@@ -1,13 +1,31 @@
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { Menu, X, Wrench } from "lucide-react";
+import { Menu, X, Wrench, ChevronDown, ChevronLeft } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   const services = [
     { name: "طراحی", href: "/design" },
-    { name: "تحلیل و شبیه سازی", href: "/analysis" },
+    { 
+      name: "تحلیل و شبیه سازی", 
+      href: "/analysis",
+      subItems: [
+        { name: "تحلیل استاتیک", href: "/analysis/static" },
+        { name: "تحلیل داینامیک", href: "/analysis/dynamic" },
+        { name: "حل مسئله", href: "/analysis/problem-solving" }
+      ]
+    },
     { name: "نقشه کشی", href: "/drawing" },
     { name: "ساخت", href: "/manufacturing" }
   ];
@@ -27,25 +45,41 @@ const Navbar = () => {
             <a href="/" className="text-foreground hover:text-primary transition-colors">خانه</a>
             
             {/* Services Dropdown */}
-            <div className="relative group">
-              <button className="text-foreground hover:text-primary transition-colors flex items-center">
-                خدمات
-                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </button>
-              <div className="absolute right-0 mt-2 w-56 bg-card border border-border rounded-md shadow-elegant opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="text-foreground hover:text-primary transition-colors flex items-center gap-1">
+                  خدمات
+                  <ChevronDown className="h-4 w-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 bg-card/95 backdrop-blur-md border-border shadow-elegant">
                 {services.map((service) => (
-                  <a
-                    key={service.name}
-                    href={service.href}
-                    className="block px-4 py-2 text-foreground hover:bg-muted hover:text-primary transition-colors"
-                  >
-                    {service.name}
-                  </a>
+                  service.subItems ? (
+                    <DropdownMenuSub key={service.name}>
+                      <DropdownMenuSubTrigger className="flex items-center justify-between text-foreground hover:bg-muted hover:text-primary">
+                        <span>{service.name}</span>
+                        <ChevronLeft className="h-4 w-4" />
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuSubContent className="w-48 bg-card/95 backdrop-blur-md border-border shadow-elegant">
+                        {service.subItems.map((subItem) => (
+                          <DropdownMenuItem key={subItem.name} asChild>
+                            <a href={subItem.href} className="text-foreground hover:bg-muted hover:text-primary cursor-pointer">
+                              {subItem.name}
+                            </a>
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuSubContent>
+                    </DropdownMenuSub>
+                  ) : (
+                    <DropdownMenuItem key={service.name} asChild>
+                      <a href={service.href} className="text-foreground hover:bg-muted hover:text-primary cursor-pointer">
+                        {service.name}
+                      </a>
+                    </DropdownMenuItem>
+                  )
                 ))}
-              </div>
-            </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             <div className="flex items-center space-x-4 rtl:space-x-reverse">
               <Button variant="outline" size="sm">
@@ -77,13 +111,27 @@ const Navbar = () => {
               <div className="space-y-1">
                 <div className="px-3 py-2 text-muted-foreground font-medium">خدمات</div>
                 {services.map((service) => (
-                  <a
-                    key={service.name}
-                    href={service.href}
-                    className="block px-6 py-2 text-sm text-foreground hover:text-primary transition-colors"
-                  >
-                    {service.name}
-                  </a>
+                  <div key={service.name}>
+                    <a
+                      href={service.href}
+                      className="block px-6 py-2 text-sm text-foreground hover:text-primary transition-colors"
+                    >
+                      {service.name}
+                    </a>
+                    {service.subItems && (
+                      <div className="pr-4">
+                        {service.subItems.map((subItem) => (
+                          <a
+                            key={subItem.name}
+                            href={subItem.href}
+                            className="block px-8 py-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                          >
+                            {subItem.name}
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
               
