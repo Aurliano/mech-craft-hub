@@ -21,12 +21,34 @@ const Navbar = () => {
       name: "تحلیل و شبیه سازی", 
       href: "/analysis",
       subItems: [
-        { name: "تحلیل استاتیک", href: "/analysis/static" },
-        { name: "تحلیل داینامیک", href: "/analysis/dynamic" },
+        { 
+          name: "تحلیل استاتیک", 
+          href: "/analysis/static",
+          subItems: [
+            { name: "تحلیل تنش", href: "/analysis/static/stress" },
+            { name: "تحلیل کرنش", href: "/analysis/static/strain" },
+            { name: "تحلیل بار", href: "/analysis/static/load" }
+          ]
+        },
+        { 
+          name: "تحلیل داینامیک", 
+          href: "/analysis/dynamic",
+          subItems: [
+            { name: "تحلیل ارتعاش", href: "/analysis/dynamic/vibration" },
+            { name: "تحلیل مودال", href: "/analysis/dynamic/modal" }
+          ]
+        },
         { name: "حل مسئله", href: "/analysis/problem-solving" }
       ]
     },
-    { name: "نقشه کشی", href: "/drawing" },
+    { 
+      name: "نقشه کشی", 
+      href: "/drawing",
+      subItems: [
+        { name: "نقشه مکانیکی", href: "/drawing/mechanical" },
+        { name: "نقشه الکتریکی", href: "/drawing/electrical" }
+      ]
+    },
     { name: "ساخت", href: "/manufacturing" }
   ];
 
@@ -52,7 +74,7 @@ const Navbar = () => {
                   <ChevronDown className="h-4 w-4" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-card/95 backdrop-blur-md border-border shadow-elegant">
+              <DropdownMenuContent align="end" className="w-56 bg-card border-border shadow-elegant z-50">
                 {services.map((service) => (
                   service.subItems ? (
                     <DropdownMenuSub key={service.name}>
@@ -60,13 +82,31 @@ const Navbar = () => {
                         <span>{service.name}</span>
                         <ChevronLeft className="h-4 w-4" />
                       </DropdownMenuSubTrigger>
-                      <DropdownMenuSubContent className="w-48 bg-card/95 backdrop-blur-md border-border shadow-elegant">
+                      <DropdownMenuSubContent className="w-48 bg-card border-border shadow-elegant z-50">
                         {service.subItems.map((subItem) => (
-                          <DropdownMenuItem key={subItem.name} asChild>
-                            <a href={subItem.href} className="text-foreground hover:bg-muted hover:text-primary cursor-pointer">
-                              {subItem.name}
-                            </a>
-                          </DropdownMenuItem>
+                          subItem.subItems ? (
+                            <DropdownMenuSub key={subItem.name}>
+                              <DropdownMenuSubTrigger className="flex items-center justify-between text-foreground hover:bg-muted hover:text-primary">
+                                <span>{subItem.name}</span>
+                                <ChevronLeft className="h-4 w-4" />
+                              </DropdownMenuSubTrigger>
+                              <DropdownMenuSubContent className="w-44 bg-card border-border shadow-elegant z-50">
+                                {subItem.subItems.map((thirdLevelItem) => (
+                                  <DropdownMenuItem key={thirdLevelItem.name} asChild>
+                                    <a href={thirdLevelItem.href} className="text-foreground hover:bg-muted hover:text-primary cursor-pointer">
+                                      {thirdLevelItem.name}
+                                    </a>
+                                  </DropdownMenuItem>
+                                ))}
+                              </DropdownMenuSubContent>
+                            </DropdownMenuSub>
+                          ) : (
+                            <DropdownMenuItem key={subItem.name} asChild>
+                              <a href={subItem.href} className="text-foreground hover:bg-muted hover:text-primary cursor-pointer">
+                                {subItem.name}
+                              </a>
+                            </DropdownMenuItem>
+                          )
                         ))}
                       </DropdownMenuSubContent>
                     </DropdownMenuSub>
@@ -114,20 +154,34 @@ const Navbar = () => {
                   <div key={service.name}>
                     <a
                       href={service.href}
-                      className="block px-6 py-2 text-sm text-foreground hover:text-primary transition-colors"
+                     className="block px-6 py-2 text-sm text-foreground hover:text-primary transition-colors"
                     >
                       {service.name}
                     </a>
                     {service.subItems && (
                       <div className="pr-4">
                         {service.subItems.map((subItem) => (
-                          <a
-                            key={subItem.name}
-                            href={subItem.href}
-                            className="block px-8 py-1 text-xs text-muted-foreground hover:text-primary transition-colors"
-                          >
-                            {subItem.name}
-                          </a>
+                          <div key={subItem.name}>
+                            <a
+                              href={subItem.href}
+                              className="block px-8 py-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                            >
+                              {subItem.name}
+                            </a>
+                            {subItem.subItems && (
+                              <div className="pr-4">
+                                {subItem.subItems.map((thirdLevelItem) => (
+                                  <a
+                                    key={thirdLevelItem.name}
+                                    href={thirdLevelItem.href}
+                                    className="block px-12 py-1 text-xs text-muted-foreground/80 hover:text-primary transition-colors"
+                                  >
+                                    {thirdLevelItem.name}
+                                  </a>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         ))}
                       </div>
                     )}
