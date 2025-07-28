@@ -60,7 +60,7 @@ const Navbar = () => {
           {/* Logo */}
           <div className="flex items-center space-x-2 rtl:space-x-reverse">
             <Wrench className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold text-foreground">مکانیک کرافت</span>
+            <span className="text-xl font-bold text-foreground">گروه صنعتی پدرام</span>
           </div>
 
           {/* Desktop Menu */}
