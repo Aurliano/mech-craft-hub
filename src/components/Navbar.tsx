@@ -130,9 +130,11 @@ const Navbar = () => {
                 ورود
               </Button>
             </Link>
-            <Button variant="hero" size="sm">
-              ثبت نام
-            </Button>
+            <Link to="/register">
+              <Button variant="hero" size="sm">
+                ثبت نام
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile menu button */}
