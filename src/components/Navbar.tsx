@@ -120,15 +120,16 @@ const Navbar = () => {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+          </div>
 
-            <div className="flex items-center space-x-4 rtl:space-x-reverse">
-              <Button variant="outline" size="sm">
-                ورود
-              </Button>
-              <Button variant="hero" size="sm">
-                ثبت نام
-              </Button>
-            </div>
+          {/* Login/Register Buttons */}
+          <div className="hidden md:flex items-center space-x-4 rtl:space-x-reverse">
+            <Button variant="outline" size="sm">
+              ورود
+            </Button>
+            <Button variant="hero" size="sm">
+              ثبت نام
+            </Button>
           </div>
 
           {/* Mobile menu button */}
