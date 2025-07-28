@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { Menu, X, Wrench, ChevronDown, ChevronLeft } from "lucide-react";
 import {
   DropdownMenu,
@@ -124,9 +125,11 @@ const Navbar = () => {
 
           {/* Login/Register Buttons */}
           <div className="hidden md:flex items-center space-x-4 rtl:space-x-reverse">
-            <Button variant="outline" size="sm">
-              ورود
-            </Button>
+            <Link to="/login">
+              <Button variant="outline" size="sm">
+                ورود
+              </Button>
+            </Link>
             <Button variant="hero" size="sm">
               ثبت نام
             </Button>
