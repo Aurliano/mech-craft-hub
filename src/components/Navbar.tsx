@@ -57,44 +57,44 @@ const Navbar = () => {
     <nav className="bg-card border-b border-border sticky top-0 z-50 backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <div className="flex items-center space-x-2 rtl:space-x-reverse">
-            <Wrench className="h-8 w-8 text-primary" />
-            <span className="text-xl font-bold text-foreground">گروه صنعتی پدرام</span>
-          </div>
+          {/* Right Section: Logo and Menu */}
+          <div className="flex items-center gap-8">
+            {/* Logo */}
+            <div className="flex items-center gap-2">
+              <Wrench className="h-8 w-8 text-primary" />
+              <span className="text-xl font-bold text-foreground">گروه صنعتی پدرام</span>
+            </div>
 
-          {/* Desktop Menu */}
-          <div className="hidden md:flex items-center space-x-8 rtl:space-x-reverse">
-            <a href="/" className="text-foreground hover:text-primary transition-colors">خانه</a>
+            {/* Desktop Menu */}
+            <div className="hidden md:flex items-center gap-8">
+              <a href="/" className="text-foreground hover:text-primary transition-colors">خانه</a>
             
             {/* Services Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="text-foreground hover:text-primary transition-colors flex items-center gap-1">
+                <a href="#services" className="text-foreground hover:text-primary transition-colors flex items-center gap-1">
                   خدمات
                   <ChevronDown className="h-4 w-4" />
-                </button>
+                </a>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-card border-border shadow-elegant z-50">
+              <DropdownMenuContent align="end" className="w-56 bg-card border-border shadow-elegant z-50 text-right">
                 {services.map((service) => (
                   service.subItems ? (
                     <DropdownMenuSub key={service.name}>
-                      <DropdownMenuSubTrigger className="flex items-center justify-between text-foreground hover:bg-muted hover:text-primary">
+                      <DropdownMenuSubTrigger className="flex items-center justify-end text-foreground hover:bg-muted hover:text-primary">
                         <span>{service.name}</span>
-                        <ChevronLeft className="h-4 w-4" />
                       </DropdownMenuSubTrigger>
-                      <DropdownMenuSubContent className="w-48 bg-card border-border shadow-elegant z-50">
+                      <DropdownMenuSubContent className="w-48 bg-card border-border shadow-elegant z-50 text-right">
                         {service.subItems.map((subItem) => (
                           subItem.subItems ? (
                             <DropdownMenuSub key={subItem.name}>
-                              <DropdownMenuSubTrigger className="flex items-center justify-between text-foreground hover:bg-muted hover:text-primary">
+                              <DropdownMenuSubTrigger className="flex items-center justify-end text-foreground hover:bg-muted hover:text-primary">
                                 <span>{subItem.name}</span>
-                                <ChevronLeft className="h-4 w-4" />
                               </DropdownMenuSubTrigger>
-                              <DropdownMenuSubContent className="w-44 bg-card border-border shadow-elegant z-50">
+                              <DropdownMenuSubContent className="w-44 bg-card border-border shadow-elegant z-50 text-right">
                                 {subItem.subItems.map((thirdLevelItem) => (
                                   <DropdownMenuItem key={thirdLevelItem.name} asChild>
-                                    <a href={thirdLevelItem.href} className="text-foreground hover:bg-muted hover:text-primary cursor-pointer">
+                                    <a href={thirdLevelItem.href} className="text-foreground hover:bg-muted hover:text-primary cursor-pointer text-right block w-full">
                                       {thirdLevelItem.name}
                                     </a>
                                   </DropdownMenuItem>
@@ -121,6 +121,7 @@ const Navbar = () => {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+            </div>
           </div>
 
           {/* Login/Register Buttons */}

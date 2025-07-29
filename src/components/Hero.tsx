@@ -34,9 +34,17 @@ const Hero = () => {
               شروع پروژه
               <ArrowLeft className="mr-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Button>
-            <Button variant="outline" size="lg" className="bg-white/10 text-white border-white/30 hover:bg-white hover:text-primary">
-              مشاهده خدمات
-            </Button>
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="bg-white/10 text-white border-white/30 hover:bg-white hover:text-primary"
+              onClick={() => {
+              const servicesSection = document.getElementById('services');
+              servicesSection?.scrollIntoView({ behavior: 'smooth' });
+            }}
+          >
+            مشاهده خدمات
+          </Button>
           </div>
 
           {/* Stats */}
