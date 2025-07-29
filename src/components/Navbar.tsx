@@ -69,56 +69,84 @@ const Navbar = () => {
             <div className="hidden md:flex items-center gap-8">
               <a href="/" className="text-foreground hover:text-primary transition-colors">خانه</a>
             
-            {/* Services Dropdown */}
+            {/* Main Menu Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <a href="#services" className="text-foreground hover:text-primary transition-colors flex items-center gap-1">
-                  خدمات
+                <button className="text-foreground hover:text-primary transition-colors flex items-center gap-1">
+                  <Menu className="h-4 w-4" />
+                  منو
                   <ChevronDown className="h-4 w-4" />
-                </a>
+                </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 bg-card border-border shadow-elegant z-50 text-right">
-                {services.map((service) => (
-                  service.subItems ? (
-                    <DropdownMenuSub key={service.name}>
-                      <DropdownMenuSubTrigger className="flex items-center justify-end text-foreground hover:bg-muted hover:text-primary">
-                        <span>{service.name}</span>
-                      </DropdownMenuSubTrigger>
-                      <DropdownMenuSubContent className="w-48 bg-card border-border shadow-elegant z-50 text-right">
-                        {service.subItems.map((subItem) => (
-                          subItem.subItems ? (
-                            <DropdownMenuSub key={subItem.name}>
-                              <DropdownMenuSubTrigger className="flex items-center justify-end text-foreground hover:bg-muted hover:text-primary">
-                                <span>{subItem.name}</span>
-                              </DropdownMenuSubTrigger>
-                              <DropdownMenuSubContent className="w-44 bg-card border-border shadow-elegant z-50 text-right">
-                                {subItem.subItems.map((thirdLevelItem) => (
-                                  <DropdownMenuItem key={thirdLevelItem.name} asChild>
-                                    <a href={thirdLevelItem.href} className="text-foreground hover:bg-muted hover:text-primary cursor-pointer text-right block w-full">
-                                      {thirdLevelItem.name}
-                                    </a>
-                                  </DropdownMenuItem>
-                                ))}
-                              </DropdownMenuSubContent>
-                            </DropdownMenuSub>
-                          ) : (
-                            <DropdownMenuItem key={subItem.name} asChild>
-                              <a href={subItem.href} className="text-foreground hover:bg-muted hover:text-primary cursor-pointer">
-                                {subItem.name}
-                              </a>
-                            </DropdownMenuItem>
-                          )
-                        ))}
-                      </DropdownMenuSubContent>
-                    </DropdownMenuSub>
-                  ) : (
-                    <DropdownMenuItem key={service.name} asChild>
-                      <a href={service.href} className="text-foreground hover:bg-muted hover:text-primary cursor-pointer">
-                        {service.name}
-                      </a>
-                    </DropdownMenuItem>
-                  )
-                ))}
+                {/* Services with submenu */}
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="flex items-center justify-end text-foreground hover:bg-muted hover:text-primary">
+                    <span>خدمات</span>
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent className="w-56 bg-card border-border shadow-elegant z-50 text-right">
+                    {services.map((service) => (
+                      service.subItems ? (
+                        <DropdownMenuSub key={service.name}>
+                          <DropdownMenuSubTrigger className="flex items-center justify-end text-foreground hover:bg-muted hover:text-primary">
+                            <span>{service.name}</span>
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuSubContent className="w-48 bg-card border-border shadow-elegant z-50 text-right">
+                            {service.subItems.map((subItem) => (
+                              subItem.subItems ? (
+                                <DropdownMenuSub key={subItem.name}>
+                                  <DropdownMenuSubTrigger className="flex items-center justify-end text-foreground hover:bg-muted hover:text-primary">
+                                    <span>{subItem.name}</span>
+                                  </DropdownMenuSubTrigger>
+                                  <DropdownMenuSubContent className="w-44 bg-card border-border shadow-elegant z-50 text-right">
+                                    {subItem.subItems.map((thirdLevelItem) => (
+                                      <DropdownMenuItem key={thirdLevelItem.name} asChild>
+                                        <a href={thirdLevelItem.href} className="text-foreground hover:bg-muted hover:text-primary cursor-pointer text-right block w-full">
+                                          {thirdLevelItem.name}
+                                        </a>
+                                      </DropdownMenuItem>
+                                    ))}
+                                  </DropdownMenuSubContent>
+                                </DropdownMenuSub>
+                              ) : (
+                                <DropdownMenuItem key={subItem.name} asChild>
+                                  <a href={subItem.href} className="text-foreground hover:bg-muted hover:text-primary cursor-pointer">
+                                    {subItem.name}
+                                  </a>
+                                </DropdownMenuItem>
+                              )
+                            ))}
+                          </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                      ) : (
+                        <DropdownMenuItem key={service.name} asChild>
+                          <a href={service.href} className="text-foreground hover:bg-muted hover:text-primary cursor-pointer">
+                            {service.name}
+                          </a>
+                        </DropdownMenuItem>
+                      )
+                    ))}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                
+                <DropdownMenuSeparator />
+                
+                {/* Portfolio */}
+                <DropdownMenuItem asChild>
+                  <a href="/portfolio" className="text-foreground hover:bg-muted hover:text-primary cursor-pointer">
+                    نمونه کارها
+                  </a>
+                </DropdownMenuItem>
+                
+                {/* Contact */}
+                <DropdownMenuItem asChild>
+                  <button 
+                    onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+                    className="text-foreground hover:bg-muted hover:text-primary cursor-pointer w-full text-right"
+                  >
+                    تماس با ما
+                  </button>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             </div>
