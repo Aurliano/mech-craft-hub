@@ -126,7 +126,11 @@ const Navbar = () => {
 
           {/* Contact and Login/Register Buttons */}
           <div className="hidden md:flex items-center space-x-4 rtl:space-x-reverse">
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+            >
               تماس با ما
             </Button>
             <Link to="/login">
@@ -200,6 +204,16 @@ const Navbar = () => {
               </div>
               
               <div className="flex flex-col space-y-2 px-3 pt-4">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    setIsOpen(false);
+                    document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                >
+                  تماس با ما
+                </Button>
                 <Button variant="outline" size="sm">
                   ورود
                 </Button>
