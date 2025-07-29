@@ -124,8 +124,11 @@ const Navbar = () => {
             </div>
           </div>
 
-          {/* Login/Register Buttons */}
+          {/* Contact and Login/Register Buttons */}
           <div className="hidden md:flex items-center space-x-4 rtl:space-x-reverse">
+            <Button variant="outline" size="sm">
+              تماس با ما
+            </Button>
             <Link to="/login">
               <Button variant="outline" size="sm">
                 ورود
