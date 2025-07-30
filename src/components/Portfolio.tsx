@@ -5,9 +5,14 @@ import {
   CarouselItem,
   CarouselNext,
   CarouselPrevious,
+  type CarouselApi,
 } from "@/components/ui/carousel";
+import { useEffect, useState } from "react";
 
 const Portfolio = () => {
+  const [api, setApi] = useState<CarouselApi>();
+  const [loaded, setLoaded] = useState(false);
+
   const portfolioItems = [
     {
       id: 1,
@@ -20,7 +25,7 @@ const Portfolio = () => {
       id: 2,
       title: "اپلیکیشن IoT مانیتورینگ",
       description: "سیستم نظارت و کنترل هوشمند تجهیزات صنعتی با اینترنت اشیاء",
-      image: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&h=400&fit=crop",
+      image: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&h=400&fit=crop", 
       category: "IoT و اتوماسیون"
     },
     {
@@ -46,6 +51,31 @@ const Portfolio = () => {
     }
   ];
 
+  // پیش‌بارگذاری تصاویر
+  useEffect(() => {
+    Promise.all(
+      portfolioItems.map((item) => {
+        return new Promise((resolve) => {
+          const img = new Image();
+          img.src = item.image;
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
+      })
+    ).then(() => setLoaded(true));
+  }, []);
+
+  // اسکرول خودکار
+  useEffect(() => {
+    if (!api || !loaded) return;
+
+    const interval = setInterval(() => {
+      api.scrollNext();
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [api, loaded]);
+
   return (
     <section className="py-20 px-4 bg-background">
       <div className="container mx-auto">
@@ -60,46 +90,55 @@ const Portfolio = () => {
 
         <div className="relative max-w-5xl mx-auto px-12">
           <Carousel
+            setApi={setApi}
             opts={{
               align: "start",
               loop: true,
-              skipSnaps: false,
-              dragFree: false,
             }}
             className="w-full"
           >
-            <CarouselContent className="-ml-2 md:-ml-4">
+            <CarouselContent>
               {portfolioItems.map((item) => (
-                <CarouselItem key={item.id} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3">
-                  <Card className="h-full hover:shadow-lg transition-shadow duration-300">
-                    <CardContent className="p-0">
-                      <div className="relative overflow-hidden rounded-t-lg">
-                        <img
-                          src={item.image}
-                          alt={item.title}
-                          className="w-full h-48 object-cover transition-transform duration-300 hover:scale-105"
-                        />
-                        <div className="absolute top-4 right-4">
-                          <span className="bg-primary/90 text-primary-foreground px-3 py-1 rounded-full text-sm font-medium">
-                            {item.category}
-                          </span>
+                <CarouselItem 
+                  key={item.id} 
+                  className="basis-full sm:basis-1/2 lg:basis-1/3 px-3 first:pl-0 last:pr-0"
+                >
+                  <div className="p-1">
+                    <Card className="overflow-hidden hover:shadow-lg transition-all duration-300">
+                      <CardContent className="p-0">
+                        <div className="relative aspect-[16/9] overflow-hidden rounded-t-lg bg-muted/10">
+                          <img
+                            src={item.image}
+                            alt={item.title}
+                            loading="lazy"
+                            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                          />
+                          <div className="absolute top-4 right-4">
+                            <span className="bg-primary/90 text-primary-foreground px-3 py-1 rounded-full text-sm font-medium shadow-md">
+                              {item.category}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                      <div className="p-6">
-                        <h3 className="text-xl font-bold text-foreground mb-3">
-                          {item.title}
-                        </h3>
-                        <p className="text-muted-foreground leading-relaxed">
-                          {item.description}
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
+                        <div className="p-6">
+                          <h3 className="text-xl font-bold mb-3">
+                            {item.title}
+                          </h3>
+                          <p className="text-muted-foreground text-sm leading-relaxed">
+                            {item.description}
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </CarouselItem>
               ))}
             </CarouselContent>
-            <CarouselPrevious className="-left-6 bg-background/80 hover:bg-background border-border" />
-            <CarouselNext className="-right-6 bg-background/80 hover:bg-background border-border" />
+            <CarouselPrevious 
+              className="absolute -right-12 top-1/2 -translate-y-1/2 bg-background hover:bg-background/80"
+            />
+            <CarouselNext 
+              className="absolute -left-12 top-1/2 -translate-y-1/2 bg-background hover:bg-background/80"
+            />
           </Carousel>
         </div>
       </div>
