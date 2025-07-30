@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Cog, Users, Award } from "lucide-react";
 import heroImage from "@/assets/hero-engineering.jpg";
-import logo from "@/assets/logo.png";
 
 const Hero = () => {
   return (
@@ -52,7 +51,7 @@ const Hero = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
               <div className="flex items-center justify-center mb-2">
-                <img src={logo} alt="لوگو" className="h-8 w-auto" />
+                <Cog className="h-8 w-8 text-accent" />
               </div>
               <div className="text-2xl font-bold text-primary-foreground">۵۰۰+</div>
               <div className="text-primary-foreground/80">پروژه موفق</div>

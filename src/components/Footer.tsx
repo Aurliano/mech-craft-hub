@@ -1,4 +1,6 @@
 import { Wrench, Phone, Mail, MapPin } from "lucide-react";
+import logo from "@/assets/logo.png";
+
 
 const Footer = () => {
   return (
@@ -9,7 +11,7 @@ const Footer = () => {
           <div className="text-right">
             <div className="flex items-center space-x-2 rtl:space-x-reverse justify-end mb-4">
               <span className="text-xl font-bold">مکانیک کرافت</span>
-              <Wrench className="h-6 w-6" />
+              <img src={logo} alt="لوگو" className="h-14 w-auto" />
             </div>
             <p className="text-primary-foreground/80 leading-relaxed">
               ارائه‌دهنده خدمات جامع مهندسی مکانیک با استفاده از جدیدترین تکنولوژی‌ها و بالاترین کیفیت
