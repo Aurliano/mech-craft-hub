@@ -1,5 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 import { Compass, BarChart3, FileText, Settings } from "lucide-react";
 
 const Services = () => {
@@ -46,7 +53,8 @@ const Services = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Desktop Grid */}
+        <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {servicesList.map((service, index) => {
             const IconComponent = service.icon;
             return (
@@ -80,6 +88,59 @@ const Services = () => {
               </Card>
             );
           })}
+        </div>
+
+        {/* Mobile Carousel */}
+        <div className="md:hidden relative max-w-sm mx-auto px-12">
+          <Carousel
+            opts={{
+              align: "start",
+              loop: true,
+              skipSnaps: false,
+              dragFree: false,
+            }}
+            className="w-full"
+          >
+            <CarouselContent className="-ml-2">
+              {servicesList.map((service, index) => {
+                const IconComponent = service.icon;
+                return (
+                  <CarouselItem key={index} className="pl-2">
+                    <Card className="group hover:shadow-elegant transition-all duration-300 hover:-translate-y-2 bg-card border-border">
+                      <CardHeader className="text-center">
+                        <div className="mx-auto w-16 h-16 bg-gradient-to-r from-primary to-primary-light rounded-full flex items-center justify-center mb-4 group-hover:shadow-glow transition-all duration-300">
+                          <IconComponent className="h-8 w-8 text-primary-foreground" />
+                        </div>
+                        <CardTitle className="text-foreground text-right">{service.title}</CardTitle>
+                        <CardDescription className="text-muted-foreground text-right">
+                          {service.description}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="text-right">
+                        <ul className="space-y-2 mb-6">
+                          {service.features.map((feature, featureIndex) => (
+                            <li key={featureIndex} className="text-sm text-muted-foreground flex items-center justify-end">
+                              <span>{feature}</span>
+                              <div className="w-2 h-2 bg-accent rounded-full mr-2"></div>
+                            </li>
+                          ))}
+                        </ul>
+                        <Button 
+                          variant="outline" 
+                          className="w-full group-hover:bg-primary group-hover:text-primary-foreground"
+                          onClick={() => window.location.href = service.href}
+                        >
+                          اطلاعات بیشتر
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </CarouselItem>
+                );
+              })}
+            </CarouselContent>
+            <CarouselPrevious className="-left-6 bg-background/80 hover:bg-background border-border" />
+            <CarouselNext className="-right-6 bg-background/80 hover:bg-background border-border" />
+          </Carousel>
         </div>
       </div>
     </section>
