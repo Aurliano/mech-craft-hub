@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
-import { Menu, X, Wrench, ChevronDown, ChevronLeft } from "lucide-react";
+import { Menu, X, Wrench, ChevronDown, ChevronLeft, ChevronUp } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +16,15 @@ import {
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [expandedServices, setExpandedServices] = useState<string[]>([]);
+
+  const toggleService = (serviceName: string) => {
+    setExpandedServices(prev => 
+      prev.includes(serviceName) 
+        ? prev.filter(name => name !== serviceName)
+        : [...prev, serviceName]
+    );
+  };
 
   const services = [
     { name: "طراحی", href: "/design" },
@@ -180,68 +189,142 @@ const Navbar = () => {
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className="md:hidden border-t border-border">
-            <div className="px-2 pt-2 pb-3 space-y-1">
-              <a href="/" className="block px-3 py-2 text-foreground hover:text-primary transition-colors">خانه</a>
-              
-              <div className="space-y-1">
-                <div className="px-3 py-2 text-muted-foreground font-medium">خدمات</div>
-                {services.map((service) => (
-                  <div key={service.name}>
-                    <a
-                      href={service.href}
-                     className="block px-6 py-2 text-sm text-foreground hover:text-primary transition-colors"
-                    >
-                      {service.name}
-                    </a>
-                    {service.subItems && (
-                      <div className="pr-4">
-                        {service.subItems.map((subItem) => (
-                          <div key={subItem.name}>
+          <div className="md:hidden border-t border-border bg-background/95 backdrop-blur-sm">
+            <div className="max-h-[80vh] overflow-y-auto">
+              <div className="px-3 py-4 space-y-3">
+                {/* Home Link */}
+                <a 
+                  href="/" 
+                  className="flex items-center justify-between p-3 rounded-lg bg-muted/30 text-foreground hover:bg-muted hover:text-primary transition-all duration-200"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <span className="font-medium">خانه</span>
+                </a>
+                
+                {/* Services Section */}
+                <div className="bg-muted/20 rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => toggleService('services')}
+                    className="w-full flex items-center justify-between p-3 text-foreground hover:bg-muted transition-colors"
+                  >
+                    <span className="font-medium">خدمات</span>
+                    {expandedServices.includes('services') ? 
+                      <ChevronUp className="h-4 w-4" /> : 
+                      <ChevronDown className="h-4 w-4" />
+                    }
+                  </button>
+                  
+                  {expandedServices.includes('services') && (
+                    <div className="px-3 pb-3 space-y-2">
+                      {services.map((service) => (
+                        <div key={service.name} className="bg-background rounded-md overflow-hidden">
+                          {service.subItems ? (
+                            <div>
+                              <button
+                                onClick={() => toggleService(service.name)}
+                                className="w-full flex items-center justify-between p-2 text-sm text-foreground hover:bg-muted transition-colors"
+                              >
+                                <span>{service.name}</span>
+                                {expandedServices.includes(service.name) ? 
+                                  <ChevronUp className="h-3 w-3" /> : 
+                                  <ChevronDown className="h-3 w-3" />
+                                }
+                              </button>
+                              
+                              {expandedServices.includes(service.name) && (
+                                <div className="px-2 pb-2 space-y-1">
+                                  {service.subItems.map((subItem) => (
+                                    <div key={subItem.name}>
+                                      {subItem.subItems ? (
+                                        <div className="bg-muted/30 rounded-sm overflow-hidden">
+                                          <button
+                                            onClick={() => toggleService(subItem.name)}
+                                            className="w-full flex items-center justify-between p-2 text-xs text-muted-foreground hover:text-primary transition-colors"
+                                          >
+                                            <span>{subItem.name}</span>
+                                            {expandedServices.includes(subItem.name) ? 
+                                              <ChevronUp className="h-3 w-3" /> : 
+                                              <ChevronDown className="h-3 w-3" />
+                                            }
+                                          </button>
+                                          
+                                          {expandedServices.includes(subItem.name) && (
+                                            <div className="px-2 pb-1 space-y-1">
+                                              {subItem.subItems.map((thirdLevelItem) => (
+                                                <a
+                                                  key={thirdLevelItem.name}
+                                                  href={thirdLevelItem.href}
+                                                  className="block p-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                                                  onClick={() => setIsOpen(false)}
+                                                >
+                                                  • {thirdLevelItem.name}
+                                                </a>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <a
+                                          href={subItem.href}
+                                          className="block p-2 text-xs text-muted-foreground hover:text-primary transition-colors rounded-sm hover:bg-muted/50"
+                                          onClick={() => setIsOpen(false)}
+                                        >
+                                          {subItem.name}
+                                        </a>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
                             <a
-                              href={subItem.href}
-                              className="block px-8 py-1 text-xs text-muted-foreground hover:text-primary transition-colors"
+                              href={service.href}
+                              className="block p-2 text-sm text-foreground hover:text-primary hover:bg-muted transition-colors"
+                              onClick={() => setIsOpen(false)}
                             >
-                              {subItem.name}
+                              {service.name}
                             </a>
-                            {subItem.subItems && (
-                              <div className="pr-4">
-                                {subItem.subItems.map((thirdLevelItem) => (
-                                  <a
-                                    key={thirdLevelItem.name}
-                                    href={thirdLevelItem.href}
-                                    className="block px-12 py-1 text-xs text-muted-foreground/80 hover:text-primary transition-colors"
-                                  >
-                                    {thirdLevelItem.name}
-                                  </a>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-              
-              <div className="flex flex-col space-y-2 px-3 pt-4">
-                <Button 
-                  variant="outline" 
-                  size="sm"
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Portfolio Link */}
+                <a 
+                  href="/portfolio" 
+                  className="flex items-center justify-between p-3 rounded-lg bg-muted/30 text-foreground hover:bg-muted hover:text-primary transition-all duration-200"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <span className="font-medium">نمونه کارها</span>
+                </a>
+
+                {/* Contact Button */}
+                <button 
                   onClick={() => {
                     setIsOpen(false);
                     document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
                   }}
+                  className="w-full flex items-center justify-between p-3 rounded-lg bg-muted/30 text-foreground hover:bg-muted hover:text-primary transition-all duration-200"
                 >
-                  تماس با ما
-                </Button>
-                <Button variant="outline" size="sm">
-                  ورود
-                </Button>
-                <Button variant="hero" size="sm">
-                  ثبت نام
-                </Button>
+                  <span className="font-medium">تماس با ما</span>
+                </button>
+
+                {/* Auth Buttons */}
+                <div className="flex flex-col space-y-3 pt-4 border-t border-border">
+                  <Link to="/login" onClick={() => setIsOpen(false)}>
+                    <Button variant="outline" size="sm" className="w-full">
+                      ورود
+                    </Button>
+                  </Link>
+                  <Link to="/register" onClick={() => setIsOpen(false)}>
+                    <Button variant="default" size="sm" className="w-full">
+                      ثبت نام
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
