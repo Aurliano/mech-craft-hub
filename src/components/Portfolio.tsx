@@ -63,6 +63,8 @@ const Portfolio = () => {
             opts={{
               align: "start",
               loop: true,
+              skipSnaps: false,
+              dragFree: false,
             }}
             className="w-full"
           >
