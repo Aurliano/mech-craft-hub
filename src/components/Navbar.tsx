@@ -77,41 +77,41 @@ const Navbar = () => {
 
             {/* Desktop Menu */}
             <div className="hidden md:flex items-center gap-8">
-              <a href="/" className="px-4 py-2 rounded-lg hover:bg-[hsl(var(--gold))] hover:text-foreground transition-all duration-300 font-medium">خانه</a>
+              <a href="/" className="hover:text-primary transition-colors">خانه</a>
             
             {/* Main Menu Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="px-4 py-2 rounded-lg hover:bg-[hsl(var(--gold))] hover:text-foreground transition-all duration-300 flex items-center gap-2 font-medium">
+                <button className="hover:text-primary transition-colors flex items-center gap-1">
                   <Menu className="h-4 w-4" />
                   منو
                   <ChevronDown className="h-4 w-4" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" side="left" className="w-64 bg-card/95 backdrop-blur-sm border-border shadow-2xl z-50 text-right">
+              <DropdownMenuContent align="end" className="w-56 bg-card border-border shadow-elegant z-50 text-right">
                 {/* Services with submenu */}
                 <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className="flex items-center justify-end hover:bg-[hsl(var(--gold))] hover:text-foreground px-4 py-3 rounded-md transition-all duration-300">
-                    <span className="font-medium">خدمات</span>
+                  <DropdownMenuSubTrigger className="flex items-center justify-end hover:bg-muted hover:text-primary">
+                    <span>خدمات</span>
                   </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="w-64 bg-card/95 backdrop-blur-sm border-border shadow-xl z-50 text-right">
+                  <DropdownMenuSubContent className="w-56 bg-background border-border shadow-md z-50 text-right">
                     {services.map((service) => (
                       service.subItems ? (
                         <DropdownMenuSub key={service.name}>
-                          <DropdownMenuSubTrigger className="flex items-center justify-end hover:bg-[hsl(var(--gold))] hover:text-foreground px-4 py-3 rounded-md transition-all duration-300">
-                            <span className="font-medium">{service.name}</span>
+                          <DropdownMenuSubTrigger className="flex items-center justify-end hover:bg-muted hover:text-primary">
+                            <span>{service.name}</span>
                           </DropdownMenuSubTrigger>
-                          <DropdownMenuSubContent className="w-56 bg-card/95 backdrop-blur-sm border-border shadow-xl z-50 text-right">
+                          <DropdownMenuSubContent className="w-48 bg-card border-border shadow-elegant z-50 text-right">
                             {service.subItems.map((subItem) => (
                               subItem.subItems ? (
                                 <DropdownMenuSub key={subItem.name}>
-                                  <DropdownMenuSubTrigger className="flex items-center justify-end text-foreground hover:bg-[hsl(var(--gold))] hover:text-foreground px-4 py-2 rounded-md transition-all duration-300">
+                                  <DropdownMenuSubTrigger className="flex items-center justify-end text-foreground hover:bg-muted hover:text-primary">
                                     <span>{subItem.name}</span>
                                   </DropdownMenuSubTrigger>
-                                  <DropdownMenuSubContent className="w-48 bg-card/95 backdrop-blur-sm border-border shadow-xl z-50 text-right">
+                                  <DropdownMenuSubContent className="w-44 bg-card border-border shadow-elegant z-50 text-right">
                                     {subItem.subItems.map((thirdLevelItem) => (
                                       <DropdownMenuItem key={thirdLevelItem.name} asChild>
-                                        <a href={thirdLevelItem.href} className="text-foreground hover:bg-[hsl(var(--gold))] hover:text-foreground cursor-pointer text-right block w-full px-4 py-2 rounded-md transition-all duration-300">
+                                        <a href={thirdLevelItem.href} className="text-foreground hover:bg-muted hover:text-primary cursor-pointer text-right block w-full">
                                           {thirdLevelItem.name}
                                         </a>
                                       </DropdownMenuItem>
@@ -120,7 +120,7 @@ const Navbar = () => {
                                 </DropdownMenuSub>
                               ) : (
                                 <DropdownMenuItem key={subItem.name} asChild>
-                                  <a href={subItem.href} className="text-foreground hover:bg-[hsl(var(--gold))] hover:text-foreground cursor-pointer px-4 py-2 rounded-md transition-all duration-300 block">
+                                  <a href={subItem.href} className="text-foreground hover:bg-muted hover:text-primary cursor-pointer">
                                     {subItem.name}
                                   </a>
                                 </DropdownMenuItem>
@@ -130,7 +130,7 @@ const Navbar = () => {
                         </DropdownMenuSub>
                       ) : (
                         <DropdownMenuItem key={service.name} asChild>
-                          <a href={service.href} className="text-foreground hover:bg-[hsl(var(--gold))] hover:text-foreground cursor-pointer px-4 py-2 rounded-md transition-all duration-300 block">
+                          <a href={service.href} className="text-foreground hover:bg-muted hover:text-primary cursor-pointer">
                             {service.name}
                           </a>
                         </DropdownMenuItem>
@@ -139,11 +139,11 @@ const Navbar = () => {
                   </DropdownMenuSubContent>
                 </DropdownMenuSub>
                 
-                <DropdownMenuSeparator className="my-2" />
+                <DropdownMenuSeparator />
                 
                 {/* Portfolio */}
                 <DropdownMenuItem asChild>
-                  <a href="/portfolio" className="text-foreground hover:bg-[hsl(var(--gold))] hover:text-foreground cursor-pointer px-4 py-3 rounded-md transition-all duration-300 block font-medium">
+                  <a href="/portfolio" className="text-foreground hover:bg-muted hover:text-primary cursor-pointer">
                     نمونه کارها
                   </a>
                 </DropdownMenuItem>
@@ -152,7 +152,7 @@ const Navbar = () => {
                 <DropdownMenuItem asChild>
                   <button 
                     onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-                    className="text-foreground hover:bg-[hsl(var(--gold))] hover:text-foreground cursor-pointer w-full text-right px-4 py-3 rounded-md transition-all duration-300 font-medium"
+                    className="text-foreground hover:bg-muted hover:text-primary cursor-pointer w-full text-right"
                   >
                     تماس با ما
                   </button>
