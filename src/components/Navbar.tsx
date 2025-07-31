@@ -2,17 +2,16 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
-import { Menu, X, Wrench, ChevronDown, ChevronLeft, ChevronUp } from "lucide-react";
+import { Menu, X, ChevronDown, ChevronUp } from "lucide-react";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  navigationMenuTriggerStyle,
+} from "@/components/ui/navigation-menu";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -76,89 +75,96 @@ const Navbar = () => {
             </div>
 
             {/* Desktop Menu */}
-            <div className="hidden md:flex items-center gap-8">
-              <a href="/" className="hover:text-primary transition-colors">خانه</a>
-            
-            {/* Main Menu Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="hover:text-primary transition-colors flex items-center gap-1">
-                  <Menu className="h-4 w-4" />
-                  منو
-                  <ChevronDown className="h-4 w-4" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-card border-border shadow-elegant z-50 text-right">
-                {/* Services with submenu */}
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className="flex items-center justify-end hover:bg-muted hover:text-primary">
-                    <span>خدمات</span>
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuSubContent className="w-56 bg-background border-border shadow-md z-50 text-right">
-                    {services.map((service) => (
-                      service.subItems ? (
-                        <DropdownMenuSub key={service.name}>
-                          <DropdownMenuSubTrigger className="flex items-center justify-end hover:bg-muted hover:text-primary">
-                            <span>{service.name}</span>
-                          </DropdownMenuSubTrigger>
-                          <DropdownMenuSubContent className="w-48 bg-card border-border shadow-elegant z-50 text-right">
-                            {service.subItems.map((subItem) => (
-                              subItem.subItems ? (
-                                <DropdownMenuSub key={subItem.name}>
-                                  <DropdownMenuSubTrigger className="flex items-center justify-end text-foreground hover:bg-muted hover:text-primary">
-                                    <span>{subItem.name}</span>
-                                  </DropdownMenuSubTrigger>
-                                  <DropdownMenuSubContent className="w-44 bg-card border-border shadow-elegant z-50 text-right">
-                                    {subItem.subItems.map((thirdLevelItem) => (
-                                      <DropdownMenuItem key={thirdLevelItem.name} asChild>
-                                        <a href={thirdLevelItem.href} className="text-foreground hover:bg-muted hover:text-primary cursor-pointer text-right block w-full">
-                                          {thirdLevelItem.name}
-                                        </a>
-                                      </DropdownMenuItem>
+            <div className="hidden md:flex items-center">
+              <NavigationMenu className="bg-transparent">
+                <NavigationMenuList className="gap-1">
+                  {/* Home */}
+                  <NavigationMenuItem>
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/">
+                      خانه
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+
+                  {/* Services */}
+                  <NavigationMenuItem>
+                    <NavigationMenuTrigger className="bg-transparent hover:bg-muted/50 data-[state=open]:bg-muted/50">
+                      خدمات
+                    </NavigationMenuTrigger>
+                    <NavigationMenuContent className="bg-card/95 backdrop-blur-sm border border-border/50 shadow-elegant">
+                      <div className="w-[400px] p-4">
+                        <div className="grid grid-cols-1 gap-4">
+                          {services.map((service) => (
+                            <div key={service.name} className="group">
+                              {service.subItems ? (
+                                <div>
+                                  <h3 className="text-sm font-medium text-foreground mb-2 px-3 py-2 bg-muted/30 rounded-md">
+                                    {service.name}
+                                  </h3>
+                                  <div className="grid grid-cols-1 gap-1 mr-4">
+                                    {service.subItems.map((subItem) => (
+                                      <div key={subItem.name}>
+                                        {subItem.subItems ? (
+                                          <div className="mb-2">
+                                            <h4 className="text-xs font-medium text-muted-foreground mb-1 px-2 py-1">
+                                              {subItem.name}
+                                            </h4>
+                                            <div className="grid grid-cols-1 gap-1 mr-4">
+                                              {subItem.subItems.map((thirdLevel) => (
+                                                <NavigationMenuLink
+                                                  key={thirdLevel.name}
+                                                  href={thirdLevel.href}
+                                                  className="block px-2 py-1 text-xs text-muted-foreground hover:text-primary hover:bg-muted/30 rounded transition-colors"
+                                                >
+                                                  • {thirdLevel.name}
+                                                </NavigationMenuLink>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <NavigationMenuLink
+                                            href={subItem.href}
+                                            className="block px-2 py-2 text-sm text-foreground hover:text-primary hover:bg-muted/50 rounded transition-colors"
+                                          >
+                                            {subItem.name}
+                                          </NavigationMenuLink>
+                                        )}
+                                      </div>
                                     ))}
-                                  </DropdownMenuSubContent>
-                                </DropdownMenuSub>
+                                  </div>
+                                </div>
                               ) : (
-                                <DropdownMenuItem key={subItem.name} asChild>
-                                  <a href={subItem.href} className="text-foreground hover:bg-muted hover:text-primary cursor-pointer">
-                                    {subItem.name}
-                                  </a>
-                                </DropdownMenuItem>
-                              )
-                            ))}
-                          </DropdownMenuSubContent>
-                        </DropdownMenuSub>
-                      ) : (
-                        <DropdownMenuItem key={service.name} asChild>
-                          <a href={service.href} className="text-foreground hover:bg-muted hover:text-primary cursor-pointer">
-                            {service.name}
-                          </a>
-                        </DropdownMenuItem>
-                      )
-                    ))}
-                  </DropdownMenuSubContent>
-                </DropdownMenuSub>
-                
-                <DropdownMenuSeparator />
-                
-                {/* Portfolio */}
-                <DropdownMenuItem asChild>
-                  <a href="/portfolio" className="text-foreground hover:bg-muted hover:text-primary cursor-pointer">
-                    نمونه کارها
-                  </a>
-                </DropdownMenuItem>
-                
-                {/* Contact */}
-                <DropdownMenuItem asChild>
-                  <button 
-                    onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-                    className="text-foreground hover:bg-muted hover:text-primary cursor-pointer w-full text-right"
-                  >
-                    تماس با ما
-                  </button>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                                <NavigationMenuLink
+                                  href={service.href}
+                                  className="block px-3 py-2 text-sm font-medium text-foreground hover:text-primary hover:bg-muted/50 rounded transition-colors"
+                                >
+                                  {service.name}
+                                </NavigationMenuLink>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </NavigationMenuContent>
+                  </NavigationMenuItem>
+
+                  {/* Portfolio */}
+                  <NavigationMenuItem>
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/portfolio">
+                      نمونه کارها
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+
+                  {/* Contact */}
+                  <NavigationMenuItem>
+                    <button 
+                      onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+                      className={navigationMenuTriggerStyle()}
+                    >
+                      تماس با ما
+                    </button>
+                  </NavigationMenuItem>
+                </NavigationMenuList>
+              </NavigationMenu>
             </div>
           </div>
 
