@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import LazyImage from "@/components/ui/lazy-image";
 
 const Portfolio = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -43,18 +44,9 @@ const Portfolio = () => {
     }
   ];
 
-  // پیش‌بارگذاری تصاویر
+  // حذف پیش‌بارگذاری تصاویر - حالا lazy loading استفاده می‌کنیم
   useEffect(() => {
-    Promise.all(
-      portfolioItems.map((item) => {
-        return new Promise((resolve) => {
-          const img = new Image();
-          img.src = item.image;
-          img.onload = resolve;
-          img.onerror = resolve;
-        });
-      })
-    ).then(() => setLoaded(true));
+    setLoaded(true);
   }, []);
 
   const nextSlide = () => {
@@ -115,7 +107,7 @@ const Portfolio = () => {
                   >
                     <div className="box bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
                       <div className="image relative aspect-[16/9] overflow-hidden">
-                        <img
+                        <LazyImage
                           src={item.image}
                           alt={item.title}
                           className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
