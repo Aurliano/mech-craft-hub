@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
-import { Menu, X, ChevronDown, ChevronUp, User, ShoppingCart, Package, HelpCircle, LogOut } from "lucide-react";
+import { Menu, X, ChevronDown, ChevronUp, User, ShoppingCart, Package, HelpCircle, LogOut, Home, LogIn, UserPlus } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -93,7 +93,7 @@ const Navbar = () => {
                   {/* Home */}
                   <NavigationMenuItem>
                     <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/">
-                      خانه
+                      <Home className="h-5 w-5" />
                     </NavigationMenuLink>
                   </NavigationMenuItem>
 
@@ -230,12 +230,12 @@ const Navbar = () => {
               <>
                 <Link to="/login">
                   <Button variant="outline" size="sm">
-                    ورود
+                    <LogIn className="h-5 w-5" />
                   </Button>
                 </Link>
                 <Link to="/register">
                   <Button variant="outline" size="sm">
-                    ثبت نام
+                    <UserPlus className="h-5 w-5" />
                   </Button>
                 </Link>
                 {/* Test Login Button */}
@@ -273,7 +273,10 @@ const Navbar = () => {
                   className="flex items-center justify-between p-3 rounded-lg bg-muted/30 text-foreground hover:bg-muted hover:text-primary transition-all duration-200"
                   onClick={() => setIsOpen(false)}
                 >
-                  <span className="font-medium">خانه</span>
+                  <span className="font-medium flex items-center gap-2">
+                    <Home className="h-5 w-5" />
+                    خانه
+                  </span>
                 </a>
                 
                 {/* Services Section */}
