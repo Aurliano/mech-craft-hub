@@ -83,7 +83,7 @@ const Navbar = () => {
             {/* Logo */}
             <div className="flex items-center gap-3">
               <img src={logo} alt="لوگو" className="h-16 w-auto" />
-              <span className="text-xl font-bold">گروه صنعتی پدرام</span>
+              <span className="text-xl font-bold">پلتفرم مهندسی سایدا</span>
             </div>
 
             {/* Desktop Menu */}
