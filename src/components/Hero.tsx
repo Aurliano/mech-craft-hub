@@ -1,13 +1,29 @@
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Cog, Users, Award } from "lucide-react";
+import { useState, useEffect } from "react";
 import heroImage from "@/assets/hero-engineering.jpg";
 
 const Hero = () => {
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  useEffect(() => {
+    const img = new Image();
+    img.src = heroImage;
+    img.onload = () => setImageLoaded(true);
+  }, []);
+
   return (
     <div className="relative min-h-screen flex items-center overflow-hidden">
       {/* Background Image */}
+      {!imageLoaded && (
+        <div className="absolute inset-0 bg-muted animate-pulse">
+          <div className="absolute inset-0 bg-primary/80"></div>
+        </div>
+      )}
       <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+        className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-500 ${
+          imageLoaded ? 'opacity-100' : 'opacity-0'
+        }`}
         style={{ backgroundImage: `url(${heroImage})` }}
       >
         <div className="absolute inset-0 bg-primary/80"></div>

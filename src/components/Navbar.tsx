@@ -2,7 +2,15 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
-import { Menu, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Menu, X, ChevronDown, ChevronUp, User, ShoppingCart, Package, HelpCircle, LogOut, Home, LogIn, UserPlus } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -16,6 +24,10 @@ import {
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [expandedServices, setExpandedServices] = useState<string[]>([]);
+  
+  // Mock authentication state - replace with real auth logic
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userName] = useState("احمد محمدی"); // Mock user name
 
   const toggleService = (serviceName: string) => {
     setExpandedServices(prev => 
@@ -71,17 +83,27 @@ const Navbar = () => {
             {/* Logo */}
             <div className="flex items-center gap-3">
               <img src={logo} alt="لوگو" className="h-16 w-auto" />
-              <span className="text-xl font-bold">گروه صنعتی پدرام</span>
+              <span className="text-xl font-bold">پلتفرم مهندسی سایدا</span>
             </div>
 
             {/* Desktop Menu */}
             <div className="hidden md:flex items-center">
               <NavigationMenu className="bg-transparent">
                 <NavigationMenuList className="gap-1">
-                  {/* Home */}
+                  {/* Contact */}
                   <NavigationMenuItem>
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/">
-                      خانه
+                    <button 
+                      onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+                      className={navigationMenuTriggerStyle()}
+                    >
+                      تماس با ما
+                    </button>
+                  </NavigationMenuItem>
+
+                  {/* Portfolio */}
+                  <NavigationMenuItem>
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/portfolio">
+                      نمونه کارها
                     </NavigationMenuLink>
                   </NavigationMenuItem>
 
@@ -146,40 +168,90 @@ const Navbar = () => {
                       </div>
                     </NavigationMenuContent>
                   </NavigationMenuItem>
-
-                  {/* Portfolio */}
+                  
+                  {/* Home */}
                   <NavigationMenuItem>
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/portfolio">
-                      نمونه کارها
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/">
+                      <Home className="h-5 w-5" />
                     </NavigationMenuLink>
                   </NavigationMenuItem>
+                  
 
-                  {/* Contact */}
-                  <NavigationMenuItem>
-                    <button 
-                      onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-                      className={navigationMenuTriggerStyle()}
-                    >
-                      تماس با ما
-                    </button>
-                  </NavigationMenuItem>
+                  
                 </NavigationMenuList>
               </NavigationMenu>
             </div>
           </div>
 
-          {/* Login/Register Buttons */}
+          {/* Auth Buttons / User Menu */}
           <div className="hidden md:flex items-center space-x-4 rtl:space-x-reverse">
-            <Link to="/login">
-              <Button variant="outline" size="sm">
-                ورود
-              </Button>
-            </Link>
-            <Link to="/register">
-              <Button variant="outline" size="sm">
-                ثبت نام
-              </Button>
-            </Link>
+            {isAuthenticated ? (
+              <>
+                {/* Shopping Cart */}
+                <Button variant="ghost" size="sm" className="relative">
+                  <ShoppingCart className="h-5 w-5" />
+                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    3
+                  </span>
+                </Button>
+
+                {/* User Account Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                      <User className="h-5 w-5" />
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{userName}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          حساب کاربری
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>
+                      <Package className="mr-2 h-4 w-4" />
+                      <span>سفارشات</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <HelpCircle className="mr-2 h-4 w-4" />
+                      <span>پشتیبانی</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setIsAuthenticated(false)}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>خروج از حساب</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="outline" size="sm">
+                    <LogIn className="h-5 w-5" />
+                  </Button>
+                </Link>
+                <Link to="/register">
+                  <Button variant="outline" size="sm">
+                    <UserPlus className="h-5 w-5" />
+                  </Button>
+                </Link>
+                {/* Test Login Button */}
+                <Button 
+                  variant="secondary" 
+                  size="sm" 
+                  onClick={() => setIsAuthenticated(true)}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  تست ورود
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile menu button */}
@@ -204,7 +276,10 @@ const Navbar = () => {
                   className="flex items-center justify-between p-3 rounded-lg bg-muted/30 text-foreground hover:bg-muted hover:text-primary transition-all duration-200"
                   onClick={() => setIsOpen(false)}
                 >
-                  <span className="font-medium">خانه</span>
+                  <span className="font-medium flex items-center gap-2">
+                    <Home className="h-5 w-5" />
+                    خانه
+                  </span>
                 </a>
                 
                 {/* Services Section */}
@@ -318,18 +393,61 @@ const Navbar = () => {
                   <span className="font-medium">تماس با ما</span>
                 </button>
 
-                {/* Auth Buttons */}
+                {/* Auth Buttons / User Menu */}
                 <div className="flex flex-col space-y-3 pt-4 border-t border-border">
-                  <Link to="/login" onClick={() => setIsOpen(false)}>
-                    <Button variant="outline" size="sm" className="w-full">
-                      ورود
-                    </Button>
-                  </Link>
-                  <Link to="/register" onClick={() => setIsOpen(false)}>
-                    <Button variant="default" size="sm" className="w-full">
-                      ثبت نام
-                    </Button>
-                  </Link>
+                  {isAuthenticated ? (
+                    <>
+                      {/* Shopping Cart */}
+                      <Button variant="outline" size="sm" className="w-full flex items-center justify-center gap-2">
+                        <ShoppingCart className="h-4 w-4" />
+                        <span>سبد خرید</span>
+                        <span className="bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                          3
+                        </span>
+                      </Button>
+
+                      {/* User Account Menu */}
+                      <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+                        <div className="flex items-center gap-2 pb-2 border-b border-border">
+                          <User className="h-4 w-4" />
+                          <span className="font-medium text-sm">{userName}</span>
+                        </div>
+                        <Button variant="ghost" size="sm" className="w-full justify-start">
+                          <Package className="mr-2 h-4 w-4" />
+                          سفارشات
+                        </Button>
+                        <Button variant="ghost" size="sm" className="w-full justify-start">
+                          <HelpCircle className="mr-2 h-4 w-4" />
+                          پشتیبانی
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="w-full justify-start text-destructive hover:text-destructive"
+                          onClick={() => {
+                            setIsAuthenticated(false);
+                            setIsOpen(false);
+                          }}
+                        >
+                          <LogOut className="mr-2 h-4 w-4" />
+                          خروج از حساب
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <Link to="/login" onClick={() => setIsOpen(false)}>
+                        <Button variant="outline" size="sm" className="w-full">
+                          ورود
+                        </Button>
+                      </Link>
+                      <Link to="/register" onClick={() => setIsOpen(false)}>
+                        <Button variant="default" size="sm" className="w-full">
+                          ثبت نام
+                        </Button>
+                      </Link>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
