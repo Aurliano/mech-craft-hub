@@ -85,17 +85,28 @@ const Navbar = () => {
               <img src={logo} alt="لوگو" className="h-16 w-auto" />
               <span className="text-xl font-bold">پلتفرم مهندسی سایدا</span>
             </div>
+            {/* Contact */}
+                  <NavigationMenuItem>
+                    <button 
+                      onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+                      className={navigationMenuTriggerStyle()}
+                    >
+                      تماس با ما
+                    </button>
+                  </NavigationMenuItem>
+
+            {/* Portfolio */}
+                  <NavigationMenuItem>
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/portfolio">
+                      نمونه کارها
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
 
             {/* Desktop Menu */}
             <div className="hidden md:flex items-center">
               <NavigationMenu className="bg-transparent">
                 <NavigationMenuList className="gap-1">
-                  {/* Home */}
-                  <NavigationMenuItem>
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/">
-                      <Home className="h-5 w-5" />
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
+                  
 
                   {/* Services */}
                   <NavigationMenuItem>
@@ -158,23 +169,16 @@ const Navbar = () => {
                       </div>
                     </NavigationMenuContent>
                   </NavigationMenuItem>
-
-                  {/* Portfolio */}
+                  
+                  {/* Home */}
                   <NavigationMenuItem>
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/portfolio">
-                      نمونه کارها
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/">
+                      <Home className="h-5 w-5" />
                     </NavigationMenuLink>
                   </NavigationMenuItem>
+                  
 
-                  {/* Contact */}
-                  <NavigationMenuItem>
-                    <button 
-                      onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-                      className={navigationMenuTriggerStyle()}
-                    >
-                      تماس با ما
-                    </button>
-                  </NavigationMenuItem>
+                  
                 </NavigationMenuList>
               </NavigationMenu>
             </div>
