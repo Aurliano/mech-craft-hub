@@ -14,7 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const AnalysisSimulation = () => {
   // Mock authentication state - this should come from your auth context/state management
-  const [isAuthenticated] = useState(true); // Change to true to test logged-in state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { toast } = useToast();
   
   const [formData, setFormData] = useState({
@@ -248,6 +248,20 @@ const AnalysisSimulation = () => {
       <Navbar />
       
       <ServiceIntro />
+
+      {/* Test Login Button */}
+      <div className="text-center py-4 bg-muted/20">
+        <Button 
+          variant="outline" 
+          onClick={() => setIsAuthenticated(!isAuthenticated)}
+          className="mb-4"
+        >
+          {isAuthenticated ? "خروج از حساب (تست)" : "ورود به حساب (تست)"}
+        </Button>
+        <p className="text-sm text-muted-foreground">
+          وضعیت فعلی: {isAuthenticated ? "وارد شده" : "وارد نشده"}
+        </p>
+      </div>
 
       <section className="py-16">
         <div className="max-w-6xl mx-auto px-4">
