@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,15 +7,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Upload, FileText, Calculator, BarChart3, Zap, Code } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
 
 const AnalysisSimulation = () => {
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState("static");
+  
   // Mock authentication state - this should come from your auth context/state management
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { toast } = useToast();
+
+  // Set active tab based on URL parameter
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && ['static', 'dynamic', 'coding'].includes(tab)) {
+      setActiveTab(tab);
+    }
+  }, [searchParams]);
   
   const [formData, setFormData] = useState({
     description: "",
@@ -265,7 +276,7 @@ const AnalysisSimulation = () => {
 
       <section className="py-16">
         <div className="max-w-6xl mx-auto px-4">
-          <Tabs defaultValue="static" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3 mb-8">
               <TabsTrigger value="static" className="text-sm md:text-base">
                 تحلیل استاتیک

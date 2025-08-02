@@ -21,6 +21,18 @@ import {
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 
+interface SubItem {
+  name: string;
+  href: string;
+  subItems?: SubItem[];
+}
+
+interface Service {
+  name: string;
+  href: string;
+  subItems?: SubItem[];
+}
+
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [expandedServices, setExpandedServices] = useState<string[]>([]);
@@ -37,30 +49,15 @@ const Navbar = () => {
     );
   };
 
-  const services = [
+  const services: Service[] = [
     { name: "طراحی", href: "/design" },
     { 
       name: "تحلیل و شبیه سازی", 
-      href: "/analysis",
+      href: "/analysis-simulation",
       subItems: [
-        { 
-          name: "تحلیل استاتیک", 
-          href: "/analysis/static",
-          subItems: [
-            { name: "تحلیل تنش", href: "/analysis/static/stress" },
-            { name: "تحلیل کرنش", href: "/analysis/static/strain" },
-            { name: "تحلیل بار", href: "/analysis/static/load" }
-          ]
-        },
-        { 
-          name: "تحلیل داینامیک", 
-          href: "/analysis/dynamic",
-          subItems: [
-            { name: "تحلیل ارتعاش", href: "/analysis/dynamic/vibration" },
-            { name: "تحلیل مودال", href: "/analysis/dynamic/modal" }
-          ]
-        },
-        { name: "حل مسئله", href: "/analysis/problem-solving" }
+        { name: "تحلیل استاتیک", href: "/analysis-simulation?tab=static" },
+        { name: "تحلیل داینامیک", href: "/analysis-simulation?tab=dynamic" },
+        { name: "حل مسئله با کدنویسی", href: "/analysis-simulation?tab=coding" }
       ]
     },
     { 
