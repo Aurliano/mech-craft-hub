@@ -100,16 +100,16 @@ const AnalysisSimulation = () => {
             </div>
             <h3 className="font-semibold mb-2">تحلیل استاتیک</h3>
             <p className="text-sm text-muted-foreground">
-              تحلیل تنش، کرنش و تغییر شکل سازه‌ها
+              تحلیل تنش، کرنش و تغییر شکل قطعات و سازه‌ها
             </p>
           </div>
           <div className="text-center">
             <div className="p-3 bg-green-500/10 rounded-full w-fit mx-auto mb-4">
               <Zap className="h-8 w-8 text-green-500" />
             </div>
-            <h3 className="font-semibold mb-2">تحلیل داینامیک</h3>
+            <h3 className="font-semibold mb-2">تحلیل دینامیکی</h3>
             <p className="text-sm text-muted-foreground">
-              شبیه‌سازی رفتار دینامیکی و ارتعاشی
+              شبیه‌سازی و تحلیل دینامیکی و مکانیزم ها و مجموعه ها
             </p>
           </div>
           <div className="text-center">
