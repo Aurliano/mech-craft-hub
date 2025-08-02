@@ -85,7 +85,12 @@ const Navbar = () => {
               <img src={logo} alt="لوگو" className="h-16 w-auto" />
               <span className="text-xl font-bold">پلتفرم مهندسی سایدا</span>
             </div>
-            {/* Contact */}
+
+            {/* Desktop Menu */}
+            <div className="hidden md:flex items-center">
+              <NavigationMenu className="bg-transparent">
+                <NavigationMenuList className="gap-1">
+                  {/* Contact */}
                   <NavigationMenuItem>
                     <button 
                       onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
@@ -95,18 +100,12 @@ const Navbar = () => {
                     </button>
                   </NavigationMenuItem>
 
-            {/* Portfolio */}
+                  {/* Portfolio */}
                   <NavigationMenuItem>
                     <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/portfolio">
                       نمونه کارها
                     </NavigationMenuLink>
                   </NavigationMenuItem>
-
-            {/* Desktop Menu */}
-            <div className="hidden md:flex items-center">
-              <NavigationMenu className="bg-transparent">
-                <NavigationMenuList className="gap-1">
-                  
 
                   {/* Services */}
                   <NavigationMenuItem>
