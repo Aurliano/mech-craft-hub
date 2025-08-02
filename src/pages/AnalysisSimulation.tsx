@@ -13,7 +13,7 @@ import Footer from "@/components/Footer";
 
 const AnalysisSimulation = () => {
   // Mock authentication state - this should come from your auth context/state management
-  const [isAuthenticated] = useState(false); // Change to true to test logged-in state
+  const [isAuthenticated] = useState(true); // Change to true to test logged-in state
   
   const [formData, setFormData] = useState({
     description: "",
