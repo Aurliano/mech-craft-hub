@@ -10,10 +10,12 @@ import { Upload, FileText, Calculator, BarChart3, Zap, Code } from "lucide-react
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useToast } from "@/hooks/use-toast";
 
 const AnalysisSimulation = () => {
   // Mock authentication state - this should come from your auth context/state management
   const [isAuthenticated] = useState(true); // Change to true to test logged-in state
+  const { toast } = useToast();
   
   const [formData, setFormData] = useState({
     description: "",
@@ -28,8 +30,41 @@ const AnalysisSimulation = () => {
   };
 
   const handleSubmit = (tabType: string) => {
-    console.log(`Submitting ${tabType} analysis:`, formData);
-    // Handle form submission logic here
+    // Check required fields
+    if (!formData.description.trim()) {
+      toast({
+        title: "خطا",
+        description: "لطفاً توضیحات تفصیلی را وارد کنید.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check software selection for static analysis
+    if (tabType === "static" && !formData.software) {
+      toast({
+        title: "خطا", 
+        description: "لطفاً نرم‌افزار مورد نظر را انتخاب کنید.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Generate random order number
+    const orderNumber = Math.floor(Math.random() * 10000) + 1000;
+    
+    // Show success message
+    toast({
+      title: "ثبت سفارش موفق",
+      description: `سفارش شما با شماره ${orderNumber} ثبت گردید و در انتظار تایید مهندسین می‌باشد. برای پیگیری وضعیت سفارش به صفحه سفارشات مراجعه نمایید.`,
+    });
+
+    // Reset form
+    setFormData({
+      description: "",
+      software: "",
+      file: null,
+    });
   };
 
   const ServiceIntro = () => (
