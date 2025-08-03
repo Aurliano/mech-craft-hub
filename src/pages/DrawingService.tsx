@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
 import { Upload, FileText, Wrench, Package } from "lucide-react";
+import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 const DrawingService = () => {
   const [weldingFile, setWeldingFile] = useState<File | null>(null);
@@ -69,11 +71,12 @@ const DrawingService = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
+      <Navbar />
       <div className="container mx-auto px-4 py-8">
         {/* Service Introduction */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent mb-4">
-            سرویس نقشه کشی
+            نقشه کشی
           </h1>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
             ما خدمات تخصصی نقشه کشی صنعتی را ارائه می‌دهیم. از نقشه‌های جوش گرفته تا نقشه‌های انفجاری و ساخت قطعات، 
@@ -93,15 +96,15 @@ const DrawingService = () => {
             <Tabs defaultValue="welding" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="welding" className="flex items-center gap-2">
-                  <Wrench className="w-4 h-4" />
+                  <Wrench className="w-4 h-4 text-foreground" />
                   نقشه جوش
                 </TabsTrigger>
                 <TabsTrigger value="exploded" className="flex items-center gap-2">
-                  <Package className="w-4 h-4" />
+                  <Package className="w-4 h-4 text-foreground" />
                   نقشه انفجاری
                 </TabsTrigger>
                 <TabsTrigger value="manufacturing" className="flex items-center gap-2">
-                  <FileText className="w-4 h-4" />
+                  <FileText className="w-4 h-4 text-foreground" />
                   نقشه ساخت
                 </TabsTrigger>
               </TabsList>
@@ -296,6 +299,7 @@ const DrawingService = () => {
           </CardContent>
         </Card>
       </div>
+      <Footer />
     </div>
   );
 };

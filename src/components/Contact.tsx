@@ -52,7 +52,7 @@ const Contact = () => {
               <Card key={index} className="group hover:shadow-elegant transition-all duration-300 hover:-translate-y-2 bg-card border-border cursor-pointer"
                     onClick={() => window.open(method.action, '_blank')}>
                 <CardHeader className="text-center">
-                  <div className="mx-auto w-16 h-16 bg-gradient-to-r from-primary to-primary-light rounded-full flex items-center justify-center mb-4 group-hover:shadow-glow transition-all duration-300">
+                  <div className="mx-auto w-16 h-16 bg-primary rounded-full flex items-center justify-center mb-4 group-hover:shadow-glow transition-all duration-300">
                     <IconComponent className="h-8 w-8 text-primary-foreground" />
                   </div>
                   <CardTitle className="text-foreground text-right">{method.title}</CardTitle>

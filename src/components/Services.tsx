@@ -60,7 +60,7 @@ const Services = () => {
             return (
               <Card key={index} className="group hover:shadow-elegant transition-all duration-300 hover:-translate-y-2 bg-card border-border">
                 <CardHeader className="text-center">
-                  <div className="mx-auto w-16 h-16 bg-gradient-to-r from-primary to-primary-light rounded-full flex items-center justify-center mb-4 group-hover:shadow-glow transition-all duration-300">
+                  <div className="mx-auto w-16 h-16 bg-primary rounded-full flex items-center justify-center mb-4 group-hover:shadow-glow transition-all duration-300">
                     <IconComponent className="h-8 w-8 text-primary-foreground" />
                   </div>
                   <CardTitle className="text-foreground text-right">{service.title}</CardTitle>
@@ -108,7 +108,7 @@ const Services = () => {
                   <CarouselItem key={index} className="pl-2">
                     <Card className="group hover:shadow-elegant transition-all duration-300 hover:-translate-y-2 bg-card border-border">
                       <CardHeader className="text-center">
-                        <div className="mx-auto w-16 h-16 bg-gradient-to-r from-primary to-primary-light rounded-full flex items-center justify-center mb-4 group-hover:shadow-glow transition-all duration-300">
+                        <div className="mx-auto w-16 h-16 bg-primary rounded-full flex items-center justify-center mb-4 group-hover:shadow-glow transition-all duration-300">
                           <IconComponent className="h-8 w-8 text-primary-foreground" />
                         </div>
                         <CardTitle className="text-foreground text-right">{service.title}</CardTitle>
