@@ -60,14 +60,7 @@ const Navbar = () => {
         { name: "حل مسئله با کدنویسی", href: "/analysis-simulation?tab=coding" }
       ]
     },
-    { 
-      name: "نقشه کشی", 
-      href: "/drawing",
-      subItems: [
-        { name: "نقشه مکانیکی", href: "/drawing/mechanical" },
-        { name: "نقشه الکتریکی", href: "/drawing/electrical" }
-      ]
-    },
+    { name: "نقشه کشی", href: "/drawing" },
     { name: "ساخت", href: "/manufacturing" }
   ];
 
