@@ -15,12 +15,29 @@ const DrawingService = () => {
   const [weldingFile, setWeldingFile] = useState<File | null>(null);
   const [explodedFile, setExplodedFile] = useState<File | null>(null);
   const [manufacturingFile, setManufacturingFile] = useState<File | null>(null);
-  const [showWeldingDetails, setShowWeldingDetails] = useState(false);
   const [weldingAreas, setWeldingAreas] = useState('');
   const [weldingMethod, setWeldingMethod] = useState('');
   const [weldThickness, setWeldThickness] = useState('');
   const [tolerances, setTolerances] = useState('');
   const [additionalSpecs, setAdditionalSpecs] = useState('');
+  
+  // New states for exploded drawing
+  const [explodedDescription, setExplodedDescription] = useState('');
+  
+  // New states for manufacturing drawing
+  const [showTolerances, setShowTolerances] = useState(false);
+  const [showSurfaceQuality, setShowSurfaceQuality] = useState(false);
+  const [manufacturingTolerances, setManufacturingTolerances] = useState('');
+  const [surfaceQuality, setSurfaceQuality] = useState('');
+  const [hardness, setHardness] = useState('');
+  const [material, setMaterial] = useState('');
+  const [coating, setCoating] = useState('');
+  
+  // New states for tolerance details
+  const [numericTolerance, setNumericTolerance] = useState('');
+  const [geometricTolerance, setGeometricTolerance] = useState('');
+  const [toleranceImage, setToleranceImage] = useState<File | null>(null);
+  const [surfaceQualityImage, setSurfaceQualityImage] = useState<File | null>(null);
 
   const acceptedFormats = ".step,.stp,.sldprt,.sldasm,.ipt,.iam";
 
@@ -53,13 +70,52 @@ const DrawingService = () => {
       return;
     }
 
-    if (tabType === 'welding' && showWeldingDetails && !weldingAreas.trim()) {
+    if (tabType === 'welding' && !weldingAreas.trim()) {
       toast({
         title: "خطا",
         description: "لطفاً نواحی که باید جوش شوند را مشخص کنید.",
         variant: "destructive",
       });
       return;
+    }
+
+    if (tabType === 'manufacturing') {
+      if (!hardness.trim()) {
+        toast({
+          title: "خطا",
+          description: "لطفاً سختی قطعه را مشخص کنید.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!material.trim()) {
+        toast({
+          title: "خطا",
+          description: "لطفاً جنس قطعه را مشخص کنید.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Check for tolerance image if tolerance checkbox is checked
+      if (showTolerances && !toleranceImage) {
+        toast({
+          title: "خطا",
+          description: "لطفاً تصویر یا طرح مربوط به تلرانس‌ها را آپلود کنید.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Check for surface quality image if surface quality checkbox is checked
+      if (showSurfaceQuality && !surfaceQualityImage) {
+        toast({
+          title: "خطا",
+          description: "لطفاً تصویر یا طرح مربوط به کیفیت سطح را آپلود کنید.",
+          variant: "destructive",
+        });
+        return;
+      }
     }
 
     // Here you would typically send the data to your backend
@@ -70,7 +126,7 @@ const DrawingService = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20">
+    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20" dir="rtl">
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         {/* Service Introduction */}
@@ -111,16 +167,17 @@ const DrawingService = () => {
 
               {/* Welding Drawing Tab */}
               <TabsContent value="welding" className="space-y-6">
-                <Card>
+                <Card dir="rtl">
                   <CardHeader>
                     <CardTitle>نقشه جوش</CardTitle>
                     <CardDescription>
-                      برای تهیه نقشه جوش، فایل سه‌بعدی خود را آپلود کنید
+                      نقشه های جوش مطابق استاندارد DIN EN 22553(1997-03) و طبق موارد زیر تهیه می شوند:
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <Label htmlFor="welding-file">آپلود فایل (اجباری)</Label>
+                      <Label htmlFor="welding-file">برای تهیه نقشه جوش، فایل سه‌بعدی خود را آپلود کنید
+                      </Label>
                       <Input
                         id="welding-file"
                         type="file"
@@ -138,75 +195,60 @@ const DrawingService = () => {
                       )}
                     </div>
 
-                    <div className="flex items-center space-x-2 space-x-reverse">
-                      <Checkbox
-                        id="welding-details"
-                        checked={showWeldingDetails}
-                        onCheckedChange={(checked) => setShowWeldingDetails(checked === true)}
+                    <div>
+                      <Label htmlFor="welding-areas">نواحی که باید جوش شوند (اجباری)</Label>
+                      <Textarea
+                        id="welding-areas"
+                        value={weldingAreas}
+                        onChange={(e) => setWeldingAreas(e.target.value)}
+                        placeholder="لطفاً نواحی که نیاز به جوش دارند را مشخص کنید..."
+                        className="mt-1"
                       />
-                      <Label htmlFor="welding-details">
-                        نیاز به تکمیل جزئیات جوشکاری دارم
-                      </Label>
                     </div>
 
-                    {showWeldingDetails && (
-                      <div className="space-y-4 p-4 border rounded-lg bg-secondary/10">
-                        <div>
-                          <Label htmlFor="welding-areas">نواحی که باید جوش شوند (اجباری)</Label>
-                          <Textarea
-                            id="welding-areas"
-                            value={weldingAreas}
-                            onChange={(e) => setWeldingAreas(e.target.value)}
-                            placeholder="لطفاً نواحی که نیاز به جوش دارند را مشخص کنید..."
-                            className="mt-1"
-                          />
-                        </div>
+                    <div>
+                      <Label htmlFor="welding-method">روش جوشکاری</Label>
+                      <Input
+                        id="welding-method"
+                        value={weldingMethod}
+                        onChange={(e) => setWeldingMethod(e.target.value)}
+                        placeholder="مثال: TIG، MIG، آرک دستی..."
+                        className="mt-1"
+                      />
+                    </div>
 
-                        <div>
-                          <Label htmlFor="welding-method">روش جوشکاری</Label>
-                          <Input
-                            id="welding-method"
-                            value={weldingMethod}
-                            onChange={(e) => setWeldingMethod(e.target.value)}
-                            placeholder="مثال: TIG، MIG، آرک دستی..."
-                            className="mt-1"
-                          />
-                        </div>
+                    <div>
+                      <Label htmlFor="weld-thickness">ضخامت درز (ساق جوش)</Label>
+                      <Input
+                        id="weld-thickness"
+                        value={weldThickness}
+                        onChange={(e) => setWeldThickness(e.target.value)}
+                        placeholder="مثال: 3mm، 5mm..."
+                        className="mt-1"
+                      />
+                    </div>
 
-                        <div>
-                          <Label htmlFor="weld-thickness">ضخامت درز (ساق جوش)</Label>
-                          <Input
-                            id="weld-thickness"
-                            value={weldThickness}
-                            onChange={(e) => setWeldThickness(e.target.value)}
-                            placeholder="مثال: 3mm، 5mm..."
-                            className="mt-1"
-                          />
-                        </div>
+                    <div>
+                      <Label htmlFor="tolerances">تلرانس‌های عددی و هندسی مدنظر طراح</Label>
+                      <Textarea
+                        id="tolerances"
+                        value={tolerances}
+                        onChange={(e) => setTolerances(e.target.value)}
+                        placeholder="تلرانس‌های مورد نیاز را مشخص کنید..."
+                        className="mt-1"
+                      />
+                    </div>
 
-                        <div>
-                          <Label htmlFor="tolerances">تلرانس‌های عددی و هندسی مدنظر طراح</Label>
-                          <Textarea
-                            id="tolerances"
-                            value={tolerances}
-                            onChange={(e) => setTolerances(e.target.value)}
-                            placeholder="تلرانس‌های مورد نیاز را مشخص کنید..."
-                            className="mt-1"
-                          />
-                        </div>
-
-                        <div>
-                          <Label htmlFor="additional-specs">مشخصات اضافی</Label>
-                          <Textarea
-                            id="additional-specs"
-                            value={additionalSpecs}
-                            onChange={(e) => setAdditionalSpecs(e.target.value)}
-                            placeholder="اگر مشخصات دیگری مدنظرتان هست، به تفکیک و با مقدار کمی یا کیفی آن مشخص کنید..."
-                            className="mt-1"
-                          />
-                        </div>
-                      </div>
-                    )}
+                    <div>
+                      <Label htmlFor="additional-specs">مشخصات اضافی</Label>
+                      <Textarea
+                        id="additional-specs"
+                        value={additionalSpecs}
+                        onChange={(e) => setAdditionalSpecs(e.target.value)}
+                        placeholder="اگر مشخصات دیگری مدنظرتان هست، به تفکیک و با مقدار کمی یا کیفی آن مشخص کنید..."
+                        className="mt-1"
+                      />
+                    </div>
 
                     <Button 
                       onClick={() => handleSubmit('welding', weldingFile)}
@@ -220,7 +262,7 @@ const DrawingService = () => {
 
               {/* Exploded Drawing Tab */}
               <TabsContent value="exploded" className="space-y-6">
-                <Card>
+                <Card dir="rtl">
                   <CardHeader>
                     <CardTitle>نقشه انفجاری</CardTitle>
                     <CardDescription>
@@ -247,6 +289,17 @@ const DrawingService = () => {
                       )}
                     </div>
 
+                    <div>
+                      <Label htmlFor="exploded-description">توضیحات تکمیلی (اختیاری)</Label>
+                      <Textarea
+                        id="exploded-description"
+                        value={explodedDescription}
+                        onChange={(e) => setExplodedDescription(e.target.value)}
+                        placeholder="اگر مجموعه شما خود متشکل از مجموعه هایی است، در فایل کلی مجموعه به صورت زیر مجموعه هایی  (assembly)قرار دهید و در بخش توضیحات نیز این موضوع به تفکیک اسم مجموعه و قطعات ذکر شوند."
+                        className="mt-1"
+                      />
+                    </div>
+
                     <Button 
                       onClick={() => handleSubmit('exploded', explodedFile)}
                       className="w-full"
@@ -259,7 +312,7 @@ const DrawingService = () => {
 
               {/* Manufacturing Drawing Tab */}
               <TabsContent value="manufacturing" className="space-y-6">
-                <Card>
+                <Card dir="rtl">
                   <CardHeader>
                     <CardTitle>نقشه ساخت (قطعات)</CardTitle>
                     <CardDescription>
@@ -284,6 +337,141 @@ const DrawingService = () => {
                           فایل انتخاب شده: {manufacturingFile.name}
                         </p>
                       )}
+                    </div>
+
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                      <Checkbox
+                        id="show-tolerances"
+                        checked={showTolerances}
+                        onCheckedChange={(checked) => setShowTolerances(checked === true)}
+                      />
+                      <Label htmlFor="show-tolerances">
+                        تلرانس های عددی و هندسی مدنظر طراح
+                      </Label>
+                    </div>
+
+                    {showTolerances && (
+                      <div className="space-y-4 p-4 border rounded-lg bg-secondary/10">
+                        <div>
+                          <Label htmlFor="numeric-tolerance">تلرانس عددی (اختیاری)</Label>
+                          <Input
+                            id="numeric-tolerance"
+                            value={numericTolerance}
+                            onChange={(e) => setNumericTolerance(e.target.value)}
+                            placeholder="مثال: ±0.1mm، ±0.05mm..."
+                            className="mt-1"
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="geometric-tolerance">تلرانس هندسی (اختیاری)</Label>
+                          <Input
+                            id="geometric-tolerance"
+                            value={geometricTolerance}
+                            onChange={(e) => setGeometricTolerance(e.target.value)}
+                            placeholder="مثال: دایره‌ای، موازی، عمود..."
+                            className="mt-1"
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="tolerance-image">تصویر یا طرح مربوط به تلرانس‌ها (اجباری)</Label>
+                          <Input
+                            id="tolerance-image"
+                            type="file"
+                            accept="image/*,.pdf"
+                            onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], setToleranceImage)}
+                            className="mt-1"
+                          />
+                          <p className="text-sm text-muted-foreground mt-1">
+                            فرمت‌های مجاز: تصاویر (JPG, PNG) و PDF
+                          </p>
+                          {toleranceImage && (
+                            <p className="text-sm text-green-600 mt-1">
+                              فایل انتخاب شده: {toleranceImage.name}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center space-x-2 space-x-reverse">
+                      <Checkbox
+                        id="show-surface-quality"
+                        checked={showSurfaceQuality}
+                        onCheckedChange={(checked) => setShowSurfaceQuality(checked === true)}
+                      />
+                      <Label htmlFor="show-surface-quality">
+                        میزان کیفیت سطح در سطوح مدنظر طراح
+                      </Label>
+                    </div>
+
+                    {showSurfaceQuality && (
+                      <div className="space-y-4 p-4 border rounded-lg bg-secondary/10">
+                        <p dir="rtl"> به سایر سطوح صافی سطح عمومی 1.6 با استاندارد DIN ISO 1303 تعلق میگیرد.</p>
+                        <div>
+                          <Label htmlFor="surface-quality">میزان کیفیت سطح (اختیاری)</Label>
+                          <Textarea
+                            id="surface-quality"
+                            value={surfaceQuality}
+                            onChange={(e) => setSurfaceQuality(e.target.value)}
+                            placeholder="کیفیت سطح در سطوح مدنظر طراح را مشخص کنید..."
+                            className="mt-1"
+                          />
+                        </div>
+
+                        <div>
+                          <Label htmlFor="surface-quality-image">تصویر یا طرح مربوط به کیفیت سطح (اجباری)</Label>
+                          <Input
+                            id="surface-quality-image"
+                            type="file"
+                            accept="image/*,.pdf"
+                            onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], setSurfaceQualityImage)}
+                            className="mt-1"
+                          />
+                          <p className="text-sm text-muted-foreground mt-1">
+                            فرمت‌های مجاز: تصاویر (JPG, PNG) و PDF
+                          </p>
+                          {surfaceQualityImage && (
+                            <p className="text-sm text-green-600 mt-1">
+                              فایل انتخاب شده: {surfaceQualityImage.name}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <div>
+                      <Label htmlFor="hardness">سختی قطعه *</Label>
+                      <Input
+                        id="hardness"
+                        value={hardness}
+                        onChange={(e) => setHardness(e.target.value)}
+                        placeholder="مثال: HRC 45، HB 200..."
+                        className="mt-1"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="material">جنس قطعه *</Label>
+                      <Input
+                        id="material"
+                        value={material}
+                        onChange={(e) => setMaterial(e.target.value)}
+                        placeholder="مثال: فولاد AISI 304، آلومینیوم 6061..."
+                        className="mt-1"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="coating">عملیات پوشش دهی و ضخامت پوشش در صورت لزوم (اختیاری)</Label>
+                      <Input
+                        id="coating"
+                        value={coating}
+                        onChange={(e) => setCoating(e.target.value)}
+                        placeholder="مثال: داکرومات 15 میکرومتر..."
+                        className="mt-1"
+                      />
                     </div>
 
                     <Button 
