@@ -95,7 +95,7 @@ const Design = () => {
           </div>
         </div>
         <h1 className="text-4xl font-bold mb-6 text-foreground">
-          خدمات طراحی مهندسی
+          خدمات طراحی و مدل سازی مهندسی
         </h1>
         <p className="text-lg text-muted-foreground leading-relaxed mb-8">
           ما خدمات تخصصی طراحی مهندسی را با استفاده از پیشرفته‌ترین نرم‌افزارها و تکنیک‌های روز دنیا ارائه می‌دهیم. 

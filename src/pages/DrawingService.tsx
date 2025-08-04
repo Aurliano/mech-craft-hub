@@ -10,6 +10,9 @@ import { toast } from "@/hooks/use-toast";
 import { Upload, FileText, Wrench, Package } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import solidworksLogo from "@/assets/solidworks.png";
+import inventorLogo from "@/assets/inventor.png";
+import autocadLogo from "@/assets/autocad.png";
 
 const DrawingService = () => {
   const [weldingFile, setWeldingFile] = useState<File | null>(null);
@@ -38,6 +41,11 @@ const DrawingService = () => {
   const [geometricTolerance, setGeometricTolerance] = useState('');
   const [toleranceImage, setToleranceImage] = useState<File | null>(null);
   const [surfaceQualityImage, setSurfaceQualityImage] = useState<File | null>(null);
+
+  // Lazy loading states for software logos
+  const [solidworksLoaded, setSolidworksLoaded] = useState(false);
+  const [inventorLoaded, setInventorLoaded] = useState(false);
+  const [autocadLoaded, setAutocadLoaded] = useState(false);
 
   const acceptedFormats = ".step,.stp,.sldprt,.sldasm,.ipt,.iam";
 
@@ -146,8 +154,18 @@ const DrawingService = () => {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="flex flex-col items-center p-6 bg-card rounded-lg border shadow-sm hover:shadow-md transition-shadow">
-                <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
-                  <FileText className="w-8 h-8 text-white" />
+                <div className="w-25 h-25 bg-white rounded-lg flex items-center justify-center mb-4 p-3">
+                  {!solidworksLoaded && (
+                    <div className="w-16 h-16 bg-muted animate-pulse rounded"></div>
+                  )}
+                  <img 
+                    src={solidworksLogo} 
+                    alt="SolidWorks" 
+                    className={`w-16 h-16 transition-opacity duration-300 ${
+                      solidworksLoaded ? 'opacity-100' : 'opacity-0'
+                    }`}
+                    onLoad={() => setSolidworksLoaded(true)}
+                  />
                 </div>
                 <h3 className="text-lg font-medium text-foreground mb-2">SolidWorks</h3>
                 <p className="text-sm text-muted-foreground text-center">
@@ -156,8 +174,18 @@ const DrawingService = () => {
               </div>
               
               <div className="flex flex-col items-center p-6 bg-card rounded-lg border shadow-sm hover:shadow-md transition-shadow">
-                <div className="w-16 h-16 bg-orange-600 rounded-full flex items-center justify-center mb-4">
-                  <Package className="w-8 h-8 text-white" />
+                <div className="w-20 h-20 bg-white rounded-lg flex items-center justify-center mb-4 p-3">
+                  {!inventorLoaded && (
+                    <div className="w-16 h-16 bg-muted animate-pulse rounded"></div>
+                  )}
+                  <img 
+                    src={inventorLogo} 
+                    alt="Inventor" 
+                    className={`w-16 h-16 transition-opacity duration-300 ${
+                      inventorLoaded ? 'opacity-100' : 'opacity-0'
+                    }`}
+                    onLoad={() => setInventorLoaded(true)}
+                  />
                 </div>
                 <h3 className="text-lg font-medium text-foreground mb-2">Inventor</h3>
                 <p className="text-sm text-muted-foreground text-center">
@@ -166,8 +194,18 @@ const DrawingService = () => {
               </div>
               
               <div className="flex flex-col items-center p-6 bg-card rounded-lg border shadow-sm hover:shadow-md transition-shadow">
-                <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mb-4">
-                  <Wrench className="w-8 h-8 text-white" />
+                <div className="w-20 h-20 bg-white rounded-lg flex items-center justify-center mb-4 p-3">
+                  {!autocadLoaded && (
+                    <div className="w-16 h-16 bg-muted animate-pulse rounded"></div>
+                  )}
+                  <img 
+                    src={autocadLogo} 
+                    alt="AutoCAD" 
+                    className={`w-16 h-16 transition-opacity duration-300 ${
+                      autocadLoaded ? 'opacity-100' : 'opacity-0'
+                    }`}
+                    onLoad={() => setAutocadLoaded(true)}
+                  />
                 </div>
                 <h3 className="text-lg font-medium text-foreground mb-2">AutoCAD</h3>
                 <p className="text-sm text-muted-foreground text-center">

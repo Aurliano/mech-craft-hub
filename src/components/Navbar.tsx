@@ -50,7 +50,7 @@ const Navbar = () => {
   };
 
   const services: Service[] = [
-    { name: "طراحی", href: "/design" },
+    { name: "طراحی و مدل سازی", href: "/design" },
     { 
       name: "تحلیل و شبیه سازی", 
       href: "/analysis-simulation",

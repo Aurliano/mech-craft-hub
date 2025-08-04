@@ -11,6 +11,10 @@ import { Link, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
+import comsolLogo from "@/assets/comsol.jpg";
+import adamsLogo from "@/assets/adams.png";
+import abaqusLogo from "@/assets/abaqus.png";
+import matlabLogo from "@/assets/matlab.png";
 
 const AnalysisSimulation = () => {
   const [searchParams] = useSearchParams();
@@ -19,6 +23,12 @@ const AnalysisSimulation = () => {
   // Mock authentication state - this should come from your auth context/state management
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { toast } = useToast();
+
+  // Lazy loading states for software logos
+  const [comsolLoaded, setComsolLoaded] = useState(false);
+  const [adamsLoaded, setAdamsLoaded] = useState(false);
+  const [abaqusLoaded, setAbaqusLoaded] = useState(false);
+  const [matlabLoaded, setMatlabLoaded] = useState(false);
 
   // Set active tab based on URL parameter
   useEffect(() => {
@@ -259,6 +269,86 @@ const AnalysisSimulation = () => {
       <Navbar />
       
       <ServiceIntro />
+
+      {/* Software Introduction */}
+      <div className="max-w-4xl mx-auto mt-12">
+        <h2 className="text-2xl font-semibold mb-6 text-foreground text-center">
+          نرم افزارهای مورد استفاده در تحلیل و شبیه‌سازی
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="flex flex-col items-center p-6 bg-card rounded-lg border shadow-sm hover:shadow-md transition-shadow">
+            <div className="w-20 h-20 bg-white rounded flex items-center justify-center mb-4 p-3">
+              {!comsolLoaded && (
+                <div className="w-32 h-32 bg-muted animate-pulse rounded"></div>
+              )}
+              <img
+                src={comsolLogo}
+                alt="COMSOL Multiphysics"
+                className={`w-32 h-32 object-contain transition-opacity duration-300 ${comsolLoaded ? 'opacity-100' : 'opacity-0'}`}
+                onLoad={() => setComsolLoaded(true)}
+              />
+            </div>
+            <h3 className="text-lg font-medium text-foreground mb-2">COMSOL Multiphysics</h3>
+            <p className="text-sm text-muted-foreground text-center">
+              نرم افزار شبیه‌سازی و تحلیل عددی پیشرفته
+            </p>
+          </div>
+
+          <div className="flex flex-col items-center p-6 bg-card rounded-lg border shadow-sm hover:shadow-md transition-shadow">
+            <div className="w-20 h-20 bg-white rounded-lg flex items-center justify-center mb-4 p-3">
+              {!adamsLoaded && (
+                <div className="w-16 h-16 bg-muted animate-pulse rounded-lg"></div>
+              )}
+              <img
+                src={adamsLogo}
+                alt="Adams View"
+                className={`w-16 h-16 object-cover transition-opacity duration-300 ${adamsLoaded ? 'opacity-100' : 'opacity-0'}`}
+                onLoad={() => setAdamsLoaded(true)}
+              />
+            </div>
+            <h3 className="text-lg font-medium text-foreground mb-2">Adams View</h3>
+            <p className="text-sm text-muted-foreground text-center">
+              نرم افزار شبیه‌سازی دینامیک چندجسمی و تحلیل حرکت
+            </p>
+          </div>
+
+          <div className="flex flex-col items-center p-6 bg-card rounded-lg border shadow-sm hover:shadow-md transition-shadow">
+            <div className="w-20 h-20 bg-white rounded flex items-center justify-center mb-4 p-3">
+              {!abaqusLoaded && (
+                <div className="w-32 h-32 bg-muted animate-pulse rounded"></div>
+              )}
+              <img
+                src={abaqusLogo}
+                alt="ABAQUS"
+                className={`w-32 h-32 object-contain transition-opacity duration-300 ${abaqusLoaded ? 'opacity-100' : 'opacity-0'}`}
+                onLoad={() => setAbaqusLoaded(true)}
+              />
+            </div>
+            <h3 className="text-lg font-medium text-foreground mb-2">ABAQUS</h3>
+            <p className="text-sm text-muted-foreground text-center">
+              نرم افزار تحلیل اجزای محدود (FEM) و شبیه‌سازی پیشرفته
+            </p>
+          </div>
+
+          <div className="flex flex-col items-center p-6 bg-card rounded-lg border shadow-sm hover:shadow-md transition-shadow">
+            <div className="w-20 h-20 bg-white rounded flex items-center justify-center mb-4 p-3">
+              {!matlabLoaded && (
+                <div className="w-32 h-32 bg-muted animate-pulse rounded"></div>
+              )}
+              <img
+                src={matlabLogo}
+                alt="MATLAB"
+                className={`w-32 h-32 object-contain transition-opacity duration-300 ${matlabLoaded ? 'opacity-100' : 'opacity-0'}`}
+                onLoad={() => setMatlabLoaded(true)}
+              />
+            </div>
+            <h3 className="text-lg font-medium text-foreground mb-2">MATLAB</h3>
+            <p className="text-sm text-muted-foreground text-center">
+              نرم افزار محاسبات عددی و شبیه‌سازی مهندسی
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Test Login Button */}
       <div className="text-center py-4 bg-muted/20">

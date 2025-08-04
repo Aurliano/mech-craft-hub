@@ -13,7 +13,7 @@ const Services = () => {
   const servicesList = [
     {
       icon: Compass,
-      title: "طراحی",
+      title: "طراحی و مدل سازی",
       description: "طراحی قطعات و سیستم‌های مکانیکی با استفاده از نرم‌افزارهای پیشرفته CAD",
       features: ["طراحی سه بعدی", "مدل‌سازی پارامتری", "طراحی مفهومی", "بهینه‌سازی طراحی"],
       href: "/design"
