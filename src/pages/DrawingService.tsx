@@ -134,10 +134,48 @@ const DrawingService = () => {
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent mb-4">
             نقشه کشی
           </h1>
-          <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-3xl mx-auto mb-8">
             ما خدمات تخصصی نقشه کشی صنعتی را ارائه می‌دهیم. از نقشه‌های جوش گرفته تا نقشه‌های انفجاری و ساخت قطعات، 
             تمامی نیازهای شما را با بالاترین کیفیت و دقت برآورده می‌کنیم.
           </p>
+          
+          {/* Software Introduction */}
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-2xl font-semibold mb-6 text-foreground">
+              نرم افزارهای مورد استفاده
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="flex flex-col items-center p-6 bg-card rounded-lg border shadow-sm hover:shadow-md transition-shadow">
+                <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
+                  <FileText className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-lg font-medium text-foreground mb-2">SolidWorks</h3>
+                <p className="text-sm text-muted-foreground text-center">
+                  نرم افزار پیشرفته مدل سازی سه بعدی
+                </p>
+              </div>
+              
+              <div className="flex flex-col items-center p-6 bg-card rounded-lg border shadow-sm hover:shadow-md transition-shadow">
+                <div className="w-16 h-16 bg-orange-600 rounded-full flex items-center justify-center mb-4">
+                  <Package className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-lg font-medium text-foreground mb-2">Inventor</h3>
+                <p className="text-sm text-muted-foreground text-center">
+                  نرم افزار طراحی و شبیه سازی مکانیکی
+                </p>
+              </div>
+              
+              <div className="flex flex-col items-center p-6 bg-card rounded-lg border shadow-sm hover:shadow-md transition-shadow">
+                <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mb-4">
+                  <Wrench className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-lg font-medium text-foreground mb-2">AutoCAD</h3>
+                <p className="text-sm text-muted-foreground text-center">
+                  نرم افزار طراحی دو بعدی و سه بعدی
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Tabs Section */}
