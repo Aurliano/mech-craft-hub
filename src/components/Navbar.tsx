@@ -60,8 +60,8 @@ const Navbar = () => {
         { name: "حل مسئله با کدنویسی", href: "/analysis-simulation?tab=coding" }
       ]
     },
-    { name: "نقشه کشی", href: "/drawing" },
-    { name: "ساخت", href: "/manufacturing" }
+    { name: "نقشه کشی صنعتی", href: "/drawing" },
+    { name: "ساخت و تولید", href: "/manufacturing" }
   ];
 
   return (

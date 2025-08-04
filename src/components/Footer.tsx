@@ -24,8 +24,8 @@ const Footer = () => {
             <ul className="space-y-2 text-primary-foreground/80">
               <li><a href="/design" className="hover:text-accent transition-colors">طراحی و مدل سازی</a></li>
               <li><a href="/analysis" className="hover:text-accent transition-colors">تحلیل و شبیه‌سازی</a></li>
-              <li><a href="/drawing" className="hover:text-accent transition-colors">نقشه‌کشی</a></li>
-              <li><a href="/manufacturing" className="hover:text-accent transition-colors">ساخت</a></li>
+              <li><a href="/drawing" className="hover:text-accent transition-colors">نقشه‌کشی صنعتی</a></li>
+              <li><a href="/manufacturing" className="hover:text-accent transition-colors">ساخت و تولید</a></li>
             </ul>
           </div>
 

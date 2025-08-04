@@ -58,19 +58,19 @@ const workshops = [
 ];
 
 const processes = [
-  { name: "تراشکاری", icon: Cog, description: "ساخت قطعات گرد و استوانه ای" },
-  { name: "فرزکاری", icon: Settings, description: "ساخت قطعات پیچیده و سطوح مختلف" },
-  { name: "جوشکاری", icon: Zap, description: "اتصال قطعات فلزی با روش های مختلف" },
-  { name: "پوشش دهی", icon: Shield, description: "محافظت و زیبایی سطح قطعات" },
-  { name: "سنگ زنی", icon: Layers, description: "صاف کاری و دقت ابعادی" },
-  { name: "نمونه سازی", icon: Target, description: "ساخت نمونه اولیه محصولات" }
+  { name: "تراشکاری", icon: Cog, description: "تراشکاری CNC ، Manual ، فرزکاری" },
+  { name: "فرزکاری", icon: Settings, description: "فرزکاری CNC سه محور ، چهار محور ، پنج محور " },
+  { name: "جوشکاری", icon: Zap, description: "جوشکاری TIG , MIG , SMAW " },
+  { name: "پوشش دهی", icon: Shield, description: "اجرای فرآیند های پوشش دهی با ضخامت و متریال درخواستی" },
+  { name: "سنگ زنی", icon: Layers, description: "اصلاح اعوجاج یا تغییر شکل‌های جزئی بعد از ماشین‌کاری" },
+  { name: "نمونه سازی", icon: Target, description: "ساخت نمونه اولیه محصولات با پرینتر سه بعدی" }
 ];
 
 const Manufacturing = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-primary/5 via-background to-secondary/5 py-20">
+      <section className="relative bg-gradient-to-br from-primary/5 via-background to-secondary/5 py-20" dir="rtl">
         <div className="container mx-auto px-6">
           <div className="text-center max-w-4xl mx-auto">
             <Factory className="h-16 w-16 mx-auto mb-6 text-primary" />
@@ -86,7 +86,7 @@ const Manufacturing = () => {
       </section>
 
       {/* Manufacturing Processes Section */}
-      <section className="py-16 bg-muted/30">
+      <section className="py-16 bg-muted/30" dir="rtl">
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4">فرآیندهای ساخت</h2>
@@ -95,7 +95,7 @@ const Manufacturing = () => {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" dir="rtl">
             {processes.map((process) => (
               <Card key={process.name} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                 <CardHeader className="text-center">
@@ -114,7 +114,7 @@ const Manufacturing = () => {
       </section>
 
       {/* Workshops Section */}
-      <section className="py-16">
+      <section className="py-16" dir="rtl">
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4">کارگاه های همکار</h2>
