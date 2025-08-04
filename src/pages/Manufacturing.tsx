@@ -11,8 +11,10 @@ import {
   Target,
   Factory,
   Gauge,
-  CheckCircle
+  CheckCircle,
+  Beaker
 } from "lucide-react";
+import { Description } from "@radix-ui/react-toast";
 
 // Mock data for workshops
 const workshops = [
@@ -63,7 +65,8 @@ const processes = [
   { name: "جوشکاری", icon: Zap, description: "جوشکاری TIG , MIG , SMAW " },
   { name: "پوشش دهی", icon: Shield, description: "اجرای فرآیند های پوشش دهی با ضخامت و متریال درخواستی" },
   { name: "سنگ زنی", icon: Layers, description: "اصلاح اعوجاج یا تغییر شکل‌های جزئی بعد از ماشین‌کاری" },
-  { name: "نمونه سازی", icon: Target, description: "ساخت نمونه اولیه محصولات با پرینتر سه بعدی" }
+  { name: "نمونه سازی", icon: Target, description: "ساخت نمونه اولیه محصولات با پرینتر سه بعدی" },
+  { name: "فرآیند های متالوژی", icon:Beaker, description: "آنالیز جنس مواد، اندازه گیری سختی، عملیات حرارتی و ..."}
 ];
 
 const Manufacturing = () => {
@@ -76,6 +79,7 @@ const Manufacturing = () => {
             <Factory className="h-16 w-16 mx-auto mb-6 text-primary" />
             <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-l from-primary to-secondary bg-clip-text text-transparent">
               خدمات ساخت و تولید
+              
             </h1>
             <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
               با شبکه گسترده ای از کارگاه های مجهز و متخصص، انواع قطعات صنعتی را با بالاترین کیفیت و دقت تولید می کنیم.
