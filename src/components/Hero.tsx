@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Cog, Users, Award } from "lucide-react";
+import { ArrowLeft, Cog, Users, Award, Code2, LucideLaptop, LucideLaptopMinimalCheck, BellElectricIcon, Brain } from "lucide-react";
 import { useState, useEffect } from "react";
 import heroImage from "@/assets/hero-engineering.jpg";
 
@@ -30,14 +30,14 @@ const Hero = () => {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-right">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-right space-y-2">
         <div className="max-w-3xl">
-          <h1 className="text-4xl md:text-6xl font-bold text-primary-foreground mb-6 leading-tight">
+          <h1 className="text-4xl md:text-6xl font-bold text-primary-foreground mb-6 leading-tight space-y-4">
             پلتفرم جامع خدمات مهندسی 
             <br />
-            <span className="bg-gradient-to-r from-accent to-primary-glow bg-clip-text text-transparent">
+            <h2 className="text-5xl text-accent bg-gradient-to-r from-accent to-primary-glow bg-clip-text ">
               با دقت و کیفیت بالا
-            </span>
+            </h2>
           </h1>
           
           <p className="text-xl text-primary-foreground/90 mb-8 leading-relaxed">
@@ -80,7 +80,7 @@ const Hero = () => {
                   className="bg-white/5 hover:bg-white/15 p-4 rounded-lg border border-white/10 transition-all duration-300 hover:border-accent/50 text-center group"
                 >
                   <div className="text-primary-foreground font-medium group-hover:text-accent transition-colors">
-                    طراحی و مدل سازی
+                    طراحی و مدل‌سازی
                   </div>
                 </a>
                 
@@ -89,7 +89,7 @@ const Hero = () => {
                   className="bg-white/5 hover:bg-white/15 p-4 rounded-lg border border-white/10 transition-all duration-300 hover:border-accent/50 text-center group"
                 >
                   <div className="text-primary-foreground font-medium group-hover:text-accent transition-colors">
-                    تحلیل و شبیه سازی
+                    تحلیل و شبیه‌سازی
                   </div>
                 </a>
                 
@@ -98,7 +98,7 @@ const Hero = () => {
                   className="bg-white/5 hover:bg-white/15 p-4 rounded-lg border border-white/10 transition-all duration-300 hover:border-accent/50 text-center group"
                 >
                   <div className="text-primary-foreground font-medium group-hover:text-accent transition-colors">
-                    نقشه کشی صنعتی
+                    نقشه‌کشی صنعتی
                   </div>
                 </a>
                 
@@ -128,7 +128,7 @@ const Hero = () => {
             {/* Electrical and Computer Engineering Card */}
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
               <div className="flex items-center justify-center mb-4">
-                <Award className="h-8 w-8 text-accent ml-3" />
+                <Brain className="h-8 w-8 text-accent ml-3" />
                 <h3 className="text-2xl font-bold text-primary-foreground">مهندسی برق و کامپیوتر</h3>
               </div>
               
@@ -147,13 +147,13 @@ const Hero = () => {
                 
                 <div className="bg-white/5 p-4 rounded-lg border border-white/10 text-center opacity-60">
                   <div className="text-primary-foreground font-medium">
-                    طراحی سخت افزار با FPGA
+                    طراحی سخت‌افزار با FPGA
                   </div>
                 </div>
                 
                 <div className="bg-white/5 p-4 rounded-lg border border-white/10 text-center opacity-60">
                   <div className="text-primary-foreground font-medium">
-                    نقشه کشی مدارات فرمان و قدرت
+                    نقشه‌کشی مدارات فرمان و قدرت
                   </div>
                 </div>
               </div>
@@ -168,13 +168,6 @@ const Hero = () => {
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
-        <div className="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center">
-          <div className="w-1 h-3 bg-white/70 rounded-full mt-2 animate-pulse"></div>
         </div>
       </div>
     </div>
