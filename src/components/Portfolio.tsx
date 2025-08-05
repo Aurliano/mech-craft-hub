@@ -1,11 +1,14 @@
-import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import LazyImage from "@/components/ui/lazy-image";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 const Portfolio = () => {
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [loaded, setLoaded] = useState(false);
-
   const portfolioItems = [
     {
       id: 1,
@@ -44,30 +47,6 @@ const Portfolio = () => {
     }
   ];
 
-  // حذف پیش‌بارگذاری تصاویر - حالا lazy loading استفاده می‌کنیم
-  useEffect(() => {
-    setLoaded(true);
-  }, []);
-
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % portfolioItems.length);
-  };
-
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + portfolioItems.length) % portfolioItems.length);
-  };
-
-  // اسکرول خودکار
-  useEffect(() => {
-    if (!loaded) return;
-
-    const interval = setInterval(() => {
-      nextSlide();
-    }, 4000);
-
-    return () => clearInterval(interval);
-  }, [loaded]);
-
   return (
     <section className="py-20 px-4 bg-background">
       <div className="container mx-auto">
@@ -80,66 +59,43 @@ const Portfolio = () => {
           </p>
         </div>
 
-        <div className="testimonials max-w-6xl mx-auto">
-          <div className="testimonials-slider relative overflow-hidden">
-            <button 
-              className="slick-prev absolute right-4 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white text-primary p-3 rounded-full shadow-lg transition-all duration-300 hover:shadow-xl"
-              onClick={prevSlide}
-              aria-label="Previous"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-            
-            <div className="slick-list overflow-hidden mx-16">
-              <div 
-                className="slick-track flex transition-transform duration-500 ease-in-out"
-                style={{
-                  transform: `translateX(-${currentSlide * (100 / 3)}%)`,
-                  width: `${(portfolioItems.length * 100) / 3}%`
-                }}
-              >
-                {portfolioItems.map((item, index) => (
-                  <div
-                    key={item.id}
-                    className={`slide w-1/3 px-3 ${
-                      index === currentSlide ? 'slick-current slick-active' : ''
-                    }`}
-                  >
-                    <div className="box bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
-                      <div className="image relative aspect-[16/9] overflow-hidden">
-                        <LazyImage
-                          src={item.image}
-                          alt={item.title}
-                          className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-                        />
-                        <div className="absolute top-4 right-4">
-                          <span className="bg-primary/90 text-primary-foreground px-3 py-1 rounded-full text-sm font-medium shadow-md">
-                            {item.category}
-                          </span>
+        <div className="max-w-6xl mx-auto">
+          <Carousel className="w-full">
+            <CarouselContent className="-ml-1">
+              {portfolioItems.map((item) => (
+                <CarouselItem key={item.id} className="pl-1 md:basis-1/2 lg:basis-1/3">
+                  <div className="p-1">
+                    <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
+                      <CardContent className="p-0">
+                        <div className="relative aspect-[16/9] overflow-hidden">
+                          <LazyImage
+                            src={item.image}
+                            alt={item.title}
+                            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                          />
+                          <div className="absolute top-4 right-4">
+                            <span className="bg-primary/90 text-primary-foreground px-3 py-1 rounded-full text-sm font-medium shadow-md">
+                              {item.category}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                      <div className="content p-6">
-                        <h5 className="text-xl font-bold mb-3 text-foreground">
-                          {item.title}
-                        </h5>
-                        <div className="testimonial text-muted-foreground text-sm leading-relaxed">
-                          {item.description}
+                        <div className="p-6">
+                          <h5 className="text-xl font-bold mb-3 text-foreground">
+                            {item.title}
+                          </h5>
+                          <p className="text-muted-foreground text-sm leading-relaxed">
+                            {item.description}
+                          </p>
                         </div>
-                      </div>
-                    </div>
+                      </CardContent>
+                    </Card>
                   </div>
-                ))}
-              </div>
-            </div>
-            
-            <button 
-              className="slick-next absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-white/90 hover:bg-white text-primary p-3 rounded-full shadow-lg transition-all duration-300 hover:shadow-xl"
-              onClick={nextSlide}
-              aria-label="Next"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-          </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious />
+            <CarouselNext />
+          </Carousel>
         </div>
       </div>
     </section>
