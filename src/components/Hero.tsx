@@ -46,7 +46,10 @@ const Hero = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 mb-12">
-            <Button variant="hero" size="lg" className="group" ref="/contact">
+            <Button variant="hero" size="lg" className="group" onClick={() => {
+              const contact = document.getElementById('contact');
+              contact?.scrollIntoView({ behavior: 'smooth' });
+            }}>
               همکاری با ما
               <ArrowLeft className="mr-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Button>
