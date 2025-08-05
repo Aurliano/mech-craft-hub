@@ -63,30 +63,61 @@ const Hero = () => {
           </Button>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
-              <div className="flex items-center justify-center mb-2">
-                <Cog className="h-8 w-8 text-accent" />
-              </div>
-              <div className="text-2xl font-bold text-primary-foreground">۵۰۰+</div>
-              <div className="text-primary-foreground/80">پروژه موفق</div>
+          {/* Services Cards */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+            <div className="flex items-center justify-center mb-4">
+              <Cog className="h-8 w-8 text-accent ml-3" />
+              <h3 className="text-2xl font-bold text-primary-foreground">مهندسی مکانیک</h3>
             </div>
             
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
-              <div className="flex items-center justify-center mb-2">
-                <Users className="h-8 w-8 text-accent" />
-              </div>
-              <div className="text-2xl font-bold text-primary-foreground">۲۰۰+</div>
-              <div className="text-primary-foreground/80">مشتری راضی</div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              <a 
+                href="/design" 
+                className="bg-white/5 hover:bg-white/15 p-4 rounded-lg border border-white/10 transition-all duration-300 hover:border-accent/50 text-center group"
+              >
+                <div className="text-primary-foreground font-medium group-hover:text-accent transition-colors">
+                  طراحی و مدل سازی
+                </div>
+              </a>
+              
+              <a 
+                href="/analysis-simulation" 
+                className="bg-white/5 hover:bg-white/15 p-4 rounded-lg border border-white/10 transition-all duration-300 hover:border-accent/50 text-center group"
+              >
+                <div className="text-primary-foreground font-medium group-hover:text-accent transition-colors">
+                  تحلیل و شبیه سازی
+                </div>
+              </a>
+              
+              <a 
+                href="/drawing-service" 
+                className="bg-white/5 hover:bg-white/15 p-4 rounded-lg border border-white/10 transition-all duration-300 hover:border-accent/50 text-center group"
+              >
+                <div className="text-primary-foreground font-medium group-hover:text-accent transition-colors">
+                  نقشه کشی صنعتی
+                </div>
+              </a>
+              
+              <a 
+                href="/manufacturing" 
+                className="bg-white/5 hover:bg-white/15 p-4 rounded-lg border border-white/10 transition-all duration-300 hover:border-accent/50 text-center group"
+              >
+                <div className="text-primary-foreground font-medium group-hover:text-accent transition-colors">
+                  ساخت و تولید
+                </div>
+              </a>
             </div>
             
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
-              <div className="flex items-center justify-center mb-2">
-                <Award className="h-8 w-8 text-accent" />
-              </div>
-              <div className="text-2xl font-bold text-primary-foreground">۱۰+</div>
-              <div className="text-primary-foreground/80">سال تجربه</div>
+            <div className="text-center">
+              <button 
+                onClick={() => {
+                  const servicesSection = document.getElementById('services');
+                  servicesSection?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="text-accent hover:text-accent/80 font-medium transition-colors underline"
+              >
+                مشاهده خدمات مهندسی مکانیک
+              </button>
             </div>
           </div>
         </div>
