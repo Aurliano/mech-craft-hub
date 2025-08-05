@@ -77,36 +77,36 @@ const Hero = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
                 <a 
                   href="/design" 
-                  className="bg-white/5 hover:bg-white/15 p-4 rounded-lg border border-white/10 transition-all duration-300 hover:border-accent/50 text-center group aspect-square flex items-center justify-center min-h-[80px]"
+                  className="bg-white/5 hover:bg-white/15 p-4 rounded-lg border border-white/10 transition-all duration-300 hover:border-accent/50 text-center group"
                 >
-                  <div className="text-primary-foreground font-medium group-hover:text-accent transition-colors text-sm sm:text-base">
+                  <div className="text-primary-foreground font-medium group-hover:text-accent transition-colors">
                     طراحی و مدل‌سازی
                   </div>
                 </a>
                 
                 <a 
                   href="/analysis-simulation" 
-                  className="bg-white/5 hover:bg-white/15 p-4 rounded-lg border border-white/10 transition-all duration-300 hover:border-accent/50 text-center group aspect-square flex items-center justify-center min-h-[80px]"
+                  className="bg-white/5 hover:bg-white/15 p-4 rounded-lg border border-white/10 transition-all duration-300 hover:border-accent/50 text-center group"
                 >
-                  <div className="text-primary-foreground font-medium group-hover:text-accent transition-colors text-sm sm:text-base">
+                  <div className="text-primary-foreground font-medium group-hover:text-accent transition-colors">
                     تحلیل و شبیه‌سازی
                   </div>
                 </a>
                 
                 <a 
                   href="/drawing-service" 
-                  className="bg-white/5 hover:bg-white/15 p-4 rounded-lg border border-white/10 transition-all duration-300 hover:border-accent/50 text-center group aspect-square flex items-center justify-center min-h-[80px]"
+                  className="bg-white/5 hover:bg-white/15 p-4 rounded-lg border border-white/10 transition-all duration-300 hover:border-accent/50 text-center group"
                 >
-                  <div className="text-primary-foreground font-medium group-hover:text-accent transition-colors text-sm sm:text-base">
+                  <div className="text-primary-foreground font-medium group-hover:text-accent transition-colors">
                     نقشه‌کشی صنعتی
                   </div>
                 </a>
                 
                 <a 
                   href="/manufacturing" 
-                  className="bg-white/5 hover:bg-white/15 p-4 rounded-lg border border-white/10 transition-all duration-300 hover:border-accent/50 text-center group aspect-square flex items-center justify-center min-h-[80px]"
+                  className="bg-white/5 hover:bg-white/15 p-4 rounded-lg border border-white/10 transition-all duration-300 hover:border-accent/50 text-center group"
                 >
-                  <div className="text-primary-foreground font-medium group-hover:text-accent transition-colors text-sm sm:text-base">
+                  <div className="text-primary-foreground font-medium group-hover:text-accent transition-colors">
                     ساخت و تولید
                   </div>
                 </a>
@@ -133,26 +133,26 @@ const Hero = () => {
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                <div className="bg-white/5 p-4 rounded-lg border border-white/10 text-center opacity-60 aspect-square flex items-center justify-center min-h-[80px]">
-                  <div className="text-primary-foreground font-medium text-sm sm:text-base">
+                <div className="bg-white/5 p-4 rounded-lg border border-white/10 text-center opacity-60">
+                  <div className="text-primary-foreground font-medium">
                     برنامه نویسی وب
                   </div>
                 </div>
                 
-                <div className="bg-white/5 p-4 rounded-lg border border-white/10 text-center opacity-60 aspect-square flex items-center justify-center min-h-[80px]">
-                  <div className="text-primary-foreground font-medium text-xs sm:text-sm">
+                <div className="bg-white/5 p-4 rounded-lg border border-white/10 text-center opacity-60">
+                  <div className="text-primary-foreground font-medium">
                     هوش مصنوعی و علم داده
                   </div>
                 </div>
                 
-                <div className="bg-white/5 p-4 rounded-lg border border-white/10 text-center opacity-60 aspect-square flex items-center justify-center min-h-[80px]">
-                  <div className="text-primary-foreground font-medium text-xs sm:text-sm">
+                <div className="bg-white/5 p-4 rounded-lg border border-white/10 text-center opacity-60">
+                  <div className="text-primary-foreground font-medium">
                     طراحی سخت‌افزار با FPGA
                   </div>
                 </div>
                 
-                <div className="bg-white/5 p-4 rounded-lg border border-white/10 text-center opacity-60 aspect-square flex items-center justify-center min-h-[80px]">
-                  <div className="text-primary-foreground font-medium text-xs sm:text-sm leading-tight">
+                <div className="bg-white/5 p-4 rounded-lg border border-white/10 text-center opacity-60">
+                  <div className="text-primary-foreground font-medium">
                     نقشه‌کشی مدارات فرمان و قدرت
                   </div>
                 </div>
