@@ -66,7 +66,7 @@ const Hero = () => {
           </div>
 
           {/* Services Cards */}
-          <div className="grid grid-cols-1 gap-6 max-w-2xl">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Mechanical Engineering Card */}
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
               <div className="flex items-center justify-center mb-4">
