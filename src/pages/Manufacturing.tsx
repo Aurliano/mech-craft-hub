@@ -12,7 +12,8 @@ import {
   Factory,
   Gauge,
   CheckCircle,
-  Beaker
+  Beaker,
+  ChevronDown
 } from "lucide-react";
 // Removed unused toast Description import
 import Navbar from "@/components/Navbar";
@@ -22,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useRef, useState } from "react";
 
 // Mock data for workshops
@@ -212,7 +214,7 @@ const Manufacturing = () => {
                       دستگاه ها و دقت
                     </h4>
                     <div className="space-y-2">
-                      {workshop.machines.map((machine, index) => (
+                      {workshop.machines.slice(0, 2).map((machine, index) => (
                         <div key={index} className="flex justify-between items-center text-sm">
                           <span className="text-muted-foreground">{machine.name}</span>
                           <Badge variant="outline" className="text-xs">
@@ -220,6 +222,27 @@ const Manufacturing = () => {
                           </Badge>
                         </div>
                       ))}
+                      {workshop.machines.length > 2 && (
+                        <>
+                          <Collapsible>
+                            <CollapsibleContent className="space-y-2 mt-2">
+                              {workshop.machines.slice(2).map((machine, index) => (
+                                <div key={index} className="flex justify-between items-center text-sm">
+                                  <span className="text-muted-foreground">{machine.name}</span>
+                                  <Badge variant="outline" className="text-xs">
+                                    {machine.precision}
+                                  </Badge>
+                                </div>
+                              ))}
+                            </CollapsibleContent>
+                            <CollapsibleTrigger className="mt-3 inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80">
+                              <span className="data-[state=open]:hidden">نمایش بیشتر</span>
+                              <span className="hidden data-[state=open]:inline">نمایش کمتر</span>
+                              <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
+                            </CollapsibleTrigger>
+                          </Collapsible>
+                        </>
+                      )}
                     </div>
                   </div>
 
