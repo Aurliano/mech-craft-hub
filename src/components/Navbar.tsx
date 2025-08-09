@@ -1,9 +1,8 @@
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
-import { Menu, X, ChevronDown, ChevronUp, User, ShoppingCart, Package, HelpCircle, LogOut, Home, LogIn, UserPlus, Clock } from "lucide-react";
+import { Menu, X, ChevronDown, ChevronUp, User, ShoppingCart, Package, HelpCircle, LogOut, Home, LogIn, UserPlus } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,7 +31,6 @@ interface Service {
   name: string;
   href: string;
   subItems?: SubItem[];
-  comingSoon?: boolean;
 }
 
 const Navbar = () => {
@@ -52,26 +50,18 @@ const Navbar = () => {
   };
 
   const services: Service[] = [
-    {
-      name: "مهندسی مکانیک",
-      href: "#",
+    { name: "طراحی و مدل سازی", href: "/design" },
+    { 
+      name: "تحلیل و شبیه سازی", 
+      href: "/analysis-simulation",
       subItems: [
-        { name: "طراحی و مدل سازی", href: "/design" },
-        {
-          name: "تحلیل و شبیه سازی",
-          href: "/analysis-simulation",
-          subItems: [
-            { name: "تحلیل استاتیک", href: "/analysis-simulation?tab=static" },
-            { name: "تحلیل داینامیک", href: "/analysis-simulation?tab=dynamic" },
-            { name: "حل مسئله با کدنویسی", href: "/analysis-simulation?tab=coding" }
-          ]
-        },
-        { name: "نقشه کشی صنعتی", href: "/drawing" },
-        { name: "ساخت و تولید", href: "/manufacturing" }
+        { name: "تحلیل استاتیک", href: "/analysis-simulation?tab=static" },
+        { name: "تحلیل داینامیک", href: "/analysis-simulation?tab=dynamic" },
+        { name: "حل مسئله با کدنویسی", href: "/analysis-simulation?tab=coding" }
       ]
     },
-    { name: "مهندسی کامپیوتر", href: "#", comingSoon: true },
-    { name: "مهندسی برق و الکترونیک", href: "#", comingSoon: true }
+    { name: "نقشه کشی صنعتی", href: "/drawing" },
+    { name: "ساخت و تولید", href: "/manufacturing" }
   ];
 
   return (
@@ -155,24 +145,12 @@ const Navbar = () => {
                                   </div>
                                 </div>
                               ) : (
-                                <>
-                                  {service.comingSoon ? (
-                                    <div className="flex items-center justify-between px-3 py-2 text-sm text-muted-foreground select-none">
-                                      <span>{service.name}</span>
-                                      <span className="flex items-center gap-1">
-                                        <Clock className="h-3 w-3" />
-                                        <Badge variant="secondary" className="text-[10px]">به‌زودی</Badge>
-                                      </span>
-                                    </div>
-                                  ) : (
-                                    <NavigationMenuLink
-                                      href={service.href}
-                                      className="block px-3 py-2 text-sm font-medium text-foreground hover:text-primary hover:bg-muted/50 rounded transition-colors"
-                                    >
-                                      {service.name}
-                                    </NavigationMenuLink>
-                                  )}
-                                </>
+                                <NavigationMenuLink
+                                  href={service.href}
+                                  className="block px-3 py-2 text-sm font-medium text-foreground hover:text-primary hover:bg-muted/50 rounded transition-colors"
+                                >
+                                  {service.name}
+                                </NavigationMenuLink>
                               )}
                             </div>
                           ))}
@@ -371,25 +349,13 @@ const Navbar = () => {
                               )}
                             </div>
                           ) : (
-                            <>
-                              {service.comingSoon ? (
-                                <div className="flex items-center justify-between p-2 text-sm text-muted-foreground select-none">
-                                  <span>{service.name}</span>
-                                  <span className="flex items-center gap-1">
-                                    <Clock className="h-4 w-4" />
-                                    <Badge variant="secondary" className="text-[10px]">به‌زودی</Badge>
-                                  </span>
-                                </div>
-                              ) : (
-                                <a
-                                  href={service.href}
-                                  className="block p-2 text-sm text-foreground hover:text-primary hover:bg-muted transition-colors"
-                                  onClick={() => setIsOpen(false)}
-                                >
-                                  {service.name}
-                                </a>
-                              )}
-                            </>
+                            <a
+                              href={service.href}
+                              className="block p-2 text-sm text-foreground hover:text-primary hover:bg-muted transition-colors"
+                              onClick={() => setIsOpen(false)}
+                            >
+                              {service.name}
+                            </a>
                           )}
                         </div>
                       ))}
