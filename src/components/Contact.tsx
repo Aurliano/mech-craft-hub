@@ -14,14 +14,14 @@ const Contact = () => {
       icon: Send,
       title: "تلگرام",
       description: "ارتباط سریع و آسان از طریق تلگرام",
-      info: "@pedram_industrial",
-      action: "https://t.me/pedram_industrial"
+      info: "@PSGTechCo1",
+      action: "https://t.me/psgtechco1"
     },
     {
       icon: MessageCircle,
       title: "ایتا",
       description: "پیام‌رسان داخلی برای ارتباط مستقیم",
-      info: "@pedramsepehrgostar",
+      info: "pedramsepehrgostar@",
       action: "https://eitaa.com/pedramsepehrgostar"
     },
     {
