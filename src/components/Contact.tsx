@@ -7,8 +7,8 @@ const Contact = () => {
       icon: Phone,
       title: "تماس تلفنی",
       description: "برای مشاوره رایگان با ما تماس بگیرید",
-      info: "021-12345678",
-      action: "tel:+982112345678"
+      info: "09921632369",
+      action: "tel:+989921632368"
     },
     {
       icon: Send,
@@ -21,14 +21,14 @@ const Contact = () => {
       icon: MessageCircle,
       title: "ایتا",
       description: "پیام‌رسان داخلی برای ارتباط مستقیم",
-      info: "@pedram_eitaa",
-      action: "https://eitaa.com/pedram_eitaa"
+      info: "@pedramsepehrgostar",
+      action: "https://eitaa.com/pedramsepehrgostar"
     },
     {
       icon: MapPin,
       title: "آدرس",
       description: "مراجعه حضوری به دفتر مرکزی",
-      info: "تهران، خیابان انقلاب، پلاک 123",
+      info: "اصفهان، خمینی شهر",
       action: "https://maps.google.com"
     }
   ];
