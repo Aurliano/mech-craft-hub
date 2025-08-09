@@ -15,9 +15,6 @@ import {
   Beaker
 } from "lucide-react";
 import { Description } from "@radix-ui/react-toast";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-
 
 // Mock data for workshops
 const workshops = [
@@ -74,15 +71,15 @@ const processes = [
 
 const Manufacturing = () => {
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
-      <Navbar />
+    <div className="min-h-screen bg-background">
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-primary/5 via-background to-secondary/5 py-20" dir="rtl">
         <div className="container mx-auto px-6">
           <div className="text-center max-w-4xl mx-auto">
-            <Factory className="h-14 w-14 mx-auto mb-6 text-primary" />
-            <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-primary bg-clip-text text-transparent">
+            <Factory className="h-16 w-16 mx-auto mb-6 text-primary" />
+            <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-l from-primary to-secondary bg-clip-text text-transparent">
               خدمات ساخت و تولید
+              
             </h1>
             <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
               با شبکه گسترده ای از کارگاه های مجهز و متخصص، انواع قطعات صنعتی را با بالاترین کیفیت و دقت تولید می کنیم.
@@ -219,7 +216,6 @@ const Manufacturing = () => {
           </button>
         </div>
       </section>
-      <Footer />
     </div>
   );
 };
