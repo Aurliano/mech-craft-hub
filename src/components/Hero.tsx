@@ -33,7 +33,7 @@ const Hero = () => {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-right space-y-2">
         <div className="max-w-3xl">
           <h1 className="text-4xl md:text-6xl font-bold text-primary-foreground mb-6 leading-tight space-y-4">
-            پلتفرم جامع خدمات مهندسی 
+            پلتفرم جامع مهندسی مکاترونیک 
             <br />
             <h2 className="text-5xl text-accent bg-gradient-to-r from-accent to-primary-glow bg-clip-text ">
               با دقت و کیفیت بالا

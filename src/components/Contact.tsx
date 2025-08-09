@@ -7,15 +7,15 @@ const Contact = () => {
       icon: Phone,
       title: "تماس تلفنی",
       description: "برای مشاوره رایگان با ما تماس بگیرید",
-      info: "09921632369",
-      action: "tel:+989921632368"
+      info: "09138891761",
+      action: "tel:+989138891761"
     },
     {
       icon: Send,
       title: "تلگرام",
       description: "ارتباط سریع و آسان از طریق تلگرام",
-      info: "@pedram_industrial",
-      action: "https://t.me/pedram_industrial"
+      info: "@PSGTechCo1",
+      action: "https://t.me/psgtechco1"
     },
     {
       icon: MessageCircle,
