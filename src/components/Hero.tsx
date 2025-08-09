@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ArrowLeft, Cog, Users, Award, Code2, LucideLaptop, LucideLaptopMinimalCheck, BellElectricIcon, Brain, Zap, ChevronDown } from "lucide-react";
+import { ArrowLeft, Cog, Users, Award, Code2, LucideLaptop, LucideLaptopMinimalCheck, BellElectricIcon, Brain, Zap } from "lucide-react";
 import { useState, useEffect } from "react";
 import heroImage from "@/assets/hero-engineering.jpg";
 
@@ -75,7 +74,7 @@ const Hero = () => {
                 <h3 className="text-xl font-bold text-primary-foreground text-center">مهندسی مکانیک</h3>
               </div>
               
-              <div className="grid grid-cols-1 gap-3 mb-4">
+              <div className="grid grid-cols-1 gap-3 mb-6">
                 <a 
                   href="/design" 
                   className="bg-white/5 hover:bg-white/15 p-3 rounded-lg border border-white/10 transition-all duration-300 hover:border-accent/50 text-center group"
@@ -102,26 +101,16 @@ const Hero = () => {
                     نقشه‌کشی صنعتی
                   </div>
                 </a>
+                
+                <a 
+                  href="/manufacturing" 
+                  className="bg-white/5 hover:bg-white/15 p-3 rounded-lg border border-white/10 transition-all duration-300 hover:border-accent/50 text-center group"
+                >
+                  <div className="text-primary-foreground font-medium group-hover:text-accent transition-colors text-sm">
+                    ساخت و تولید
+                  </div>
+                </a>
               </div>
-              <Collapsible>
-                <CollapsibleContent>
-                  <a 
-                    href="/manufacturing" 
-                    className="bg-white/5 hover:bg-white/15 p-3 rounded-lg border border-white/10 transition-all duration-300 hover:border-accent/50 text-center group"
-                  >
-                    <div className="text-primary-foreground font-medium group-hover:text-accent transition-colors text-sm">
-                      ساخت و تولید
-                    </div>
-                  </a>
-                </CollapsibleContent>
-                <div className="text-center mt-2">
-                  <CollapsibleTrigger className="inline-flex items-center gap-2 text-sm text-accent hover:text-accent/80">
-                    <span className="data-[state=open]:hidden">نمایش بیشتر</span>
-                    <span className="hidden data-[state=open]:inline">نمایش کمتر</span>
-                    <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
-                  </CollapsibleTrigger>
-                </div>
-              </Collapsible>
               
               <div className="text-center">
                 <button 
@@ -143,7 +132,7 @@ const Hero = () => {
                 <h3 className="text-xl font-bold text-primary-foreground text-center">مهندسی کامپیوتر</h3>
               </div>
               
-              <div className="grid grid-cols-1 gap-3 mb-4">
+              <div className="grid grid-cols-1 gap-3 mb-6">
                 <div className="bg-white/5 p-3 rounded-lg border border-white/10 text-center opacity-60">
                   <div className="text-primary-foreground font-medium text-sm">
                     طراحی وب
@@ -161,23 +150,13 @@ const Hero = () => {
                     برنامه نویسی
                   </div>
                 </div>
-              </div>
-              <Collapsible>
-                <CollapsibleContent>
-                  <div className="bg-white/5 p-3 rounded-lg border border-white/10 text-center opacity-60">
-                    <div className="text-primary-foreground font-medium text-sm">
-                      طراحی اپلیکیشن موبایل
-                    </div>
+                
+                <div className="bg-white/5 p-3 rounded-lg border border-white/10 text-center opacity-60">
+                  <div className="text-primary-foreground font-medium text-sm">
+                    طراحی اپلیکیشن موبایل
                   </div>
-                </CollapsibleContent>
-                <div className="text-center mt-2">
-                  <CollapsibleTrigger className="inline-flex items-center gap-2 text-sm text-accent hover:text-accent/80">
-                    <span className="data-[state=open]:hidden">نمایش بیشتر</span>
-                    <span className="hidden data-[state=open]:inline">نمایش کمتر</span>
-                    <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
-                  </CollapsibleTrigger>
                 </div>
-              </Collapsible>
+              </div>
               
               <div className="text-center">
                 <button 
@@ -196,7 +175,7 @@ const Hero = () => {
                 <h3 className="text-xl font-bold text-primary-foreground text-center space-y-1">مهندسی‌الکترونیک</h3>
               </div>
               
-              <div className="grid grid-cols-1 gap-3 mb-4">
+              <div className="grid grid-cols-1 gap-3 mb-6">
                 <div className="bg-white/5 p-3 rounded-lg border border-white/10 text-center opacity-60">
                   <div className="text-primary-foreground font-medium text-sm">
                    طراحی سخت‌افزار با FPGA
@@ -214,23 +193,13 @@ const Hero = () => {
                     نقشه‌کشی مدارات فرمان و قدرت
                   </div>
                 </div>
-              </div>
-              <Collapsible>
-                <CollapsibleContent>
-                  <div className="bg-white/5 p-3 rounded-lg border border-white/10 text-center opacity-60">
-                    <div className="text-primary-foreground font-medium text-sm">
-                      اتوماسیون صنعتی
-                    </div>
+                
+                <div className="bg-white/5 p-3 rounded-lg border border-white/10 text-center opacity-60">
+                  <div className="text-primary-foreground font-medium text-sm">
+                    اتوماسیون صنعتی
                   </div>
-                </CollapsibleContent>
-                <div className="text-center mt-2">
-                  <CollapsibleTrigger className="inline-flex items-center gap-2 text-sm text-accent hover:text-accent/80">
-                    <span className="data-[state=open]:hidden">نمایش بیشتر</span>
-                    <span className="hidden data-[state=open]:inline">نمایش کمتر</span>
-                    <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
-                  </CollapsibleTrigger>
                 </div>
-              </Collapsible>
+              </div>
               
               <div className="text-center">
                 <button 
