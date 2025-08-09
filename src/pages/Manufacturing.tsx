@@ -14,10 +14,15 @@ import {
   CheckCircle,
   Beaker
 } from "lucide-react";
-import { Description } from "@radix-ui/react-toast";
+// Removed unused toast Description import
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/components/ui/use-toast";
+import { useRef, useState } from "react";
 
 // Mock data for workshops
 const workshops = [
@@ -73,6 +78,40 @@ const processes = [
 ];
 
 const Manufacturing = () => {
+  const { toast } = useToast();
+  const orderRef = useRef<HTMLDivElement>(null);
+  const [selectedWorkshopId, setSelectedWorkshopId] = useState<string>("");
+  const [files, setFiles] = useState<File[]>([]);
+  const [description, setDescription] = useState("");
+
+  const handleOrderClick = (id: number) => {
+    setSelectedWorkshopId(String(id));
+    setTimeout(() => {
+      orderRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 0);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedWorkshopId || files.length === 0 || !description.trim()) {
+      toast({
+        title: "اطلاعات ناقص است",
+        description: "لطفاً کارگاه، فایل‌ها و توضیحات را تکمیل کنید.",
+        variant: "destructive",
+      });
+      return;
+    }
+    toast({
+      title: "سفارش ثبت شد",
+      description: "درخواست شما با موفقیت ثبت شد. کارشناسان ما با شما تماس می‌گیرند.",
+    });
+    setSelectedWorkshopId("");
+    setFiles([]);
+    setDescription("");
+    const fileInput = document.getElementById("order-files") as HTMLInputElement | null;
+    if (fileInput) fileInput.value = "";
+  };
+
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <Navbar />
@@ -197,10 +236,70 @@ const Manufacturing = () => {
                       <div className="text-muted-foreground">امتیاز کیفیت</div>
                     </div>
                   </div>
+
+                  <div className="mt-6">
+                    <Button className="w-full" onClick={() => handleOrderClick(workshop.id)}>
+                      ثبت سفارش
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Order Section */}
+      <section id="order" ref={orderRef} className="py-16 bg-muted/20" dir="rtl">
+        <div className="container mx-auto px-6">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold mb-2">ثبت سفارش ساخت</h2>
+            <p className="text-muted-foreground">لطفاً اطلاعات زیر را تکمیل کنید.</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="max-w-3xl mx-auto space-y-6">
+            <div>
+              <label className="block text-sm font-medium mb-2">کارگاه انتخابی</label>
+              <Select value={selectedWorkshopId} onValueChange={setSelectedWorkshopId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="یک کارگاه انتخاب کنید" />
+                </SelectTrigger>
+                <SelectContent className="z-50 bg-background">
+                  {workshops.map((w) => (
+                    <SelectItem key={w.id} value={String(w.id)}>
+                      {w.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label htmlFor="order-files" className="block text-sm font-medium mb-2">آپلود فایل‌های مربوطه</label>
+              <Input
+                id="order-files"
+                type="file"
+                multiple
+                onChange={(e) => setFiles(Array.from(e.target.files || []))}
+              />
+              <p className="text-xs text-muted-foreground mt-2">
+                فرمت‌های مجاز: PDF, DWG, DXF, STEP, تصاویر و ...
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">توضیحات تکمیلی</label>
+              <Textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="فرآیندهای لازم برای ساخت، تلرانس‌ها، متریال و ..."
+              />
+            </div>
+
+            <div className="flex justify-end">
+              <Button type="submit" className="min-w-40">ثبت سفارش</Button>
+            </div>
+          </form>
         </div>
       </section>
 
