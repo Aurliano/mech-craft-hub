@@ -49,11 +49,11 @@ const Footer = () => {
                 <MapPin className="h-4 w-4 mr-2" />
               </div>
               <div className="flex items-center justify-end">
-                <span>+98 21 1234 5678</span>
+                <span>989921632368+</span>
                 <Phone className="h-4 w-4 mr-2" />
               </div>
               <div className="flex items-center justify-end">
-                <span>info@mechcraft.com</span>
+                <span>info@saydaco.com</span>
                 <Mail className="h-4 w-4 mr-2" />
               </div>
             </div>
@@ -61,7 +61,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-primary-foreground/20 mt-8 pt-8 text-center text-primary-foreground/60">
-          <p>&copy; 1404 پلتفرم مکانیک سایدا. تمامی حقوق محفوظ است.</p>
+          <p>&copy; 1404 پلتفرم مکانرونیک سایدا. تمامی حقوق محفوظ است.</p>
         </div>
       </div>
     </footer>
