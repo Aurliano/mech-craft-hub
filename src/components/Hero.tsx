@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Cog, Users, Award, Code2, LucideLaptop, LucideLaptopMinimalCheck, BellElectricIcon, Brain } from "lucide-react";
+import { ArrowLeft, Cog, Users, Award, Code2, LucideLaptop, LucideLaptopMinimalCheck, BellElectricIcon, Brain, Zap } from "lucide-react";
 import { useState, useEffect } from "react";
 import heroImage from "@/assets/hero-engineering.jpg";
 
@@ -66,47 +66,47 @@ const Hero = () => {
           </div>
 
           {/* Services Cards */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Mechanical Engineering Card */}
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
               <div className="flex items-center justify-center mb-4">
                 <Cog className="h-8 w-8 text-accent ml-3" />
-                <h3 className="text-2xl font-bold text-primary-foreground">مهندسی مکانیک</h3>
+                <h3 className="text-xl font-bold text-primary-foreground text-center">مهندسی مکانیک</h3>
               </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              <div className="grid grid-cols-1 gap-3 mb-6">
                 <a 
                   href="/design" 
-                  className="bg-white/5 hover:bg-white/15 p-4 rounded-lg border border-white/10 transition-all duration-300 hover:border-accent/50 text-center group aspect-square flex items-center justify-center min-h-[80px]"
+                  className="bg-white/5 hover:bg-white/15 p-3 rounded-lg border border-white/10 transition-all duration-300 hover:border-accent/50 text-center group"
                 >
-                  <div className="text-primary-foreground font-medium group-hover:text-accent transition-colors text-sm sm:text-base">
+                  <div className="text-primary-foreground font-medium group-hover:text-accent transition-colors text-sm">
                     طراحی و مدل‌سازی
                   </div>
                 </a>
                 
                 <a 
                   href="/analysis-simulation" 
-                  className="bg-white/5 hover:bg-white/15 p-4 rounded-lg border border-white/10 transition-all duration-300 hover:border-accent/50 text-center group aspect-square flex items-center justify-center min-h-[80px]"
+                  className="bg-white/5 hover:bg-white/15 p-3 rounded-lg border border-white/10 transition-all duration-300 hover:border-accent/50 text-center group"
                 >
-                  <div className="text-primary-foreground font-medium group-hover:text-accent transition-colors text-sm sm:text-base">
+                  <div className="text-primary-foreground font-medium group-hover:text-accent transition-colors text-sm">
                     تحلیل و شبیه‌سازی
                   </div>
                 </a>
                 
                 <a 
                   href="/drawing-service" 
-                  className="bg-white/5 hover:bg-white/15 p-4 rounded-lg border border-white/10 transition-all duration-300 hover:border-accent/50 text-center group aspect-square flex items-center justify-center min-h-[80px]"
+                  className="bg-white/5 hover:bg-white/15 p-3 rounded-lg border border-white/10 transition-all duration-300 hover:border-accent/50 text-center group"
                 >
-                  <div className="text-primary-foreground font-medium group-hover:text-accent transition-colors text-sm sm:text-base">
+                  <div className="text-primary-foreground font-medium group-hover:text-accent transition-colors text-sm">
                     نقشه‌کشی صنعتی
                   </div>
                 </a>
                 
                 <a 
                   href="/manufacturing" 
-                  className="bg-white/5 hover:bg-white/15 p-4 rounded-lg border border-white/10 transition-all duration-300 hover:border-accent/50 text-center group aspect-square flex items-center justify-center min-h-[80px]"
+                  className="bg-white/5 hover:bg-white/15 p-3 rounded-lg border border-white/10 transition-all duration-300 hover:border-accent/50 text-center group"
                 >
-                  <div className="text-primary-foreground font-medium group-hover:text-accent transition-colors text-sm sm:text-base">
+                  <div className="text-primary-foreground font-medium group-hover:text-accent transition-colors text-sm">
                     ساخت و تولید
                   </div>
                 </a>
@@ -118,42 +118,42 @@ const Hero = () => {
                     const servicesSection = document.getElementById('services');
                     servicesSection?.scrollIntoView({ behavior: 'smooth' });
                   }}
-                  className="text-accent hover:text-accent/80 font-medium transition-colors underline"
+                  className="text-accent hover:text-accent/80 font-medium transition-colors underline text-sm"
                 >
                   مشاهده خدمات مهندسی مکانیک
                 </button>
               </div>
             </div>
 
-            {/* Electrical and Computer Engineering Card */}
+            {/* Computer Engineering Card */}
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
               <div className="flex items-center justify-center mb-4">
                 <Brain className="h-8 w-8 text-accent ml-3" />
-                <h3 className="text-2xl font-bold text-primary-foreground">مهندسی برق و کامپیوتر</h3>
+                <h3 className="text-xl font-bold text-primary-foreground text-center">مهندسی کامپیوتر</h3>
               </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                <div className="bg-white/5 p-4 rounded-lg border border-white/10 text-center opacity-60 aspect-square flex items-center justify-center min-h-[80px]">
-                  <div className="text-primary-foreground font-medium text-sm sm:text-base">
+              <div className="grid grid-cols-1 gap-3 mb-6">
+                <div className="bg-white/5 p-3 rounded-lg border border-white/10 text-center opacity-60">
+                  <div className="text-primary-foreground font-medium text-sm">
                     برنامه نویسی وب
                   </div>
                 </div>
                 
-                <div className="bg-white/5 p-4 rounded-lg border border-white/10 text-center opacity-60 aspect-square flex items-center justify-center min-h-[80px]">
-                  <div className="text-primary-foreground font-medium text-xs sm:text-sm">
+                <div className="bg-white/5 p-3 rounded-lg border border-white/10 text-center opacity-60">
+                  <div className="text-primary-foreground font-medium text-sm">
                     هوش مصنوعی و علم داده
                   </div>
                 </div>
                 
-                <div className="bg-white/5 p-4 rounded-lg border border-white/10 text-center opacity-60 aspect-square flex items-center justify-center min-h-[80px]">
-                  <div className="text-primary-foreground font-medium text-xs sm:text-sm">
+                <div className="bg-white/5 p-3 rounded-lg border border-white/10 text-center opacity-60">
+                  <div className="text-primary-foreground font-medium text-sm">
                     طراحی سخت‌افزار با FPGA
                   </div>
                 </div>
                 
-                <div className="bg-white/5 p-4 rounded-lg border border-white/10 text-center opacity-60 aspect-square flex items-center justify-center min-h-[80px]">
-                  <div className="text-primary-foreground font-medium text-xs sm:text-sm leading-tight">
-                    نقشه‌کشی مدارات فرمان و قدرت
+                <div className="bg-white/5 p-3 rounded-lg border border-white/10 text-center opacity-60">
+                  <div className="text-primary-foreground font-medium text-sm">
+                    طراحی اپلیکیشن موبایل
                   </div>
                 </div>
               </div>
@@ -161,9 +161,52 @@ const Hero = () => {
               <div className="text-center">
                 <button 
                   disabled
-                  className="text-primary-foreground/50 font-medium cursor-not-allowed"
+                  className="text-primary-foreground/50 font-medium cursor-not-allowed text-sm"
                 >
-                  مشاهده خدمات مهندسی برق و کامپیوتر
+                  مشاهده خدمات مهندسی کامپیوتر
+                </button>
+              </div>
+            </div>
+
+            {/* Electrical Engineering Card */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+              <div className="flex items-center justify-center mb-4">
+                <Zap className="h-8 w-8 text-accent ml-3" />
+                <h3 className="text-xl font-bold text-primary-foreground text-center">مهندسی برق و الکترونیک</h3>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-3 mb-6">
+                <div className="bg-white/5 p-3 rounded-lg border border-white/10 text-center opacity-60">
+                  <div className="text-primary-foreground font-medium text-sm">
+                    طراحی مدارات الکترونیک
+                  </div>
+                </div>
+                
+                <div className="bg-white/5 p-3 rounded-lg border border-white/10 text-center opacity-60">
+                  <div className="text-primary-foreground font-medium text-sm">
+                    سیستم‌های کنترل
+                  </div>
+                </div>
+                
+                <div className="bg-white/5 p-3 rounded-lg border border-white/10 text-center opacity-60">
+                  <div className="text-primary-foreground font-medium text-sm">
+                    نقشه‌کشی مدارات قدرت
+                  </div>
+                </div>
+                
+                <div className="bg-white/5 p-3 rounded-lg border border-white/10 text-center opacity-60">
+                  <div className="text-primary-foreground font-medium text-sm">
+                    اتوماسیون صنعتی
+                  </div>
+                </div>
+              </div>
+              
+              <div className="text-center">
+                <button 
+                  disabled
+                  className="text-primary-foreground/50 font-medium cursor-not-allowed text-sm"
+                >
+                  مشاهده خدمات مهندسی برق
                 </button>
               </div>
             </div>
