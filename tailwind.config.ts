@@ -19,7 +19,7 @@ export default {
 		},
 		extend: {
 			fontFamily: {
-				sans: ['Yekan' , 'sans-serif'],
+				sans: ['Yekan' , sans-serif],
 			},
 			colors: {
 				border: 'hsl(var(--border))',
