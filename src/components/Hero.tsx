@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Cog, Users, Award, Code2, LucideLaptop, LucideLaptopMinimalCheck, BellElectricIcon, Brain, Zap } from "lucide-react";
+import { ArrowLeft, Cog, Brain, Zap, Globe } from "lucide-react"; // Added Globe icon
 import { useState, useEffect } from "react";
 import heroImage from "@/assets/hero-engineering.jpg";
 
@@ -32,10 +32,10 @@ const Hero = () => {
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-right space-y-2">
         <div className="max-w-3xl">
-          <h1 className="text-4xl md:text-6xl font-bold text-primary-foreground mb-6 leading-tight space-y-4">
-            پلتفرم جامع مهندسی مکانرونیک 
+          <h1 className="text-4xl md:text-6xl font-bold text-primary-foreground mb-6 leading-tight space-y-4 font-yekan">
+            پلتفرم جامع مهندسی مکاترونیک 
             <br />
-            <h2 className="text-5xl text-accent bg-gradient-to-r from-accent to-primary-glow bg-clip-text ">
+            <h2 className="text-3xl text-accent bg-gradient-to-r from-accent via-yellow-700 to-accent bg-clip-text text-transparent font-yekan ">
               با دقت و کیفیت بالا
             </h2>
           </h1>
@@ -207,6 +207,49 @@ const Hero = () => {
                   className="text-primary-foreground/50 font-medium cursor-not-allowed text-sm"
                 >
                   مشاهده‌خدمات مهندسی‌برق
+                </button>
+              </div>
+            </div>
+
+            {/* Metaverse Card - New */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+              <div className="flex items-center justify-center mb-4">
+                <Globe className="h-8 w-8 text-accent ml-3" />
+                <h3 className="text-xl font-bold text-primary-foreground text-center">متاورس</h3>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-3 mb-6">
+                <div className="bg-white/5 p-3 rounded-lg border border-white/10 text-center opacity-60">
+                  <div className="text-primary-foreground font-medium text-sm">
+                    VR
+                  </div>
+                </div>
+                
+                <div className="bg-white/5 p-3 rounded-lg border border-white/10 text-center opacity-60">
+                  <div className="text-primary-foreground font-medium text-sm">
+                    AR
+                  </div>
+                </div>
+                
+                <div className="bg-white/5 p-3 rounded-lg border border-white/10 text-center opacity-60">
+                  <div className="text-primary-foreground font-medium text-sm">
+                    واقعیت ترکیبی
+                  </div>
+                </div>
+                
+                <div className="bg-white/5 p-3 rounded-lg border border-white/10 text-center opacity-60">
+                  <div className="text-primary-foreground font-medium text-sm">
+                    انیمیشن و گرافیک
+                  </div>
+                </div>
+              </div>
+              
+              <div className="text-center">
+                <button 
+                  disabled
+                  className="text-primary-foreground/50 font-medium cursor-not-allowed text-sm"
+                >
+                  مشاهده خدمات متاورس
                 </button>
               </div>
             </div>
