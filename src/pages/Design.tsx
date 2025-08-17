@@ -95,40 +95,46 @@ const Design = () => {
           </div>
         </div>
         <h1 className="text-4xl font-bold mb-6 text-foreground">
-          خدمات طراحی و مدل سازی مهندسی
+          خدمات طراحی و مدل‌سازی مهندسی
         </h1>
         <p className="text-lg text-muted-foreground leading-relaxed mb-8">
           ما خدمات تخصصی طراحی مهندسی را با استفاده از پیشرفته‌ترین نرم‌افزارها و تکنیک‌های روز دنیا ارائه می‌دهیم. 
           تیم متخصص ما آماده طراحی و توسعه پروژه‌های شما در حوزه‌های مختلف مهندسی است.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-          <div className="text-center">
-            <div className="p-3 bg-blue-500/10 rounded-full w-fit mx-auto mb-4">
-              <Palette className="h-8 w-8 text-blue-500" />
-            </div>
-            <h3 className="font-semibold mb-2">طراحی صنعتی</h3>
-            <p className="text-sm text-muted-foreground">
-              طراحی قطعات و مجموعه‌های صنعتی با استانداردهای روز دنیا
-            </p>
-          </div>
-          <div className="text-center">
-            <div className="p-3 bg-green-500/10 rounded-full w-fit mx-auto mb-4">
-              <FileText className="h-8 w-8 text-green-500" />
-            </div>
-            <h3 className="font-semibold mb-2">نقشه‌کشی فنی</h3>
-            <p className="text-sm text-muted-foreground">
-              تهیه نقشه‌های فنی و تولیدی با دقت و کیفیت بالا
-            </p>
-          </div>
-          <div className="text-center">
-            <div className="p-3 bg-purple-500/10 rounded-full w-fit mx-auto mb-4">
-              <Upload className="h-8 w-8 text-purple-500" />
-            </div>
-            <h3 className="font-semibold mb-2">مستندسازی</h3>
-            <p className="text-sm text-muted-foreground">
-              تهیه مستندات فنی کامل و راهنمای کاربری
-            </p>
-          </div>
+          <Card className="text-center">
+            <CardContent className="pt-6">
+              <div className="p-3 bg-blue-500/10 rounded-full w-fit mx-auto mb-4">
+                <Palette className="h-8 w-8 text-blue-500" />
+              </div>
+              <h3 className="font-semibold mb-2">طراحی در حوزه های مختلف</h3>
+              <p className="text-sm text-muted-foreground">
+                طراحی قطعات و مجموعه‌ها با استانداردهای روز دنیا
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="text-center">
+            <CardContent className="pt-6">
+              <div className="p-3 bg-green-500/10 rounded-full w-fit mx-auto mb-4">
+                <FileText className="h-8 w-8 text-green-500" />
+              </div>
+              <h3 className="font-semibold mb-2">استفاده از نرم افزار های مختلف </h3>
+              <p className="text-sm text-muted-foreground" dir="rtl">
+                استفاده از نرم افزار های مختلف CAD برای طراحی و مدل سازی
+              </p>
+            </CardContent>
+          </Card>
+          <Card className="text-center">
+            <CardContent className="pt-6">
+              <div className="p-3 bg-purple-500/10 rounded-full w-fit mx-auto mb-4">
+                <Upload className="h-8 w-8 text-purple-500" />
+              </div>
+              <h3 className="font-semibold mb-2">مستندسازی</h3>
+              <p className="text-sm text-muted-foreground">
+                تهیه مستندات فنی کامل برای طراحی انجام شده
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </section>
@@ -469,11 +475,11 @@ const Design = () => {
                     }))}
                   />
                   <Label htmlFor="allPartsDocumentation" className="text-sm font-semibold">
-                    مستندات خواسته شده را برای همه قطعات میخواهم
+                    مستندات خواسته شده را برای بخشی از قطعات میخواهم
                   </Label>
                 </div>
                 <p className="text-sm text-destructive mt-2">
-                  اگر مستندات را برای تعدادی از قطعات منتخب نیاز دارید، در توضیحات تکمیلی بنویسید.
+                  اگر مستندات را برای تعدادی از قطعات منتخب نیاز دارید، در توضیحات تکمیلی مشخص کنید.
                 </p>
               </div>
             </div>

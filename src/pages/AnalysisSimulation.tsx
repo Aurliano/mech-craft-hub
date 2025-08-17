@@ -100,7 +100,7 @@ const AnalysisSimulation = () => {
           خدمات تحلیل و شبیه‌سازی مهندسی
         </h1>
         <p className="text-lg text-muted-foreground leading-relaxed mb-8">
-          ما خدمات تخصصی تحلیل و شبیه‌سازی مهندسی را با استفاده از پیشرفته‌ترین نرم‌افزارهای موجود ارائه می‌دهیم. 
+          ما خدمات تخصصی تحلیل و شبیه‌سازی و حل مسائل مهندسی را با استفاده از پیشرفته‌ترین نرم‌افزارهای موجود ارائه می‌دهیم. 
           تیم متخصص ما آماده حل مسائل پیچیده شما در حوزه‌های مختلف مهندسی است.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
@@ -108,7 +108,7 @@ const AnalysisSimulation = () => {
             <div className="p-3 bg-blue-500/10 rounded-full w-fit mx-auto mb-4">
               <Calculator className="h-8 w-8 text-blue-500" />
             </div>
-            <h3 className="font-semibold mb-2">تحلیل استاتیک</h3>
+            <h3 className="font-semibold mb-2">تحلیل استاتیکی</h3>
             <p className="text-sm text-muted-foreground">
               تحلیل تنش، کرنش و تغییر شکل قطعات و سازه‌ها
             </p>
@@ -203,7 +203,6 @@ const AnalysisSimulation = () => {
                       <SelectValue placeholder="انتخاب نرم‌افزار" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="adams">ADAMS</SelectItem>
                       <SelectItem value="abaqus">ABAQUS</SelectItem>
                       <SelectItem value="comsol">COMSOL</SelectItem>
                     </SelectContent>
@@ -308,7 +307,7 @@ const AnalysisSimulation = () => {
             </div>
             <h3 className="text-lg font-medium text-foreground mb-2">Adams View</h3>
             <p className="text-sm text-muted-foreground text-center">
-              نرم افزار شبیه‌سازی دینامیک چندجسمی و تحلیل حرکت
+              نرم افزار شبیه‌سازی دینامیکی چندجسمی و تحلیل حرکت
             </p>
           </div>
 
@@ -369,10 +368,10 @@ const AnalysisSimulation = () => {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3 mb-8">
               <TabsTrigger value="static" className="text-sm md:text-base">
-                تحلیل استاتیک
+                تحلیل استاتیکی
               </TabsTrigger>
               <TabsTrigger value="dynamic" className="text-sm md:text-base">
-                تحلیل داینامیک
+                تحلیل دینامیکی
               </TabsTrigger>
               <TabsTrigger value="coding" className="text-sm md:text-base">
                 حل مسئله با کدنویسی
@@ -382,7 +381,7 @@ const AnalysisSimulation = () => {
             <TabsContent value="static" className="mt-8">
               {isAuthenticated ? (
                 <AnalysisForm
-                  title="تحلیل استاتیک"
+                  title="تحلیل استاتیکی"
                   description="تحلیل رفتار استاتیکی سازه‌ها و قطعات تحت بارهای ثابت"
                   showSoftwareSelect={true}
                   tabType="static"
@@ -395,8 +394,8 @@ const AnalysisSimulation = () => {
             <TabsContent value="dynamic" className="mt-8">
               {isAuthenticated ? (
                 <AnalysisForm
-                  title="تحلیل داینامیک"
-                  description="شبیه‌سازی رفتار دینامیکی، ارتعاشی و گذرای سیستم‌ها"
+                  title="تحلیل دینامیکی"
+                  description="شبیه‌سازی رفتار دینامیکی و ارتعاشی سیستم‌ها"
                   tabType="dynamic"
                 />
               ) : (
@@ -408,7 +407,7 @@ const AnalysisSimulation = () => {
               {isAuthenticated ? (
                 <AnalysisForm
                   title="حل مسئله با کدنویسی"
-                  description="توسعه الگوریتم‌ها و نرم‌افزارهای تخصصی برای حل مسائل پیچیده"
+                  description="توسعه الگوریتم‌ها و حل عددی برای مسائل پیچیده"
                   tabType="coding"
                 />
               ) : (
