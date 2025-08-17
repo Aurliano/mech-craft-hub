@@ -29,7 +29,7 @@ export default {
           foreground: 'hsl(var(--muted-foreground))',
         },
         accent: {
-          DEFAULT: 'hsl(var(--accent))',
+          DEFAULT: '#FFCB74',
           foreground: 'hsl(var(--accent-foreground))',
         },
         popover: {

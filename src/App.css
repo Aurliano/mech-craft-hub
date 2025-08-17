@@ -27,10 +27,16 @@
   }
 }
 
+
+
 @media (prefers-reduced-motion: no-preference) {
   a:nth-of-type(2) .logo {
     animation: logo-spin infinite 20s linear;
   }
+}
+@font-face {
+  font-family: 'IranYekan';
+  src: url('https://fonts.googleapis.com/css2?family=Iran+Yekan&display=swap');
 }
 
 .card {
