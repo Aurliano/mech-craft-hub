@@ -35,9 +35,12 @@
   }
 }
 @font-face {
-  font-family: 'IranYekan';
-  src: url('https://fonts.googleapis.com/css2?family=Iran+Yekan&display=swap');
+  font-family: "B Roya Bold";
+  src: url("https://db.onlinewebfonts.com/t/2cd7e13bf73dde1e798305b5f3da8c9e.woff2") format("woff2"),
+       url("https://db.onlinewebfonts.com/t/2cd7e13bf73dde1e798305b5f3da8c9e.woff") format("woff"),
+       url("https://db.onlinewebfonts.com/t/2cd7e13bf73dde1e798305b5f3da8c9e.ttf") format("truetype");
 }
+
 
 .card {
   padding: 2em;
