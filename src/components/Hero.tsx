@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Cog, Brain, Zap, Globe, LaptopIcon, CircuitBoardIcon } from "lucide-react"; // Added Globe icon
 import { useState, useEffect } from "react";
-import heroImage from "@/assets/hero-engineering.jpg";
+import heroImage from "@/assets/hero-engineering.png";
 import MetaIcon from "@/assets/icons8-meta.svg"; // Importing the Meta icon
 
 const Hero = () => {
