@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Cog, Brain, Zap, Globe } from "lucide-react"; // Added Globe icon
+import { ArrowLeft, Cog, Brain, Zap, Globe, LaptopIcon, CircuitBoardIcon } from "lucide-react"; // Added Globe icon
 import { useState, useEffect } from "react";
 import heroImage from "@/assets/hero-engineering.jpg";
+import MetaIcon from "@/assets/icons8-meta.svg"; // Importing the Meta icon
 
 const Hero = () => {
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -36,7 +37,7 @@ const Hero = () => {
             پلتفرم جامع مهندسی مکاترونیک 
             <br />
             <h2 className="text-3xl text-accent bg-gradient-to-r from-accent via-yellow-700 to-accent bg-clip-text text-transparent font-yekan ">
-              با دقت و کیفیت بالا
+              طراحی، تحلیل و ساخت پروژه‌های مهندسی
             </h2>
           </h1>
           
@@ -129,7 +130,7 @@ const Hero = () => {
           {/* Computer Engineering Card */}
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
             <div className="flex items-center justify-center mb-4">
-              <Brain className="h-8 w-8 text-accent ml-3" />
+              <LaptopIcon className="h-8 w-8 text-accent ml-3" />
               <h3 className="text-xl font-bold text-primary-foreground text-center">مهندسی کامپیوتر</h3>
             </div>
             
@@ -172,7 +173,7 @@ const Hero = () => {
           {/* Electrical Engineering Card */}
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
             <div className="flex items-center justify-center mb-4">
-              <Zap className="h-8 w-8 text-accent ml-3" />
+              <CircuitBoardIcon className="h-8 w-8 text-accent ml-3" />
               <h3 className="text-xl font-bold text-primary-foreground text-center space-y-1">مهندسی‌الکترونیک</h3>
             </div>
             
@@ -215,7 +216,7 @@ const Hero = () => {
           {/* Metaverse Card - New */}
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
             <div className="flex items-center justify-center mb-4">
-              <Globe className="h-8 w-8 text-accent ml-3" />
+              <img src={MetaIcon} className="h-8 w-8 text-accent ml-3" />
               <h3 className="text-xl font-bold text-primary-foreground text-center">متاورس</h3>
             </div>
             
