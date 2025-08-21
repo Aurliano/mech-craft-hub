@@ -1,0 +1,261 @@
+from django.db import models
+from django.contrib.auth.models import AbstractUser
+from django.core.validators import RegexValidator
+import uuid
+
+
+class User(AbstractUser):
+    """Extended User model with additional fields"""
+    
+    phone_regex = RegexValidator(
+        regex=r'^\+?1?\d{9,15}$',
+        message="شماره تلفن باید فرمت صحیح داشته باشد."
+    )
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    phone = models.CharField(validators=[phone_regex], max_length=17, unique=True)
+    is_email_verified = models.BooleanField(default=False)
+    is_phone_verified = models.BooleanField(default=False)
+    profile_image = models.URLField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    # اضافه کردن related_name برای جلوگیری از conflict
+    groups = models.ManyToManyField(
+        'auth.Group',
+        blank=True,
+        related_name='custom_user_set',
+        related_query_name='custom_user',
+    )
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        blank=True,
+        related_name='custom_user_set',
+        related_query_name='custom_user',
+    )
+
+    def __str__(self):
+        return f"{self.username} - {self.phone}"
+
+
+class Role(models.Model):
+    """User roles like customer, contractor, admin"""
+    
+    ROLE_CHOICES = [
+        ('customer', 'مشتری'),
+        ('contractor', 'پیمانکار'),
+        ('admin', 'مدیر'),
+        ('support', 'پشتیبان'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=50, choices=ROLE_CHOICES, unique=True)
+    display_name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'roles'
+    
+    def __str__(self):
+        return self.display_name
+
+
+class Permission(models.Model):
+    """Custom permissions for the system"""
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=100, unique=True)
+    codename = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+    
+    class Meta:
+        db_table = 'permissions'
+    
+    def __str__(self):
+        return self.name
+
+
+class UserRole(models.Model):
+    """Many-to-many relationship between users and roles"""
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_roles')
+    role = models.ForeignKey(Role, on_delete=models.CASCADE, related_name='role_users')
+    assigned_at = models.DateTimeField(auto_now_add=True)
+    assigned_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='assigned_roles')
+    is_active = models.BooleanField(default=True)
+    
+    class Meta:
+        db_table = 'user_roles'
+        unique_together = ('user', 'role')
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.role.name}"
+
+
+class Scope(models.Model):
+    """Service scopes like mechanical engineering, electrical engineering"""
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=100, unique=True)
+    display_name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    icon = models.URLField(blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'scopes'
+        ordering = ['name']
+    
+    def __str__(self):
+        return self.display_name
+
+
+class Service(models.Model):
+    """Services offered in each scope"""
+    
+    SERVICE_TYPES = [
+        ('design', 'طراحی'),
+        ('analysis', 'تحلیل و شبیه‌سازی'), 
+        ('drawing', 'نقشه‌کشی'),
+        ('manufacturing', 'ساخت و تولید'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    scope = models.ForeignKey(Scope, on_delete=models.CASCADE, related_name='services')
+    name = models.CharField(max_length=200)
+    type = models.CharField(max_length=50, choices=SERVICE_TYPES)
+    description = models.TextField(blank=True)
+    base_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    estimated_delivery_days = models.PositiveIntegerField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'services'
+        unique_together = ('scope', 'name', 'type')
+        ordering = ['scope', 'name']
+    
+    def __str__(self):
+        return f"{self.scope.display_name} - {self.name}"
+
+
+class ServiceField(models.Model):
+    """Dynamic fields for each service"""
+    
+    FIELD_TYPES = [
+        ('text', 'متن'),
+        ('number', 'عدد'),
+        ('file', 'فایل'),
+        ('select', 'انتخاب'),
+        ('multiselect', 'چند انتخابه'),
+        ('checkbox', 'تیک'),
+        ('date', 'تاریخ'),
+        ('textarea', 'متن طولانی'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name='fields')
+    name = models.CharField(max_length=200)
+    field_key = models.CharField(max_length=100)  # unique key for API
+    type = models.CharField(max_length=50, choices=FIELD_TYPES)
+    options = models.JSONField(blank=True, null=True)  # For select/multiselect
+    is_required = models.BooleanField(default=False)
+    order = models.PositiveIntegerField(default=0)
+    help_text = models.TextField(blank=True)
+    validation_rules = models.JSONField(blank=True, null=True)
+    
+    class Meta:
+        db_table = 'service_fields'
+        unique_together = ('service', 'field_key')
+        ordering = ['order', 'name']
+    
+    def __str__(self):
+        return f"{self.service.name} - {self.name}"
+
+
+class Order(models.Model):
+    """Customer orders"""
+    
+    ORDER_STATUS = [
+        ('draft', 'پیش‌نویس'),
+        ('submitted', 'ارسال شده'),
+        ('in_review', 'در حال بررسی'),
+        ('quoted', 'قیمت‌گذاری شده'),
+        ('accepted', 'تایید شده'),
+        ('in_progress', 'در حال انجام'),
+        ('completed', 'تکمیل شده'),
+        ('delivered', 'تحویل داده شده'),
+        ('cancelled', 'لغو شده'),
+        ('refunded', 'بازگشت وجه'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='orders')
+    order_number = models.CharField(max_length=50, unique=True)
+    status = models.CharField(max_length=50, choices=ORDER_STATUS, default='draft')
+    total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'orders'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Order {self.order_number} - {self.customer.username}"
+    
+    def save(self, *args, **kwargs):
+        if not self.order_number:
+            # Generate unique order number
+            self.order_number = f"ORD-{timezone.now().strftime('%Y%m%d')}-{str(uuid.uuid4())[:8].upper()}"
+        super().save(*args, **kwargs)
+
+
+class OrderItem(models.Model):
+    """Items in each order"""
+    
+    ITEM_STATUS = [
+        ('pending', 'در انتظار'),
+        ('quoted', 'قیمت‌گذاری شده'),
+        ('accepted', 'تایید شده'),
+        ('in_progress', 'در حال انجام'),
+        ('completed', 'تکمیل شده'),
+        ('cancelled', 'لغو شده'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
+    service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name='order_items')
+    assigned_contractor = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='assigned_order_items'
+    )
+    status = models.CharField(max_length=50, choices=ITEM_STATUS, default='pending')
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    estimated_delivery = models.DateTimeField(null=True, blank=True)
+    actual_delivery = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'order_items'
+        ordering = ['created_at']
+    
+    def __str__(self):
+        return f"{self.order.order_number} - {self.service.name}"
+
+
+# مسائل اضافی که باید حل شوند:
+
+# 1. اضافه کردن Index ها
+# 2. اضافه کردن Soft Delete
+# 3. اضافه کردن Audit Trail
+# 4. اضافه کردن File Storage برای Media
+# 5. اضافه کردن Caching Strategy

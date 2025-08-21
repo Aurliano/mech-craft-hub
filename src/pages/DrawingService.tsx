@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,8 @@ import Footer from "@/components/Footer";
 import solidworksLogo from "@/assets/solidworks.png";
 import inventorLogo from "@/assets/inventor.png";
 import autocadLogo from "@/assets/autocad.png";
+import { useMe } from "@/hooks/useAuth";
+import { getServices, uploadFile, createCart, createCartItem } from "@/lib/api";
 
 const DrawingService = () => {
   const [weldingFile, setWeldingFile] = useState<File | null>(null);
@@ -47,6 +49,20 @@ const DrawingService = () => {
   const [inventorLoaded, setInventorLoaded] = useState(false);
   const [autocadLoaded, setAutocadLoaded] = useState(false);
 
+  const [serviceId, setServiceId] = useState<string | null>(null);
+  const { data: me } = useMe();
+  useEffect(() => {
+    (async () => {
+      try {
+        const services = await getServices();
+        const drawing = services.find((s: any) => s.type === 'drawing') || services.find((s: any) => /draw|نقشه/i.test(s.name));
+        if (drawing) setServiceId(drawing.id);
+      } catch (e) {
+        // ignore
+      }
+    })();
+  }, []);
+
   const acceptedFormats = ".step,.stp,.sldprt,.sldasm,.ipt,.iam";
 
   const handleFileUpload = (file: File, setFile: (file: File | null) => void) => {
@@ -68,69 +84,55 @@ const DrawingService = () => {
     }
   };
 
-  const handleSubmit = (tabType: string, file: File | null) => {
+  const handleSubmit = async (tabType: string, file: File | null) => {
+    if (!me) {
+      toast({ title: "نیاز به ورود", description: "برای ثبت سفارش ابتدا وارد شوید.", variant: "destructive" });
+      return;
+    }
+    if (!serviceId) {
+      toast({ title: "سرویس موجود نیست", description: "لطفاً سرویس نقشه‌کشی را در پنل ادمین ایجاد کنید.", variant: "destructive" });
+      return;
+    }
     if (!file) {
-      toast({
-        title: "خطا",
-        description: "لطفاً فایل مورد نیاز را آپلود کنید.",
-        variant: "destructive",
-      });
+      toast({ title: "خطا", description: "لطفاً فایل مورد نیاز را آپلود کنید.", variant: "destructive" });
       return;
     }
-
-    if (tabType === 'welding' && !weldingAreas.trim()) {
-      toast({
-        title: "خطا",
-        description: "لطفاً نواحی که باید جوش شوند را مشخص کنید.",
-        variant: "destructive",
-      });
-      return;
+    try {
+      // Upload primary file
+      const uploaded = await uploadFile(file, { context: 'service', context_id: serviceId });
+      const field_values: Record<string, any> = { file_url: uploaded.url };
+      if (tabType === 'welding') {
+        field_values.welding_areas = weldingAreas;
+        field_values.welding_method = weldingMethod;
+        field_values.weld_thickness = weldThickness;
+        field_values.tolerances = tolerances;
+        field_values.additional_specs = additionalSpecs;
+      } else if (tabType === 'exploded') {
+        field_values.exploded_description = explodedDescription;
+      } else if (tabType === 'manufacturing') {
+        field_values.hardness = hardness;
+        field_values.material = material;
+        field_values.coating = coating;
+        field_values.show_tolerances = showTolerances;
+        field_values.numeric_tolerance = numericTolerance;
+        field_values.geometric_tolerance = geometricTolerance;
+        field_values.show_surface_quality = showSurfaceQuality;
+        field_values.surface_quality = surfaceQuality;
+        if (toleranceImage) {
+          const upTol = await uploadFile(toleranceImage, { context: 'service', context_id: serviceId });
+          field_values.tolerance_image_url = upTol.url;
+        }
+        if (surfaceQualityImage) {
+          const upSurf = await uploadFile(surfaceQualityImage, { context: 'service', context_id: serviceId });
+          field_values.surface_quality_image_url = upSurf.url;
+        }
+      }
+      const cart = await createCart(me.id);
+      await createCartItem({ cart: cart.id, service: serviceId, field_values });
+      toast({ title: "سفارش ثبت شد", description: "آیتم به سبد شما اضافه شد." });
+    } catch (err) {
+      toast({ title: "خطا", description: "ثبت سفارش با مشکل مواجه شد.", variant: "destructive" });
     }
-
-    if (tabType === 'manufacturing') {
-      if (!hardness.trim()) {
-        toast({
-          title: "خطا",
-          description: "لطفاً سختی قطعه را مشخص کنید.",
-          variant: "destructive",
-        });
-        return;
-      }
-      if (!material.trim()) {
-        toast({
-          title: "خطا",
-          description: "لطفاً جنس قطعه را مشخص کنید.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      // Check for tolerance image if tolerance checkbox is checked
-      if (showTolerances && !toleranceImage) {
-        toast({
-          title: "خطا",
-          description: "لطفاً تصویر یا طرح مربوط به تلرانس‌ها را آپلود کنید.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      // Check for surface quality image if surface quality checkbox is checked
-      if (showSurfaceQuality && !surfaceQualityImage) {
-        toast({
-          title: "خطا",
-          description: "لطفاً تصویر یا طرح مربوط به کیفیت سطح را آپلود کنید.",
-          variant: "destructive",
-        });
-        return;
-      }
-    }
-
-    // Here you would typically send the data to your backend
-    toast({
-      title: "سفارش ثبت شد",
-      description: `سفارش ${tabType === 'welding' ? 'نقشه جوش' : tabType === 'exploded' ? 'نقشه انفجاری' : 'نقشه ساخت'} با موفقیت ثبت شد.`,
-    });
   };
 
   return (
