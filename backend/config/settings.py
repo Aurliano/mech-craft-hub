@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'django_filters',
     'corsheaders',
     'drf_spectacular',
     'drf_spectacular_sidecar',
@@ -51,9 +52,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -150,11 +151,37 @@ AUTH_USER_MODEL = 'api.User'
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:8080',
     'http://127.0.0.1:8080',
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
 ]
+
+CORS_ALLOWED_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
 
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8080',
     'http://127.0.0.1:8080',
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
 ]
 
 REST_FRAMEWORK = {
@@ -162,8 +189,29 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 20,
+    'DEFAULT_PAGINATION_CLASS': 'api.pagination.StandardResultsSetPagination',
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'api.throttling.CustomAnonRateThrottle',
+        'api.throttling.CustomUserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',
+        'user': '1000/hour',
+        'burst': '60/minute',
+        'sustained': '1000/hour',
+        'upload': '10/hour',
+        'login': '5/minute',
+        'api': '500/hour'
+    },
+    'EXCEPTION_HANDLER': 'api.exceptions.custom_exception_handler',
+    'DEFAULT_VERSIONING_CLASS': 'api.versioning.CustomURLPathVersioning',
+    'ALLOWED_VERSIONS': ['v1', 'v2'],
+    'DEFAULT_VERSION': 'v1'
 }
 
 from datetime import timedelta
@@ -178,3 +226,16 @@ SPECTACULAR_SETTINGS = {
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
 }
+
+# Frontend URL for password reset links
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:8080')
+
+# Email settings (for production)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # For development
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  # For production
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'localhost')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@mechcraft.com')

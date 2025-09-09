@@ -6,17 +6,30 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import AuthNavbar from "@/components/AuthNavbar";
 import { useLogin } from "@/hooks/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Login = () => {
   const navigate = useNavigate();
   const { mutateAsync: login, isPending, error } = useLogin();
+  const { isAuthenticated } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
+  // Redirect if already authenticated
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/dashboard");
+    }
+  }, [isAuthenticated, navigate]);
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    await login({ username, password });
-    navigate("/");
+    try {
+      await login({ username, password });
+      navigate("/dashboard");
+    } catch (err) {
+      // Error is handled by the hook
+    }
   }
 
   return (

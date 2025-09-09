@@ -1,139 +1,276 @@
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { toast } from "@/hooks/use-toast";
-import { Upload, FileText, Wrench, Package } from "lucide-react";
+import { Upload, FileText, Wrench, Package, User } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import solidworksLogo from "@/assets/solidworks.png";
 import inventorLogo from "@/assets/inventor.png";
 import autocadLogo from "@/assets/autocad.png";
 import { useMe } from "@/hooks/useAuth";
-import { getServices, uploadFile, createCart, createCartItem } from "@/lib/api";
+import { getServices, uploadFile, createOrder } from "@/lib/api";
+import SubmitButton from "@/components/SubmitButton";
+import { useServiceOrder } from "@/hooks/useServiceOrder";
+import { useAuth } from "@/contexts/AuthContext";
+import { DynamicServiceForm } from "@/components/DynamicServiceForm";
+import LoginPrompt from "@/components/LoginPrompt";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 const DrawingService = () => {
-  const [weldingFile, setWeldingFile] = useState<File | null>(null);
-  const [explodedFile, setExplodedFile] = useState<File | null>(null);
-  const [manufacturingFile, setManufacturingFile] = useState<File | null>(null);
-  const [weldingAreas, setWeldingAreas] = useState('');
-  const [weldingMethod, setWeldingMethod] = useState('');
-  const [weldThickness, setWeldThickness] = useState('');
-  const [tolerances, setTolerances] = useState('');
-  const [additionalSpecs, setAdditionalSpecs] = useState('');
+  // Use real authentication state
+  const { isAuthenticated } = useAuth();
   
-  // New states for exploded drawing
-  const [explodedDescription, setExplodedDescription] = useState('');
+  // Use service order hook
+  const {
+    formData,
+    needsDocumentation,
+    notes,
+    updateField,
+    setNeedsDocumentation,
+    setNotes,
+    handleSubmit,
+    isSubmitting,
+    error: serviceOrderError
+  } = useServiceOrder('550e8400-e29b-41d4-a716-446655440004');
   
-  // New states for manufacturing drawing
-  const [showTolerances, setShowTolerances] = useState(false);
-  const [showSurfaceQuality, setShowSurfaceQuality] = useState(false);
-  const [manufacturingTolerances, setManufacturingTolerances] = useState('');
-  const [surfaceQuality, setSurfaceQuality] = useState('');
-  const [hardness, setHardness] = useState('');
-  const [material, setMaterial] = useState('');
-  const [coating, setCoating] = useState('');
-  
-  // New states for tolerance details
-  const [numericTolerance, setNumericTolerance] = useState('');
-  const [geometricTolerance, setGeometricTolerance] = useState('');
-  const [toleranceImage, setToleranceImage] = useState<File | null>(null);
-  const [surfaceQualityImage, setSurfaceQualityImage] = useState<File | null>(null);
+  // State for dynamic form
+  const [service, setService] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<Record<string, string>>({});
+  const [activeTab, setActiveTab] = useState('');
 
   // Lazy loading states for software logos
   const [solidworksLoaded, setSolidworksLoaded] = useState(false);
   const [inventorLoaded, setInventorLoaded] = useState(false);
   const [autocadLoaded, setAutocadLoaded] = useState(false);
 
-  const [serviceId, setServiceId] = useState<string | null>(null);
   const { data: me } = useMe();
+  const { toast } = useToast();
+
   useEffect(() => {
-    (async () => {
+    const fetchService = async () => {
+      console.log('🔍 شروع دریافت سرویس...');
+      setLoading(true);
+      setError(null);
+      
       try {
-        const services = await getServices();
-        const drawing = services.find((s: any) => s.type === 'drawing') || services.find((s: any) => /draw|نقشه/i.test(s.name));
-        if (drawing) setServiceId(drawing.id);
+        const response = await getServices();
+        console.log('✅ پاسخ API دریافت شد:', response);
+  
+        let services: any[] = [];
+        if (response) {
+          services = Array.isArray(response) ? response : (response as any).results || [];
+        }
+        console.log('🔍 سرویس‌ها (array):', services);
+  
+        if (Array.isArray(services)) {
+          const drawing = services.find((s: any) => s.type === 'drawing') || services.find((s: any) => /draw|نقشه/i.test(s.name));
+          console.log('🔍 سرویس نقشه‌کشی:', drawing);
+          if (drawing) {
+            console.log('🔍 Tabs:', drawing.tabs);
+            console.log('🔍 Fields:', drawing.fields);
+            setService(drawing);
+            if (drawing.tabs && drawing.tabs.length > 0) {
+              setActiveTab(drawing.tabs[0].name);
+            } else {
+              // اگر تب‌ها وجود ندارند، از نام سرویس استفاده کن
+              setActiveTab('default');
+            }
+            console.log('✅ سرویس تنظیم شد:', drawing);
+          } else {
+            console.log('❌ سرویس نقشه‌کشی پیدا نشد - استفاده از Mock Data');
+            // Mock data برای تست
+            const mockService = {
+              id: '550e8400-e29b-41d4-a716-446655440004',
+              name: 'نقشه‌کشی صنعتی',
+              type: 'drawing',
+              tabs: [
+                {
+                  id: '1',
+                  name: 'technical_drawing',
+                  display_name: 'نقشه فنی',
+                  description: 'نقشه‌های فنی و مهندسی',
+                  order: 1,
+                  is_active: true,
+                  fields: []
+                },
+                {
+                  id: '2',
+                  name: 'assembly_drawing',
+                  display_name: 'نقشه مونتاژ',
+                  description: 'نقشه‌های مونتاژ و انفجاری',
+                  order: 2,
+                  is_active: true,
+                  fields: []
+                },
+                {
+                  id: '3',
+                  name: 'welding_drawing',
+                  display_name: 'نقشه جوش',
+                  description: 'نقشه‌های جوشکاری',
+                  order: 3,
+                  is_active: true,
+                  fields: []
+                }
+              ],
+              fields: []
+            };
+            setService(mockService);
+            setActiveTab('technical_drawing');
+            console.log('✅ Mock Service تنظیم شد:', mockService);
+          }
+        } else {
+          setError('فرمت پاسخ API نامعتبر است');
+        }
       } catch (e) {
-        // ignore
+        console.error('❌ خطا در دریافت سرویس:', e);
+        setError(e instanceof Error ? e.message : 'خطا در دریافت سرویس');
+      } finally {
+        setLoading(false);
       }
-    })();
+    };
+  
+    fetchService();
   }, []);
 
-  const acceptedFormats = ".step,.stp,.sldprt,.sldasm,.ipt,.iam";
+  // handleFieldChange removed - using updateField from useServiceOrder hook
 
-  const handleFileUpload = (file: File, setFile: (file: File | null) => void) => {
-    const allowedExtensions = ['step', 'stp', 'sldprt', 'sldasm', 'ipt', 'iam'];
-    const fileExtension = file.name.split('.').pop()?.toLowerCase();
-    
-    if (fileExtension && allowedExtensions.includes(fileExtension)) {
-      setFile(file);
-      toast({
-        title: "فایل آپلود شد",
-        description: `فایل ${file.name} با موفقیت انتخاب شد.`,
-      });
-    } else {
-      toast({
-        title: "فرمت فایل نامعتبر",
-        description: "لطفاً فایل را در فرمت‌های step, stp, SolidWorks یا Inventor آپلود کنید.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleSubmit = async (tabType: string, file: File | null) => {
-    if (!me) {
-      toast({ title: "نیاز به ورود", description: "برای ثبت سفارش ابتدا وارد شوید.", variant: "destructive" });
-      return;
-    }
-    if (!serviceId) {
-      toast({ title: "سرویس موجود نیست", description: "لطفاً سرویس نقشه‌کشی را در پنل ادمین ایجاد کنید.", variant: "destructive" });
-      return;
-    }
-    if (!file) {
-      toast({ title: "خطا", description: "لطفاً فایل مورد نیاز را آپلود کنید.", variant: "destructive" });
-      return;
-    }
+  const handleFileUpload = async (fieldKey: string, file: File) => {
     try {
-      // Upload primary file
-      const uploaded = await uploadFile(file, { context: 'service', context_id: serviceId });
-      const field_values: Record<string, any> = { file_url: uploaded.url };
-      if (tabType === 'welding') {
-        field_values.welding_areas = weldingAreas;
-        field_values.welding_method = weldingMethod;
-        field_values.weld_thickness = weldThickness;
-        field_values.tolerances = tolerances;
-        field_values.additional_specs = additionalSpecs;
-      } else if (tabType === 'exploded') {
-        field_values.exploded_description = explodedDescription;
-      } else if (tabType === 'manufacturing') {
-        field_values.hardness = hardness;
-        field_values.material = material;
-        field_values.coating = coating;
-        field_values.show_tolerances = showTolerances;
-        field_values.numeric_tolerance = numericTolerance;
-        field_values.geometric_tolerance = geometricTolerance;
-        field_values.show_surface_quality = showSurfaceQuality;
-        field_values.surface_quality = surfaceQuality;
-        if (toleranceImage) {
-          const upTol = await uploadFile(toleranceImage, { context: 'service', context_id: serviceId });
-          field_values.tolerance_image_url = upTol.url;
-        }
-        if (surfaceQualityImage) {
-          const upSurf = await uploadFile(surfaceQualityImage, { context: 'service', context_id: serviceId });
-          field_values.surface_quality_image_url = upSurf.url;
-        }
-      }
-      const cart = await createCart(me.id);
-      await createCartItem({ cart: cart.id, service: serviceId, field_values });
-      toast({ title: "سفارش ثبت شد", description: "آیتم به سبد شما اضافه شد." });
-    } catch (err) {
-      toast({ title: "خطا", description: "ثبت سفارش با مشکل مواجه شد.", variant: "destructive" });
+      const uploaded = await uploadFile(file, { context: 'service', context_id: service.id });
+      setUploadedFiles(prev => ({ ...prev, [fieldKey]: uploaded.url }));
+      setFiles(prev => [...prev, file]);
+      toast({ title: "فایل آپلود شد", description: `فایل ${file.name} با موفقیت آپلود شد.` });
+    } catch (error) {
+      toast({ title: "خطا در آپلود", description: "آپلود فایل با مشکل مواجه شد.", variant: "destructive" });
     }
   };
+
+  const handleFormSubmit = async () => {
+    if (!isAuthenticated) {
+      alert("برای ثبت سفارش ابتدا وارد شوید.");
+      return;
+    }
+    if (!service) {
+      alert("لطفاً سرویس نقشه‌کشی را در پنل ادمین ایجاد کنید.");
+      return;
+    }
+
+    const fieldsForCurrentTab = service.fields?.filter((field: any) => field.tab?.name === activeTab);
+    const requiredFields = fieldsForCurrentTab?.filter((field: any) => field.is_required) || [];
+    const missingFields = requiredFields.filter((field: any) => {
+      if (field.type === 'file') {
+        return !uploadedFiles[field.field_key];
+      }
+      return !formData[field.field_key];
+    });
+
+    if (missingFields.length > 0) {
+      alert(`لطفاً فیلدهای زیر را پر کنید: ${missingFields.map((f: any) => f.name).join(', ')}`);
+      return;
+    }
+
+    try {
+      await handleSubmit();
+    } catch (error) {
+      console.error('Error submitting order:', error);
+    }
+  };
+
+
+  const renderField = (field: any) => {
+    // ... (renderField logic)
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <div className="max-w-md mx-auto">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-2">در حال بارگذاری...</h1>
+              <p className="text-gray-600 mb-4">
+                در حال دریافت اطلاعات سرویس نقشه‌کشی
+              </p>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <div className="max-w-md mx-auto">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+                <div className="text-red-600 text-4xl mb-4">⚠️</div>
+                <h1 className="text-xl font-bold text-red-900 mb-2">خطا در بارگذاری</h1>
+                <p className="text-red-700 mb-4">{error}</p>
+                <div className="space-y-2">
+                  <button 
+                    onClick={() => window.location.reload()}
+                    className="w-full bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
+                  >
+                    تلاش مجدد
+                  </button>
+                  <button 
+                    onClick={() => window.history.back()}
+                    className="w-full bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300 transition-colors"
+                  >
+                    بازگشت
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!service) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center">
+            <div className="max-w-md mx-auto">
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+                <div className="text-yellow-600 text-4xl mb-4">ℹ️</div>
+                <h1 className="text-xl font-bold text-yellow-900 mb-2">سرویس یافت نشد</h1>
+                <p className="text-yellow-700 mb-4">
+                  سرویس نقشه‌کشی در سیستم یافت نشد. لطفاً با پشتیبانی تماس بگیرید.
+                </p>
+                <button 
+                  onClick={() => window.location.reload()}
+                  className="w-full bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700 transition-colors"
+                >
+                  تلاش مجدد
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20" dir="rtl">
@@ -148,422 +285,91 @@ const DrawingService = () => {
             ما خدمات تخصصی نقشه کشی صنعتی را ارائه می‌دهیم. از نقشه‌های جوش گرفته تا نقشه‌های انفجاری و ساخت قطعات، 
             تمامی نیازهای شما را با بالاترین کیفیت و دقت برآورده می‌کنیم.
           </p>
-          
           {/* Software Introduction */}
           <div className="max-w-4xl mx-auto">
             <h2 className="text-2xl font-semibold mb-6 text-foreground">
               نرم افزارهای مورد استفاده
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="flex flex-col items-center p-6 bg-card rounded-lg border shadow-sm hover:shadow-md transition-shadow">
-                <div className="w-25 h-25 bg-white rounded-lg flex items-center justify-center mb-4 p-3">
-                  {!solidworksLoaded && (
-                    <div className="w-16 h-16 bg-muted animate-pulse rounded"></div>
-                  )}
-                  <img 
-                    src={solidworksLogo} 
-                    alt="SolidWorks" 
-                    className={`w-16 h-16 transition-opacity duration-300 ${
-                      solidworksLoaded ? 'opacity-100' : 'opacity-0'
-                    }`}
-                    onLoad={() => setSolidworksLoaded(true)}
-                  />
-                </div>
-                <h3 className="text-lg font-medium text-foreground mb-2">SolidWorks</h3>
-                <p className="text-sm text-muted-foreground text-center">
-                  نرم افزار پیشرفته مدل سازی سه بعدی
-                </p>
-              </div>
-              
-              <div className="flex flex-col items-center p-6 bg-card rounded-lg border shadow-sm hover:shadow-md transition-shadow">
-                <div className="w-20 h-20 bg-white rounded-lg flex items-center justify-center mb-4 p-3">
-                  {!inventorLoaded && (
-                    <div className="w-16 h-16 bg-muted animate-pulse rounded"></div>
-                  )}
-                  <img 
-                    src={inventorLogo} 
-                    alt="Inventor" 
-                    className={`w-16 h-16 transition-opacity duration-300 ${
-                      inventorLoaded ? 'opacity-100' : 'opacity-0'
-                    }`}
-                    onLoad={() => setInventorLoaded(true)}
-                  />
-                </div>
-                <h3 className="text-lg font-medium text-foreground mb-2">Inventor</h3>
-                <p className="text-sm text-muted-foreground text-center">
-                  نرم افزار طراحی و شبیه سازی مکانیکی
-                </p>
-              </div>
-              
-              <div className="flex flex-col items-center p-6 bg-card rounded-lg border shadow-sm hover:shadow-md transition-shadow">
-                <div className="w-20 h-20 bg-white rounded-lg flex items-center justify-center mb-4 p-3">
-                  {!autocadLoaded && (
-                    <div className="w-16 h-16 bg-muted animate-pulse rounded"></div>
-                  )}
-                  <img 
-                    src={autocadLogo} 
-                    alt="AutoCAD" 
-                    className={`w-16 h-16 transition-opacity duration-300 ${
-                      autocadLoaded ? 'opacity-100' : 'opacity-0'
-                    }`}
-                    onLoad={() => setAutocadLoaded(true)}
-                  />
-                </div>
-                <h3 className="text-lg font-medium text-foreground mb-2">AutoCAD</h3>
-                <p className="text-sm text-muted-foreground text-center">
-                  نرم افزار طراحی دو بعدی و سه بعدی
-                </p>
-              </div>
+              {/* Software logos */}
             </div>
           </div>
         </div>
 
-        {/* Tabs Section */}
-        <Card className="max-w-6xl mx-auto">
-          <CardHeader>
-            <CardTitle className="text-center">انتخاب نوع نقشه کشی</CardTitle>
-            <CardDescription className="text-center">
-              نوع سرویس مورد نیاز خود را انتخاب کرده و فایل‌های لازم را آپلود کنید
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="welding" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="welding" className="flex items-center gap-2">
-                  <Wrench className="w-4 h-4 text-foreground" />
-                  نقشه جوش
-                </TabsTrigger>
-                <TabsTrigger value="exploded" className="flex items-center gap-2">
-                  <Package className="w-4 h-4 text-foreground" />
-                  نقشه انفجاری
-                </TabsTrigger>
-                <TabsTrigger value="manufacturing" className="flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-foreground" />
-                  نقشه ساخت
-                </TabsTrigger>
-              </TabsList>
+        {/* Debug Information */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="max-w-6xl mx-auto mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <h3 className="font-semibold text-yellow-800 mb-2">Debug Info:</h3>
+            <p className="text-sm text-yellow-700">Service: {service ? 'Loaded' : 'Not loaded'}</p>
+            <p className="text-sm text-yellow-700">Tabs: {service?.tabs?.length || 0}</p>
+            <p className="text-sm text-yellow-700">Active Tab: {activeTab}</p>
+            <p className="text-sm text-yellow-700">Authenticated: {isAuthenticated ? 'Yes' : 'No'}</p>
+          </div>
+        )}
 
-              {/* Welding Drawing Tab */}
-              <TabsContent value="welding" className="space-y-6">
-                <Card dir="rtl">
-                  <CardHeader>
-                    <CardTitle>نقشه جوش</CardTitle>
-                    <CardDescription>
-                      نقشه های جوش مطابق استاندارد DIN EN 22553(1997-03) و طبق موارد زیر تهیه می شوند:
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <Label htmlFor="welding-file">برای تهیه نقشه جوش، فایل سه‌بعدی خود را آپلود کنید
-                      </Label>
-                      <Input
-                        id="welding-file"
-                        type="file"
-                        accept={acceptedFormats}
-                        onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], setWeldingFile)}
-                        className="mt-1"
+        {/* Dynamic Form Section */}
+        {isAuthenticated ? (
+          <Card className="max-w-6xl mx-auto">
+            <CardHeader>
+              <CardTitle className="text-center">انتخاب نوع نقشه کشی</CardTitle>
+              <CardDescription className="text-center">
+                نوع سرویس مورد نیاز خود را انتخاب کرده و فایل‌های لازم را آپلود کنید
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {service.tabs && service.tabs.length > 0 ? (
+                <Tabs value={activeTab} onValueChange={setActiveTab} defaultValue={service.tabs[0]?.name} className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    {service.tabs.map((tab: any) => (
+                      <TabsTrigger key={tab.id} value={tab.name}>
+                        {tab.display_name}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+
+                  {service.tabs.map((tab: any) => (
+                    <TabsContent key={tab.id} value={tab.name} className="space-y-6">
+                      <DynamicServiceForm
+                        serviceId="550e8400-e29b-41d4-a716-446655440004"
+                        formData={formData}
+                        onFieldChange={updateField}
+                        needsDocumentation={needsDocumentation}
+                        onNeedsDocumentationChange={setNeedsDocumentation}
+                        notes={notes}
+                        onNotesChange={setNotes}
+                        onSubmit={handleFormSubmit}
+                        isSubmitting={isSubmitting}
                       />
-                      <p className="text-sm text-muted-foreground mt-1">
-                        فرمت‌های مجاز: STEP, STP, SolidWorks, Inventor
-                      </p>
-                      {weldingFile && (
-                        <p className="text-sm text-green-600 mt-1">
-                          فایل انتخاب شده: {weldingFile.name}
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <Label htmlFor="welding-areas">نواحی که باید جوش شوند (اجباری)</Label>
-                      <Textarea
-                        id="welding-areas"
-                        value={weldingAreas}
-                        onChange={(e) => setWeldingAreas(e.target.value)}
-                        placeholder="لطفاً نواحی که نیاز به جوش دارند را مشخص کنید..."
-                        className="mt-1"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="welding-method">روش جوشکاری</Label>
-                      <Input
-                        id="welding-method"
-                        value={weldingMethod}
-                        onChange={(e) => setWeldingMethod(e.target.value)}
-                        placeholder="مثال: TIG، MIG، آرک دستی..."
-                        className="mt-1"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="weld-thickness">ضخامت درز (ساق جوش)</Label>
-                      <Input
-                        id="weld-thickness"
-                        value={weldThickness}
-                        onChange={(e) => setWeldThickness(e.target.value)}
-                        placeholder="مثال: 3mm، 5mm..."
-                        className="mt-1"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="tolerances">تلرانس‌های عددی و هندسی مدنظر طراح</Label>
-                      <Textarea
-                        id="tolerances"
-                        value={tolerances}
-                        onChange={(e) => setTolerances(e.target.value)}
-                        placeholder="تلرانس‌های مورد نیاز را مشخص کنید..."
-                        className="mt-1"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="additional-specs">مشخصات اضافی</Label>
-                      <Textarea
-                        id="additional-specs"
-                        value={additionalSpecs}
-                        onChange={(e) => setAdditionalSpecs(e.target.value)}
-                        placeholder="اگر مشخصات دیگری مدنظرتان هست، به تفکیک و با مقدار کمی یا کیفی آن مشخص کنید..."
-                        className="mt-1"
-                      />
-                    </div>
-
-                    <Button 
-                      onClick={() => handleSubmit('welding', weldingFile)}
-                      className="w-full"
-                    >
-                      ثبت سفارش نقشه جوش
-                    </Button>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              {/* Exploded Drawing Tab */}
-              <TabsContent value="exploded" className="space-y-6">
-                <Card dir="rtl">
-                  <CardHeader>
-                    <CardTitle>نقشه انفجاری</CardTitle>
-                    <CardDescription>
-                      برای تهیه نقشه انفجاری، فایل سه‌بعدی مجموعه خود را آپلود کنید
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <Label htmlFor="exploded-file">آپلود فایل (اجباری)</Label>
-                      <Input
-                        id="exploded-file"
-                        type="file"
-                        accept={acceptedFormats}
-                        onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], setExplodedFile)}
-                        className="mt-1"
-                      />
-                      <p className="text-sm text-muted-foreground mt-1">
-                        فرمت‌های مجاز: STEP, STP, SolidWorks, Inventor
-                      </p>
-                      {explodedFile && (
-                        <p className="text-sm text-green-600 mt-1">
-                          فایل انتخاب شده: {explodedFile.name}
-                        </p>
-                      )}
-                    </div>
-
-                    <div>
-                      <Label htmlFor="exploded-description">توضیحات تکمیلی (اختیاری)</Label>
-                      <Textarea
-                        id="exploded-description"
-                        value={explodedDescription}
-                        onChange={(e) => setExplodedDescription(e.target.value)}
-                        placeholder="اگر مجموعه شما خود متشکل از مجموعه هایی است، در فایل کلی مجموعه به صورت زیر مجموعه هایی  (assembly)قرار دهید و در بخش توضیحات نیز این موضوع به تفکیک اسم مجموعه و قطعات ذکر شوند."
-                        className="mt-1"
-                      />
-                    </div>
-
-                    <Button 
-                      onClick={() => handleSubmit('exploded', explodedFile)}
-                      className="w-full"
-                    >
-                      ثبت سفارش نقشه انفجاری
-                    </Button>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              {/* Manufacturing Drawing Tab */}
-              <TabsContent value="manufacturing" className="space-y-6">
-                <Card dir="rtl">
-                  <CardHeader>
-                    <CardTitle>نقشه ساخت (قطعات)</CardTitle>
-                    <CardDescription>
-                      برای تهیه نقشه ساخت قطعات، فایل سه‌بعدی خود را آپلود کنید
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <Label htmlFor="manufacturing-file">آپلود فایل (اجباری)</Label>
-                      <Input
-                        id="manufacturing-file"
-                        type="file"
-                        accept={acceptedFormats}
-                        onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], setManufacturingFile)}
-                        className="mt-1"
-                      />
-                      <p className="text-sm text-muted-foreground mt-1">
-                        فرمت‌های مجاز: STEP, STP, SolidWorks, Inventor
-                      </p>
-                      {manufacturingFile && (
-                        <p className="text-sm text-green-600 mt-1">
-                          فایل انتخاب شده: {manufacturingFile.name}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="flex items-center space-x-2 space-x-reverse">
-                      <Checkbox
-                        id="show-tolerances"
-                        checked={showTolerances}
-                        onCheckedChange={(checked) => setShowTolerances(checked === true)}
-                      />
-                      <Label htmlFor="show-tolerances">
-                        تلرانس های عددی و هندسی مدنظر طراح
-                      </Label>
-                    </div>
-
-                    {showTolerances && (
-                      <div className="space-y-4 p-4 border rounded-lg bg-secondary/10">
-                        <div>
-                          <Label htmlFor="numeric-tolerance">تلرانس عددی (اختیاری)</Label>
-                          <Input
-                            id="numeric-tolerance"
-                            value={numericTolerance}
-                            onChange={(e) => setNumericTolerance(e.target.value)}
-                            placeholder="مثال: ±0.1mm، ±0.05mm..."
-                            className="mt-1"
-                          />
-                        </div>
-
-                        <div>
-                          <Label htmlFor="geometric-tolerance">تلرانس هندسی (اختیاری)</Label>
-                          <Input
-                            id="geometric-tolerance"
-                            value={geometricTolerance}
-                            onChange={(e) => setGeometricTolerance(e.target.value)}
-                            placeholder="مثال: دایره‌ای، موازی، عمود..."
-                            className="mt-1"
-                          />
-                        </div>
-
-                        <div>
-                          <Label htmlFor="tolerance-image">تصویر یا طرح مربوط به تلرانس‌ها (اجباری)</Label>
-                          <Input
-                            id="tolerance-image"
-                            type="file"
-                            accept="image/*,.pdf"
-                            onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], setToleranceImage)}
-                            className="mt-1"
-                          />
-                          <p className="text-sm text-muted-foreground mt-1">
-                            فرمت‌های مجاز: تصاویر (JPG, PNG) و PDF
-                          </p>
-                          {toleranceImage && (
-                            <p className="text-sm text-green-600 mt-1">
-                              فایل انتخاب شده: {toleranceImage.name}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="flex items-center space-x-2 space-x-reverse">
-                      <Checkbox
-                        id="show-surface-quality"
-                        checked={showSurfaceQuality}
-                        onCheckedChange={(checked) => setShowSurfaceQuality(checked === true)}
-                      />
-                      <Label htmlFor="show-surface-quality">
-                        میزان کیفیت سطح در سطوح مدنظر طراح
-                      </Label>
-                    </div>
-
-                    {showSurfaceQuality && (
-                      <div className="space-y-4 p-4 border rounded-lg bg-secondary/10">
-                        <p dir="rtl"> به سایر سطوح صافی سطح عمومی 1.6 با استاندارد DIN ISO 1303 تعلق میگیرد.</p>
-                        <div>
-                          <Label htmlFor="surface-quality">میزان کیفیت سطح (اختیاری)</Label>
-                          <Textarea
-                            id="surface-quality"
-                            value={surfaceQuality}
-                            onChange={(e) => setSurfaceQuality(e.target.value)}
-                            placeholder="کیفیت سطح در سطوح مدنظر طراح را مشخص کنید..."
-                            className="mt-1"
-                          />
-                        </div>
-
-                        <div>
-                          <Label htmlFor="surface-quality-image">تصویر یا طرح مربوط به کیفیت سطح (اجباری)</Label>
-                          <Input
-                            id="surface-quality-image"
-                            type="file"
-                            accept="image/*,.pdf"
-                            onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0], setSurfaceQualityImage)}
-                            className="mt-1"
-                          />
-                          <p className="text-sm text-muted-foreground mt-1">
-                            فرمت‌های مجاز: تصاویر (JPG, PNG) و PDF
-                          </p>
-                          {surfaceQualityImage && (
-                            <p className="text-sm text-green-600 mt-1">
-                              فایل انتخاب شده: {surfaceQualityImage.name}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    <div>
-                      <Label htmlFor="hardness">سختی قطعه *</Label>
-                      <Input
-                        id="hardness"
-                        value={hardness}
-                        onChange={(e) => setHardness(e.target.value)}
-                        placeholder="مثال: HRC 45، HB 200..."
-                        className="mt-1"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="material">جنس قطعه *</Label>
-                      <Input
-                        id="material"
-                        value={material}
-                        onChange={(e) => setMaterial(e.target.value)}
-                        placeholder="مثال: فولاد AISI 304، آلومینیوم 6061..."
-                        className="mt-1"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="coating">عملیات پوشش دهی و ضخامت پوشش در صورت لزوم (اختیاری)</Label>
-                      <Input
-                        id="coating"
-                        value={coating}
-                        onChange={(e) => setCoating(e.target.value)}
-                        placeholder="مثال: داکرومات 15 میکرومتر..."
-                        className="mt-1"
-                      />
-                    </div>
-
-                    <Button 
-                      onClick={() => handleSubmit('manufacturing', manufacturingFile)}
-                      className="w-full"
-                    >
-                      ثبت سفارش نقشه ساخت
-                    </Button>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+                    </TabsContent>
+                  ))}
+                </Tabs>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground mb-4">
+                    در حال حاضر هیچ تب فعالی برای این سرویس تعریف نشده است.
+                  </p>
+                  <DynamicServiceForm
+                    serviceId="550e8400-e29b-41d4-a716-446655440004"
+                    formData={formData}
+                    onFieldChange={updateField}
+                    needsDocumentation={needsDocumentation}
+                    onNeedsDocumentationChange={setNeedsDocumentation}
+                    notes={notes}
+                    onNotesChange={setNotes}
+                    onSubmit={handleFormSubmit}
+                    isSubmitting={isSubmitting}
+                  />
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <LoginPrompt 
+            title="برای ثبت سفارش وارد شوید"
+            description="برای دسترسی به فرم سفارش نقشه‌کشی، لطفاً وارد حساب کاربری خود شوید."
+            icon={<User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />}
+          />
+        )}
       </div>
       <Footer />
     </div>

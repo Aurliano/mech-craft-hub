@@ -21,12 +21,15 @@ const Hero = () => {
           <div className="absolute inset-0 bg-primary/80"></div>
         </div>
       )}
-      <div 
-        className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-500 ${
-          imageLoaded ? 'opacity-100' : 'opacity-0'
-        }`}
-        style={{ backgroundImage: `url(${heroImage})` }}
-      >
+      <div className="absolute inset-0">
+        <img
+          src={heroImage}
+          alt="تصویر پس‌زمینه مهندسی"
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
+            imageLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
+          onLoad={() => setImageLoaded(true)}
+        />
         <div className="absolute inset-0 bg-primary/80"></div>
       </div>
 
@@ -36,9 +39,9 @@ const Hero = () => {
           <h1 className="text-4xl md:text-6xl font-bold text-primary-foreground mb-6 leading-tight space-y-4 font-yekan">
             پلتفرم جامع مهندسی مکاترونیک 
             <br />
-            <h2 className="text-3xl text-accent bg-gradient-to-r from-accent via-yellow-700 to-accent bg-clip-text text-transparent font-yekan ">
+            <span className="text-3xl text-accent bg-gradient-to-r from-accent via-yellow-700 to-accent bg-clip-text text-transparent font-yekan block">
               طراحی، تحلیل و ساخت پروژه‌های مهندسی
-            </h2>
+            </span>
           </h1>
           
           <p className="text-xl text-primary-foreground/90 mb-8 leading-relaxed">
@@ -216,7 +219,7 @@ const Hero = () => {
           {/* Metaverse Card - New */}
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
             <div className="flex items-center justify-center mb-4">
-              <img src={MetaIcon} className="h-8 w-8 text-accent ml-3" />
+              <img src={MetaIcon} alt="آیکون متاورس" className="h-8 w-8 text-accent ml-3" />
               <h3 className="text-xl font-bold text-primary-foreground text-center">متاورس</h3>
             </div>
             

@@ -13,7 +13,9 @@ import {
   Gauge,
   CheckCircle,
   Beaker,
-  ChevronDown
+  ChevronDown,
+  User,
+  FileText
 } from "lucide-react";
 // Removed unused toast Description import
 import Navbar from "@/components/Navbar";
@@ -22,9 +24,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/components/ui/use-toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import SubmitButton from "@/components/SubmitButton";
+import { useServiceOrder } from "@/hooks/useServiceOrder";
+import { useAuth } from "@/contexts/AuthContext";
+import LoginPrompt from "@/components/LoginPrompt";
+import { DynamicServiceForm } from "@/components/DynamicServiceForm";
+import { useContractorWorkshops } from "@/hooks/useAuth";
 
 // Mock data for workshops
 const workshops = [
@@ -80,38 +90,54 @@ const processes = [
 ];
 
 const Manufacturing = () => {
-  const { toast } = useToast();
+  const { isAuthenticated } = useAuth();
   const orderRef = useRef<HTMLDivElement>(null);
   const [selectedWorkshopId, setSelectedWorkshopId] = useState<string>("");
   const [files, setFiles] = useState<File[]>([]);
-  const [description, setDescription] = useState("");
+  
+  // Get workshops from API
+  const { data: apiWorkshops, isLoading: isLoadingWorkshops } = useContractorWorkshops();
+  
+  // Use service order hook
+  const {
+    formData,
+    needsDocumentation,
+    notes,
+    documentationOptions,
+    updateField,
+    setNeedsDocumentation,
+    setNotes,
+    setDocumentationOptions,
+    handleSubmit,
+    isSubmitting,
+    error
+  } = useServiceOrder('550e8400-e29b-41d4-a716-446655440003');
 
-  const handleOrderClick = (id: number) => {
+  // Use API workshops if available, otherwise fallback to mock data
+  const displayWorkshops = apiWorkshops && apiWorkshops.length > 0 ? apiWorkshops : workshops;
+
+  const handleOrderClick = (id: number | string) => {
     setSelectedWorkshopId(String(id));
     setTimeout(() => {
       orderRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 0);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedWorkshopId || files.length === 0 || !description.trim()) {
-      toast({
-        title: "اطلاعات ناقص است",
-        description: "لطفاً کارگاه، فایل‌ها و توضیحات را تکمیل کنید.",
-        variant: "destructive",
-      });
+
+  const handleFormSubmit = async () => {
+    if (!selectedWorkshopId || files.length === 0 || !formData.description?.trim()) {
+      alert("لطفاً کارگاه، فایل‌ها و توضیحات را تکمیل کنید.");
       return;
     }
-    toast({
-      title: "سفارش ثبت شد",
-      description: "درخواست شما با موفقیت ثبت شد. کارشناسان ما با شما تماس می‌گیرند.",
-    });
-    setSelectedWorkshopId("");
-    setFiles([]);
-    setDescription("");
-    const fileInput = document.getElementById("order-files") as HTMLInputElement | null;
-    if (fileInput) fileInput.value = "";
+    
+    try {
+      // Add workshop selection to form data
+      updateField('selected_workshop_id', selectedWorkshopId);
+      
+      await handleSubmit();
+    } catch (error) {
+      console.error('Error submitting order:', error);
+    }
   };
 
   return (
@@ -172,7 +198,13 @@ const Manufacturing = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
-            {workshops.map((workshop) => (
+            {isLoadingWorkshops ? (
+              <div className="col-span-full text-center py-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">در حال بارگذاری کارگاه‌ها...</p>
+              </div>
+            ) : (
+              displayWorkshops.map((workshop) => (
               <Card key={workshop.id} className="overflow-hidden hover:shadow-xl transition-all duration-300">
                 <CardHeader className="bg-gradient-to-r from-primary/10 to-secondary/10">
                   <div className="flex items-start justify-between">
@@ -197,7 +229,7 @@ const Manufacturing = () => {
                       توانمندی ها
                     </h4>
                     <div className="flex flex-wrap gap-2">
-                      {workshop.capabilities.map((capability) => (
+                      {(workshop.capabilities || []).map((capability) => (
                         <Badge key={capability} variant="secondary" className="text-xs">
                           {capability}
                         </Badge>
@@ -209,56 +241,61 @@ const Manufacturing = () => {
 
                   {/* Machines */}
                   <div className="mb-6">
-                    <h4 className="font-semibold mb-3 flex items-center gap-2">
-                      <Gauge className="h-4 w-4" />
+                    <h4 className="font-semibold mb-3 flex items-center gap-2">                      <Gauge className="h-4 w-4" />
                       دستگاه ها و دقت
                     </h4>
                     <div className="space-y-2">
-                      {workshop.machines.slice(0, 2).map((machine, index) => (
-                        <div key={index} className="flex justify-between items-center text-sm">
-                          <span className="text-muted-foreground">{machine.name}</span>
-                          <Badge variant="outline" className="text-xs">
-                            {machine.precision}
-                          </Badge>
-                        </div>
-                      ))}
-                      {workshop.machines.length > 2 && (
+                      {Array.isArray(workshop.machines) && workshop.machines.length > 0 ? (
                         <>
-                          <Collapsible>
-                            <CollapsibleContent className="space-y-2 mt-2">
-                              {workshop.machines.slice(2).map((machine, index) => (
-                                <div key={index} className="flex justify-between items-center text-sm">
-                                  <span className="text-muted-foreground">{machine.name}</span>
-                                  <Badge variant="outline" className="text-xs">
-                                    {machine.precision}
-                                  </Badge>
-                                </div>
-                              ))}
-                            </CollapsibleContent>
-                            <CollapsibleTrigger className="mt-3 inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80">
-                              <span className="data-[state=open]:hidden">نمایش بیشتر</span>
-                              <span className="hidden data-[state=open]:inline">نمایش کمتر</span>
-                              <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
-                            </CollapsibleTrigger>
-                          </Collapsible>
+                          {workshop.machines.slice(0, 2).map((machine, index) => (
+                            <div key={index} className="flex justify-between items-center text-sm">
+                              <span className="text-muted-foreground">{machine.name}</span>
+                              <Badge variant="outline" className="text-xs">
+                                {machine.precision}
+                              </Badge>
+                            </div>
+                          ))}
+                          {workshop.machines.length > 2 && (
+                            <Collapsible>
+                              <CollapsibleContent className="space-y-2 mt-2">
+                                {workshop.machines.slice(2).map((machine, index) => (
+                                  <div key={index} className="flex justify-between items-center text-sm">
+                                    <span className="text-muted-foreground">{machine.name}</span>
+                                    <Badge variant="outline" className="text-xs">
+                                      {machine.precision}
+                                    </Badge>
+                                  </div>
+                                ))}
+                              </CollapsibleContent>
+                              <CollapsibleTrigger className="mt-3 inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80">
+                                <span className="data-[state=open]:hidden">نمایش بیشتر</span>
+                                <span className="hidden data-[state=open]:inline">نمایش کمتر</span>
+                                <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
+                              </CollapsibleTrigger>
+                            </Collapsible>
+                          )}
                         </>
+                      ) : (
+                        <p className="text-muted-foreground text-sm">اطلاعات دستگاه موجود نیست</p>
                       )}
                     </div>
                   </div>
 
                   <Separator className="my-4" />
 
-                  {/* Stats */}
-                  <div className="flex justify-between items-center text-sm">
-                    <div className="text-center">
-                      <div className="font-semibold text-primary">{workshop.completedProjects}</div>
-                      <div className="text-muted-foreground">پروژه تکمیل شده</div>
+                  {/* Stats - Only show for mock data */}
+                  {workshop.completedProjects && workshop.rating && (
+                    <div className="flex justify-between items-center text-sm">
+                      <div className="text-center">
+                        <div className="font-semibold text-primary">{workshop.completedProjects}</div>
+                        <div className="text-muted-foreground">پروژه تکمیل شده</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="font-semibold text-primary">{workshop.rating}/5</div>
+                        <div className="text-muted-foreground">امتیاز کیفیت</div>
+                      </div>
                     </div>
-                    <div className="text-center">
-                      <div className="font-semibold text-primary">{workshop.rating}/5</div>
-                      <div className="text-muted-foreground">امتیاز کیفیت</div>
-                    </div>
-                  </div>
+                  )}
 
                   <div className="mt-6">
                     <Button className="w-full" onClick={() => handleOrderClick(workshop.id)}>
@@ -267,7 +304,8 @@ const Manufacturing = () => {
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -280,7 +318,8 @@ const Manufacturing = () => {
             <p className="text-muted-foreground">لطفاً اطلاعات زیر را تکمیل کنید.</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="max-w-3xl mx-auto space-y-6">
+          {isAuthenticated ? (
+            <div className="max-w-3xl mx-auto space-y-6">
             <div>
               <label className="block text-sm font-medium mb-2">کارگاه انتخابی</label>
               <Select value={selectedWorkshopId} onValueChange={setSelectedWorkshopId}>
@@ -288,7 +327,7 @@ const Manufacturing = () => {
                   <SelectValue placeholder="یک کارگاه انتخاب کنید" />
                 </SelectTrigger>
                 <SelectContent className="z-50 bg-background">
-                  {workshops.map((w) => (
+                  {displayWorkshops.map((w) => (
                     <SelectItem key={w.id} value={String(w.id)}>
                       {w.name}
                     </SelectItem>
@@ -310,19 +349,238 @@ const Manufacturing = () => {
               </p>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2">توضیحات تکمیلی</label>
-              <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="فرآیندهای لازم برای ساخت، تلرانس‌ها، متریال و ..."
-              />
-            </div>
+            <DynamicServiceForm
+              serviceId="550e8400-e29b-41d4-a716-446655440003"
+              formData={formData}
+              onFieldChange={updateField}
+              needsDocumentation={needsDocumentation}
+              onNeedsDocumentationChange={setNeedsDocumentation}
+              notes={notes}
+              onNotesChange={setNotes}
+              onSubmit={handleFormSubmit}
+              isSubmitting={isSubmitting}
+            />
 
-            <div className="flex justify-end">
-              <Button type="submit" className="min-w-40">ثبت سفارش</Button>
+            {/* Documentation Options */}
+            {needsDocumentation && (
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    گزینه‌های مستندسازی
+                  </CardTitle>
+                  <CardDescription>
+                    نوع مستندات مورد نیاز خود را انتخاب کنید
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex items-center space-x-2 space-x-reverse">
+                        <Checkbox
+                          id="performanceReport"
+                          checked={documentationOptions.performanceReport}
+                          onCheckedChange={(checked) => setDocumentationOptions(prev => ({ 
+                            ...prev, 
+                            performanceReport: checked as boolean 
+                          }))}
+                        />
+                        <Label htmlFor="performanceReport" className="text-sm">
+                          گزارش شرح عملکرد قطعات/سامانه
+                        </Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2 space-x-reverse">
+                        <Checkbox
+                          id="assemblyInstructions"
+                          checked={documentationOptions.assemblyInstructions}
+                          onCheckedChange={(checked) => setDocumentationOptions(prev => ({ 
+                            ...prev, 
+                            assemblyInstructions: checked as boolean 
+                          }))}
+                        />
+                        <Label htmlFor="assemblyInstructions" className="text-sm">
+                          دستورالعمل مونتاژ قطعات/سامانه
+                        </Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2 space-x-reverse">
+                        <Checkbox
+                          id="metallurgicalDocument"
+                          checked={documentationOptions.metallurgicalDocument}
+                          onCheckedChange={(checked) => setDocumentationOptions(prev => ({ 
+                            ...prev, 
+                            metallurgicalDocument: checked as boolean 
+                          }))}
+                        />
+                        <Label htmlFor="metallurgicalDocument" className="text-sm">
+                          سند متالوژیکی قطعات
+                        </Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2 space-x-reverse">
+                        <Checkbox
+                          id="heatTreatmentDocument"
+                          checked={documentationOptions.heatTreatmentDocument}
+                          onCheckedChange={(checked) => setDocumentationOptions(prev => ({ 
+                            ...prev, 
+                            heatTreatmentDocument: checked as boolean 
+                          }))}
+                        />
+                        <Label htmlFor="heatTreatmentDocument" className="text-sm">
+                          سند عملیات حرارتی قطعات
+                        </Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2 space-x-reverse">
+                        <Checkbox
+                          id="analysisTestReport"
+                          checked={documentationOptions.analysisTestReport}
+                          onCheckedChange={(checked) => setDocumentationOptions(prev => ({ 
+                            ...prev, 
+                            analysisTestReport: checked as boolean 
+                          }))}
+                        />
+                        <Label htmlFor="analysisTestReport" className="text-sm">
+                          گزارش آزمون آنالیز
+                        </Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2 space-x-reverse">
+                        <Checkbox
+                          id="coatingDocument"
+                          checked={documentationOptions.coatingDocument}
+                          onCheckedChange={(checked) => setDocumentationOptions(prev => ({ 
+                            ...prev, 
+                            coatingDocument: checked as boolean 
+                          }))}
+                        />
+                        <Label htmlFor="coatingDocument" className="text-sm">
+                          سند پوشش دهی قطعات
+                        </Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2 space-x-reverse">
+                        <Checkbox
+                          id="bomDocument"
+                          checked={documentationOptions.bomDocument}
+                          onCheckedChange={(checked) => setDocumentationOptions(prev => ({ 
+                            ...prev, 
+                            bomDocument: checked as boolean 
+                          }))}
+                        />
+                        <Label htmlFor="bomDocument" className="text-sm">
+                          سند BOM (لیست قطعات و مواد)
+                        </Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2 space-x-reverse">
+                        <Checkbox
+                          id="opcDocument"
+                          checked={documentationOptions.opcDocument}
+                          onCheckedChange={(checked) => setDocumentationOptions(prev => ({ 
+                            ...prev, 
+                            opcDocument: checked as boolean 
+                          }))}
+                        />
+                        <Label htmlFor="opcDocument" className="text-sm">
+                          سند عملیات فرآیند ساخت(OPC)
+                        </Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2 space-x-reverse">
+                        <Checkbox
+                          id="fpcDocument"
+                          checked={documentationOptions.fpcDocument}
+                          onCheckedChange={(checked) => setDocumentationOptions(prev => ({ 
+                            ...prev, 
+                            fpcDocument: checked as boolean 
+                          }))}
+                        />
+                        <Label htmlFor="fpcDocument" className="text-sm">
+                          سند فرآیند جریان ساخت (FPC)
+                        </Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2 space-x-reverse">
+                        <Checkbox
+                          id="qcChecklist"
+                          checked={documentationOptions.qcChecklist}
+                          onCheckedChange={(checked) => setDocumentationOptions(prev => ({ 
+                            ...prev, 
+                            qcChecklist: checked as boolean 
+                          }))}
+                        />
+                        <Label htmlFor="qcChecklist" className="text-sm">
+                          چک لیست کنترل ابعادی (QC)
+                        </Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2 space-x-reverse">
+                        <Checkbox
+                          id="contractorCapabilityDocument"
+                          checked={documentationOptions.contractorCapabilityDocument}
+                          onCheckedChange={(checked) => setDocumentationOptions(prev => ({ 
+                            ...prev, 
+                            contractorCapabilityDocument: checked as boolean 
+                          }))}
+                        />
+                        <Label htmlFor="contractorCapabilityDocument" className="text-sm">
+                          سند توانایی پیمانکار
+                        </Label>
+                      </div>
+
+                      <div className="flex items-center space-x-2 space-x-reverse">
+                        <Checkbox
+                          id="designTree"
+                          checked={documentationOptions.designTree}
+                          onCheckedChange={(checked) => setDocumentationOptions(prev => ({ 
+                            ...prev, 
+                            designTree: checked as boolean 
+                          }))}
+                        />
+                        <Label htmlFor="designTree" className="text-sm">
+                          درخت طراحی
+                        </Label>
+                      </div>
+                    </div>
+
+                    <div className="mt-6 p-4 bg-muted/30 rounded-lg border">
+                      <div className="flex items-center space-x-2 space-x-reverse mb-2">
+                        <Checkbox
+                          id="allPartsDocumentation"
+                          checked={documentationOptions.allPartsDocumentation}
+                          onCheckedChange={(checked) => setDocumentationOptions(prev => ({ 
+                            ...prev, 
+                            allPartsDocumentation: checked as boolean 
+                          }))}
+                        />
+                        <Label htmlFor="allPartsDocumentation" className="text-sm font-semibold">
+                          مستندات خواسته شده را برای بخشی از قطعات میخواهم
+                        </Label>
+                      </div>
+                      <p className="text-sm text-destructive mt-2">
+                        اگر مستندات را برای تعدادی از قطعات منتخب نیاز دارید، در توضیحات تکمیلی مشخص کنید.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+              {error && (
+                <div className="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-md">
+                  {error}
+                </div>
+              )}
             </div>
-          </form>
+          ) : (
+            <LoginPrompt 
+              title="برای ثبت سفارش وارد شوید"
+              description="برای دسترسی به فرم سفارش ساخت و تولید، لطفاً وارد حساب کاربری خود شوید."
+              icon={<User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />}
+            />
+          )}
         </div>
       </section>
 

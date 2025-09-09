@@ -1,11 +1,11 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from .models import (
-    User, Role, Permission, UserRole, Scope, Service, ServiceField,
+    User, Role, Permission, UserRole, Scope, Service, ServiceField, ServiceTab, 
     ContractorService, Workshop, WorkshopService, Cart, CartItem,
     Order, OrderItem, Quote, OrderStatusLog, Payment,
     TicketCategory, Ticket, TicketParticipant, TicketMessage, TicketAttachment,
-    MediaFile, Review
+    MediaFile, Review, PasswordResetToken, PhoneVerificationCode, Notification
 )
 
 
@@ -60,6 +60,15 @@ class ServiceAdmin(admin.ModelAdmin):
     list_filter = ('scope', 'type', 'is_active', 'created_at')
     search_fields = ('name', 'description', 'scope__name')
     prepopulated_fields = {'name': ('name',)}
+
+
+@admin.register(ServiceTab)
+class ServiceTabAdmin(admin.ModelAdmin):
+    list_display = ('display_name', 'service', 'name', 'order', 'is_active')
+    list_filter = ('service', 'is_active', 'created_at')
+    search_fields = ('display_name', 'name', 'service__name')
+    ordering = ('service', 'order')
+    raw_id_fields = ('service',)
 
 
 @admin.register(ServiceField)
@@ -212,3 +221,30 @@ class ReviewAdmin(admin.ModelAdmin):
     search_fields = ('customer__username', 'contractor__username', 'comment')
     raw_id_fields = ('customer', 'contractor', 'order_item', 'approved_by')
     readonly_fields = ('created_at', 'approved_at')
+
+
+@admin.register(PasswordResetToken)
+class PasswordResetTokenAdmin(admin.ModelAdmin):
+    list_display = ('user', 'token', 'is_used', 'created_at', 'expires_at')
+    list_filter = ('is_used', 'created_at', 'expires_at')
+    search_fields = ('user__username', 'user__email', 'token')
+    raw_id_fields = ('user',)
+    readonly_fields = ('created_at', 'expires_at')
+
+
+@admin.register(PhoneVerificationCode)
+class PhoneVerificationCodeAdmin(admin.ModelAdmin):
+    list_display = ('user', 'phone', 'code', 'is_used', 'created_at', 'expires_at')
+    list_filter = ('is_used', 'created_at', 'expires_at')
+    search_fields = ('user__username', 'phone', 'code')
+    raw_id_fields = ('user',)
+    readonly_fields = ('created_at', 'expires_at')
+
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ('user', 'type', 'title', 'is_read', 'created_at')
+    list_filter = ('type', 'is_read', 'created_at')
+    search_fields = ('user__username', 'title', 'message')
+    raw_id_fields = ('user', 'related_order', 'related_quote')
+    readonly_fields = ('created_at',)

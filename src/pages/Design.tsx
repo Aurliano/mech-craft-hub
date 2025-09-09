@@ -9,81 +9,69 @@ import { Upload, FileText, Palette, User } from "lucide-react";
 import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { useToast } from "@/hooks/use-toast";
+import SubmitButton from "@/components/SubmitButton";
+import { useServiceOrder } from "@/hooks/useServiceOrder";
+import { useAuth } from "@/contexts/AuthContext";
+import { DynamicServiceForm } from "@/components/DynamicServiceForm";
+import LoginPrompt from "@/components/LoginPrompt";
 
 const Design = () => {
-  // Mock authentication state - this should come from your auth context/state management
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const { toast } = useToast();
+  // Use real authentication state
+  const { isAuthenticated } = useAuth();
   
-  const [formData, setFormData] = useState({
-    description: "",
-    file: null as File | null,
-    needsDocumentation: false,
-    documentationOptions: {
-      performanceReport: false,
-      assemblyInstructions: false,
-      metallurgicalDocument: false,
-      heatTreatmentDocument: false,
-      analysisTestReport: false,
-      coatingDocument: false,
-      bomDocument: false,
-      opcDocument: false,
-      fpcDocument: false,
-      qcChecklist: false,
-      contractorCapabilityDocument: false,
-      designTree: false,
-      allPartsDocumentation: false,
-    },
-  });
+  // Use service order hook
+  const {
+    formData,
+    needsDocumentation,
+    notes,
+    updateField,
+    setNeedsDocumentation,
+    setNotes,
+    handleSubmit,
+    isSubmitting,
+    error
+  } = useServiceOrder('550e8400-e29b-41d4-a716-446655440002');
+
+  // Create setFormData function for compatibility
+  const setFormData = (updater: any) => {
+    if (typeof updater === 'function') {
+      const newData = updater(formData);
+      Object.keys(newData).forEach(key => {
+        updateField(key, newData[key]);
+      });
+    } else {
+      Object.keys(updater).forEach(key => {
+        updateField(key, updater[key]);
+      });
+    }
+  };
+  
+  const [file, setFile] = useState<File | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFormData(prev => ({ ...prev, file: e.target.files![0] }));
+      setFile(e.target.files[0]);
+      updateField('file', e.target.files[0]);
     }
   };
 
-  const handleSubmit = () => {
+  const handleFormSubmit = async () => {
     // Check required fields
-    if (!formData.description.trim()) {
-      toast({
-        title: "خطا",
-        description: "لطفاً توضیحات پروژه را وارد کنید.",
-        variant: "destructive",
-      });
+    if (!formData.description?.trim()) {
+      alert("لطفا توضیحات پروژه را وارد کنید");
       return;
     }
 
-    // Generate random order number
-    const orderNumber = Math.floor(Math.random() * 10000) + 1000;
-    
-    // Show success message
-    toast({
-      title: "ثبت سفارش موفق",
-      description: `سفارش طراحی شما با شماره ${orderNumber} ثبت گردید و در انتظار تایید مهندسین می‌باشد. برای پیگیری وضعیت سفارش به صفحه سفارشات مراجعه نمایید.`,
-    });
+    if (!file) {
+      alert("لطفا فایل پروژه را آپلود کنید");
+      return;
+    }
 
-    // Reset form
-    setFormData({
-      description: "",
-      file: null,
-      needsDocumentation: false,
-      documentationOptions: {
-        performanceReport: false,
-        assemblyInstructions: false,
-        metallurgicalDocument: false,
-        heatTreatmentDocument: false,
-        analysisTestReport: false,
-        coatingDocument: false,
-        bomDocument: false,
-        opcDocument: false,
-        fpcDocument: false,
-        qcChecklist: false,
-        contractorCapabilityDocument: false,
-        designTree: false,
-        allPartsDocumentation: false,
-      },
-    });
+    try {
+      await handleSubmit();
+    } catch (error) {
+      console.error('Error submitting order:', error);
+    }
   };
 
   const ServiceIntro = () => (
@@ -140,22 +128,6 @@ const Design = () => {
     </section>
   );
 
-  const LoginPrompt = () => (
-    <div className="text-center py-12">
-      <div className="p-6 bg-muted/30 rounded-lg max-w-md mx-auto">
-        <User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-        <h3 className="text-lg font-semibold mb-2">برای ثبت سفارش وارد شوید</h3>
-        <p className="text-muted-foreground mb-6">
-          برای دسترسی به فرم سفارش طراحی، لطفاً وارد حساب کاربری خود شوید.
-        </p>
-        <Link to="/login">
-          <Button className="w-full">
-            ورود به حساب کاربری
-          </Button>
-        </Link>
-      </div>
-    </div>
-  );
 
   const DesignForm = () => (
     <div className="space-y-6">
@@ -164,85 +136,20 @@ const Design = () => {
         <p className="text-muted-foreground">اطلاعات پروژه خود را وارد کنید</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Description Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              شرح پروژه
-            </CardTitle>
-            <CardDescription>
-              توضیحات کامل پروژه طراحی خود را ارائه دهید
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="description">توضیحات پروژه *</Label>
-                <Textarea
-                  id="description"
-                  placeholder="لطفاً شرح کاملی از پروژه طراحی، نیازمندی‌ها، ابعاد، مواد و سایر جزئیات مهم ارائه دهید..."
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  className="min-h-32"
-                />
-              </div>
-              
-              <div className="flex items-center space-x-2 space-x-reverse">
-                <Checkbox
-                  id="documentation"
-                  checked={formData.needsDocumentation}
-                  onCheckedChange={(checked) => setFormData(prev => ({ ...prev, needsDocumentation: checked as boolean }))}
-                />
-                <Label htmlFor="documentation" className="text-sm">
-                  برای طرحم نیاز به ارائه مستندات دارم
-                </Label>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* File Upload Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Upload className="h-5 w-5" />
-              بارگذاری فایل
-            </CardTitle>
-            <CardDescription>
-              فایل‌های مرجع یا اسکچ اولیه را آپلود کنید
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="file">فایل‌های پروژه (اختیاری)</Label>
-                <Input
-                  id="file"
-                  type="file"
-                  onChange={handleFileChange}
-                  accept=".pdf,.doc,.docx,.dwg,.step,.iges,.jpg,.jpeg,.png,.zip,.rar"
-                  className="cursor-pointer"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  فرمت‌های مجاز: PDF, DOC, DOCX, DWG, STEP, IGES, JPG, PNG, ZIP, RAR
-                </p>
-              </div>
-              
-              {formData.file && (
-                <div className="p-3 bg-muted/30 rounded-md">
-                  <p className="text-sm font-medium">فایل انتخاب شده:</p>
-                  <p className="text-sm text-muted-foreground">{formData.file.name}</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <DynamicServiceForm
+        serviceId="550e8400-e29b-41d4-a716-446655440002"
+        formData={formData}
+        onFieldChange={updateField}
+        needsDocumentation={needsDocumentation}
+        onNeedsDocumentationChange={setNeedsDocumentation}
+        notes={notes}
+        onNotesChange={setNotes}
+        onSubmit={handleFormSubmit}
+        isSubmitting={isSubmitting}
+      />
 
       {/* Documentation Options */}
-      {formData.needsDocumentation && (
+      {needsDocumentation && (
         <Card className="mt-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -487,15 +394,13 @@ const Design = () => {
         </Card>
       )}
 
-      <div className="text-center">
-        <Button 
-          onClick={handleSubmit}
-          size="lg"
-          className="w-full md:w-auto"
-        >
-          ثبت سفارش طراحی
-        </Button>
-      </div>
+      {error && (
+        <div className="text-center">
+          <div className="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-md">
+            {error}
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -505,23 +410,16 @@ const Design = () => {
       
       <ServiceIntro />
 
-      {/* Test Login Button */}
-      <div className="text-center py-4 bg-muted/20">
-        <Button 
-          variant="outline" 
-          onClick={() => setIsAuthenticated(!isAuthenticated)}
-          className="mb-4"
-        >
-          {isAuthenticated ? "خروج از حساب (تست)" : "ورود به حساب (تست)"}
-        </Button>
-        <p className="text-sm text-muted-foreground">
-          وضعیت فعلی: {isAuthenticated ? "وارد شده" : "وارد نشده"}
-        </p>
-      </div>
 
       <section className="py-16">
         <div className="max-w-6xl mx-auto px-4">
-          {isAuthenticated ? <DesignForm /> : <LoginPrompt />}
+          {isAuthenticated ? <DesignForm /> : (
+            <LoginPrompt 
+              title="برای ثبت سفارش وارد شوید"
+              description="برای دسترسی به فرم سفارش طراحی، لطفاً وارد حساب کاربری خود شوید."
+              icon={<User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />}
+            />
+          )}
         </div>
       </section>
 

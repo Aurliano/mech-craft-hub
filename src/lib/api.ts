@@ -1,5 +1,7 @@
-export const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://127.0.0.1:8001';
+export const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
 export const API_ROOT = `${API_BASE_URL}/api`;
+
+import { requestQueue } from './requestQueue';
 
 const ACCESS_TOKEN_KEY = 'access_token';
 const REFRESH_TOKEN_KEY = 'refresh_token';
@@ -18,7 +20,38 @@ export function clearTokens() {
   localStorage.removeItem(REFRESH_TOKEN_KEY);
 }
 
-export async function fetchJson<T>(path: string, options: RequestInit = {}): Promise<T> {
+export function getRefreshToken(): string | null {
+  return localStorage.getItem(REFRESH_TOKEN_KEY);
+}
+
+export async function refreshAccessToken(): Promise<string | null> {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) return null;
+
+  try {
+    const res = await fetch(`${API_ROOT}/token/refresh/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh: refreshToken }),
+    });
+
+    if (!res.ok) {
+      clearTokens();
+      return null;
+    }
+
+    const data = await res.json();
+    setTokens(data.access, data.refresh);
+    return data.access;
+  } catch (error) {
+    console.error('Token refresh failed:', error);
+    clearTokens();
+    return null;
+  }
+}
+
+// Simple fetch function without retry logic
+async function simpleFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getAccessToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -30,6 +63,30 @@ export async function fetchJson<T>(path: string, options: RequestInit = {}): Pro
     ...options,
     headers,
   });
+
+  // If token expired, try to refresh
+  if (res.status === 401 && token) {
+    const newToken = await refreshAccessToken();
+    if (newToken) {
+      // Retry the request with new token
+      const retryHeaders = { ...headers, 'Authorization': `Bearer ${newToken}` };
+      const retryRes = await fetch(`${API_ROOT}${path}`, {
+        ...options,
+        headers: retryHeaders,
+      });
+      if (!retryRes.ok) {
+        const text = await retryRes.text();
+        throw new Error(text || retryRes.statusText);
+      }
+      if (retryRes.status === 204) return undefined as unknown as T;
+      return (await retryRes.json()) as T;
+    } else {
+      // If refresh failed, clear tokens and throw error
+      clearTokens();
+      throw new Error('Session expired. Please log in again.');
+    }
+  }
+
   if (!res.ok) {
     const text = await res.text();
     throw new Error(text || res.statusText);
@@ -38,29 +95,54 @@ export async function fetchJson<T>(path: string, options: RequestInit = {}): Pro
   return (await res.json()) as T;
 }
 
+// Queue-based fetch function with rate limiting
+export async function fetchJson<T>(path: string, options: RequestInit = {}): Promise<T> {
+  return requestQueue.add(() => simpleFetch<T>(path, options), 2);
+}
+
+
+
 export async function loginRequest(params: { username: string; password: string }) {
   const res = await fetch(`${API_ROOT}/token/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
   });
-  if (!res.ok) throw new Error('Invalid credentials');
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || 'Invalid credentials');
+  }
   return (await res.json()) as { access: string; refresh: string };
 }
 
 export async function registerRequest(params: { username: string; email: string; phone: string; password: string }) {
-  return fetchJson('/v1/auth/register/', {
+  const res = await fetch(`${API_ROOT}/v1/auth/register/`, {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
   });
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || 'Registration failed');
+  }
+  return (await res.json()) as any;
 }
 
 export async function meRequest() {
-  return fetchJson('/v1/auth/me/', { method: 'GET' });
+  return fetchJson<any>('/v1/auth/me/', { method: 'GET' });
 }
 
 export async function getServices() {
   return fetchJson<any[]>('/v1/services/');
+}
+
+export async function getServiceFields(serviceId: string) {
+  try {
+    return await fetchJson<any[]>(`/v1/services/${serviceId}/fields/`);
+  } catch (error) {
+    console.error('Error fetching service fields:', error);
+    return [];
+  }
 }
 
 export async function createCart(customer: string) {
@@ -82,20 +164,474 @@ export async function createCartItem(data: {
   });
 }
 
-export async function uploadFile(file: File, extra?: { context?: string; context_id?: string }) {
+
+export async function uploadFile(file: File, extra?: { context?: string; context_id?: string }, retries = 3): Promise<{ id: string; url: string; original_name: string }> {
   const token = getAccessToken();
-  const form = new FormData();
-  form.append('file', file);
-  if (extra?.context) form.append('context', extra.context);
-  if (extra?.context_id) form.append('context_id', extra.context_id);
-  const res = await fetch(`${API_ROOT}/v1/upload/`, {
+  if (!token) {
+    throw new Error("Authentication token not found. Please log in.");
+  }
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      if (extra?.context) form.append('context', extra.context);
+      if (extra?.context_id) form.append('context_id', extra.context_id);
+
+      const headers = new Headers();
+      headers.append('Authorization', `Bearer ${token}`);
+
+      console.log(`Upload attempt ${attempt}/${retries}:`, file.name, 'Size:', file.size, 'Type:', file.type);
+      console.log('Extra data:', extra);
+
+      const res = await fetch(`${API_ROOT}/v1/upload/`, {
+        method: 'POST',
+        headers: headers,
+        body: form,
+      });
+
+      console.log('Upload response status:', res.status);
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error('Upload error response:', text);
+        
+        if (attempt === retries) {
+          throw new Error(`Upload failed after ${retries} attempts: ${res.status} - ${text}`);
+        }
+        
+        // Wait before retry
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        continue;
+      }
+      
+      const result = await res.json();
+      console.log('Upload success:', result);
+      return result as { id: string; url: string; original_name: string };
+    } catch (error) {
+      console.error(`Upload error attempt ${attempt}:`, error);
+      
+      if (attempt === retries) {
+        throw error;
+      }
+      
+      // Wait before retry
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+    }
+  }
+  
+  throw new Error('Upload failed after all retries');
+}
+
+// Password Reset Functions
+export async function passwordResetRequest(email: string) {
+  const res = await fetch(`${API_ROOT}/v1/auth/password-reset-request/`, {
     method: 'POST',
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    body: form,
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email }),
   });
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || 'Upload failed');
+    const errorText = await res.text();
+    throw new Error(errorText || 'Password reset request failed');
   }
-  return (await res.json()) as { id: string; url: string; original_name: string };
-} 
+  return (await res.json()) as { detail: string; reset_url?: string };
+}
+
+export async function passwordResetConfirm(token: string, newPassword: string) {
+  const res = await fetch(`${API_ROOT}/v1/auth/password-reset-confirm/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, new_password: newPassword }),
+  });
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || 'Password reset confirmation failed');
+  }
+  return (await res.json()) as { detail: string };
+}
+
+export async function changePassword(oldPassword: string, newPassword: string) {
+  const res = await fetch(`${API_ROOT}/v1/auth/change-password/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ old_password: oldPassword, new_password: newPassword }),
+  });
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || 'Change password failed');
+  }
+  return (await res.json()) as { detail: string };
+}
+
+// Phone Verification Functions
+export async function phoneVerificationRequest(phone: string) {
+  const res = await fetch(`${API_ROOT}/v1/auth/phone-verification-request/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone }),
+  });
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || 'Phone verification request failed');
+  }
+  return (await res.json()) as { detail: string; code?: string; expires_in: number };
+}
+
+export async function phoneVerificationConfirm(phone: string, code: string) {
+  const res = await fetch(`${API_ROOT}/v1/auth/phone-verification-confirm/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone, code }),
+  });
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || 'Phone verification confirmation failed');
+  }
+  return (await res.json()) as { detail: string };
+}
+
+// Dashboard Data Functions
+export async function getUserOrders() {
+  try {
+    return await fetchJson<any[]>('/v1/orders/');
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+    return [];
+  }
+}
+
+export async function getUserCart() {
+  try {
+    return await fetchJson<any>('/v1/carts/');
+  } catch (error) {
+    console.error('Error fetching cart:', error);
+    return null;
+  }
+}
+
+export async function getUserCartItems() {
+  try {
+    return await fetchJson<any[]>('/v1/cart-items/');
+  } catch (error) {
+    console.error('Error fetching cart items:', error);
+    return [];
+  }
+}
+
+
+export async function getUserStats() {
+  try {
+    // For now, return mock data. In the future, this will be a real endpoint
+    return Promise.resolve({
+      totalOrders: 12,
+      pendingOrders: 3,
+      completedOrders: 9,
+      cartItems: 5,
+      unreadNotifications: 1,
+    });
+  } catch (error) {
+    console.error('Error fetching stats:', error);
+    return {
+      totalOrders: 0,
+      pendingOrders: 0,
+      completedOrders: 0,
+      cartItems: 0,
+      unreadNotifications: 0,
+    };
+  }
+}
+
+// Order Management Functions
+export async function createOrder(data: {
+  customer: string;
+  status: string;
+  notes?: string;
+  items: {
+    service: string;
+    field_values: Record<string, any>;
+    needs_documentation?: boolean;
+  }[];
+}) {
+  try {
+    return await fetchJson<any>('/v1/orders/create/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  } catch (error) {
+    console.error('Error creating order:', error);
+    throw error;
+  }
+}
+
+export async function getOrderById(orderId: string) {
+  try {
+    return await fetchJson<any>(`/v1/orders/${orderId}/`);
+  } catch (error) {
+    console.error('Error fetching order:', error);
+    throw error;
+  }
+}
+
+export async function updateOrderStatus(orderId: string, status: string) {
+  try {
+    return await fetchJson<any>(`/v1/orders/${orderId}/`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  } catch (error) {
+    console.error('Error updating order status:', error);
+    throw error;
+  }
+}
+
+// Quote Management Functions
+export async function createQuote(data: {
+  order_item: string;
+  contractor: string;
+  price: number;
+  documentation_price?: number;
+  delivery_days: number;
+  documentation_days?: number;
+  notes?: string;
+}) {
+  try {
+    return await fetchJson<any>('/v1/quotes/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  } catch (error) {
+    console.error('Error creating quote:', error);
+    throw error;
+  }
+}
+
+export async function getQuotesByOrder(orderId: string) {
+  try {
+    return await fetchJson<any[]>(`/v1/quotes/?order_item__order=${orderId}`);
+  } catch (error) {
+    console.error('Error fetching quotes:', error);
+    return [];
+  }
+}
+
+export async function acceptQuote(quoteId: string) {
+  try {
+    return await fetchJson<any>(`/v1/quotes/${quoteId}/`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status: 'accepted' }),
+    });
+  } catch (error) {
+    console.error('Error accepting quote:', error);
+    throw error;
+  }
+}
+
+// Cart Management Functions
+export async function addOrderToCart(orderId: string) {
+  try {
+    return await fetchJson<any>('/v1/cart-items/', {
+      method: 'POST',
+      body: JSON.stringify({ 
+        order: orderId,
+        service: '', // Will be filled by backend
+        field_values: {},
+        needs_documentation: false
+      }),
+    });
+  } catch (error) {
+    console.error('Error adding order to cart:', error);
+    throw error;
+  }
+}
+
+export async function removeFromCart(cartItemId: string) {
+  try {
+    return await fetchJson<any>(`/v1/cart-items/${cartItemId}/`, {
+      method: 'DELETE',
+    });
+  } catch (error) {
+    console.error('Error removing from cart:', error);
+    throw error;
+  }
+}
+
+// Payment Functions
+export async function processPayment(orderId: string, paymentData: {
+  amount: number;
+  method: string;
+  gateway_response?: any;
+}) {
+  try {
+    return await fetchJson<any>('/v1/payments/', {
+      method: 'POST',
+      body: JSON.stringify({
+        order: orderId,
+        ...paymentData
+      }),
+    });
+  } catch (error) {
+    console.error('Error processing payment:', error);
+    throw error;
+  }
+}
+
+export async function downloadInvoice(orderId: string) {
+  try {
+    const response = await fetch(`${API_ROOT}/v1/orders/${orderId}/invoice/`, {
+      headers: {
+        'Authorization': `Bearer ${getAccessToken()}`,
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to download invoice');
+    }
+    
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `invoice-${orderId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  } catch (error) {
+    console.error('Error downloading invoice:', error);
+    throw error;
+  }
+}
+
+// Notification Functions
+export async function getUserNotifications() {
+  try {
+    return await fetchJson<any[]>('/v1/notifications/');
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    return [];
+  }
+}
+
+export async function markNotificationRead(notificationId: string) {
+  try {
+    return await fetchJson<any>(`/v1/notifications/${notificationId}/read/`, {
+      method: 'PATCH',
+    });
+  } catch (error) {
+    console.error('Error marking notification as read:', error);
+    throw error;
+  }
+}
+
+export async function markAllNotificationsRead() {
+  try {
+    return await fetchJson<any>('/v1/notifications/read-all/', {
+      method: 'PATCH',
+    });
+  } catch (error) {
+    console.error('Error marking all notifications as read:', error);
+    throw error;
+  }
+}
+
+// Contractor API Functions
+export async function getContractorOrders() {
+  try {
+    return await fetchJson<any[]>('/v1/contractor/orders/');
+  } catch (error) {
+    console.error('Error fetching contractor orders:', error);
+    return [];
+  }
+}
+
+export async function getContractorProposals() {
+  try {
+    return await fetchJson<any[]>('/v1/contractor/proposals/');
+  } catch (error) {
+    console.error('Error fetching contractor proposals:', error);
+    return [];
+  }
+}
+
+export async function getContractorActiveProjects() {
+  try {
+    return await fetchJson<any[]>('/v1/contractor/active-projects/');
+  } catch (error) {
+    console.error('Error fetching contractor active projects:', error);
+    return [];
+  }
+}
+
+export async function getContractorStats() {
+  try {
+    return await fetchJson<any>('/v1/contractor/stats/');
+  } catch (error) {
+    console.error('Error fetching contractor stats:', error);
+    return {
+      total_proposals: 0,
+      accepted_proposals: 0,
+      active_projects: 0,
+      rating: 0
+    };
+  }
+}
+
+export async function createContractorProposal(proposalData: {
+  order_item: string;
+  price: number;
+  documentation_price: number;
+  delivery_days: number;
+  documentation_days: number;
+  notes?: string;
+}) {
+  try {
+    return await fetchJson<any>('/v1/contractor/proposals/create/', {
+      method: 'POST',
+      body: JSON.stringify(proposalData),
+    });
+  } catch (error) {
+    console.error('Error creating contractor proposal:', error);
+    throw error;
+  }
+}
+
+export async function getContractorWorkshops() {
+  try {
+    return await fetchJson<any[]>('/v1/contractor/workshops/');
+  } catch (error) {
+    console.error('Error fetching contractor workshops:', error);
+    return [];
+  }
+}
+
+export async function createContractorWorkshop(workshopData: {
+  name: string;
+  address: string;
+  description?: string;
+  province: string;
+  city: string;
+  postal_address: string;
+  manager_name: string;
+  manager_phone: string;
+  capabilities: string[];
+  machines: { name: string; precision: string }[];
+}) {
+  try {
+    return await fetchJson<any>('/v1/contractor/workshops/create/', {
+      method: 'POST',
+      body: JSON.stringify(workshopData),
+    });
+  } catch (error) {
+    console.error('Error creating contractor workshop:', error);
+    throw error;
+  }
+}
+
+export async function checkContractorManufacturingService() {
+  try {
+    return await fetchJson<any>('/v1/contractor/check-manufacturing/');
+  } catch (error) {
+    console.error('Error checking contractor manufacturing service:', error);
+    throw error;
+  }
+}

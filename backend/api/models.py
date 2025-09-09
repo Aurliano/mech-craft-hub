@@ -130,6 +130,7 @@ class Service(models.Model):
     description = models.TextField(blank=True)
     base_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     estimated_delivery_days = models.PositiveIntegerField(null=True, blank=True)
+    supports_documentation = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -143,8 +144,29 @@ class Service(models.Model):
         return f"{self.scope.display_name} - {self.name}"
 
 
+class ServiceTab(models.Model):
+    """Tabs for each service (e.g., نقشه جوش, نقشه انفجاری, ساخت)"""
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name='tabs')
+    name = models.CharField(max_length=100)  # "welding", "exploded", "manufacturing"
+    display_name = models.CharField(max_length=200)  # "نقشه جوش", "نقشه انفجاری", "ساخت"
+    description = models.TextField(blank=True)
+    order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'service_tabs'
+        unique_together = ('service', 'name')
+        ordering = ['order', 'name']
+    
+    def __str__(self):
+        return f"{self.service.name} - {self.display_name}"
+
+
 class ServiceField(models.Model):
-    """Dynamic fields for each service"""
+    """Dynamic fields for each service tab"""
     
     FIELD_TYPES = [
         ('text', 'متن'),
@@ -159,6 +181,7 @@ class ServiceField(models.Model):
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name='fields')
+    tab = models.ForeignKey(ServiceTab, on_delete=models.CASCADE, related_name='fields', null=True, blank=True)
     name = models.CharField(max_length=200)
     field_key = models.CharField(max_length=100)  # unique key for API
     type = models.CharField(max_length=50, choices=FIELD_TYPES)
@@ -171,10 +194,12 @@ class ServiceField(models.Model):
     class Meta:
         db_table = 'service_fields'
         unique_together = ('service', 'field_key')
-        ordering = ['order', 'name']
+        ordering = ['tab', 'order', 'name']
     
     def __str__(self):
-        return f"{self.service.name} - {self.name}"
+        tab_name = self.tab.display_name if self.tab else "بدون تب"
+        return f"{self.service.name} - {tab_name} - {self.name}"
+
 
 
 class ContractorService(models.Model):
@@ -205,6 +230,15 @@ class Workshop(models.Model):
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='workshops')
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    # New fields for workshop details
+    province = models.CharField(max_length=100, blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    postal_address = models.TextField(blank=True)
+    manager_name = models.CharField(max_length=200, blank=True)
+    manager_phone = models.CharField(max_length=20, blank=True)
+    capabilities = models.JSONField(default=list, blank=True)  # List of manufacturing processes
+    machines = models.JSONField(default=list, blank=True)  # List of machines with precision
     
     class Meta:
         db_table = 'workshops'
@@ -282,6 +316,7 @@ class Order(models.Model):
     status = models.CharField(max_length=50, choices=ORDER_STATUS, default='draft')
     total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     notes = models.TextField(blank=True)
+    documentation_options = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -577,3 +612,76 @@ class Review(models.Model):
     
     def __str__(self):
         return f"{self.customer.username} → {self.contractor.username} ({self.rating}⭐)"
+
+
+class PasswordResetToken(models.Model):
+    """Password reset tokens"""
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='password_reset_tokens')
+    token = models.CharField(max_length=100, unique=True)
+    is_used = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    
+    class Meta:
+        db_table = 'password_reset_tokens'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Password reset for {self.user.username}"
+    
+    def is_expired(self):
+        return timezone.now() > self.expires_at
+
+
+class PhoneVerificationCode(models.Model):
+    """Phone verification codes"""
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='phone_verification_codes', null=True, blank=True)
+    phone = models.CharField(max_length=17)
+    code = models.CharField(max_length=6)
+    is_used = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    
+    class Meta:
+        db_table = 'phone_verification_codes'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"Verification code for {self.phone}"
+    
+    def is_expired(self):
+        return timezone.now() > self.expires_at
+
+
+class Notification(models.Model):
+    """User notifications"""
+    
+    NOTIFICATION_TYPES = [
+        ('order_status', 'تغییر وضعیت سفارش'),
+        ('quote_received', 'دریافت پیشنهاد'),
+        ('quote_accepted', 'تایید پیشنهاد'),
+        ('payment_completed', 'تکمیل پرداخت'),
+        ('order_completed', 'تکمیل سفارش'),
+        ('system', 'سیستم'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    type = models.CharField(max_length=50, choices=NOTIFICATION_TYPES)
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    related_order = models.ForeignKey(Order, on_delete=models.CASCADE, null=True, blank=True, related_name='notifications')
+    related_quote = models.ForeignKey(Quote, on_delete=models.CASCADE, null=True, blank=True, related_name='notifications')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'notifications'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.title}"

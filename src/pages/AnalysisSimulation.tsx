@@ -10,7 +10,11 @@ import { Upload, FileText, Calculator, BarChart3, Zap, Code } from "lucide-react
 import { Link, useSearchParams } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import { useToast } from "@/hooks/use-toast";
+import SubmitButton from "@/components/SubmitButton";
+import { useServiceOrder } from "@/hooks/useServiceOrder";
+import { useAuth } from "@/contexts/AuthContext";
+import { DynamicServiceForm } from "@/components/DynamicServiceForm";
+import LoginPrompt from "@/components/LoginPrompt";
 import comsolLogo from "@/assets/comsol.jpg";
 import adamsLogo from "@/assets/adams.png";
 import abaqusLogo from "@/assets/abaqus.png";
@@ -20,9 +24,21 @@ const AnalysisSimulation = () => {
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState("static");
   
-  // Mock authentication state - this should come from your auth context/state management
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const { toast } = useToast();
+  // Use real authentication state
+  const { isAuthenticated } = useAuth();
+  
+  // Use service order hook
+  const {
+    formData,
+    needsDocumentation,
+    notes,
+    updateField,
+    setNeedsDocumentation,
+    setNotes,
+    handleSubmit,
+    isSubmitting,
+    error
+  } = useServiceOrder('550e8400-e29b-41d4-a716-446655440001');
 
   // Lazy loading states for software logos
   const [comsolLoaded, setComsolLoaded] = useState(false);
@@ -38,54 +54,21 @@ const AnalysisSimulation = () => {
     }
   }, [searchParams]);
   
-  const [formData, setFormData] = useState({
-    description: "",
-    software: "",
-    file: null as File | null,
-  });
+  const [file, setFile] = useState<File | null>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setFormData(prev => ({ ...prev, file: e.target.files![0] }));
+      setFile(e.target.files[0]);
+      updateField('file', e.target.files[0]);
     }
   };
 
-  const handleSubmit = (tabType: string) => {
-    // Check required fields
-    if (!formData.description.trim()) {
-      toast({
-        title: "خطا",
-        description: "لطفاً توضیحات تفصیلی را وارد کنید.",
-        variant: "destructive",
-      });
-      return;
+  const handleFormSubmit = async (tabType: string) => {
+    try {
+      await handleSubmit();
+    } catch (error) {
+      console.error('Error submitting order:', error);
     }
-
-    // Check software selection for static analysis
-    if (tabType === "static" && !formData.software) {
-      toast({
-        title: "خطا", 
-        description: "لطفاً نرم‌افزار مورد نظر را انتخاب کنید.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Generate random order number
-    const orderNumber = Math.floor(Math.random() * 10000) + 1000;
-    
-    // Show success message
-    toast({
-      title: "ثبت سفارش موفق",
-      description: `سفارش شما با شماره ${orderNumber} ثبت گردید و در انتظار تایید مهندسین می‌باشد. برای پیگیری وضعیت سفارش به صفحه سفارشات مراجعه نمایید.`,
-    });
-
-    // Reset form
-    setFormData({
-      description: "",
-      software: "",
-      file: null,
-    });
   };
 
   const ServiceIntro = () => (
@@ -136,22 +119,6 @@ const AnalysisSimulation = () => {
     </section>
   );
 
-  const LoginPrompt = () => (
-    <div className="text-center py-12">
-      <div className="p-6 bg-muted/30 rounded-lg max-w-md mx-auto">
-        <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-        <h3 className="text-lg font-semibold mb-2">برای ثبت سفارش وارد شوید</h3>
-        <p className="text-muted-foreground mb-6">
-          برای دسترسی به فرم سفارش تحلیل و شبیه‌سازی، لطفاً وارد حساب کاربری خود شوید.
-        </p>
-        <Link to="/login">
-          <Button className="w-full">
-            ورود به حساب کاربری
-          </Button>
-        </Link>
-      </div>
-    </div>
-  );
 
   const AnalysisForm = ({ 
     title, 
@@ -170,95 +137,30 @@ const AnalysisSimulation = () => {
         <p className="text-muted-foreground">{description}</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Text Input Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              شرح پروژه
-            </CardTitle>
-            <CardDescription>
-              لطفاً جزئیات پروژه خود را بنویسید
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="description">توضیحات تفصیلی</Label>
-                <Textarea
-                  id="description"
-                  placeholder="لطفاً شرح کاملی از پروژه و نیازهای خود ارائه دهید..."
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  className="min-h-32"
-                />
-              </div>
-              
-              {showSoftwareSelect && (
-                <div>
-                  <Label htmlFor="software">نرم‌افزار مورد نظر</Label>
-                  <Select value={formData.software} onValueChange={(value) => setFormData(prev => ({ ...prev, software: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="انتخاب نرم‌افزار" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="abaqus">ABAQUS</SelectItem>
-                      <SelectItem value="comsol">COMSOL</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
 
-        {/* File Upload Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Upload className="h-5 w-5" />
-              بارگذاری فایل
-            </CardTitle>
-            <CardDescription>
-              فایل‌های مربوط به پروژه را آپلود کنید
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="file">فایل پروژه</Label>
-                <Input
-                  id="file"
-                  type="file"
-                  onChange={handleFileChange}
-                  accept=".pdf,.doc,.docx,.dwg,.step,.iges,.zip,.rar"
-                  className="cursor-pointer"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  فرمت‌های مجاز: PDF, DOC, DOCX, DWG, STEP, IGES, ZIP, RAR
-                </p>
-              </div>
-              
-              {formData.file && (
-                <div className="p-3 bg-muted/30 rounded-md">
-                  <p className="text-sm font-medium">فایل انتخاب شده:</p>
-                  <p className="text-sm text-muted-foreground">{formData.file.name}</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <DynamicServiceForm
+        serviceId="550e8400-e29b-41d4-a716-446655440001"
+        formData={formData}
+        onFieldChange={updateField}
+        needsDocumentation={needsDocumentation}
+        onNeedsDocumentationChange={setNeedsDocumentation}
+        notes={notes}
+        onNotesChange={setNotes}
+      />
 
-      <div className="text-center">
-        <Button 
-          onClick={() => handleSubmit(tabType)}
+      <div className="text-center mt-6">
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-md">
+            {error}
+          </div>
+        )}
+        <SubmitButton 
+          onClick={() => handleFormSubmit(tabType)}
+          isLoading={isSubmitting}
+          text={`ثبت سفارش ${title}`}
           size="lg"
           className="w-full md:w-auto"
-        >
-          ثبت سفارش {title}
-        </Button>
+        />
       </div>
     </div>
   );
@@ -349,19 +251,6 @@ const AnalysisSimulation = () => {
         </div>
       </div>
 
-      {/* Test Login Button */}
-      <div className="text-center py-4 bg-muted/20">
-        <Button 
-          variant="outline" 
-          onClick={() => setIsAuthenticated(!isAuthenticated)}
-          className="mb-4"
-        >
-          {isAuthenticated ? "خروج از حساب (تست)" : "ورود به حساب (تست)"}
-        </Button>
-        <p className="text-sm text-muted-foreground">
-          وضعیت فعلی: {isAuthenticated ? "وارد شده" : "وارد نشده"}
-        </p>
-      </div>
 
       <section className="py-16">
         <div className="max-w-6xl mx-auto px-4">
@@ -387,7 +276,11 @@ const AnalysisSimulation = () => {
                   tabType="static"
                 />
               ) : (
-                <LoginPrompt />
+                <LoginPrompt 
+                  title="برای ثبت سفارش وارد شوید"
+                  description="برای دسترسی به فرم سفارش تحلیل و شبیه‌سازی، لطفاً وارد حساب کاربری خود شوید."
+                  icon={<FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />}
+                />
               )}
             </TabsContent>
 
@@ -399,7 +292,11 @@ const AnalysisSimulation = () => {
                   tabType="dynamic"
                 />
               ) : (
-                <LoginPrompt />
+                <LoginPrompt 
+                  title="برای ثبت سفارش وارد شوید"
+                  description="برای دسترسی به فرم سفارش تحلیل و شبیه‌سازی، لطفاً وارد حساب کاربری خود شوید."
+                  icon={<FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />}
+                />
               )}
             </TabsContent>
 
@@ -411,7 +308,11 @@ const AnalysisSimulation = () => {
                   tabType="coding"
                 />
               ) : (
-                <LoginPrompt />
+                <LoginPrompt 
+                  title="برای ثبت سفارش وارد شوید"
+                  description="برای دسترسی به فرم سفارش تحلیل و شبیه‌سازی، لطفاً وارد حساب کاربری خود شوید."
+                  icon={<FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />}
+                />
               )}
             </TabsContent>
           </Tabs>
