@@ -6,7 +6,7 @@ from .views import (
     CartViewSet, CartItemViewSet,
     OrderViewSet, OrderItemViewSet, QuoteViewSet,
     TicketViewSet, TicketMessageViewSet, ReviewViewSet,
-    register, me, UserViewSet, UploadView,
+    register, login, me, UserViewSet, UploadView,
     password_reset_request, password_reset_confirm, phone_verification_request,
     phone_verification_confirm, change_password,
     # New order management endpoints
@@ -20,6 +20,8 @@ from .views import (
     get_contractor_orders, get_contractor_proposals, get_contractor_active_projects,
     get_contractor_stats, create_contractor_proposal, get_contractor_workshops,
     create_contractor_workshop, check_contractor_manufacturing_service,
+    # hCaptcha endpoints
+    captcha_fallback_status, captcha_fallback_verify, hcaptcha_stats, hcaptcha_attempts,
 )
 
 router = DefaultRouter()
@@ -42,6 +44,7 @@ urlpatterns = [
     path('version/', version_info, name='version_info'),
     path('status/', api_status, name='api_status'),
     path('v1/auth/register/', register, name='register'),
+    path('v1/auth/login/', login, name='login'),
     path('v1/auth/me/', me, name='me'),
     path('v1/auth/password-reset-request/', password_reset_request, name='password_reset_request'),
     path('v1/auth/password-reset-confirm/', password_reset_confirm, name='password_reset_confirm'),
@@ -86,6 +89,14 @@ urlpatterns = [
     path('v1/contractor/workshops/', get_contractor_workshops, name='get_contractor_workshops'),
     path('v1/contractor/workshops/create/', create_contractor_workshop, name='create_contractor_workshop'),
     path('v1/contractor/check-manufacturing/', check_contractor_manufacturing_service, name='check_contractor_manufacturing_service'),
+    
+    # hCaptcha Fallback Endpoints
+    path('v1/captcha/fallback/', captcha_fallback_status, name='captcha_fallback_status'),
+    path('v1/captcha/fallback/verify/', captcha_fallback_verify, name='captcha_fallback_verify'),
+    
+    # hCaptcha Admin Endpoints
+    path('v1/admin/hcaptcha/stats/', hcaptcha_stats, name='hcaptcha_stats'),
+    path('v1/admin/hcaptcha/attempts/', hcaptcha_attempts, name='hcaptcha_attempts'),
     
     # Aliases for requested endpoints
     path('v1/categories/', ScopeViewSet.as_view({'get': 'list'}), name='categories'),

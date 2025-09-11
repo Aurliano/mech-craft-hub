@@ -35,6 +35,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import LoginPrompt from "@/components/LoginPrompt";
 import { DynamicServiceForm } from "@/components/DynamicServiceForm";
 import { useContractorWorkshops } from "@/hooks/useAuth";
+import TermsAndConditions from "@/components/TermsAndConditions";
 
 // Mock data for workshops
 const workshops = [
@@ -94,6 +95,7 @@ const Manufacturing = () => {
   const orderRef = useRef<HTMLDivElement>(null);
   const [selectedWorkshopId, setSelectedWorkshopId] = useState<string>("");
   const [files, setFiles] = useState<File[]>([]);
+  const [acceptTerms, setAcceptTerms] = useState(false);
   
   // Get workshops from API
   const { data: apiWorkshops, isLoading: isLoadingWorkshops } = useContractorWorkshops();
@@ -113,6 +115,12 @@ const Manufacturing = () => {
     error
   } = useServiceOrder('550e8400-e29b-41d4-a716-446655440003');
 
+  // Check if any documentation option is selected
+  const hasAnyDocumentationSelected = () => {
+    const options = documentationOptions;
+    return Object.values(options).some(value => value === true);
+  };
+
   // Use API workshops if available, otherwise fallback to mock data
   const displayWorkshops = apiWorkshops && apiWorkshops.length > 0 ? apiWorkshops : workshops;
 
@@ -127,6 +135,11 @@ const Manufacturing = () => {
   const handleFormSubmit = async () => {
     if (!selectedWorkshopId || files.length === 0 || !formData.description?.trim()) {
       alert("لطفاً کارگاه، فایل‌ها و توضیحات را تکمیل کنید.");
+      return;
+    }
+
+    if (!acceptTerms) {
+      alert("لطفا قوانین و شرایط را بپذیرید");
       return;
     }
     
@@ -362,7 +375,7 @@ const Manufacturing = () => {
             />
 
             {/* Documentation Options */}
-            {needsDocumentation && (
+            {hasAnyDocumentationSelected() && (
               <Card className="mt-6">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -567,6 +580,15 @@ const Manufacturing = () => {
                 </CardContent>
               </Card>
             )}
+
+            {/* Terms and Conditions */}
+            <div className="mt-6">
+              <TermsAndConditions
+                checked={acceptTerms}
+                onCheckedChange={setAcceptTerms}
+                error={!acceptTerms && formData.description ? "لطفا قوانین و شرایط را بپذیرید" : undefined}
+              />
+            </div>
 
               {error && (
                 <div className="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-md">

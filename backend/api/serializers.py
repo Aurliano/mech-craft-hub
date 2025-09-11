@@ -2,7 +2,8 @@ from rest_framework import serializers
 from .models import (
     User, Role, UserRole, Scope, Service, ServiceField, ServiceTab,
     Cart, CartItem, Order, OrderItem, Quote, Workshop,
-    Ticket, TicketMessage, Review, PasswordResetToken, PhoneVerificationCode, Notification
+    Ticket, TicketMessage, Review, PasswordResetToken, PhoneVerificationCode, Notification,
+    HCaptchaAttempt
 )
 
 
@@ -130,18 +131,190 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
+    hcaptcha_token = serializers.CharField(write_only=True, required=True)
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'phone', 'password']
+        fields = ['id', 'username', 'email', 'phone', 'password', 'hcaptcha_token']
         read_only_fields = ['id']
 
+    def validate_hcaptcha_token(self, value):
+        """Validate hCaptcha token"""
+        from .utils.hcaptcha import verify_hcaptcha_token_sync, HCaptchaError
+        from django.conf import settings
+        
+        if not value:
+            raise serializers.ValidationError("hCaptcha token is required")
+        
+        # Skip validation if no secret is configured (development mode)
+        if not getattr(settings, 'HCAPTCHA_SECRET', None):
+            return value
+        
+        try:
+            # Get client IP from request context
+            request = self.context.get('request')
+            remote_ip = None
+            if request:
+                remote_ip = request.META.get('REMOTE_ADDR')
+                # Handle X-Forwarded-For header
+                x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+                if x_forwarded_for:
+                    remote_ip = x_forwarded_for.split(',')[0].strip()
+            
+            success, response_data = verify_hcaptcha_token_sync(value, remote_ip)
+            
+            if not success:
+                error_codes = response_data.get('error-codes', [])
+                error_message = f"hCaptcha verification failed: {', '.join(error_codes)}"
+                raise serializers.ValidationError(error_message)
+            
+            # Store the token for later use in create method
+            self._hcaptcha_response = response_data
+            return value
+            
+        except HCaptchaError as e:
+            raise serializers.ValidationError(f"hCaptcha verification error: {str(e)}")
+        except Exception as e:
+            raise serializers.ValidationError(f"hCaptcha verification failed: {str(e)}")
+
     def create(self, validated_data):
+        from .utils.hcaptcha import log_hcaptcha_attempt
+        import hashlib
+        
+        hcaptcha_token = validated_data.pop('hcaptcha_token')
         password = validated_data.pop('password')
+        
+        # Get request context for logging
+        request = self.context.get('request')
+        remote_ip = None
+        user_agent = None
+        if request:
+            remote_ip = request.META.get('REMOTE_ADDR')
+            user_agent = request.META.get('HTTP_USER_AGENT')
+            # Handle X-Forwarded-For header
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+            if x_forwarded_for:
+                remote_ip = x_forwarded_for.split(',')[0].strip()
+        
+        # Create user
         user = User(**validated_data)
         user.set_password(password)
         user.save()
+        
+        # Log successful hCaptcha attempt
+        token_hash = hashlib.sha256(hcaptcha_token.encode('utf-8')).hexdigest()
+        # Log successful hCaptcha attempt
+        log_hcaptcha_attempt(
+            ip=remote_ip,
+            user=user,
+            endpoint='/api/v1/auth/register/',
+            success=True,
+            response_data=getattr(self, '_hcaptcha_response', None),
+            token_hash=token_hash,
+            user_agent=user_agent
+        )
+        
         return user
+
+
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()
+    hcaptcha_token = serializers.CharField(required=True)
+
+    def validate_hcaptcha_token(self, value):
+        """Validate hCaptcha token"""
+        from .utils.hcaptcha import verify_hcaptcha_token_sync, HCaptchaError
+        from django.conf import settings
+        
+        if not value:
+            raise serializers.ValidationError("hCaptcha token is required")
+        
+        # Skip validation if no secret is configured (development mode)
+        if not getattr(settings, 'HCAPTCHA_SECRET', None):
+            return value
+        
+        try:
+            # Get client IP from request context
+            request = self.context.get('request')
+            remote_ip = None
+            if request:
+                remote_ip = request.META.get('REMOTE_ADDR')
+                # Handle X-Forwarded-For header
+                x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+                if x_forwarded_for:
+                    remote_ip = x_forwarded_for.split(',')[0].strip()
+            
+            success, response_data = verify_hcaptcha_token_sync(value, remote_ip)
+            
+            if not success:
+                error_codes = response_data.get('error-codes', [])
+                error_message = f"hCaptcha verification failed: {', '.join(error_codes)}"
+                raise serializers.ValidationError(error_message)
+            
+            # Store the token for later use
+            self._hcaptcha_response = response_data
+            return value
+            
+        except HCaptchaError as e:
+            raise serializers.ValidationError(f"hCaptcha verification error: {str(e)}")
+        except Exception as e:
+            raise serializers.ValidationError(f"hCaptcha verification failed: {str(e)}")
+
+    def validate(self, attrs):
+        from django.contrib.auth import authenticate
+        from .utils.hcaptcha import log_hcaptcha_attempt
+        import hashlib
+        
+        username = attrs.get('username')
+        password = attrs.get('password')
+        hcaptcha_token = attrs.get('hcaptcha_token')
+        
+        # Get request context for logging
+        request = self.context.get('request')
+        remote_ip = None
+        user_agent = None
+        if request:
+            remote_ip = request.META.get('REMOTE_ADDR')
+            user_agent = request.META.get('HTTP_USER_AGENT')
+            # Handle X-Forwarded-For header
+            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+            if x_forwarded_for:
+                remote_ip = x_forwarded_for.split(',')[0].strip()
+        
+        # Authenticate user
+        user = authenticate(username=username, password=password)
+        if not user:
+            # Log failed hCaptcha attempt
+            token_hash = hashlib.sha256(hcaptcha_token.encode('utf-8')).hexdigest()
+            # Log failed hCaptcha attempt
+            log_hcaptcha_attempt(
+                ip=remote_ip,
+                user=None,
+                endpoint='/api/v1/auth/login/',
+                success=False,
+                response_data=getattr(self, '_hcaptcha_response', None),
+                token_hash=token_hash,
+                user_agent=user_agent,
+                error_message="Authentication failed"
+            )
+            
+            raise serializers.ValidationError("Invalid credentials")
+        
+        # Log successful hCaptcha attempt
+        token_hash = hashlib.sha256(hcaptcha_token.encode('utf-8')).hexdigest()
+        log_hcaptcha_attempt(
+            ip=remote_ip,
+            user=user,
+            endpoint='/api/v1/auth/login/',
+            success=True,
+            response_data=getattr(self, '_hcaptcha_response', None),
+            token_hash=token_hash,
+            user_agent=user_agent
+        )
+        
+        attrs['user'] = user
+        return attrs
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):

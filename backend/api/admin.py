@@ -5,7 +5,8 @@ from .models import (
     ContractorService, Workshop, WorkshopService, Cart, CartItem,
     Order, OrderItem, Quote, OrderStatusLog, Payment,
     TicketCategory, Ticket, TicketParticipant, TicketMessage, TicketAttachment,
-    MediaFile, Review, PasswordResetToken, PhoneVerificationCode, Notification
+    MediaFile, Review, PasswordResetToken, PhoneVerificationCode, Notification,
+    HCaptchaAttempt
 )
 
 
@@ -248,3 +249,30 @@ class NotificationAdmin(admin.ModelAdmin):
     search_fields = ('user__username', 'title', 'message')
     raw_id_fields = ('user', 'related_order', 'related_quote')
     readonly_fields = ('created_at',)
+
+
+@admin.register(HCaptchaAttempt)
+class HCaptchaAttemptAdmin(admin.ModelAdmin):
+    list_display = ('id', 'ip', 'user', 'endpoint', 'success', 'created_at', 'token_hash_short')
+    list_filter = ('success', 'endpoint', 'created_at', 'user')
+    search_fields = ('ip', 'user__username', 'endpoint', 'token_hash', 'error_message')
+    raw_id_fields = ('user',)
+    readonly_fields = ('created_at', 'token_hash', 'response_raw')
+    ordering = ('-created_at',)
+    
+    def token_hash_short(self, obj):
+        """Display first 8 characters of token hash for admin interface"""
+        return f"{obj.token_hash[:8]}..." if obj.token_hash else "N/A"
+    token_hash_short.short_description = "Token Hash"
+    
+    def get_queryset(self, request):
+        """Optimize queryset for admin interface"""
+        return super().get_queryset(request).select_related('user')
+    
+    def has_add_permission(self, request):
+        """Prevent manual creation of hCaptcha attempts"""
+        return False
+    
+    def has_change_permission(self, request, obj=None):
+        """Prevent editing of hCaptcha attempts"""
+        return False

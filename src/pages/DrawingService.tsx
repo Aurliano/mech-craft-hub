@@ -96,8 +96,8 @@ const DrawingService = () => {
                 {
                   id: '1',
                   name: 'technical_drawing',
-                  display_name: 'نقشه فنی',
-                  description: 'نقشه‌های فنی و مهندسی',
+                  display_name: 'نقشه ساخت',
+                  description: 'نقشه‌های ساخت (قطعات)',
                   order: 1,
                   is_active: true,
                   fields: []
@@ -105,7 +105,7 @@ const DrawingService = () => {
                 {
                   id: '2',
                   name: 'assembly_drawing',
-                  display_name: 'نقشه مونتاژ',
+                  display_name: 'نقشه انفجاری',
                   description: 'نقشه‌های مونتاژ و انفجاری',
                   order: 2,
                   is_active: true,
@@ -114,7 +114,7 @@ const DrawingService = () => {
                 {
                   id: '3',
                   name: 'welding_drawing',
-                  display_name: 'نقشه جوش',
+                  display_name: 'نقشه جوشکاری',
                   description: 'نقشه‌های جوشکاری',
                   order: 3,
                   is_active: true,

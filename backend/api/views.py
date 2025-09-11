@@ -1,4 +1,4 @@
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.response import Response
 from rest_framework import viewsets, permissions, status, filters
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
@@ -17,7 +17,8 @@ from .models import (
 from .pagination import StandardResultsSetPagination, LargeResultsSetPagination, SmallResultsSetPagination
 from .throttling import (
     CustomUserRateThrottle, CustomAnonRateThrottle, BurstRateThrottle,
-    SustainedRateThrottle, UploadRateThrottle, LoginRateThrottle, APIRateThrottle
+    SustainedRateThrottle, UploadRateThrottle, LoginRateThrottle, APIRateThrottle,
+    RegisterThrottle, LoginThrottle, HCaptchaThrottle, check_ip_abuse, increment_abuse_counter
 )
 from .exceptions import (
     ValidationException, NotFoundException, PermissionException,
@@ -27,7 +28,7 @@ from .versioning import get_version_info, version_deprecated_response
 from .serializers import (
     ScopeSerializer, ServiceSerializer, ServiceFieldSerializer, ServiceTabSerializer,
     CartSerializer, CartItemSerializer, OrderSerializer, OrderItemSerializer, QuoteSerializer,
-    TicketSerializer, TicketMessageSerializer, ReviewSerializer, RegisterSerializer, UserSerializer,
+    TicketSerializer, TicketMessageSerializer, ReviewSerializer, RegisterSerializer, LoginSerializer, UserSerializer,
     PasswordResetRequestSerializer, PasswordResetConfirmSerializer, PhoneVerificationRequestSerializer,
     PhoneVerificationConfirmSerializer, ChangePasswordSerializer,
     CreateOrderSerializer, OrderStatusUpdateSerializer, CreateQuoteSerializer,
@@ -41,6 +42,10 @@ from django.core.mail import send_mail
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from uuid import uuid4
+from .utils.hcaptcha import (
+    verify_hcaptcha_token_sync, log_hcaptcha_attempt, check_fallback_available,
+    get_fallback_captcha_data, verify_fallback_captcha, get_hcaptcha_stats
+)
 
 
 # Custom Filters
@@ -128,13 +133,37 @@ def api_status(request):
 
 @api_view(["POST"]) 
 @permission_classes([AllowAny])
+@throttle_classes([RegisterThrottle])
 def register(request):
-    # Apply rate limiting for registration
-    throttle_classes = [LoginRateThrottle]
-    serializer = RegisterSerializer(data=request.data)
+    """User registration with hCaptcha validation"""
+    serializer = RegisterSerializer(data=request.data, context={'request': request})
     serializer.is_valid(raise_exception=True)
     user = serializer.save()
     return Response(UserSerializer(user).data, status=201)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+@throttle_classes([LoginThrottle])
+def login(request):
+    """Login with hCaptcha validation"""
+    from rest_framework_simplejwt.tokens import RefreshToken
+    
+    serializer = LoginSerializer(data=request.data, context={'request': request})
+    serializer.is_valid(raise_exception=True)
+    
+    user = serializer.validated_data['user']
+    
+    # Generate JWT tokens
+    refresh = RefreshToken.for_user(user)
+    access_token = str(refresh.access_token)
+    refresh_token = str(refresh)
+    
+    return Response({
+        'access': access_token,
+        'refresh': refresh_token,
+        'user': UserSerializer(user).data
+    })
 
 
 @api_view(["GET"]) 
@@ -187,13 +216,13 @@ class ServiceFieldViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class CartViewSet(viewsets.ModelViewSet):
-    queryset = Cart.objects.select_related('customer').all()
+    queryset = Cart.objects.select_related('customer').all().order_by('-created_at')
     serializer_class = CartSerializer
     permission_classes = [permissions.IsAuthenticated]
 
 
 class CartItemViewSet(viewsets.ModelViewSet):
-    queryset = CartItem.objects.select_related('cart', 'service').all()
+    queryset = CartItem.objects.select_related('cart', 'service').all().order_by('-added_at')
     serializer_class = CartItemSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -1059,3 +1088,100 @@ def check_contractor_manufacturing_service(request):
             'error': True,
             'message': 'سرویس ساخت و تولید یافت نشد'
         }, status=status.HTTP_404_NOT_FOUND)
+
+
+# hCaptcha Fallback System
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def captcha_fallback_status(request):
+    """Check if fallback captcha is available"""
+    from .utils.hcaptcha import check_fallback_available, get_fallback_captcha_data
+    
+    if check_fallback_available():
+        captcha_data = get_fallback_captcha_data()
+        return Response(captcha_data)
+    else:
+        return Response({"available": False})
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def captcha_fallback_verify(request):
+    """Verify fallback captcha answer"""
+    from .utils.hcaptcha import verify_fallback_captcha
+    
+    challenge_id = request.data.get('challenge_id')
+    answer = request.data.get('answer')
+    
+    if not challenge_id or not answer:
+        return Response(
+            {"error": "challenge_id and answer are required"}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    is_valid = verify_fallback_captcha(challenge_id, answer)
+    
+    if is_valid:
+        return Response({"valid": True})
+    else:
+        return Response(
+            {"valid": False, "error": "Invalid answer"}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+
+# hCaptcha Statistics and Admin
+@api_view(["GET"])
+@permission_classes([IsAdminUser])
+def hcaptcha_stats(request):
+    """Get hCaptcha statistics for admin"""
+    from .models import HCaptchaAttempt
+    from .utils.hcaptcha import get_hcaptcha_stats
+    
+    days = int(request.GET.get('days', 30))
+    stats = HCaptchaAttempt.get_stats(days)
+    system_stats = get_hcaptcha_stats()
+    
+    return Response({
+        'attempts': stats,
+        'system': system_stats
+    })
+
+
+@api_view(["GET"])
+@permission_classes([IsAdminUser])
+def hcaptcha_attempts(request):
+    """Get hCaptcha attempts for admin review"""
+    from .models import HCaptchaAttempt
+    from django.core.paginator import Paginator
+    
+    attempts = HCaptchaAttempt.objects.all().order_by('-created_at')
+    
+    # Pagination
+    page = int(request.GET.get('page', 1))
+    per_page = int(request.GET.get('per_page', 50))
+    paginator = Paginator(attempts, per_page)
+    
+    try:
+        page_obj = paginator.page(page)
+    except:
+        page_obj = paginator.page(1)
+    
+    return Response({
+        'count': paginator.count,
+        'num_pages': paginator.num_pages,
+        'current_page': page,
+        'results': [
+            {
+                'id': attempt.id,
+                'created_at': attempt.created_at,
+                'ip': attempt.ip,
+                'user': attempt.user.username if attempt.user else None,
+                'endpoint': attempt.endpoint,
+                'success': attempt.success,
+                'error_message': attempt.error_message,
+                'user_agent': attempt.user_agent
+            }
+            for attempt in page_obj.object_list
+        ]
+    })

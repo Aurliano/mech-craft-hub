@@ -3,6 +3,9 @@ import os
 import sys
 import django
 
+# Add the project directory to Python path
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 # Setup Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
@@ -10,29 +13,57 @@ django.setup()
 from api.models import Service
 
 def update_services_documentation():
-    # Update design and manufacturing services to support documentation
-    design_service_id = '550e8400-e29b-41d4-a716-446655440002'  # طراحی مکانیکی
-    manufacturing_service_id = '550e8400-e29b-41d4-a716-446655440003'  # ساخت و تولید
+    """Update services to support documentation based on service type"""
     
-    try:
-        # Update design service
-        design_service = Service.objects.get(id=design_service_id)
-        design_service.supports_documentation = True
-        design_service.save()
-        print(f"Updated design service: {design_service.name}")
-        
-        # Update manufacturing service
-        manufacturing_service = Service.objects.get(id=manufacturing_service_id)
-        manufacturing_service.supports_documentation = True
-        manufacturing_service.save()
-        print(f"Updated manufacturing service: {manufacturing_service.name}")
-        
-        print("Services updated successfully!")
-        
-    except Service.DoesNotExist as e:
-        print(f"Service not found: {e}")
-    except Exception as e:
-        print(f"Error updating services: {e}")
+    # Services that should support documentation
+    documentation_services = [
+        '550e8400-e29b-41d4-a716-446655440001',  # Analysis & Simulation
+        '550e8400-e29b-41d4-a716-446655440002',  # Design
+        '550e8400-e29b-41d4-a716-446655440003',  # Manufacturing
+    ]
+    
+    # Services that should NOT support documentation
+    no_documentation_services = [
+        '550e8400-e29b-41d4-a716-446655440004',  # Drawing
+    ]
+    
+    updated_count = 0
+    
+    # Enable documentation for specified services
+    for service_id in documentation_services:
+        try:
+            service = Service.objects.get(id=service_id)
+            if not service.supports_documentation:
+                service.supports_documentation = True
+                service.save()
+                print(f"✅ Enabled documentation for: {service.name} ({service.type})")
+                updated_count += 1
+            else:
+                print(f"ℹ️  Documentation already enabled for: {service.name} ({service.type})")
+        except Service.DoesNotExist:
+            print(f"❌ Service not found: {service_id}")
+    
+    # Disable documentation for specified services
+    for service_id in no_documentation_services:
+        try:
+            service = Service.objects.get(id=service_id)
+            if service.supports_documentation:
+                service.supports_documentation = False
+                service.save()
+                print(f"✅ Disabled documentation for: {service.name} ({service.type})")
+                updated_count += 1
+            else:
+                print(f"ℹ️  Documentation already disabled for: {service.name} ({service.type})")
+        except Service.DoesNotExist:
+            print(f"❌ Service not found: {service_id}")
+    
+    print(f"\n📊 Updated {updated_count} services")
+    
+    # Show current status
+    print("\n📋 Current service documentation status:")
+    for service in Service.objects.all():
+        status = "✅ Supports" if service.supports_documentation else "❌ No support"
+        print(f"  {service.name} ({service.type}): {status}")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     update_services_documentation()

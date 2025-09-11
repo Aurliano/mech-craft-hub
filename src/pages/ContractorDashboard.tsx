@@ -145,12 +145,12 @@ const ContractorDashboard = () => {
           {/* Header - Account Section */}
           <Card>
             <CardContent className="p-6">
-              <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center">
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
                     <User className="h-8 w-8 text-blue-600" />
                   </div>
-                  <div>
+            <div>
                     <h1 className="text-2xl font-bold text-gray-900">خوش آمدید، {user?.first_name || user?.username}</h1>
                     <p className="text-gray-600">پیمانکار</p>
                   </div>
@@ -171,8 +171,8 @@ const ContractorDashboard = () => {
                       <p className="text-sm text-gray-600">امتیاز و نظرات</p>
                     </Card>
                   </Link>
-                </div>
-              </div>
+            </div>
+          </div>
             </CardContent>
           </Card>
 
@@ -200,8 +200,8 @@ const ContractorDashboard = () => {
                 </div>
               </CardContent>
             </Card>
-            <Card>
-              <CardContent className="p-6">
+          <Card>
+            <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-600">پروژه‌های فعال</p>
@@ -234,64 +234,64 @@ const ContractorDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-col md:flex-row gap-4 mb-6">
-                    <div className="flex-1">
-                      <div className="relative">
-                        <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                        <Input
-                          placeholder="جستجو در سفارشات..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="pr-10"
-                        />
-                      </div>
-                    </div>
-                    <div className="w-full md:w-48">
-                      <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="فیلتر وضعیت" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">همه وضعیت‌ها</SelectItem>
-                          <SelectItem value="pending">در انتظار پیشنهاد</SelectItem>
-                          <SelectItem value="submitted">ارسال شده</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      placeholder="جستجو در سفارشات..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pr-10"
+                    />
                   </div>
+                </div>
+                <div className="w-full md:w-48">
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="فیلتر وضعیت" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">همه وضعیت‌ها</SelectItem>
+                      <SelectItem value="pending">در انتظار پیشنهاد</SelectItem>
+                      <SelectItem value="submitted">ارسال شده</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-                  <div className="space-y-4">
-                    {filteredOrders.map((order) => (
+              <div className="space-y-4">
+                {filteredOrders.map((order) => (
                       <Card key={order.id} className="hover:shadow-md transition-shadow">
-                        <CardContent className="p-6">
+                    <CardContent className="p-6">
                           <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-gray-900">{order.order_number}</h3>
+                        <h3 className="text-lg font-semibold text-gray-900">{order.order_number}</h3>
                             <Badge variant="outline">در انتظار پیشنهاد</Badge>
-                          </div>
+                      </div>
                           <div className="space-y-2 text-sm text-gray-600 mb-4">
-                            <div className="flex items-center gap-2">
-                              <Clock className="h-4 w-4" />
-                              <span>تاریخ: {new Date(order.created_at).toLocaleDateString('fa-IR')}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Package className="h-4 w-4" />
-                              <span>تعداد آیتم: {order.items?.length || 0}</span>
-                            </div>
-                            {order.notes && (
-                              <p className="text-gray-700 mt-2">{order.notes}</p>
-                            )}
-                          </div>
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4" />
+                          <span>تاریخ: {new Date(order.created_at).toLocaleDateString('fa-IR')}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Package className="h-4 w-4" />
+                          <span>تعداد آیتم: {order.items?.length || 0}</span>
+                        </div>
+                        {order.notes && (
+                          <p className="text-gray-700 mt-2">{order.notes}</p>
+                        )}
+                      </div>
                           <div className="flex gap-2">
-                            <Button 
-                              variant="outline" 
-                              size="sm"
+                        <Button 
+                          variant="outline" 
+                          size="sm"
                               onClick={() => {
-                                setSelectedOrder(order);
-                                setShowQuoteForm(true);
-                              }}
-                            >
-                              <DollarSign className="h-4 w-4 ml-2" />
-                              ثبت پیشنهاد
-                            </Button>
+                            setSelectedOrder(order);
+                            setShowQuoteForm(true);
+                          }}
+                        >
+                          <DollarSign className="h-4 w-4 ml-2" />
+                          ثبت پیشنهاد
+                        </Button>
                             <Button variant="ghost" size="sm">
                               <Eye className="h-4 w-4 ml-2" />
                               مشاهده جزئیات
@@ -342,11 +342,11 @@ const ContractorDashboard = () => {
                                 </Button>
                               )}
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -393,7 +393,7 @@ const ContractorDashboard = () => {
                         </CardContent>
                       </Card>
                     ))}
-                  </div>
+            </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -404,7 +404,7 @@ const ContractorDashboard = () => {
               <Card>
                 <CardHeader>
                   <div className="flex justify-between items-center">
-                    <div>
+            <div>
                       <CardTitle>کارگاه‌های من</CardTitle>
                       <CardDescription>مدیریت کارگاه‌های شما</CardDescription>
                     </div>
@@ -455,8 +455,8 @@ const ContractorDashboard = () => {
 
             {/* Notifications Tab */}
             <TabsContent value="notifications" className="space-y-6">
-              <Card>
-                <CardHeader>
+                <Card>
+                  <CardHeader>
                   <CardTitle>اعلان‌ها</CardTitle>
                   <CardDescription>آخرین اعلان‌ها و پیام‌های سیستم</CardDescription>
                 </CardHeader>
@@ -490,87 +490,87 @@ const ContractorDashboard = () => {
               <Card className="w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
                 <CardHeader>
                   <CardTitle>ثبت پیشنهاد برای سفارش {selectedOrder.order_number}</CardTitle>
-                  <CardDescription>لطفا جزئیات پیشنهاد خود را وارد کنید</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                    <CardDescription>لطفا جزئیات پیشنهاد خود را وارد کنید</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="price">قیمت (تومان)</Label>
+                        <Input
+                          id="price"
+                          type="number"
+                          value={quoteData.price}
+                          onChange={(e) => setQuoteData({...quoteData, price: e.target.value})}
+                          placeholder="قیمت پیشنهادی"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="delivery_days">زمان تحویل (روز)</Label>
+                        <Input
+                          id="delivery_days"
+                          type="number"
+                          value={quoteData.delivery_days}
+                          onChange={(e) => setQuoteData({...quoteData, delivery_days: e.target.value})}
+                          placeholder="تعداد روز"
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="documentation_price">قیمت مستندسازی (تومان)</Label>
+                        <Input
+                          id="documentation_price"
+                          type="number"
+                          value={quoteData.documentation_price}
+                          onChange={(e) => setQuoteData({...quoteData, documentation_price: e.target.value})}
+                          placeholder="قیمت مستندسازی"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="documentation_days">زمان مستندسازی (روز)</Label>
+                        <Input
+                          id="documentation_days"
+                          type="number"
+                          value={quoteData.documentation_days}
+                          onChange={(e) => setQuoteData({...quoteData, documentation_days: e.target.value})}
+                          placeholder="تعداد روز"
+                        />
+                      </div>
+                    </div>
+                    
                     <div>
-                      <Label htmlFor="price">قیمت (تومان)</Label>
-                      <Input
-                        id="price"
-                        type="number"
-                        value={quoteData.price}
-                        onChange={(e) => setQuoteData({...quoteData, price: e.target.value})}
-                        placeholder="قیمت پیشنهادی"
+                      <Label htmlFor="notes">یادداشت</Label>
+                      <Textarea
+                        id="notes"
+                        value={quoteData.notes}
+                        onChange={(e) => setQuoteData({...quoteData, notes: e.target.value})}
+                        placeholder="توضیحات اضافی..."
+                        rows={3}
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="delivery_days">زمان تحویل (روز)</Label>
-                      <Input
-                        id="delivery_days"
-                        type="number"
-                        value={quoteData.delivery_days}
-                        onChange={(e) => setQuoteData({...quoteData, delivery_days: e.target.value})}
-                        placeholder="تعداد روز"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="documentation_price">قیمت مستندسازی (تومان)</Label>
-                      <Input
-                        id="documentation_price"
-                        type="number"
-                        value={quoteData.documentation_price}
-                        onChange={(e) => setQuoteData({...quoteData, documentation_price: e.target.value})}
-                        placeholder="قیمت مستندسازی"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="documentation_days">زمان مستندسازی (روز)</Label>
-                      <Input
-                        id="documentation_days"
-                        type="number"
-                        value={quoteData.documentation_days}
-                        onChange={(e) => setQuoteData({...quoteData, documentation_days: e.target.value})}
-                        placeholder="تعداد روز"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="notes">یادداشت</Label>
-                    <Textarea
-                      id="notes"
-                      value={quoteData.notes}
-                      onChange={(e) => setQuoteData({...quoteData, notes: e.target.value})}
-                      placeholder="توضیحات اضافی..."
-                      rows={3}
-                    />
-                  </div>
-                  
-                  <div className="flex gap-2">
-                    <Button 
-                      onClick={handleCreateQuote}
+                    
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={handleCreateQuote}
                       disabled={createProposalMutation.isPending}
-                      className="flex-1"
-                    >
-                      <CheckCircle className="h-4 w-4 ml-2" />
+                        className="flex-1"
+                      >
+                        <CheckCircle className="h-4 w-4 ml-2" />
                       {createProposalMutation.isPending ? 'در حال ثبت...' : 'ثبت پیشنهاد'}
-                    </Button>
-                    <Button 
-                      variant="outline"
-                      onClick={() => {
-                        setShowQuoteForm(false);
-                        setSelectedOrder(null);
-                      }}
-                    >
-                      انصراف
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        onClick={() => {
+                          setShowQuoteForm(false);
+                          setSelectedOrder(null);
+                        }}
+                      >
+                        انصراف
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
             </div>
           )}
         </div>

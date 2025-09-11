@@ -635,3 +635,71 @@ export async function checkContractorManufacturingService() {
     throw error;
   }
 }
+
+// hCaptcha API Functions
+export async function loginWithCaptcha(params: { 
+  username: string; 
+  password: string; 
+  hcaptcha_token: string;
+}) {
+  const res = await fetch(`${API_ROOT}/v1/auth/login/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || 'Login failed');
+  }
+  return (await res.json()) as { access: string; refresh: string };
+}
+
+export async function registerWithCaptcha(params: { 
+  username: string; 
+  email: string; 
+  phone: string; 
+  password: string; 
+  hcaptcha_token: string;
+}) {
+  const res = await fetch(`${API_ROOT}/v1/auth/register/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || 'Registration failed');
+  }
+  return (await res.json()) as any;
+}
+
+// Fallback Captcha API Functions
+export async function getFallbackCaptchaStatus() {
+  try {
+    return await fetchJson<{ available: boolean }>('/v1/captcha/fallback/');
+  } catch (error) {
+    console.error('Error checking fallback captcha status:', error);
+    return { available: false };
+  }
+}
+
+export async function getFallbackCaptchaChallenge() {
+  try {
+    return await fetchJson<{ challenge_id: string; challenge: string }>('/v1/captcha/fallback/');
+  } catch (error) {
+    console.error('Error getting fallback captcha challenge:', error);
+    throw error;
+  }
+}
+
+export async function verifyFallbackCaptcha(challengeId: string, answer: string) {
+  try {
+    return await fetchJson<{ success: boolean; message?: string }>('/v1/captcha/fallback/verify/', {
+      method: 'POST',
+      body: JSON.stringify({ challenge_id: challengeId, answer }),
+    });
+  } catch (error) {
+    console.error('Error verifying fallback captcha:', error);
+    throw error;
+  }
+}

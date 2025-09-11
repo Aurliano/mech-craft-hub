@@ -9,7 +9,9 @@ import {
   markNotificationRead, markAllNotificationsRead,
   getContractorOrders, getContractorProposals, getContractorActiveProjects,
   getContractorStats, createContractorProposal, getContractorWorkshops,
-  createContractorWorkshop, checkContractorManufacturingService
+  createContractorWorkshop, checkContractorManufacturingService,
+  loginWithCaptcha, registerWithCaptcha, getFallbackCaptchaStatus, 
+  getFallbackCaptchaChallenge, verifyFallbackCaptcha
 } from '@/lib/api';
 
 export function useMe() {
@@ -375,5 +377,53 @@ export function useCheckContractorManufacturingService() {
     queryKey: ['contractor-manufacturing-service'],
     queryFn: checkContractorManufacturingService,
     staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+// hCaptcha Authentication Hooks
+export function useLoginWithCaptcha() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: loginWithCaptcha,
+    onSuccess: (data) => {
+      setTokens(data.access, data.refresh);
+      qc.invalidateQueries({ queryKey: ['me'] });
+      // Redirect to home page and refresh
+      window.location.href = '/';
+    },
+  });
+}
+
+export function useRegisterWithCaptcha() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: registerWithCaptcha,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['me'] });
+      // Redirect to home page and refresh
+      window.location.href = '/';
+    },
+  });
+}
+
+// Fallback Captcha Hooks
+export function useFallbackCaptchaStatus() {
+  return useQuery({
+    queryKey: ['fallback-captcha-status'],
+    queryFn: getFallbackCaptchaStatus,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+export function useFallbackCaptchaChallenge() {
+  return useMutation({
+    mutationFn: getFallbackCaptchaChallenge,
+  });
+}
+
+export function useVerifyFallbackCaptcha() {
+  return useMutation({
+    mutationFn: ({ challengeId, answer }: { challengeId: string; answer: string }) =>
+      verifyFallbackCaptcha(challengeId, answer),
   });
 } 

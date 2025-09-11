@@ -369,17 +369,17 @@ const Navbar = () => {
                     <>
                       {/* Shopping Cart - Only for customers */}
                       {isCustomer && (
-                        <Button variant="outline" size="sm" className="w-full flex items-center justify-center gap-2" asChild>
-                          <Link to="/cart" onClick={() => setIsOpen(false)}>
-                            <ShoppingCart className="h-4 w-4" />
-                            <span>سبد خرید</span>
-                            {cartItemsCount > 0 && (
-                              <span className="bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                                {cartItemsCount}
-                              </span>
-                            )}
-                          </Link>
-                        </Button>
+                      <Button variant="outline" size="sm" className="w-full flex items-center justify-center gap-2" asChild>
+                        <Link to="/cart" onClick={() => setIsOpen(false)}>
+                          <ShoppingCart className="h-4 w-4" />
+                          <span>سبد خرید</span>
+                          {cartItemsCount > 0 && (
+                            <span className="bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                              {cartItemsCount}
+                            </span>
+                          )}
+                        </Link>
+                      </Button>
                       )}
 
                       {/* User Account Menu */}
@@ -387,7 +387,7 @@ const Navbar = () => {
                         <div className="flex items-center gap-2 pb-2 border-b border-border">
                           <User className="h-4 w-4" />
                           <div className="flex flex-col">
-                            <span className="font-medium text-sm">{userName}</span>
+                          <span className="font-medium text-sm">{userName}</span>
                             <span className="text-xs text-muted-foreground">
                               {isContractor ? 'پیمانکار' : isCustomer ? 'مشتری' : 'کاربر'}
                             </span>
@@ -416,8 +416,8 @@ const Navbar = () => {
                         
                         <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
                           <Link to="/support" onClick={() => setIsOpen(false)}>
-                            <HelpCircle className="mr-2 h-4 w-4" />
-                            پشتیبانی
+                          <HelpCircle className="mr-2 h-4 w-4" />
+                          پشتیبانی
                           </Link>
                         </Button>
                         
@@ -463,24 +463,24 @@ const Navbar = () => {
                                 <Settings className="mr-2 h-4 w-4" />
                                 پروژه‌های فعال
                               </Link>
-                            </Button>
+                        </Button>
                           </>
                         )}
                         
                         <div className="pt-2 border-t border-border">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="w-full justify-start text-destructive hover:text-destructive"
-                            title="خروج از حساب"
-                            onClick={() => {
-                              logout();
-                              setIsOpen(false);
-                            }}
-                          >
-                            <LogOut className="mr-2 h-4 w-4" />
-                            خروج از حساب
-                          </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="w-full justify-start text-destructive hover:text-destructive"
+                          title="خروج از حساب"
+                          onClick={() => {
+                            logout();
+                            setIsOpen(false);
+                          }}
+                        >
+                          <LogOut className="mr-2 h-4 w-4" />
+                          خروج از حساب
+                        </Button>
                         </div>
                       </div>
                     </>

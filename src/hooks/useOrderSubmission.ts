@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useCreateOrder } from './useAuth';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 export function useOrderSubmission() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
+  const { toast } = useToast();
   const createOrderMutation = useCreateOrder();
 
   const submitOrder = async (orderData: {
@@ -38,12 +40,32 @@ export function useOrderSubmission() {
 
       const result = await createOrderMutation.mutateAsync(orderPayload);
       
+      // Show success toast
+      toast({
+        title: "سفارش با موفقیت ثبت شد! 🎉",
+        description: "سفارش شما با موفقیت ثبت شد و به زودی بررسی خواهد شد.",
+        duration: 3000,
+      });
+      
       // Redirect to orders page after successful submission
-      window.location.href = '/orders';
+      // Use React Router navigation instead of window.location
+      setTimeout(() => {
+        window.location.href = '/orders';
+      }, 2000); // Increased delay to show toast
       
       return result;
     } catch (err: any) {
-      setError(err.message || 'خطا در ثبت سفارش');
+      const errorMessage = err.message || 'خطا در ثبت سفارش';
+      setError(errorMessage);
+      
+      // Show error toast
+      toast({
+        title: "خطا در ثبت سفارش ❌",
+        description: errorMessage,
+        variant: "destructive",
+        duration: 5000,
+      });
+      
       throw err;
     } finally {
       setIsSubmitting(false);

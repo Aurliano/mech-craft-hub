@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from django.utils import timezone
+from django.conf import settings
 import uuid
 
 
@@ -685,3 +686,109 @@ class Notification(models.Model):
     
     def __str__(self):
         return f"{self.user.username} - {self.title}"
+
+
+class HCaptchaAttempt(models.Model):
+    """Audit trail for hCaptcha verification attempts"""
+    
+    id = models.BigAutoField(primary_key=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    ip = models.GenericIPAddressField(null=True, blank=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        null=True, 
+        blank=True, 
+        on_delete=models.SET_NULL,
+        related_name='hcaptcha_attempts'
+    )
+    endpoint = models.CharField(max_length=255)
+    success = models.BooleanField()
+    response_raw = models.JSONField(null=True, blank=True)  # Store limited JSON response
+    token_hash = models.CharField(max_length=64, db_index=True)  # SHA256 of token (not token itself)
+    error_message = models.TextField(blank=True, null=True)
+    user_agent = models.TextField(blank=True, null=True)
+    
+    class Meta:
+        db_table = 'hcaptcha_attempts'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['created_at']),
+            models.Index(fields=['ip']),
+            models.Index(fields=['success']),
+            models.Index(fields=['endpoint']),
+        ]
+    
+    def __str__(self):
+        status = "Success" if self.success else "Failed"
+        user_info = self.user.username if self.user else "Anonymous"
+        return f"hCaptcha {status} - {user_info} - {self.endpoint}"
+    
+    @classmethod
+    def create_attempt(
+        cls,
+        ip: str,
+        user,
+        endpoint: str,
+        success: bool,
+        token_hash: str,
+        response_data: dict = None,
+        error_message: str = None,
+        user_agent: str = None
+    ):
+        """Create a new hCaptcha attempt record."""
+        # Sanitize response data to avoid storing sensitive information
+        sanitized_response = None
+        if response_data:
+            sanitized_response = {
+                'success': response_data.get('success', False),
+                'error_codes': response_data.get('error-codes', []),
+                'challenge_ts': response_data.get('challenge_ts'),
+                'hostname': response_data.get('hostname'),
+                'bypass': response_data.get('bypass', False)
+            }
+        
+        return cls.objects.create(
+            ip=ip,
+            user=user,
+            endpoint=endpoint,
+            success=success,
+            response_raw=sanitized_response,
+            token_hash=token_hash,
+            error_message=error_message,
+            user_agent=user_agent
+        )
+    
+    @classmethod
+    def get_stats(cls, days: int = 30):
+        """Get hCaptcha statistics for the last N days."""
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        since = timezone.now() - timedelta(days=days)
+        attempts = cls.objects.filter(created_at__gte=since)
+        
+        total_attempts = attempts.count()
+        successful_attempts = attempts.filter(success=True).count()
+        failed_attempts = total_attempts - successful_attempts
+        
+        # Group by endpoint
+        endpoint_stats = attempts.values('endpoint').annotate(
+            total=models.Count('id'),
+            successful=models.Count('id', filter=models.Q(success=True)),
+            failed=models.Count('id', filter=models.Q(success=False))
+        ).order_by('-total')
+        
+        # Group by IP (top failing IPs)
+        ip_stats = attempts.filter(success=False).values('ip').annotate(
+            failure_count=models.Count('id')
+        ).order_by('-failure_count')[:10]
+        
+        return {
+            'period_days': days,
+            'total_attempts': total_attempts,
+            'successful_attempts': successful_attempts,
+            'failed_attempts': failed_attempts,
+            'success_rate': (successful_attempts / total_attempts * 100) if total_attempts > 0 else 0,
+            'endpoint_stats': list(endpoint_stats),
+            'top_failing_ips': list(ip_stats)
+        }

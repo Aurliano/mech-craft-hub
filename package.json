@@ -12,6 +12,7 @@
     "test:auth": "echo 'Testing authentication features...' && echo '1. Go to http://localhost:8080/register' && echo '2. Register a new user' && echo '3. Verify phone number' && echo '4. Login at http://localhost:8080/login' && echo '5. Test forgot password at http://localhost:8080/forgot-password'"
   },
   "dependencies": {
+    "@hcaptcha/react-hcaptcha": "^1.12.1",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-accordion": "^1.2.0",
     "@radix-ui/react-alert-dialog": "^1.1.1",

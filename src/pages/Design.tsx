@@ -14,6 +14,7 @@ import { useServiceOrder } from "@/hooks/useServiceOrder";
 import { useAuth } from "@/contexts/AuthContext";
 import { DynamicServiceForm } from "@/components/DynamicServiceForm";
 import LoginPrompt from "@/components/LoginPrompt";
+import TermsAndConditions from "@/components/TermsAndConditions";
 
 const Design = () => {
   // Use real authentication state
@@ -32,6 +33,12 @@ const Design = () => {
     error
   } = useServiceOrder('550e8400-e29b-41d4-a716-446655440002');
 
+  // Check if any documentation option is selected
+  const hasAnyDocumentationSelected = () => {
+    const options = formData.documentationOptions;
+    return Object.values(options).some(value => value === true);
+  };
+
   // Create setFormData function for compatibility
   const setFormData = (updater: any) => {
     if (typeof updater === 'function') {
@@ -47,6 +54,7 @@ const Design = () => {
   };
   
   const [file, setFile] = useState<File | null>(null);
+  const [acceptTerms, setAcceptTerms] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -64,6 +72,11 @@ const Design = () => {
 
     if (!file) {
       alert("لطفا فایل پروژه را آپلود کنید");
+      return;
+    }
+
+    if (!acceptTerms) {
+      alert("لطفا قوانین و شرایط را بپذیرید");
       return;
     }
 
@@ -149,7 +162,7 @@ const Design = () => {
       />
 
       {/* Documentation Options */}
-      {needsDocumentation && (
+      {hasAnyDocumentationSelected() && (
         <Card className="mt-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -393,6 +406,15 @@ const Design = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Terms and Conditions */}
+      <div className="mt-6">
+        <TermsAndConditions
+          checked={acceptTerms}
+          onCheckedChange={setAcceptTerms}
+          error={!acceptTerms && formData.description ? "لطفا قوانین و شرایط را بپذیرید" : undefined}
+        />
+      </div>
 
       {error && (
         <div className="text-center">
