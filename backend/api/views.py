@@ -11,7 +11,8 @@ from .models import (
     User,
     Scope, Service, ServiceField, ServiceTab,
     Cart, CartItem, Order, OrderItem, Quote, Workshop, ContractorService,
-    Ticket, TicketMessage, Review, MediaFile,
+    Ticket, TicketMessage, TicketAttachment, TicketFileType, TicketCategory, TicketParticipant,
+    ContentFilterLog, Review, MediaFile,
     PasswordResetToken, PhoneVerificationCode, Payment, Notification
 )
 from .pagination import StandardResultsSetPagination, LargeResultsSetPagination, SmallResultsSetPagination
@@ -28,7 +29,9 @@ from .versioning import get_version_info, version_deprecated_response
 from .serializers import (
     ScopeSerializer, ServiceSerializer, ServiceFieldSerializer, ServiceTabSerializer,
     CartSerializer, CartItemSerializer, OrderSerializer, OrderItemSerializer, QuoteSerializer,
-    TicketSerializer, TicketMessageSerializer, ReviewSerializer, RegisterSerializer, LoginSerializer, UserSerializer,
+    TicketSerializer, TicketMessageSerializer, TicketAttachmentSerializer, TicketFileTypeSerializer,
+    TicketCategorySerializer, TicketParticipantSerializer, ContentFilterLogSerializer,
+    ReviewSerializer, RegisterSerializer, LoginSerializer, UserSerializer,
     PasswordResetRequestSerializer, PasswordResetConfirmSerializer, PhoneVerificationRequestSerializer,
     PhoneVerificationConfirmSerializer, ChangePasswordSerializer,
     CreateOrderSerializer, OrderStatusUpdateSerializer, CreateQuoteSerializer,
@@ -297,6 +300,53 @@ class TicketMessageViewSet(viewsets.ModelViewSet):
     queryset = TicketMessage.objects.select_related('ticket', 'sender').all()
     serializer_class = TicketMessageSerializer
     permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        # Users can see messages from their own tickets
+        if self.request.user.is_staff:
+            return TicketMessage.objects.select_related('ticket', 'sender').all()
+        return TicketMessage.objects.filter(
+            models.Q(ticket__creator=self.request.user) | 
+            models.Q(ticket__participants__user=self.request.user)
+        ).select_related('ticket', 'sender').distinct()
+
+
+class TicketAttachmentViewSet(viewsets.ModelViewSet):
+    queryset = TicketAttachment.objects.select_related('message', 'file_type').all()
+    serializer_class = TicketAttachmentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        # Users can see attachments from their own tickets
+        if self.request.user.is_staff:
+            return TicketAttachment.objects.select_related('message', 'file_type').all()
+        return TicketAttachment.objects.filter(
+            models.Q(message__ticket__creator=self.request.user) | 
+            models.Q(message__ticket__participants__user=self.request.user)
+        ).select_related('message', 'file_type').distinct()
+
+
+class TicketFileTypeViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = TicketFileType.objects.filter(is_active=True)
+    serializer_class = TicketFileTypeSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+
+class TicketCategoryViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = TicketCategory.objects.all()
+    serializer_class = TicketCategorySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+
+class ContentFilterLogViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = ContentFilterLog.objects.select_related('user', 'reviewed_by').all()
+    serializer_class = ContentFilterLogSerializer
+    permission_classes = [permissions.IsAdminUser]
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['user__username', 'violation_type', 'detected_content']
+    ordering_fields = ['created_at', 'confidence_score']
+    ordering = ['-created_at']
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -575,6 +625,217 @@ def update_order_status(request, order_id):
         return Response(OrderSerializer(order).data)
     except Order.DoesNotExist:
         return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+
+
+# Ticket Management Endpoints
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_ticket_message(request):
+    """Create a new ticket message with content filtering"""
+    from .utils.content_filter import content_filter
+    from .utils.file_handler import file_upload_handler, ocr_processor
+    
+    try:
+        ticket_id = request.data.get('ticket_id')
+        content = request.data.get('content', '')
+        files = request.FILES.getlist('files')
+        
+        # Get ticket
+        try:
+            ticket = Ticket.objects.get(id=ticket_id)
+        except Ticket.DoesNotExist:
+            return Response({'error': 'تیکت یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Check if user can access this ticket
+        if not (ticket.creator == request.user or 
+                ticket.participants.filter(user=request.user).exists() or 
+                request.user.is_staff):
+            return Response({'error': 'شما دسترسی به این تیکت ندارید'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Content filtering
+        filter_result = content_filter.filter_content(content, str(request.user.id))
+        
+        if filter_result.is_violation:
+            # Log the violation
+            ContentFilterLog.objects.create(
+                user=request.user,
+                ticket=ticket,
+                violation_type=filter_result.violation_type,
+                detected_content=filter_result.detected_content,
+                original_content=content,
+                action_taken=filter_result.action,
+                confidence_score=filter_result.confidence
+            )
+            
+            if filter_result.action == 'block':
+                return Response({
+                    'error': 'پیام شما حاوی اطلاعات تماس است و نمی‌تواند ارسال شود',
+                    'violation_type': filter_result.violation_type,
+                    'detected_content': filter_result.detected_content
+                }, status=status.HTTP_400_BAD_REQUEST)
+            elif filter_result.action == 'quarantine':
+                # Create message but mark ticket as quarantined
+                ticket.status = 'quarantined'
+                ticket.save()
+                
+                message = TicketMessage.objects.create(
+                    ticket=ticket,
+                    sender=request.user,
+                    content=content,
+                    is_internal=False
+                )
+                
+                return Response({
+                    'message': 'پیام شما در انتظار بررسی قرار گرفت',
+                    'ticket_status': 'quarantined',
+                    'message_id': str(message.id)
+                }, status=status.HTTP_201_CREATED)
+        
+        # Create message
+        message = TicketMessage.objects.create(
+            ticket=ticket,
+            sender=request.user,
+            content=content,
+            is_internal=False
+        )
+        
+        # Handle file uploads
+        uploaded_files = []
+        for file in files:
+            upload_result = file_upload_handler.save_file(file, str(ticket_id), str(message.id))
+            if upload_result['success']:
+                # Get file type
+                file_type = TicketFileType.objects.get(name=upload_result['file_info']['file_type'])
+                
+                # Create attachment
+                attachment = TicketAttachment.objects.create(
+                    message=message,
+                    file_type=file_type,
+                    filename=upload_result['file_info']['filename'],
+                    original_filename=upload_result['file_info']['original_filename'],
+                    file_path=upload_result['file_info']['file_path'],
+                    mime_type=upload_result['file_info']['mime_type'],
+                    file_size=upload_result['file_info']['file_size'],
+                    attachment_type='other'
+                )
+                
+                # Process OCR for images and PDFs
+                if file_type.category in ['image', 'document']:
+                    ocr_text = ocr_processor.extract_text_from_image(attachment.file_path)
+                    if ocr_text:
+                        attachment.ocr_text = ocr_text
+                        attachment.is_processed = True
+                        attachment.save()
+                        
+                        # Check OCR text for violations
+                        ocr_filter_result = content_filter.filter_content(ocr_text, str(request.user.id))
+                        if ocr_filter_result.is_violation:
+                            ContentFilterLog.objects.create(
+                                user=request.user,
+                                ticket=ticket,
+                                message=message,
+                                violation_type=ocr_filter_result.violation_type,
+                                detected_content=ocr_filter_result.detected_content,
+                                original_content=ocr_text,
+                                action_taken=ocr_filter_result.action,
+                                confidence_score=ocr_filter_result.confidence
+                            )
+                
+                uploaded_files.append(attachment)
+        
+        # Update ticket last activity
+        ticket.last_activity_at = timezone.now()
+        ticket.save()
+        
+        return Response({
+            'message': 'پیام با موفقیت ارسال شد',
+            'message_id': str(message.id),
+            'uploaded_files': len(uploaded_files)
+        }, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        return Response({'error': f'خطا در ارسال پیام: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_ticket(request):
+    """Create a new ticket"""
+    from .utils.content_filter import content_filter
+    
+    try:
+        category_id = request.data.get('category_id')
+        subject = request.data.get('subject', '')
+        content = request.data.get('content', '')
+        order_id = request.data.get('order_id')
+        priority = request.data.get('priority', 'medium')
+        
+        # Get category
+        try:
+            category = TicketCategory.objects.get(id=category_id)
+        except TicketCategory.DoesNotExist:
+            return Response({'error': 'دسته‌بندی تیکت یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Check if order is required and valid
+        order = None
+        if category.requires_order:
+            if not order_id:
+                return Response({'error': 'برای این نوع تیکت، انتخاب سفارش الزامی است'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            try:
+                order = Order.objects.get(id=order_id, customer=request.user)
+                # Check if order is in progress
+                if order.status != 'in_progress':
+                    return Response({'error': 'فقط برای سفارشات در حال انجام می‌توان تیکت ایجاد کرد'}, status=status.HTTP_400_BAD_REQUEST)
+            except Order.DoesNotExist:
+                return Response({'error': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Content filtering for subject and content
+        subject_filter = content_filter.filter_content(subject, str(request.user.id))
+        content_filter_result = content_filter.filter_content(content, str(request.user.id))
+        
+        if subject_filter.is_violation or content_filter_result.is_violation:
+            return Response({
+                'error': 'موضوع یا محتوای تیکت حاوی اطلاعات تماس است',
+                'violations': {
+                    'subject': subject_filter.detected_content if subject_filter.is_violation else None,
+                    'content': content_filter_result.detected_content if content_filter_result.is_violation else None
+                }
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Create ticket
+        ticket = Ticket.objects.create(
+            category=category,
+            subject=subject,
+            creator=request.user,
+            order=order,
+            priority=priority,
+            status='open'
+        )
+        
+        # Add creator as participant
+        TicketParticipant.objects.create(
+            ticket=ticket,
+            user=request.user,
+            role='creator'
+        )
+        
+        # Create initial message
+        if content:
+            message = TicketMessage.objects.create(
+                ticket=ticket,
+                sender=request.user,
+                content=content,
+                is_internal=False
+            )
+        
+        return Response({
+            'message': 'تیکت با موفقیت ایجاد شد',
+            'ticket_id': str(ticket.id)
+        }, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        return Response({'error': f'خطا در ایجاد تیکت: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 # Quote Management Endpoints

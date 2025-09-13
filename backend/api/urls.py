@@ -5,7 +5,8 @@ from .views import (
     ScopeViewSet, ServiceViewSet, ServiceFieldViewSet, ServiceTabViewSet,
     CartViewSet, CartItemViewSet,
     OrderViewSet, OrderItemViewSet, QuoteViewSet,
-    TicketViewSet, TicketMessageViewSet, ReviewViewSet,
+    TicketViewSet, TicketMessageViewSet, TicketAttachmentViewSet, TicketFileTypeViewSet, 
+    TicketCategoryViewSet, ContentFilterLogViewSet, ReviewViewSet,
     register, login, me, UserViewSet, UploadView,
     password_reset_request, password_reset_confirm, phone_verification_request,
     phone_verification_confirm, change_password,
@@ -20,6 +21,8 @@ from .views import (
     get_contractor_orders, get_contractor_proposals, get_contractor_active_projects,
     get_contractor_stats, create_contractor_proposal, get_contractor_workshops,
     create_contractor_workshop, check_contractor_manufacturing_service,
+    # Ticket endpoints
+    create_ticket, create_ticket_message,
     # hCaptcha endpoints
     captcha_fallback_status, captcha_fallback_verify, hcaptcha_stats, hcaptcha_attempts,
 )
@@ -37,6 +40,10 @@ router.register(r'order-items', OrderItemViewSet, basename='orderitem')
 router.register(r'quotes', QuoteViewSet, basename='quote')
 router.register(r'tickets', TicketViewSet, basename='ticket')
 router.register(r'ticket-messages', TicketMessageViewSet, basename='ticketmessage')
+router.register(r'ticket-attachments', TicketAttachmentViewSet, basename='ticketattachment')
+router.register(r'ticket-file-types', TicketFileTypeViewSet, basename='ticketfiletype')
+router.register(r'ticket-categories', TicketCategoryViewSet, basename='ticketcategory')
+router.register(r'content-filter-logs', ContentFilterLogViewSet, basename='contentfilterlog')
 router.register(r'reviews', ReviewViewSet, basename='review')
 
 urlpatterns = [
@@ -89,6 +96,10 @@ urlpatterns = [
     path('v1/contractor/workshops/', get_contractor_workshops, name='get_contractor_workshops'),
     path('v1/contractor/workshops/create/', create_contractor_workshop, name='create_contractor_workshop'),
     path('v1/contractor/check-manufacturing/', check_contractor_manufacturing_service, name='check_contractor_manufacturing_service'),
+    
+    # Ticket Management Endpoints
+    path('v1/tickets/create/', create_ticket, name='create_ticket'),
+    path('v1/tickets/<uuid:ticket_id>/messages/', create_ticket_message, name='create_ticket_message'),
     
     # hCaptcha Fallback Endpoints
     path('v1/captcha/fallback/', captcha_fallback_status, name='captcha_fallback_status'),

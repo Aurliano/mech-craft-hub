@@ -5,14 +5,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import AuthNavbar from "@/components/AuthNavbar";
 import { useRegister, usePhoneVerificationRequest, useRegisterWithCaptcha, useFallbackCaptchaStatus, useFallbackCaptchaChallenge, useVerifyFallbackCaptcha } from "@/hooks/useAuth";
 import { useAuth } from "@/contexts/AuthContext";
 import HCaptchaComponent from "@/components/HCaptcha";
 import LocalCaptcha from "@/components/LocalCaptcha";
 import TermsAndConditions from "@/components/TermsAndConditions";
+import { useScopes, useServices } from "@/hooks/useAuth";
 
-const Register = () => {
+const ContractorRegister = () => {
   const navigate = useNavigate();
   const { mutateAsync: register, isPending, error } = useRegister();
   const { mutateAsync: registerWithCaptcha, isPending: isCaptchaPending, error: captchaError } = useRegisterWithCaptcha();
@@ -22,12 +25,18 @@ const Register = () => {
   const { mutateAsync: getChallenge, isPending: isChallengePending } = useFallbackCaptchaChallenge();
   const { mutateAsync: verifyFallback, isPending: isVerifyingFallback } = useVerifyFallbackCaptcha();
   
+  // Get scopes and services
+  const { data: scopes } = useScopes();
+  const [selectedScopeId, setSelectedScopeId] = useState<string>("");
+  const { data: services } = useServices(selectedScopeId);
+  
   const [phone, setPhone] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [showPhoneVerification, setShowPhoneVerification] = useState(false);
   const [hcaptchaToken, setHcaptchaToken] = useState<string | null>(null);
@@ -44,7 +53,7 @@ const Register = () => {
   // Redirect if already authenticated
   React.useEffect(() => {
     if (isAuthenticated) {
-      navigate("/dashboard");
+      navigate("/contractor-dashboard");
     }
   }, [isAuthenticated, navigate]);
 
@@ -104,7 +113,9 @@ const Register = () => {
       email,
       phone,
       password,
-      role: 'customer' // Set role as customer
+      role: 'contractor', // Set role as contractor
+      selected_scope: selectedScopeId,
+      selected_services: selectedServices
     };
 
     if (hcaptchaToken) {
@@ -124,6 +135,14 @@ const Register = () => {
       alert("لطفا قوانین و شرایط را بپذیرید");
       return;
     }
+    if (!selectedScopeId) {
+      alert("لطفا زمینه فعالیت را انتخاب کنید");
+      return;
+    }
+    if (selectedServices.length === 0) {
+      alert("لطفا حداقل یک سرویس را انتخاب کنید");
+      return;
+    }
     
     try {
       if (useFallback && fallbackChallenge) {
@@ -132,9 +151,7 @@ const Register = () => {
         await performRegistration();
       } else {
         // Try regular registration without captcha
-        await register({ username: phone, email, phone, password });
-        await requestVerification(phone);
-        setShowPhoneVerification(true);
+        await performRegistration();
       }
     } catch (err) {
       // Error is handled by the hook
@@ -148,18 +165,26 @@ const Register = () => {
   // Redirect after successful phone verification
   React.useEffect(() => {
     if (isAuthenticated && showPhoneVerification) { 
-      navigate("/dashboard");
+      navigate("/contractor-dashboard");
     }
   }, [isAuthenticated, showPhoneVerification, navigate]);
+
+  const handleServiceToggle = (serviceId: string) => {
+    setSelectedServices(prev => 
+      prev.includes(serviceId) 
+        ? prev.filter(id => id !== serviceId)
+        : [...prev, serviceId]
+    );
+  };
 
   return (
     <div className="min-h-screen" dir="rtl">
       <AuthNavbar />
       <div className="flex items-center justify-center bg-gradient-to-br from-background to-muted p-4 min-h-[calc(100vh-4rem)]">
-        <Card className="w-full max-w-md">
+        <Card className="w-full max-w-2xl">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">ثبت نام</CardTitle>
-            <CardDescription>حساب کاربری جدید ایجاد کنید</CardDescription>
+            <CardTitle className="text-2xl font-bold">ثبت نام پیمانکار</CardTitle>
+            <CardDescription>حساب کاربری پیمانکار ایجاد کنید</CardDescription>
           </CardHeader>
           <CardContent>
             {showPhoneVerification ? (
@@ -229,7 +254,7 @@ const Register = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">رمز عبور</Label>
+                  <Label htmlFor="password">رمز عبور *</Label>
                   <Input 
                     id="password" 
                     type="password" 
@@ -241,7 +266,7 @@ const Register = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">تکرار رمز عبور</Label>
+                  <Label htmlFor="confirmPassword">تکرار رمز عبور *</Label>
                   <Input 
                     id="confirmPassword" 
                     type="password" 
@@ -252,6 +277,47 @@ const Register = () => {
                     minLength={8} 
                   />
                 </div>
+
+                {/* Scope Selection */}
+                <div className="space-y-2">
+                  <Label htmlFor="scope">زمینه فعالیت *</Label>
+                  <Select value={selectedScopeId} onValueChange={setSelectedScopeId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="زمینه فعالیت خود را انتخاب کنید" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {scopes?.map((scope) => (
+                        <SelectItem key={scope.id} value={scope.id}>
+                          {scope.display_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Services Selection */}
+                {selectedScopeId && services && (
+                  <div className="space-y-2">
+                    <Label>خدمات قابل ارائه *</Label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded-md p-3">
+                      {services.map((service) => (
+                        <div key={service.id} className="flex items-center space-x-2 space-x-reverse">
+                          <Checkbox
+                            id={service.id}
+                            checked={selectedServices.includes(service.id)}
+                            onCheckedChange={() => handleServiceToggle(service.id)}
+                          />
+                          <Label htmlFor={service.id} className="text-sm">
+                            {service.name}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      حداقل یک سرویس را انتخاب کنید
+                    </p>
+                  </div>
+                )}
 
                 {/* hCaptcha or Fallback Captcha */}
                 {!useFallback && hcaptchaSiteKey && (
@@ -309,7 +375,7 @@ const Register = () => {
                   type="submit" 
                   disabled={isPending || isVerifying || isCaptchaPending || isVerifyingFallback || (!hcaptchaToken && !useFallback && hcaptchaSiteKey)}
                 >
-                  {isPending || isVerifying || isCaptchaPending || isVerifyingFallback ? "در حال ثبت‌نام..." : "ثبت نام"}
+                  {isPending || isVerifying || isCaptchaPending || isVerifyingFallback ? "در حال ثبت‌نام..." : "ثبت نام پیمانکار"}
                 </Button>
                 
                 <div className="text-center">
@@ -329,4 +395,4 @@ const Register = () => {
   );
 };
 
-export default Register;
+export default ContractorRegister;

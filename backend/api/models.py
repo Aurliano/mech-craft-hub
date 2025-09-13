@@ -478,6 +478,8 @@ class Ticket(models.Model):
         ('open', 'باز'),
         ('closed', 'بسته'),
         ('waiting_response', 'در انتظار پاسخ'),
+        ('quarantined', 'قرنطینه شده'),
+        ('escalated', 'ارجاع شده'),
     ], default='open')
     priority = models.CharField(max_length=20, choices=[
         ('low', 'کم'),
@@ -534,28 +536,106 @@ class TicketMessage(models.Model):
         return f"{self.sender.username} - {self.ticket.subject}"
 
 
+class TicketFileType(models.Model):
+    """Allowed file types for ticket attachments"""
+    
+    FILE_CATEGORIES = [
+        ('image', 'تصویر'),
+        ('document', 'سند'),
+        ('cad_3d', 'فایل سه بعدی'),
+        ('drawing', 'نقشه'),
+        ('other', 'سایر'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=50, unique=True)
+    display_name = models.CharField(max_length=100)
+    category = models.CharField(max_length=20, choices=FILE_CATEGORIES)
+    extensions = models.JSONField(default=list)  # List of allowed extensions
+    mime_types = models.JSONField(default=list)  # List of allowed MIME types
+    max_size_mb = models.IntegerField(default=100)  # Max file size in MB
+    is_active = models.BooleanField(default=True)
+    
+    class Meta:
+        db_table = 'ticket_file_types'
+    
+    def __str__(self):
+        return self.display_name
+
+
 class TicketAttachment(models.Model):
     """File attachments for ticket messages"""
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     message = models.ForeignKey(TicketMessage, on_delete=models.CASCADE, related_name='attachments')
+    file_type = models.ForeignKey(TicketFileType, on_delete=models.CASCADE, related_name='attachments')
     filename = models.CharField(max_length=255)
+    original_filename = models.CharField(max_length=255, blank=True, null=True)
     file_path = models.CharField(max_length=500)
     mime_type = models.CharField(max_length=100)
     file_size = models.BigIntegerField()
-    file_type = models.CharField(max_length=20, choices=[
+    attachment_type = models.CharField(max_length=20, choices=[
         ('initial', 'فایل اولیه'),
         ('revision', 'بازبینی'),
         ('final', 'فایل نهایی'),
+        ('reference', 'مرجع'),
         ('other', 'سایر'),
     ], default='other')
+    is_processed = models.BooleanField(default=False)  # For OCR processing
+    ocr_text = models.TextField(blank=True)  # Extracted text from images/PDFs
     uploaded_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
         db_table = 'ticket_attachments'
+        ordering = ['-uploaded_at']
     
     def __str__(self):
         return f"{self.filename} - {self.message.ticket.subject}"
+    
+    @property
+    def file_size_mb(self):
+        return round(self.file_size / (1024 * 1024), 2)
+
+
+class ContentFilterLog(models.Model):
+    """Log for content filtering violations"""
+    
+    VIOLATION_TYPES = [
+        ('phone', 'شماره تلفن'),
+        ('email', 'ایمیل'),
+        ('url', 'لینک'),
+        ('social_id', 'آیدی شبکه اجتماعی'),
+        ('contact_invitation', 'دعوت به ارتباط خارجی'),
+        ('other', 'سایر'),
+    ]
+    
+    ACTIONS = [
+        ('blocked', 'مسدود شده'),
+        ('quarantined', 'قرنطینه شده'),
+        ('warning', 'هشدار'),
+        ('allowed', 'مجاز'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='content_violations')
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='content_violations', null=True, blank=True)
+    message = models.ForeignKey(TicketMessage, on_delete=models.CASCADE, related_name='content_violations', null=True, blank=True)
+    violation_type = models.CharField(max_length=20, choices=VIOLATION_TYPES)
+    detected_content = models.TextField()  # The content that was flagged
+    original_content = models.TextField()  # Original content before filtering
+    action_taken = models.CharField(max_length=20, choices=ACTIONS)
+    confidence_score = models.FloatField(default=0.0)  # ML confidence score
+    is_false_positive = models.BooleanField(default=False)
+    reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_violations')
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'content_filter_logs'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.violation_type} - {self.action_taken}"
 
 
 class MediaFile(models.Model):

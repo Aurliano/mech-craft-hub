@@ -2,7 +2,8 @@ from rest_framework import serializers
 from .models import (
     User, Role, UserRole, Scope, Service, ServiceField, ServiceTab,
     Cart, CartItem, Order, OrderItem, Quote, Workshop,
-    Ticket, TicketMessage, Review, PasswordResetToken, PhoneVerificationCode, Notification,
+    Ticket, TicketMessage, TicketAttachment, TicketFileType, TicketCategory, TicketParticipant,
+    ContentFilterLog, Review, PasswordResetToken, PhoneVerificationCode, Notification,
     HCaptchaAttempt
 )
 
@@ -106,20 +107,89 @@ class QuoteSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at']
 
 
+class TicketFileTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TicketFileType
+        fields = ['id', 'name', 'display_name', 'category', 'extensions', 'mime_types', 'max_size_mb', 'is_active']
+
+
+class TicketAttachmentSerializer(serializers.ModelSerializer):
+    file_type = TicketFileTypeSerializer(read_only=True)
+    file_url = serializers.SerializerMethodField()
+    file_size_mb = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = TicketAttachment
+        fields = [
+            'id', 'file_type', 'filename', 'original_filename', 'file_path', 
+            'mime_type', 'file_size', 'file_size_mb', 'attachment_type', 
+            'is_processed', 'ocr_text', 'uploaded_at', 'file_url'
+        ]
+        read_only_fields = ['id', 'uploaded_at', 'file_size_mb']
+    
+    def get_file_url(self, obj):
+        from .utils.file_handler import file_upload_handler
+        return file_upload_handler.get_file_url(obj.file_path)
+
+
 class TicketMessageSerializer(serializers.ModelSerializer):
+    attachments = TicketAttachmentSerializer(many=True, read_only=True)
+    sender_name = serializers.CharField(source='sender.username', read_only=True)
+    
     class Meta:
         model = TicketMessage
-        fields = ['id', 'ticket', 'sender', 'content', 'is_internal', 'created_at']
+        fields = [
+            'id', 'ticket', 'sender', 'sender_name', 'content', 'is_internal', 
+            'created_at', 'attachments'
+        ]
         read_only_fields = ['id', 'created_at']
+
+
+class TicketCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TicketCategory
+        fields = ['id', 'name', 'display_name', 'requires_order', 'description']
+
+
+class TicketParticipantSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source='user.username', read_only=True)
+    
+    class Meta:
+        model = TicketParticipant
+        fields = ['id', 'user', 'user_name', 'role', 'joined_at']
+        read_only_fields = ['id', 'joined_at']
 
 
 class TicketSerializer(serializers.ModelSerializer):
     messages = TicketMessageSerializer(many=True, read_only=True)
-
+    participants = TicketParticipantSerializer(many=True, read_only=True)
+    creator_name = serializers.CharField(source='creator.username', read_only=True)
+    category_name = serializers.CharField(source='category.display_name', read_only=True)
+    order_number = serializers.CharField(source='order.order_number', read_only=True)
+    
     class Meta:
         model = Ticket
-        fields = ['id', 'category', 'subject', 'creator', 'order', 'status', 'priority', 'created_at', 'last_activity_at', 'messages']
+        fields = [
+            'id', 'category', 'category_name', 'subject', 'creator', 'creator_name', 
+            'order', 'order_number', 'status', 'priority', 'created_at', 
+            'last_activity_at', 'messages', 'participants'
+        ]
         read_only_fields = ['id', 'created_at', 'last_activity_at']
+
+
+class ContentFilterLogSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source='user.username', read_only=True)
+    reviewed_by_name = serializers.CharField(source='reviewed_by.username', read_only=True)
+    
+    class Meta:
+        model = ContentFilterLog
+        fields = [
+            'id', 'user', 'user_name', 'ticket', 'message', 'violation_type',
+            'detected_content', 'original_content', 'action_taken', 'confidence_score',
+            'is_false_positive', 'reviewed_by', 'reviewed_by_name', 'reviewed_at',
+            'created_at'
+        ]
+        read_only_fields = ['id', 'created_at']
 
 
 class ReviewSerializer(serializers.ModelSerializer):

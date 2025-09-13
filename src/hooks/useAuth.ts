@@ -11,7 +11,8 @@ import {
   getContractorStats, createContractorProposal, getContractorWorkshops,
   createContractorWorkshop, checkContractorManufacturingService,
   loginWithCaptcha, registerWithCaptcha, getFallbackCaptchaStatus, 
-  getFallbackCaptchaChallenge, verifyFallbackCaptcha
+  getFallbackCaptchaChallenge, verifyFallbackCaptcha,
+  getServiceTabs, getTabFields, getScopes, getServices
 } from '@/lib/api';
 
 export function useMe() {
@@ -103,6 +104,42 @@ export function usePhoneVerificationConfirm() {
       // Redirect to home page and refresh after phone verification
       window.location.href = '/';
     },
+  });
+}
+
+// Scopes and Services Hooks
+export function useScopes() {
+  return useQuery<any[]>({
+    queryKey: ['scopes'],
+    queryFn: getScopes,
+    retry: false,
+  });
+}
+
+export function useServices(scopeId?: string) {
+  return useQuery<any[]>({
+    queryKey: ['services', scopeId],
+    queryFn: () => getServices(scopeId),
+    enabled: Boolean(scopeId),
+    retry: false,
+  });
+}
+
+export function useServiceTabs(serviceId: string) {
+  return useQuery<any[]>({
+    queryKey: ['serviceTabs', serviceId],
+    queryFn: () => getServiceTabs(serviceId),
+    enabled: Boolean(serviceId),
+    retry: false,
+  });
+}
+
+export function useTabFields(tabId: string) {
+  return useQuery<any[]>({
+    queryKey: ['tabFields', tabId],
+    queryFn: () => getTabFields(tabId),
+    enabled: Boolean(tabId),
+    retry: false,
   });
 }
 

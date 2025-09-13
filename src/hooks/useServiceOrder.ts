@@ -3,6 +3,7 @@ import { useOrderSubmission } from './useOrderSubmission';
 
 export function useServiceOrder(serviceId: string) {
   const [formData, setFormData] = useState<Record<string, any>>({});
+  const [tabFieldValues, setTabFieldValues] = useState<Record<string, Record<string, any>>>({});
   const [needsDocumentation, setNeedsDocumentation] = useState(false);
   const [notes, setNotes] = useState('');
   const [documentationOptions, setDocumentationOptions] = useState<Record<string, boolean>>({});
@@ -16,11 +17,27 @@ export function useServiceOrder(serviceId: string) {
     }));
   };
 
+  const updateTabField = (tabId: string, fieldKey: string, value: any) => {
+    setTabFieldValues(prev => ({
+      ...prev,
+      [tabId]: {
+        ...prev[tabId],
+        [fieldKey]: value
+      }
+    }));
+  };
+
   const handleSubmit = async () => {
     try {
+      // Merge formData and tabFieldValues
+      const allFieldValues = { ...formData };
+      Object.values(tabFieldValues).forEach(tabFields => {
+        Object.assign(allFieldValues, tabFields);
+      });
+
       await submitOrder({
         serviceId,
-        fieldValues: formData,
+        fieldValues: allFieldValues,
         needsDocumentation,
         notes,
         documentationOptions
@@ -32,6 +49,7 @@ export function useServiceOrder(serviceId: string) {
 
   const resetForm = () => {
     setFormData({});
+    setTabFieldValues({});
     setNeedsDocumentation(false);
     setNotes('');
     setDocumentationOptions({});
@@ -40,10 +58,12 @@ export function useServiceOrder(serviceId: string) {
 
   return {
     formData,
+    tabFieldValues,
     needsDocumentation,
     notes,
     documentationOptions,
     updateField,
+    updateTabField,
     setNeedsDocumentation,
     setNotes,
     setDocumentationOptions,

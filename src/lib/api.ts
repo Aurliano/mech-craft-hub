@@ -132,7 +132,7 @@ export async function meRequest() {
   return fetchJson<any>('/v1/auth/me/', { method: 'GET' });
 }
 
-export async function getServices() {
+export async function getAllServices() {
   return fetchJson<any[]>('/v1/services/');
 }
 
@@ -141,6 +141,24 @@ export async function getServiceFields(serviceId: string) {
     return await fetchJson<any[]>(`/v1/services/${serviceId}/fields/`);
   } catch (error) {
     console.error('Error fetching service fields:', error);
+    return [];
+  }
+}
+
+export async function getServiceTabs(serviceId: string) {
+  try {
+    return await fetchJson<any[]>(`/v1/service-tabs/?service=${serviceId}`);
+  } catch (error) {
+    console.error('Error fetching service tabs:', error);
+    return [];
+  }
+}
+
+export async function getTabFields(tabId: string) {
+  try {
+    return await fetchJson<any[]>(`/v1/service-fields/?tab=${tabId}`);
+  } catch (error) {
+    console.error('Error fetching tab fields:', error);
     return [];
   }
 }
@@ -290,6 +308,26 @@ export async function phoneVerificationConfirm(phone: string, code: string) {
   return (await res.json()) as { detail: string };
 }
 
+// Scopes and Services Functions
+export async function getScopes() {
+  try {
+    return await fetchJson<any[]>('/v1/scopes/');
+  } catch (error) {
+    console.error('Error fetching scopes:', error);
+    return [];
+  }
+}
+
+export async function getServices(scopeId?: string) {
+  try {
+    const url = scopeId ? `/v1/scopes/${scopeId}/services/` : '/v1/services/';
+    return await fetchJson<any[]>(url);
+  } catch (error) {
+    console.error('Error fetching services:', error);
+    return [];
+  }
+}
+
 // Dashboard Data Functions
 export async function getUserOrders() {
   try {
@@ -427,6 +465,23 @@ export async function acceptQuote(quoteId: string) {
 }
 
 // Cart Management Functions
+export async function addToCart(data: {
+  cart: string;
+  service: string;
+  field_values: Record<string, any>;
+  needs_documentation?: boolean;
+}) {
+  try {
+    return await fetchJson<any>('/v1/cart-items/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  } catch (error) {
+    console.error('Error adding to cart:', error);
+    throw error;
+  }
+}
+
 export async function addOrderToCart(orderId: string) {
   try {
     return await fetchJson<any>('/v1/cart-items/', {
@@ -703,3 +758,261 @@ export async function verifyFallbackCaptcha(challengeId: string, answer: string)
     throw error;
   }
 }
+
+// Ticket Management API Functions
+export async function getTickets(params?: { status?: string; priority?: string; search?: string }) {
+  try {
+    const queryParams = new URLSearchParams();
+    if (params?.status) queryParams.append('status', params.status);
+    if (params?.priority) queryParams.append('priority', params.priority);
+    if (params?.search) queryParams.append('search', params.search);
+    
+    const url = `/tickets/${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    return await fetchJson<{ results: any[]; count: number }>(url);
+  } catch (error) {
+    console.error('Error fetching tickets:', error);
+    throw error;
+  }
+}
+
+export async function getTicketById(ticketId: string) {
+  try {
+    return await fetchJson<any>(`/tickets/${ticketId}/`);
+  } catch (error) {
+    console.error('Error fetching ticket:', error);
+    throw error;
+  }
+}
+
+export async function getTicketMessages(ticketId: string) {
+  try {
+    return await fetchJson<{ results: any[]; count: number }>(`/tickets/${ticketId}/messages/`);
+  } catch (error) {
+    console.error('Error fetching ticket messages:', error);
+    throw error;
+  }
+}
+
+export async function createTicket(data: {
+  category_id: string;
+  subject: string;
+  content: string;
+  order_id?: string;
+  priority?: string;
+}) {
+  try {
+    return await fetchJson<{ ticket_id: string; message: string }>('/tickets/create/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  } catch (error) {
+    console.error('Error creating ticket:', error);
+    throw error;
+  }
+}
+
+export async function createTicketMessage(ticketId: string, data: {
+  content: string;
+  files?: File[];
+}) {
+  try {
+    const formData = new FormData();
+    formData.append('ticket_id', ticketId);
+    formData.append('content', data.content);
+    
+    if (data.files) {
+      data.files.forEach(file => {
+        formData.append('files', file);
+      });
+    }
+
+    return await fetchJson<{ message_id: string; message: string }>(`/tickets/${ticketId}/messages/`, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  } catch (error) {
+    console.error('Error creating ticket message:', error);
+    throw error;
+  }
+}
+
+export async function getTicketCategories() {
+  try {
+    return await fetchJson<any[]>('/ticket-categories/');
+  } catch (error) {
+    console.error('Error fetching ticket categories:', error);
+    throw error;
+  }
+}
+
+export async function getTicketFileTypes() {
+  try {
+    return await fetchJson<any[]>('/ticket-file-types/');
+  } catch (error) {
+    console.error('Error fetching ticket file types:', error);
+    throw error;
+  }
+}
+
+export async function updateTicketStatus(ticketId: string, status: string) {
+  try {
+    return await fetchJson<{ message: string }>(`/tickets/${ticketId}/`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  } catch (error) {
+    console.error('Error updating ticket status:', error);
+    throw error;
+  }
+}
+
+export async function getContentFilterLogs(params?: { 
+  violation_type?: string; 
+  action_taken?: string; 
+  user_id?: string;
+  page?: number;
+}) {
+  try {
+    const queryParams = new URLSearchParams();
+    if (params?.violation_type) queryParams.append('violation_type', params.violation_type);
+    if (params?.action_taken) queryParams.append('action_taken', params.action_taken);
+    if (params?.user_id) queryParams.append('user_id', params.user_id);
+    if (params?.page) queryParams.append('page', params.page.toString());
+    
+    const url = `/content-filter-logs/${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    return await fetchJson<{ results: any[]; count: number }>(url);
+  } catch (error) {
+    console.error('Error fetching content filter logs:', error);
+    throw error;
+  }
+}
+
+export async function reviewContentViolation(violationId: string, isFalsePositive: boolean) {
+  try {
+    return await fetchJson<{ message: string }>(`/content-filter-logs/${violationId}/`, {
+      method: 'PATCH',
+      body: JSON.stringify({ is_false_positive: isFalsePositive }),
+    });
+  } catch (error) {
+    console.error('Error reviewing content violation:', error);
+    throw error;
+  }
+}
+
+// Missing functions that are referenced in api object
+export async function changePasswordRequest(data: { old_password: string; new_password: string }) {
+  try {
+    return await fetchJson<any>('/v1/auth/change-password/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  } catch (error) {
+    console.error('Error changing password:', error);
+    throw error;
+  }
+}
+
+export async function getHCaptchaStats() {
+  try {
+    return await fetchJson<any>('/v1/admin/hcaptcha/stats/');
+  } catch (error) {
+    console.error('Error fetching hCaptcha stats:', error);
+    throw error;
+  }
+}
+
+export async function getHCaptchaAttempts() {
+  try {
+    return await fetchJson<any>('/v1/admin/hcaptcha/attempts/');
+  } catch (error) {
+    console.error('Error fetching hCaptcha attempts:', error);
+    throw error;
+  }
+}
+
+// API object for easy access to all functions
+export const api = {
+  // Auth
+  me: meRequest,
+  login: loginRequest,
+  register: registerRequest,
+  refreshToken: refreshAccessToken,
+  changePassword: changePasswordRequest,
+  passwordResetRequest: passwordResetRequest,
+  passwordResetConfirm: passwordResetConfirm,
+  phoneVerificationRequest: phoneVerificationRequest,
+  phoneVerificationConfirm: phoneVerificationConfirm,
+  
+  // Services
+  getAllServices,
+  getServiceFields,
+  getScopes,
+  getServices,
+  
+  // Orders
+  getUserOrders,
+  getOrderById,
+  createOrder,
+  updateOrderStatus,
+  
+  // Cart
+  getUserCart,
+  getUserCartItems,
+  createCart,
+  addToCart,
+  addOrderToCart,
+  removeFromCart,
+  
+  // Quotes
+  createQuote,
+  getQuotesByOrder,
+  acceptQuote,
+  
+  // Payments
+  processPayment,
+  downloadInvoice,
+  
+  // Notifications
+  getUserNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+  
+  // Contractor
+  getContractorOrders,
+  getContractorProposals,
+  getContractorActiveProjects,
+  getContractorStats,
+  createContractorProposal,
+  getContractorWorkshops,
+  createContractorWorkshop,
+  checkContractorManufacturingService,
+  
+  // hCaptcha
+  getFallbackCaptchaStatus,
+  getFallbackCaptchaChallenge,
+  verifyFallbackCaptcha,
+  getHCaptchaStats,
+  getHCaptchaAttempts,
+  
+  // Tickets
+  getTickets,
+  getTicketById,
+  getTicketMessages,
+  createTicket,
+  createTicketMessage,
+  getTicketCategories,
+  getTicketFileTypes,
+  updateTicketStatus,
+  getContentFilterLogs,
+  reviewContentViolation,
+  
+  // Utility functions
+  getAccessToken,
+  setTokens,
+  clearTokens,
+  getRefreshToken,
+  fetchJson,
+};

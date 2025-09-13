@@ -14,6 +14,7 @@ import SubmitButton from "@/components/SubmitButton";
 import { useServiceOrder } from "@/hooks/useServiceOrder";
 import { useAuth } from "@/contexts/AuthContext";
 import { DynamicServiceForm } from "@/components/DynamicServiceForm";
+import ServiceTabs from "@/components/ServiceTabs";
 import LoginPrompt from "@/components/LoginPrompt";
 import comsolLogo from "@/assets/comsol.jpg";
 import adamsLogo from "@/assets/adams.png";
@@ -30,9 +31,11 @@ const AnalysisSimulation = () => {
   // Use service order hook
   const {
     formData,
+    tabFieldValues,
     needsDocumentation,
     notes,
     updateField,
+    updateTabField,
     setNeedsDocumentation,
     setNotes,
     handleSubmit,
@@ -137,6 +140,12 @@ const AnalysisSimulation = () => {
         <p className="text-muted-foreground">{description}</p>
       </div>
 
+
+      <ServiceTabs
+        serviceId="550e8400-e29b-41d4-a716-446655440001"
+        onFieldChange={updateTabField}
+        fieldValues={tabFieldValues}
+      />
 
       <DynamicServiceForm
         serviceId="550e8400-e29b-41d4-a716-446655440001"

@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Cog, Brain, Zap, Globe, LaptopIcon, CircuitBoardIcon } from "lucide-react"; // Added Globe icon
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import heroImage from "@/assets/hero-engineering.png";
 import MetaIcon from "@/assets/icons8-meta.svg"; // Importing the Meta icon
 
@@ -49,12 +50,11 @@ const Hero = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 mb-12">
-            <Button variant="hero" size="lg" className="group" onClick={() => {
-              const contact = document.getElementById('contact');
-              contact?.scrollIntoView({ behavior: 'smooth' });
-            }}>
-              همکاری با ما
-              <ArrowLeft className="mr-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+            <Button variant="hero" size="lg" className="group" asChild>
+              <Link to="/contractor-register">
+                همکاری با ما
+                <ArrowLeft className="mr-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
             </Button>
             <Button 
               variant="outline" 

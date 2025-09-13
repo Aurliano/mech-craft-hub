@@ -8,6 +8,7 @@ import RoleBasedRoute from "@/components/RoleBasedRoute";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ContractorRegister from "./pages/ContractorRegister";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import PhoneVerification from "./pages/PhoneVerification";
@@ -51,6 +52,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/contractor-register" element={<ContractorRegister />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/phone-verification" element={<PhoneVerification />} />
