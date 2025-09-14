@@ -27,6 +27,8 @@ import MyWorkshops from "./pages/MyWorkshops";
 import OrderDetails from "./pages/OrderDetails";
 import FileUploadDemo from "./pages/FileUploadDemo";
 import OrderPreviewDemo from "./pages/OrderPreviewDemo";
+import ServicesPage from "./pages/ServicesPage";
+import PortfolioPage from "./pages/PortfolioPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -91,6 +93,10 @@ const App = () => (
               <Route path="/design" element={<Design />} />
               <Route path="/drawing" element={<DrawingService />} />
               <Route path="/manufacturing" element={<Manufacturing />} />
+              
+              {/* Info Pages */}
+              <Route path="/services" element={<ServicesPage />} />
+              <Route path="/portfolio" element={<PortfolioPage />} />
               
               {/* Shared Routes */}
               <Route path="/profile" element={<Profile />} />
