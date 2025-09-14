@@ -294,7 +294,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ service, onSubmit, loading = 
             <Checkbox
               id="needs_documentation"
               checked={needsDocumentation}
-              onCheckedChange={setNeedsDocumentation}
+              onCheckedChange={(checked) => setNeedsDocumentation(checked === true)}
             />
             <Label htmlFor="needs_documentation" className="text-sm">
               نیاز به مستندسازی فنی

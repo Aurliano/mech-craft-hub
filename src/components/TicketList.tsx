@@ -65,7 +65,7 @@ const TicketList: React.FC<TicketListProps> = ({
         priority: priorityFilter !== 'all' ? priorityFilter : undefined,
         search: searchTerm || undefined
       });
-      setTickets(response.results || response);
+      setTickets(Array.isArray(response) ? response : response.results || []);
     } catch (error) {
       console.error('Error fetching tickets:', error);
       toast({

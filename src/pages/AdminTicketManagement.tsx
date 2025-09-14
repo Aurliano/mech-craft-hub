@@ -76,7 +76,7 @@ const AdminTicketManagement = () => {
     try {
       setLoading(true);
       const response = await api.getTickets();
-      setTickets(response.results || response);
+      setTickets(Array.isArray(response) ? response : response.results || []);
     } catch (error) {
       console.error('Error fetching tickets:', error);
       toast({
@@ -92,7 +92,7 @@ const AdminTicketManagement = () => {
   const fetchViolations = async () => {
     try {
       const response = await api.getContentFilterLogs();
-      setViolations(response.results || response);
+      setViolations(Array.isArray(response) ? response : response.results || []);
     } catch (error) {
       console.error('Error fetching violations:', error);
       toast({

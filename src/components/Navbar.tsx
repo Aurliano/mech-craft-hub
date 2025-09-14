@@ -53,11 +53,11 @@ const Navbar = () => {
     { name: "طراحی و مدل سازی", href: "/design" },
     { 
       name: "تحلیل و شبیه سازی", 
-      href: "/analysis-simulation",
+      href: "/analysis",
       subItems: [
-        { name: "تحلیل استاتیک", href: "/analysis-simulation?tab=static" },
-        { name: "تحلیل داینامیک", href: "/analysis-simulation?tab=dynamic" },
-        { name: "حل مسئله با کدنویسی", href: "/analysis-simulation?tab=coding" }
+        { name: "تحلیل استاتیک", href: "/analysis?tab=static" },
+        { name: "تحلیل داینامیک", href: "/analysis?tab=dynamic" },
+        { name: "حل مسئله با کدنویسی", href: "/analysis?tab=coding" }
       ]
     },
     { name: "نقشه کشی صنعتی", href: "/drawing" },

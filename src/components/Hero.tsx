@@ -90,7 +90,7 @@ const Hero = () => {
               </a>
               
               <a 
-                href="/analysis-simulation" 
+                href="/analysis" 
                 className="bg-white/5 hover:bg-white/15 p-3 rounded-lg border border-white/10 transition-all duration-300 hover:border-accent/50 text-center group"
               >
                 <div className="text-primary-foreground font-medium group-hover:text-accent transition-colors text-sm">
@@ -99,7 +99,7 @@ const Hero = () => {
               </a>
               
               <a 
-                href="/drawing-service" 
+                href="/drawing" 
                 className="bg-white/5 hover:bg-white/15 p-3 rounded-lg border border-white/10 transition-all duration-300 hover:border-accent/50 text-center group"
               >
                 <div className="text-primary-foreground font-medium group-hover:text-accent transition-colors text-sm">
