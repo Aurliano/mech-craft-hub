@@ -213,9 +213,32 @@ class ServiceTabViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class ServiceFieldViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = ServiceField.objects.all().select_related('service')
+    queryset = ServiceField.objects.all().select_related('service', 'tab')
     serializer_class = ServiceFieldSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        service_id = self.request.query_params.get('service')
+        tab_id = self.request.query_params.get('tab')
+        
+        if service_id:
+            # اگر service_id داده شده، فیلدهای مربوط به آن سرویس را برگردان
+            # اگر tab_id هم داده شده، فقط فیلدهای آن تب را برگردان
+            if tab_id:
+                queryset = queryset.filter(service_id=service_id, tab_id=tab_id)
+            else:
+                # اگر سرویس تب دارد، فقط فیلدهای بدون tab (فیلدهای عمومی) را برگردان
+                # اگر سرویس تب ندارد، همه فیلدهای آن سرویس را برگردان
+                service = Service.objects.get(id=service_id)
+                if service.has_tabs:
+                    # سرویس تب دارد، فقط فیلدهای عمومی (بدون tab) را برگردان
+                    queryset = queryset.filter(service_id=service_id, tab__isnull=True)
+                else:
+                    # سرویس تب ندارد، همه فیلدهای آن سرویس را برگردان
+                    queryset = queryset.filter(service_id=service_id)
+        
+        return queryset.order_by('tab', 'order', 'name')
 
 
 class CartViewSet(viewsets.ModelViewSet):

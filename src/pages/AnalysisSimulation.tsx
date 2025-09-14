@@ -1,20 +1,11 @@
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Upload, FileText, Calculator, BarChart3, Zap, Code } from "lucide-react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useState } from "react";
+import { FileText, Calculator, BarChart3, Zap, Code } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import SubmitButton from "@/components/SubmitButton";
 import { useServiceOrder } from "@/hooks/useServiceOrder";
 import { useAuth } from "@/contexts/AuthContext";
-import { DynamicServiceForm } from "@/components/DynamicServiceForm";
-import ServiceTabs from "@/components/ServiceTabs";
+import { useService } from "@/hooks/useAuth";
+import ServiceOrderForm from "@/components/ServiceOrderForm";
 import LoginPrompt from "@/components/LoginPrompt";
 import comsolLogo from "@/assets/comsol.jpg";
 import adamsLogo from "@/assets/adams.png";
@@ -22,11 +13,11 @@ import abaqusLogo from "@/assets/abaqus.png";
 import matlabLogo from "@/assets/matlab.png";
 
 const AnalysisSimulation = () => {
-  const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState("static");
-  
   // Use real authentication state
   const { isAuthenticated } = useAuth();
+  
+  // Get service information
+  const { data: service } = useService('550e8400-e29b-41d4-a716-446655440001');
   
   // Use service order hook
   const {
@@ -34,10 +25,12 @@ const AnalysisSimulation = () => {
     tabFieldValues,
     needsDocumentation,
     notes,
+    documentationOptions,
     updateField,
     updateTabField,
     setNeedsDocumentation,
     setNotes,
+    setDocumentationOptions,
     handleSubmit,
     isSubmitting,
     error
@@ -49,24 +42,7 @@ const AnalysisSimulation = () => {
   const [abaqusLoaded, setAbaqusLoaded] = useState(false);
   const [matlabLoaded, setMatlabLoaded] = useState(false);
 
-  // Set active tab based on URL parameter
-  useEffect(() => {
-    const tab = searchParams.get('tab');
-    if (tab && ['static', 'dynamic', 'coding'].includes(tab)) {
-      setActiveTab(tab);
-    }
-  }, [searchParams]);
-  
-  const [file, setFile] = useState<File | null>(null);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setFile(e.target.files[0]);
-      updateField('file', e.target.files[0]);
-    }
-  };
-
-  const handleFormSubmit = async (tabType: string) => {
+  const handleFormSubmit = async () => {
     try {
       await handleSubmit();
     } catch (error) {
@@ -123,56 +99,6 @@ const AnalysisSimulation = () => {
   );
 
 
-  const AnalysisForm = ({ 
-    title, 
-    description, 
-    showSoftwareSelect = false, 
-    tabType 
-  }: { 
-    title: string; 
-    description: string; 
-    showSoftwareSelect?: boolean; 
-    tabType: string;
-  }) => (
-    <div className="space-y-6">
-      <div className="text-center mb-8">
-        <h3 className="text-2xl font-semibold mb-2">{title}</h3>
-        <p className="text-muted-foreground">{description}</p>
-      </div>
-
-
-      <ServiceTabs
-        serviceId="550e8400-e29b-41d4-a716-446655440001"
-        onFieldChange={updateTabField}
-        fieldValues={tabFieldValues}
-      />
-
-      <DynamicServiceForm
-        serviceId="550e8400-e29b-41d4-a716-446655440001"
-        formData={formData}
-        onFieldChange={updateField}
-        needsDocumentation={needsDocumentation}
-        onNeedsDocumentationChange={setNeedsDocumentation}
-        notes={notes}
-        onNotesChange={setNotes}
-      />
-
-      <div className="text-center mt-6">
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-md">
-            {error}
-          </div>
-        )}
-        <SubmitButton 
-          onClick={() => handleFormSubmit(tabType)}
-          isLoading={isSubmitting}
-          text={`ثبت سفارش ${title}`}
-          size="lg"
-          className="w-full md:w-auto"
-        />
-      </div>
-    </div>
-  );
 
   return (
     <div className="min-h-screen" dir="rtl">
@@ -263,68 +189,36 @@ const AnalysisSimulation = () => {
 
       <section className="py-16">
         <div className="max-w-6xl mx-auto px-4">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-8">
-              <TabsTrigger value="static" className="text-sm md:text-base">
-                تحلیل استاتیکی
-              </TabsTrigger>
-              <TabsTrigger value="dynamic" className="text-sm md:text-base">
-                تحلیل دینامیکی
-              </TabsTrigger>
-              <TabsTrigger value="coding" className="text-sm md:text-base">
-                حل مسئله با کدنویسی
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="static" className="mt-8">
-              {isAuthenticated ? (
-                <AnalysisForm
-                  title="تحلیل استاتیکی"
-                  description="تحلیل رفتار استاتیکی سازه‌ها و قطعات تحت بارهای ثابت"
-                  showSoftwareSelect={true}
-                  tabType="static"
-                />
-              ) : (
-                <LoginPrompt 
-                  title="برای ثبت سفارش وارد شوید"
-                  description="برای دسترسی به فرم سفارش تحلیل و شبیه‌سازی، لطفاً وارد حساب کاربری خود شوید."
-                  icon={<FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />}
-                />
-              )}
-            </TabsContent>
-
-            <TabsContent value="dynamic" className="mt-8">
-              {isAuthenticated ? (
-                <AnalysisForm
-                  title="تحلیل دینامیکی"
-                  description="شبیه‌سازی رفتار دینامیکی و ارتعاشی سیستم‌ها"
-                  tabType="dynamic"
-                />
-              ) : (
-                <LoginPrompt 
-                  title="برای ثبت سفارش وارد شوید"
-                  description="برای دسترسی به فرم سفارش تحلیل و شبیه‌سازی، لطفاً وارد حساب کاربری خود شوید."
-                  icon={<FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />}
-                />
-              )}
-            </TabsContent>
-
-            <TabsContent value="coding" className="mt-8">
-              {isAuthenticated ? (
-                <AnalysisForm
-                  title="حل مسئله با کدنویسی"
-                  description="توسعه الگوریتم‌ها و حل عددی برای مسائل پیچیده"
-                  tabType="coding"
-                />
-              ) : (
-                <LoginPrompt 
-                  title="برای ثبت سفارش وارد شوید"
-                  description="برای دسترسی به فرم سفارش تحلیل و شبیه‌سازی، لطفاً وارد حساب کاربری خود شوید."
-                  icon={<FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />}
-                />
-              )}
-            </TabsContent>
-          </Tabs>
+          {isAuthenticated ? (
+            <ServiceOrderForm
+              serviceId="550e8400-e29b-41d4-a716-446655440001"
+              service={service}
+              formData={formData}
+              tabFieldValues={tabFieldValues}
+              needsDocumentation={needsDocumentation}
+              onNeedsDocumentationChange={setNeedsDocumentation}
+              notes={notes}
+              onNotesChange={setNotes}
+              onFieldChange={updateField}
+              onTabFieldChange={updateTabField}
+              documentationOptions={documentationOptions}
+              onDocumentationOptionsChange={setDocumentationOptions}
+              onSubmit={handleFormSubmit}
+              isSubmitting={isSubmitting}
+            />
+          ) : (
+            <LoginPrompt 
+              title="برای ثبت سفارش وارد شوید"
+              description="برای دسترسی به فرم سفارش تحلیل و شبیه‌سازی، لطفاً وارد حساب کاربری خود شوید."
+              icon={<FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />}
+            />
+          )}
+          
+          {error && (
+            <div className="mt-6 p-3 bg-red-100 border border-red-300 text-red-700 rounded-md">
+              {error}
+            </div>
+          )}
         </div>
       </section>
 

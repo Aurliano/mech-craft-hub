@@ -12,7 +12,7 @@ import {
   createContractorWorkshop, checkContractorManufacturingService,
   loginWithCaptcha, registerWithCaptcha, getFallbackCaptchaStatus, 
   getFallbackCaptchaChallenge, verifyFallbackCaptcha,
-  getServiceTabs, getTabFields, getScopes, getServices
+  getServiceTabs, getTabFields, getScopes, getServices, getServiceFields, getAllServices
 } from '@/lib/api';
 
 export function useMe() {
@@ -139,6 +139,24 @@ export function useTabFields(tabId: string) {
     queryKey: ['tabFields', tabId],
     queryFn: () => getTabFields(tabId),
     enabled: Boolean(tabId),
+    retry: false,
+  });
+}
+
+export function useServiceFields(serviceId: string, tabId?: string) {
+  return useQuery<any[]>({
+    queryKey: ['serviceFields', serviceId, tabId],
+    queryFn: () => getServiceFields(serviceId, tabId),
+    enabled: Boolean(serviceId),
+    retry: false,
+  });
+}
+
+export function useService(serviceId: string) {
+  return useQuery<any>({
+    queryKey: ['service', serviceId],
+    queryFn: () => getAllServices().then(services => services.find(s => s.id === serviceId)),
+    enabled: Boolean(serviceId),
     retry: false,
   });
 }

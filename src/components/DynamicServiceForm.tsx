@@ -6,9 +6,10 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useServiceFields } from '@/hooks/useServiceFields';
+import { useServiceFields } from '@/hooks/useAuth';
 import MultiFileUpload from './MultiFileUpload';
 import OrderPreview from './OrderPreview';
+import DocumentationSection from './DocumentationSection';
 
 interface UploadedFile {
   id: string;
@@ -27,6 +28,8 @@ interface DynamicServiceFormProps {
   onFieldChange: (fieldKey: string, value: any) => void;
   needsDocumentation: boolean;
   onNeedsDocumentationChange: (value: boolean) => void;
+  documentationOptions: Record<string, boolean>;
+  onDocumentationOptionChange: (option: string, checked: boolean) => void;
   notes: string;
   onNotesChange: (value: string) => void;
   onSubmit?: () => void;
@@ -39,12 +42,14 @@ export function DynamicServiceForm({
   onFieldChange,
   needsDocumentation,
   onNeedsDocumentationChange,
+  documentationOptions,
+  onDocumentationOptionChange,
   notes,
   onNotesChange,
   onSubmit,
   isSubmitting = false
 }: DynamicServiceFormProps) {
-  const { data: fields, isLoading, error } = useServiceFields(serviceId);
+  const { data: fields = [], isLoading, error } = useServiceFields(serviceId);
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, UploadedFile[]>>({});
   const [showPreview, setShowPreview] = useState(false);
 
@@ -161,11 +166,15 @@ export function DynamicServiceForm({
               <SelectValue placeholder={field.help_text} />
             </SelectTrigger>
             <SelectContent>
-              {field.options?.map((option: string) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
+              {field.options?.map((option: any, index: number) => {
+                const optionValue = typeof option === 'string' ? option : option.value || option.label || String(option);
+                const optionLabel = typeof option === 'string' ? option : option.label || option.value || String(option);
+                return (
+                  <SelectItem key={optionValue || index} value={optionValue}>
+                    {optionLabel}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         );
@@ -174,22 +183,26 @@ export function DynamicServiceForm({
         const selectedValues = Array.isArray(value) ? value : [];
         return (
           <div className="space-y-2">
-            {field.options?.map((option: string) => (
-              <div key={option} className="flex items-center space-x-2 space-x-reverse">
-                <Checkbox
-                  id={`${field.field_key}-${option}`}
-                  checked={selectedValues.includes(option)}
-                  onCheckedChange={(checked) => {
-                    if (checked) {
-                      onFieldChange(field.field_key, [...selectedValues, option]);
-                    } else {
-                      onFieldChange(field.field_key, selectedValues.filter((v: string) => v !== option));
-                    }
-                  }}
-                />
-                <Label htmlFor={`${field.field_key}-${option}`}>{option}</Label>
-              </div>
-            ))}
+            {field.options?.map((option: any, index: number) => {
+              const optionValue = typeof option === 'string' ? option : option.value || option.label || String(option);
+              const optionLabel = typeof option === 'string' ? option : option.label || option.value || String(option);
+              return (
+                <div key={optionValue || index} className="flex items-center space-x-2 space-x-reverse">
+                  <Checkbox
+                    id={`${field.field_key}-${optionValue}`}
+                    checked={selectedValues.includes(optionValue)}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        onFieldChange(field.field_key, [...selectedValues, optionValue]);
+                      } else {
+                        onFieldChange(field.field_key, selectedValues.filter((v: string) => v !== optionValue));
+                      }
+                    }}
+                  />
+                  <Label htmlFor={`${field.field_key}-${optionValue}`}>{optionLabel}</Label>
+                </div>
+              );
+            })}
           </div>
         );
 
@@ -265,17 +278,14 @@ export function DynamicServiceForm({
           </div>
         ))}
 
-        {/* Documentation Checkbox */}
-        <div className="flex items-center space-x-2 space-x-reverse pt-4 border-t">
-          <Checkbox
-            id="needs_documentation"
-            checked={needsDocumentation}
-            onCheckedChange={onNeedsDocumentationChange}
-          />
-          <Label htmlFor="needs_documentation" className="text-sm">
-            نیاز به مستندسازی فنی
-          </Label>
-        </div>
+        {/* Documentation Section */}
+        <DocumentationSection
+          needsDocumentation={needsDocumentation}
+          onNeedsDocumentationChange={onNeedsDocumentationChange}
+          documentationOptions={documentationOptions}
+          onDocumentationOptionChange={onDocumentationOptionChange}
+          serviceSupportsDocumentation={true}
+        />
 
         {/* Notes */}
         <div className="space-y-2">

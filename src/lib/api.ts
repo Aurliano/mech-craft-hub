@@ -133,12 +133,23 @@ export async function meRequest() {
 }
 
 export async function getAllServices() {
-  return fetchJson<any[]>('/v1/services/');
+  try {
+    const response = await fetchJson<any>('/v1/services/');
+    return Array.isArray(response) ? response : (response.results || []);
+  } catch (error) {
+    console.error('Error fetching services:', error);
+    return [];
+  }
 }
 
-export async function getServiceFields(serviceId: string) {
+export async function getServiceFields(serviceId: string, tabId?: string) {
   try {
-    return await fetchJson<any[]>(`/v1/services/${serviceId}/fields/`);
+    const url = tabId 
+      ? `/v1/service-fields/?service=${serviceId}&tab=${tabId}`
+      : `/v1/service-fields/?service=${serviceId}`;
+    const response = await fetchJson<any>(url);
+    // اگر response یک object با results است، results را برگردان، وگرنه خود response را
+    return Array.isArray(response) ? response : (response.results || []);
   } catch (error) {
     console.error('Error fetching service fields:', error);
     return [];
@@ -147,7 +158,8 @@ export async function getServiceFields(serviceId: string) {
 
 export async function getServiceTabs(serviceId: string) {
   try {
-    return await fetchJson<any[]>(`/v1/service-tabs/?service=${serviceId}`);
+    const response = await fetchJson<any>(`/v1/service-tabs/?service=${serviceId}`);
+    return Array.isArray(response) ? response : (response.results || []);
   } catch (error) {
     console.error('Error fetching service tabs:', error);
     return [];
@@ -156,7 +168,8 @@ export async function getServiceTabs(serviceId: string) {
 
 export async function getTabFields(tabId: string) {
   try {
-    return await fetchJson<any[]>(`/v1/service-fields/?tab=${tabId}`);
+    const response = await fetchJson<any>(`/v1/service-fields/?tab=${tabId}`);
+    return Array.isArray(response) ? response : (response.results || []);
   } catch (error) {
     console.error('Error fetching tab fields:', error);
     return [];

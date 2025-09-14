@@ -132,6 +132,7 @@ class Service(models.Model):
     base_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     estimated_delivery_days = models.PositiveIntegerField(null=True, blank=True)
     supports_documentation = models.BooleanField(default=False)
+    has_tabs = models.BooleanField(default=False)  # آیا این سرویس تب‌های مختلف دارد؟
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

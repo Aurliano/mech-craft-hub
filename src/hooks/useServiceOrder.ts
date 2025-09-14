@@ -30,7 +30,10 @@ export function useServiceOrder(serviceId: string) {
   const handleSubmit = async () => {
     try {
       // Merge formData and tabFieldValues
-      const allFieldValues = { ...formData };
+      const allFieldValues = { 
+        ...formData, 
+        documentationOptions 
+      };
       Object.values(tabFieldValues).forEach(tabFields => {
         Object.assign(allFieldValues, tabFields);
       });

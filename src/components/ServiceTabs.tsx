@@ -1,24 +1,47 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useServiceTabs, useTabFields } from '@/hooks/useAuth';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useServiceTabs, useServiceFields } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
+import DocumentationSection from './DocumentationSection';
 
 interface ServiceTabsProps {
   serviceId: string;
   onFieldChange: (tabId: string, fieldKey: string, value: any) => void;
   fieldValues: Record<string, Record<string, any>>;
+  needsDocumentation?: boolean;
+  onNeedsDocumentationChange?: (value: boolean) => void;
+  documentationOptions?: Record<string, boolean>;
+  onDocumentationOptionChange?: (option: string, checked: boolean) => void;
+  notes?: string;
+  onNotesChange?: (value: string) => void;
+  onSubmit?: () => void;
+  isSubmitting?: boolean;
+  error?: string;
 }
 
 const ServiceTabs: React.FC<ServiceTabsProps> = ({ 
   serviceId, 
   onFieldChange, 
-  fieldValues 
+  fieldValues,
+  needsDocumentation = false,
+  onNeedsDocumentationChange,
+  documentationOptions = {},
+  onDocumentationOptionChange,
+  notes = '',
+  onNotesChange,
+  onSubmit,
+  isSubmitting = false,
+  error
 }) => {
   const [activeTab, setActiveTab] = useState<string>('');
   
-  const { data: tabs, isLoading: tabsLoading, error: tabsError } = useServiceTabs(serviceId);
-  const { data: fields, isLoading: fieldsLoading } = useTabFields(activeTab);
+  const { data: tabs = [], isLoading: tabsLoading, error: tabsError } = useServiceTabs(serviceId);
+  const { data: fields = [], isLoading: fieldsLoading } = useServiceFields(serviceId, activeTab);
 
   // Set first tab as active when tabs are loaded
   React.useEffect(() => {
@@ -75,17 +98,62 @@ const ServiceTabs: React.FC<ServiceTabsProps> = ({
                 onFieldChange={onFieldChange}
                 fieldValues={fieldValues[tab.id] || {}}
               />
+              
+              {/* Documentation Section - only show on first tab */}
+              {tab.id === tabs[0]?.id && onNeedsDocumentationChange && onDocumentationOptionChange && (
+                <DocumentationSection
+                  needsDocumentation={needsDocumentation}
+                  onNeedsDocumentationChange={onNeedsDocumentationChange}
+                  documentationOptions={documentationOptions}
+                  onDocumentationOptionChange={onDocumentationOptionChange}
+                  serviceSupportsDocumentation={true}
+                />
+              )}
+              
+              {/* Notes - only show on first tab */}
+              {tab.id === tabs[0]?.id && onNotesChange && (
+                <div className="mt-6 space-y-2">
+                  <label className="text-sm font-medium">
+                    توضیحات اضافی
+                  </label>
+                  <textarea
+                    value={notes}
+                    onChange={(e) => onNotesChange(e.target.value)}
+                    placeholder="توضیحات تکمیلی در مورد پروژه..."
+                    rows={3}
+                    className="w-full p-3 border border-gray-300 rounded-md text-right"
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
       ))}
+      
+      {/* Submit Button - only show on first tab */}
+      {tabs.length > 0 && onSubmit && (
+        <div className="mt-8 text-center">
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-300 text-red-700 rounded-md">
+              {error}
+            </div>
+          )}
+          <button
+            onClick={onSubmit}
+            disabled={isSubmitting}
+            className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isSubmitting ? 'در حال ثبت...' : 'ثبت سفارش'}
+          </button>
+        </div>
+      )}
     </Tabs>
   );
 };
 
 interface TabFieldsProps {
   tabId: string;
-  fields: any[] | undefined;
+  fields: any[];
   fieldsLoading: boolean;
   onFieldChange: (tabId: string, fieldKey: string, value: any) => void;
   fieldValues: Record<string, any>;
@@ -108,7 +176,7 @@ const TabFields: React.FC<TabFieldsProps> = ({
     );
   }
 
-  if (!fields || fields.length === 0) {
+  if (fields.length === 0) {
     return (
       <p className="text-muted-foreground text-center">
         فیلدی برای این تب تعریف نشده است
@@ -151,10 +219,6 @@ interface FieldRendererProps {
 }
 
 const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onChange }) => {
-  const { Input } = require('@/components/ui/input');
-  const { Textarea } = require('@/components/ui/textarea');
-  const { Checkbox } = require('@/components/ui/checkbox');
-  const { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } = require('@/components/ui/select');
 
   switch (field.type) {
     case 'text':
@@ -204,11 +268,15 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onChange })
             <SelectValue placeholder="انتخاب کنید" />
           </SelectTrigger>
           <SelectContent>
-            {field.options?.map((option: any) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
+            {field.options?.map((option: any, index: number) => {
+              const optionValue = typeof option === 'string' ? option : option.value || option.label || String(option);
+              const optionLabel = typeof option === 'string' ? option : option.label || option.value || String(option);
+              return (
+                <SelectItem key={optionValue || index} value={optionValue}>
+                  {optionLabel}
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
       );
@@ -216,25 +284,29 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onChange })
     case 'multiselect':
       return (
         <div className="space-y-2">
-          {field.options?.map((option: any) => (
-            <div key={option.value} className="flex items-center space-x-2 space-x-reverse">
-              <Checkbox
-                id={`${field.field_key}-${option.value}`}
-                checked={value?.includes(option.value) || false}
-                onCheckedChange={(checked) => {
-                  const currentValues = value || [];
-                  if (checked) {
-                    onChange([...currentValues, option.value]);
-                  } else {
-                    onChange(currentValues.filter((v: any) => v !== option.value));
-                  }
-                }}
-              />
-              <label htmlFor={`${field.field_key}-${option.value}`} className="text-sm">
-                {option.label}
-              </label>
-            </div>
-          ))}
+          {field.options?.map((option: any, index: number) => {
+            const optionValue = typeof option === 'string' ? option : option.value || option.label || String(option);
+            const optionLabel = typeof option === 'string' ? option : option.label || option.value || String(option);
+            return (
+              <div key={optionValue || index} className="flex items-center space-x-2 space-x-reverse">
+                <Checkbox
+                  id={`${field.field_key}-${optionValue}`}
+                  checked={value?.includes(optionValue) || false}
+                  onCheckedChange={(checked) => {
+                    const currentValues = value || [];
+                    if (checked) {
+                      onChange([...currentValues, optionValue]);
+                    } else {
+                      onChange(currentValues.filter((v: any) => v !== optionValue));
+                    }
+                  }}
+                />
+                <label htmlFor={`${field.field_key}-${optionValue}`} className="text-sm">
+                  {optionLabel}
+                </label>
+              </div>
+            );
+          })}
         </div>
       );
       

@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { DynamicServiceForm } from "@/components/DynamicServiceForm";
 import LoginPrompt from "@/components/LoginPrompt";
 import TermsAndConditions from "@/components/TermsAndConditions";
+import DocumentationSection from "@/components/DocumentationSection";
 
 const Design = () => {
   // Use real authentication state
@@ -25,9 +26,11 @@ const Design = () => {
     formData,
     needsDocumentation,
     notes,
+    documentationOptions,
     updateField,
     setNeedsDocumentation,
     setNotes,
+    setDocumentationOptions,
     handleSubmit,
     isSubmitting,
     error
@@ -35,7 +38,7 @@ const Design = () => {
 
   // Check if any documentation option is selected
   const hasAnyDocumentationSelected = () => {
-    const options = formData.documentationOptions;
+    const options = documentationOptions || {};
     return Object.values(options).some(value => value === true);
   };
 
@@ -149,263 +152,22 @@ const Design = () => {
         <p className="text-muted-foreground">اطلاعات پروژه خود را وارد کنید</p>
       </div>
 
-      <DynamicServiceForm
-        serviceId="550e8400-e29b-41d4-a716-446655440002"
-        formData={formData}
-        onFieldChange={updateField}
-        needsDocumentation={needsDocumentation}
-        onNeedsDocumentationChange={setNeedsDocumentation}
-        notes={notes}
-        onNotesChange={setNotes}
-        onSubmit={handleFormSubmit}
-        isSubmitting={isSubmitting}
-      />
+            <DynamicServiceForm
+              serviceId="550e8400-e29b-41d4-a716-446655440002"
+              formData={formData}
+              onFieldChange={updateField}
+              needsDocumentation={needsDocumentation}
+              onNeedsDocumentationChange={setNeedsDocumentation}
+              documentationOptions={documentationOptions}
+              onDocumentationOptionChange={(option, checked) => 
+                setDocumentationOptions(prev => ({ ...prev, [option]: checked }))
+              }
+              notes={notes}
+              onNotesChange={setNotes}
+              onSubmit={handleFormSubmit}
+              isSubmitting={isSubmitting}
+            />
 
-      {/* Documentation Options */}
-      {hasAnyDocumentationSelected() && (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              گزینه‌های مستندسازی
-            </CardTitle>
-            <CardDescription>
-              نوع مستندات مورد نیاز خود را انتخاب کنید
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center space-x-2 space-x-reverse">
-                  <Checkbox
-                    id="performanceReport"
-                    checked={formData.documentationOptions.performanceReport}
-                    onCheckedChange={(checked) => setFormData(prev => ({ 
-                      ...prev, 
-                      documentationOptions: { 
-                        ...prev.documentationOptions, 
-                        performanceReport: checked as boolean 
-                      } 
-                    }))}
-                  />
-                  <Label htmlFor="performanceReport" className="text-sm">
-                    گزارش شرح عملکرد قطعات/سامانه
-                  </Label>
-                </div>
-
-                <div className="flex items-center space-x-2 space-x-reverse">
-                  <Checkbox
-                    id="assemblyInstructions"
-                    checked={formData.documentationOptions.assemblyInstructions}
-                    onCheckedChange={(checked) => setFormData(prev => ({ 
-                      ...prev, 
-                      documentationOptions: { 
-                        ...prev.documentationOptions, 
-                        assemblyInstructions: checked as boolean 
-                      } 
-                    }))}
-                  />
-                  <Label htmlFor="assemblyInstructions" className="text-sm">
-                    دستورالعمل مونتاژ قطعات/سامانه
-                  </Label>
-                </div>
-
-                <div className="flex items-center space-x-2 space-x-reverse">
-                  <Checkbox
-                    id="metallurgicalDocument"
-                    checked={formData.documentationOptions.metallurgicalDocument}
-                    onCheckedChange={(checked) => setFormData(prev => ({ 
-                      ...prev, 
-                      documentationOptions: { 
-                        ...prev.documentationOptions, 
-                        metallurgicalDocument: checked as boolean 
-                      } 
-                    }))}
-                  />
-                  <Label htmlFor="metallurgicalDocument" className="text-sm">
-                    سند متالوژیکی قطعات
-                  </Label>
-                </div>
-
-                <div className="flex items-center space-x-2 space-x-reverse">
-                  <Checkbox
-                    id="heatTreatmentDocument"
-                    checked={formData.documentationOptions.heatTreatmentDocument}
-                    onCheckedChange={(checked) => setFormData(prev => ({ 
-                      ...prev, 
-                      documentationOptions: { 
-                        ...prev.documentationOptions, 
-                        heatTreatmentDocument: checked as boolean 
-                      } 
-                    }))}
-                  />
-                  <Label htmlFor="heatTreatmentDocument" className="text-sm">
-                    سند عملیات حرارتی قطعات
-                  </Label>
-                </div>
-
-                <div className="flex items-center space-x-2 space-x-reverse">
-                  <Checkbox
-                    id="analysisTestReport"
-                    checked={formData.documentationOptions.analysisTestReport}
-                    onCheckedChange={(checked) => setFormData(prev => ({ 
-                      ...prev, 
-                      documentationOptions: { 
-                        ...prev.documentationOptions, 
-                        analysisTestReport: checked as boolean 
-                      } 
-                    }))}
-                  />
-                  <Label htmlFor="analysisTestReport" className="text-sm">
-                    گزارش آزمون آنالیز
-                  </Label>
-                </div>
-
-                <div className="flex items-center space-x-2 space-x-reverse">
-                  <Checkbox
-                    id="coatingDocument"
-                    checked={formData.documentationOptions.coatingDocument}
-                    onCheckedChange={(checked) => setFormData(prev => ({ 
-                      ...prev, 
-                      documentationOptions: { 
-                        ...prev.documentationOptions, 
-                        coatingDocument: checked as boolean 
-                      } 
-                    }))}
-                  />
-                  <Label htmlFor="coatingDocument" className="text-sm">
-                    سند پوشش دهی قطعات
-                  </Label>
-                </div>
-
-                <div className="flex items-center space-x-2 space-x-reverse">
-                  <Checkbox
-                    id="bomDocument"
-                    checked={formData.documentationOptions.bomDocument}
-                    onCheckedChange={(checked) => setFormData(prev => ({ 
-                      ...prev, 
-                      documentationOptions: { 
-                        ...prev.documentationOptions, 
-                        bomDocument: checked as boolean 
-                      } 
-                    }))}
-                  />
-                  <Label htmlFor="bomDocument" className="text-sm">
-                    سند BOM (لیست قطعات و مواد)
-                  </Label>
-                </div>
-
-                <div className="flex items-center space-x-2 space-x-reverse">
-                  <Checkbox
-                    id="opcDocument"
-                    checked={formData.documentationOptions.opcDocument}
-                    onCheckedChange={(checked) => setFormData(prev => ({ 
-                      ...prev, 
-                      documentationOptions: { 
-                        ...prev.documentationOptions, 
-                        opcDocument: checked as boolean 
-                      } 
-                    }))}
-                  />
-                  <Label htmlFor="opcDocument" className="text-sm">
-                    سند عملیات فرآیند ساخت(OPC)
-                  </Label>
-                </div>
-
-                <div className="flex items-center space-x-2 space-x-reverse">
-                  <Checkbox
-                    id="fpcDocument"
-                    checked={formData.documentationOptions.fpcDocument}
-                    onCheckedChange={(checked) => setFormData(prev => ({ 
-                      ...prev, 
-                      documentationOptions: { 
-                        ...prev.documentationOptions, 
-                        fpcDocument: checked as boolean 
-                      } 
-                    }))}
-                  />
-                  <Label htmlFor="fpcDocument" className="text-sm">
-                    سند فرآیند جریان ساخت (FPC)
-                  </Label>
-                </div>
-
-                <div className="flex items-center space-x-2 space-x-reverse">
-                  <Checkbox
-                    id="qcChecklist"
-                    checked={formData.documentationOptions.qcChecklist}
-                    onCheckedChange={(checked) => setFormData(prev => ({ 
-                      ...prev, 
-                      documentationOptions: { 
-                        ...prev.documentationOptions, 
-                        qcChecklist: checked as boolean 
-                      } 
-                    }))}
-                  />
-                  <Label htmlFor="qcChecklist" className="text-sm">
-                    چک لیست کنترل ابعادی (QC)
-                  </Label>
-                </div>
-
-                <div className="flex items-center space-x-2 space-x-reverse">
-                  <Checkbox
-                    id="contractorCapabilityDocument"
-                    checked={formData.documentationOptions.contractorCapabilityDocument}
-                    onCheckedChange={(checked) => setFormData(prev => ({ 
-                      ...prev, 
-                      documentationOptions: { 
-                        ...prev.documentationOptions, 
-                        contractorCapabilityDocument: checked as boolean 
-                      } 
-                    }))}
-                  />
-                  <Label htmlFor="contractorCapabilityDocument" className="text-sm">
-                    سند توانایی پیمانکار
-                  </Label>
-                </div>
-
-                <div className="flex items-center space-x-2 space-x-reverse">
-                  <Checkbox
-                    id="designTree"
-                    checked={formData.documentationOptions.designTree}
-                    onCheckedChange={(checked) => setFormData(prev => ({ 
-                      ...prev, 
-                      documentationOptions: { 
-                        ...prev.documentationOptions, 
-                        designTree: checked as boolean 
-                      } 
-                    }))}
-                  />
-                  <Label htmlFor="designTree" className="text-sm">
-                    درخت طراحی
-                  </Label>
-                </div>
-              </div>
-
-              <div className="mt-6 p-4 bg-muted/30 rounded-lg border">
-                <div className="flex items-center space-x-2 space-x-reverse mb-2">
-                  <Checkbox
-                    id="allPartsDocumentation"
-                    checked={formData.documentationOptions.allPartsDocumentation}
-                    onCheckedChange={(checked) => setFormData(prev => ({ 
-                      ...prev, 
-                      documentationOptions: { 
-                        ...prev.documentationOptions, 
-                        allPartsDocumentation: checked as boolean 
-                      } 
-                    }))}
-                  />
-                  <Label htmlFor="allPartsDocumentation" className="text-sm font-semibold">
-                    مستندات خواسته شده را برای بخشی از قطعات میخواهم
-                  </Label>
-                </div>
-                <p className="text-sm text-destructive mt-2">
-                  اگر مستندات را برای تعدادی از قطعات منتخب نیاز دارید، در توضیحات تکمیلی مشخص کنید.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Terms and Conditions */}
       <div className="mt-6">
