@@ -7,7 +7,7 @@ from .views import (
     OrderViewSet, OrderItemViewSet, QuoteViewSet,
     TicketViewSet, TicketMessageViewSet, TicketAttachmentViewSet, TicketFileTypeViewSet, 
     TicketCategoryViewSet, ContentFilterLogViewSet, ReviewViewSet,
-    register, login, me, UserViewSet, UploadView,
+    register, login, refresh_token, logout, me, UserViewSet, UploadView,
     password_reset_request, password_reset_confirm, phone_verification_request,
     phone_verification_confirm, change_password,
     # New order management endpoints
@@ -52,6 +52,8 @@ urlpatterns = [
     path('status/', api_status, name='api_status'),
     path('v1/auth/register/', register, name='register'),
     path('v1/auth/login/', login, name='login'),
+    path('v1/auth/refresh/', refresh_token, name='refresh_token'),
+    path('v1/auth/logout/', logout, name='logout'),
     path('v1/auth/me/', me, name='me'),
     path('v1/auth/password-reset-request/', password_reset_request, name='password_reset_request'),
     path('v1/auth/password-reset-confirm/', password_reset_confirm, name='password_reset_confirm'),
@@ -113,5 +115,9 @@ urlpatterns = [
     path('v1/categories/', ScopeViewSet.as_view({'get': 'list'}), name='categories'),
     path('v1/projects/', OrderViewSet.as_view({'get': 'list', 'post': 'create'}), name='projects'),
     path('v1/bids/', QuoteViewSet.as_view({'get': 'list', 'post': 'create'}), name='bids'),
+    
+    # Direct ticket endpoints (for compatibility)
+    path('tickets/', TicketViewSet.as_view({'get': 'list', 'post': 'create'}), name='tickets_direct'),
+    
     path('v1/', include(router.urls)),
 ] 

@@ -4,6 +4,8 @@ from rest_framework import status
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.http import Http404
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+from rest_framework.exceptions import AuthenticationFailed, NotAuthenticated
 import logging
 
 logger = logging.getLogger(__name__)
@@ -45,6 +47,20 @@ def custom_exception_handler(exc, context):
         elif response.status_code == 401:
             custom_response_data['message'] = 'احراز هویت مورد نیاز است'
             custom_response_data['details'] = 'لطفاً وارد شوید'
+            
+            # Handle JWT specific errors
+            if isinstance(exc, (InvalidToken, TokenError)):
+                custom_response_data['message'] = 'توکن نامعتبر است'
+                custom_response_data['details'] = 'لطفاً دوباره وارد شوید'
+                custom_response_data['code'] = 'token_invalid'
+            elif isinstance(exc, AuthenticationFailed):
+                custom_response_data['message'] = 'احراز هویت ناموفق'
+                custom_response_data['details'] = 'نام کاربری یا رمز عبور اشتباه است'
+                custom_response_data['code'] = 'authentication_failed'
+            elif isinstance(exc, NotAuthenticated):
+                custom_response_data['message'] = 'احراز هویت مورد نیاز است'
+                custom_response_data['details'] = 'لطفاً وارد شوید'
+                custom_response_data['code'] = 'not_authenticated'
             
         elif response.status_code == 403:
             custom_response_data['message'] = 'دسترسی غیرمجاز'

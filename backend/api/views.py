@@ -151,22 +151,87 @@ def register(request):
 def login(request):
     """Login with hCaptcha validation"""
     from rest_framework_simplejwt.tokens import RefreshToken
+    from .utils.jwt_utils import JWTManager
     
     serializer = LoginSerializer(data=request.data, context={'request': request})
     serializer.is_valid(raise_exception=True)
     
     user = serializer.validated_data['user']
     
-    # Generate JWT tokens
-    refresh = RefreshToken.for_user(user)
-    access_token = str(refresh.access_token)
-    refresh_token = str(refresh)
+    # Generate JWT tokens using JWTManager
+    try:
+        tokens = JWTManager.create_tokens_for_user(user)
+        return Response({
+            'access': tokens['access'],
+            'refresh': tokens['refresh'],
+            'access_expires': tokens['access_expires'],
+            'refresh_expires': tokens['refresh_expires'],
+            'user': UserSerializer(user).data
+        })
+    except Exception as e:
+        return Response({
+            'error': True,
+            'message': 'خطا در ایجاد توکن',
+            'details': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def refresh_token(request):
+    """Refresh JWT access token"""
+    from .utils.jwt_utils import JWTManager
     
-    return Response({
-        'access': access_token,
-        'refresh': refresh_token,
-        'user': UserSerializer(user).data
-    })
+    refresh_token = request.data.get('refresh')
+    if not refresh_token:
+        return Response({
+            'error': True,
+            'message': 'توکن تازه‌سازی مورد نیاز است',
+            'code': 'refresh_token_required'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    result = JWTManager.refresh_access_token(refresh_token)
+    
+    if result['success']:
+        return Response({
+            'access': result['access'],
+            'access_expires': result['access_expires']
+        })
+    else:
+        return Response({
+            'error': True,
+            'message': result['message'],
+            'code': result['error']
+        }, status=status.HTTP_401_UNAUTHORIZED)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def logout(request):
+    """Logout user and blacklist refresh token"""
+    from rest_framework_simplejwt.tokens import RefreshToken
+    from rest_framework_simplejwt.exceptions import TokenError
+    
+    try:
+        refresh_token = request.data.get('refresh')
+        if refresh_token:
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+        
+        return Response({
+            'message': 'با موفقیت خارج شدید'
+        })
+    except TokenError:
+        return Response({
+            'error': True,
+            'message': 'توکن نامعتبر است'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        return Response({
+            'error': True,
+            'message': 'خطا در خروج از سیستم',
+            'details': str(e)
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(["GET"]) 

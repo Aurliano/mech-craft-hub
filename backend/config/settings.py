@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'django_filters',
     'corsheaders',
     'drf_spectacular',
@@ -60,6 +62,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'api.middleware.JWTAuthenticationMiddleware',  # Custom JWT middleware
     'axes.middleware.AxesMiddleware',  # Must be after AuthenticationMiddleware
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -226,6 +229,29 @@ from datetime import timedelta
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    'AUDIENCE': None,
+    'ISSUER': None,
+    'JWK_URL': None,
+    'LEEWAY': 0,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+    'TOKEN_USER_CLASS': 'rest_framework_simplejwt.models.TokenUser',
+    'JTI_CLAIM': 'jti',
+    'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
+    'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
+    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
+    'BLACKLIST_TOKEN_CHECKS': True,
 }
 
 SPECTACULAR_SETTINGS = {
@@ -284,17 +310,19 @@ else:
         }
     }
 
+# Authentication backends
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesStandaloneBackend',  # Must be first
+    'django.contrib.auth.backends.ModelBackend',
+]
+
 # django-axes Configuration
 AXES_ENABLED = True
 AXES_FAILURE_LIMIT = 5  # Lock after 5 failed attempts
 AXES_COOLOFF_TIME = 1  # 1 hour lockout
-AXES_LOCKOUT_CALLABLE = 'axes.lockout.database_lockout'
 AXES_LOCKOUT_TEMPLATE = 'axes/lockout.html'
 AXES_VERBOSE = True
-AXES_META_PRECEDENCE_ORDER = [
-    'HTTP_X_FORWARDED_FOR',
-    'REMOTE_ADDR',
-]
+AXES_LOCKOUT_PARAMETERS = ['ip_address', 'user_agent']
 
 # django-simple-captcha Configuration (for fallback)
 CAPTCHA_CHALLENGE_FUNCT = 'captcha.helpers.math_challenge'
