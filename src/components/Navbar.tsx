@@ -53,11 +53,11 @@ const Navbar = () => {
     { name: "طراحی و مدل سازی", href: "/design" },
     { 
       name: "تحلیل و شبیه سازی", 
-      href: "/analysis-simulation",
+      href: "/analysis",
       subItems: [
-        { name: "تحلیل استاتیک", href: "/analysis-simulation?tab=static" },
-        { name: "تحلیل داینامیک", href: "/analysis-simulation?tab=dynamic" },
-        { name: "حل مسئله با کدنویسی", href: "/analysis-simulation?tab=coding" }
+        { name: "تحلیل استاتیک", href: "/analysis?tab=static" },
+        { name: "تحلیل داینامیک", href: "/analysis?tab=dynamic" },
+        { name: "حل مسئله با کدنویسی", href: "/analysis?tab=coding" }
       ]
     },
     { name: "نقشه کشی صنعتی", href: "/drawing" },
@@ -91,6 +91,13 @@ const Navbar = () => {
                     </button>
                   </NavigationMenuItem>
 
+                  {/* Services Page */}
+                  <NavigationMenuItem>
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/services">
+                      خدمات ما
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+
                   {/* Portfolio */}
                   <NavigationMenuItem>
                     <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/portfolio">
@@ -98,10 +105,10 @@ const Navbar = () => {
                     </NavigationMenuLink>
                   </NavigationMenuItem>
 
-                  {/* Services */}
+                  {/* Services Dropdown */}
                   <NavigationMenuItem>
                     <NavigationMenuTrigger className="bg-transparent hover:bg-muted/50 data-[state=open]:bg-muted/50">
-                      خدمات
+                      خدمات تخصصی
                     </NavigationMenuTrigger>
                     <NavigationMenuContent className="bg-card/95 backdrop-blur-sm border border-border/50 shadow-elegant">
                       <div className="w-[400px] p-4">

@@ -51,7 +51,7 @@ const Support = () => {
     try {
       setLoading(true);
       const response = await api.getTickets();
-      setTickets(response.results || response);
+      setTickets(Array.isArray(response) ? response : response.results || []);
     } catch (error) {
       console.error('Error fetching tickets:', error);
       toast({
@@ -67,7 +67,7 @@ const Support = () => {
   const fetchTicketMessages = async (ticketId: string) => {
     try {
       const response = await api.getTicketMessages(ticketId);
-      setTicketMessages(response.results || response);
+      setTicketMessages(Array.isArray(response) ? response : response.results || []);
     } catch (error) {
       console.error('Error fetching ticket messages:', error);
       toast({
