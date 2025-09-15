@@ -53,7 +53,7 @@ from .utils.hcaptcha import (
 
 # Custom Filters
 class ServiceFilter(filters_drf.FilterSet):
-    scope = filters_drf.CharFilter(field_name='scope__name')
+    scope = filters_drf.UUIDFilter(field_name='scope__id')
     type = filters_drf.ChoiceFilter(choices=Service.SERVICE_TYPES)
     is_active = filters_drf.BooleanFilter()
     min_price = filters_drf.NumberFilter(field_name='base_price', lookup_expr='gte')

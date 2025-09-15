@@ -31,7 +31,9 @@ export const LocalCaptcha: React.FC<LocalCaptchaProps> = ({
     if (onRequestChallenge && !challenge) {
       onRequestChallenge();
     }
-  }, [onRequestChallenge, challenge]);
+  }, [challenge]);
+
+  // Manual verification - no auto-verify
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,13 +47,10 @@ export const LocalCaptcha: React.FC<LocalCaptchaProps> = ({
     setError('');
 
     try {
-      onVerify(answer);
+      await onVerify(answer);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'خطا در تایید کپچا';
       setError(errorMessage);
-      if (onError) {
-        onError(errorMessage);
-      }
     } finally {
       setIsVerifying(false);
     }
@@ -64,6 +63,13 @@ export const LocalCaptcha: React.FC<LocalCaptchaProps> = ({
       onRequestChallenge();
     }
   };
+
+  // Auto-request new challenge when component mounts
+  useEffect(() => {
+    if (onRequestChallenge && !challenge) {
+      onRequestChallenge();
+    }
+  }, [challenge]); // Remove onRequestChallenge from dependencies
 
   if (!challenge) {
     return (
@@ -86,58 +92,53 @@ export const LocalCaptcha: React.FC<LocalCaptchaProps> = ({
   }
 
   return (
-    <Card className={className}>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg">کپچای محلی</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="captcha-question">سوال:</Label>
-            <div className="p-3 bg-muted rounded-md text-center text-lg font-mono">
-              {challenge.question}
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="captcha-answer">پاسخ:</Label>
-            <Input
-              id="captcha-answer"
-              type="text"
-              value={answer}
-              onChange={(e) => setAnswer(e.target.value)}
-              placeholder="پاسخ خود را وارد کنید"
-              className="text-center"
-              dir="ltr"
-            />
-          </div>
+    <div className={`space-y-4 ${className}`}>
+      <div className="space-y-2">
+        <Label htmlFor="captcha-question">سوال:</Label>
+        <div className="p-3 bg-muted rounded-md text-center text-lg font-mono">
+          {challenge.question}
+        </div>
+      </div>
+      
+      <div className="space-y-2">
+        <Label htmlFor="captcha-answer">پاسخ:</Label>
+        <Input
+          id="captcha-answer"
+          type="text"
+          value={answer}
+          onChange={(e) => setAnswer(e.target.value)}
+          placeholder="پاسخ خود را وارد کنید"
+          className="text-center"
+          dir="ltr"
+        />
+      </div>
 
-          {error && (
-            <Alert variant="destructive">
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
-          <div className="flex gap-2">
-            <Button 
-              type="submit" 
-              disabled={isVerifying || !answer.trim()}
-              className="flex-1"
-            >
-              {isVerifying ? 'در حال تایید...' : 'تایید'}
-            </Button>
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={handleRetry}
-              disabled={isVerifying}
-            >
-              کپچای جدید
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+      <div className="flex gap-2">
+        <Button 
+          type="button" 
+          onClick={handleSubmit}
+          disabled={isVerifying || !answer.trim()}
+          className="flex-1"
+        >
+          {isVerifying ? 'در حال تایید...' : 'تایید'}
+        </Button>
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={handleRetry}
+          disabled={isVerifying}
+          className="flex-1"
+        >
+          کپچای جدید
+        </Button>
+      </div>
+    </div>
   );
 };
 

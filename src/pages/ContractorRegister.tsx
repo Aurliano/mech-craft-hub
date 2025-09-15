@@ -18,7 +18,7 @@ import { useScopes, useServices } from "@/hooks/useAuth";
 const ContractorRegister = () => {
   const navigate = useNavigate();
   const { mutateAsync: register, isPending, error } = useRegister();
-  const { mutateAsync: registerWithCaptcha, isPending: isCaptchaPending, error: captchaError } = useRegisterWithCaptcha();
+  const { mutateAsync: registerWithCaptcha, isPending: isCaptchaPending, error: registerCaptchaError } = useRegisterWithCaptcha();
   const { mutateAsync: requestVerification, isPending: isVerifying } = usePhoneVerificationRequest();
   const { isAuthenticated } = useAuth();
   const { data: fallbackStatus } = useFallbackCaptchaStatus();
@@ -28,7 +28,12 @@ const ContractorRegister = () => {
   // Get scopes and services
   const { data: scopes } = useScopes();
   const [selectedScopeId, setSelectedScopeId] = useState<string>("");
-  const { data: services } = useServices(selectedScopeId);
+  const { data: services } = useServices(selectedScopeId || undefined);
+  
+  // Reset selected services when scope changes
+  React.useEffect(() => {
+    setSelectedServices([]);
+  }, [selectedScopeId]);
   
   const [phone, setPhone] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -44,6 +49,9 @@ const ContractorRegister = () => {
   const [fallbackChallenge, setFallbackChallenge] = useState<{ id: string; question: string } | null>(null);
   const [fallbackAnswer, setFallbackAnswer] = useState("");
   const [showFallback, setShowFallback] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
+  const [captchaError, setCaptchaError] = useState<string>('');
+  const [captchaVerified, setCaptchaVerified] = useState<boolean>(false);
 
   const hcaptchaRef = useRef<any>(null);
 
@@ -55,14 +63,14 @@ const ContractorRegister = () => {
     if (isAuthenticated) {
       navigate("/contractor-dashboard");
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated]);
 
   // Check if fallback is available
   React.useEffect(() => {
     if (fallbackStatus?.available && !hcaptchaSiteKey) {
       setUseFallback(true);
     }
-  }, [fallbackStatus, hcaptchaSiteKey]);
+  }, [fallbackStatus?.available, hcaptchaSiteKey]);
 
   const handleCaptchaVerify = (token: string) => {
     setHcaptchaToken(token);
@@ -75,7 +83,7 @@ const ContractorRegister = () => {
     }
   };
 
-  const handleFallbackRequest = async () => {
+  const handleFallbackRequest = React.useCallback(async () => {
     try {
       const challenge = await getChallenge();
       setFallbackChallenge({
@@ -85,25 +93,39 @@ const ContractorRegister = () => {
       setUseFallback(true);
     } catch (err) {
       console.error('Failed to get fallback challenge:', err);
+      // Reset fallback state on error
+      setFallbackChallenge(null);
+      setUseFallback(false);
     }
-  };
+  }, [getChallenge]);
 
-  const handleFallbackVerify = async (answer: string) => {
-    if (!fallbackChallenge) return;
+  const handleFallbackVerify = React.useCallback(async (answer: string) => {
+    if (!fallbackChallenge) {
+      setCaptchaError('کپچا در دسترس نیست');
+      setCaptchaVerified(false);
+      return;
+    }
+    
+    // Set the answer in state
+    setFallbackAnswer(answer);
+    setCaptchaError(''); // Clear previous errors
     
     try {
       const result = await verifyFallback({ challengeId: fallbackChallenge.id, answer });
-      if (result.success) {
-        // Fallback captcha verified, proceed with registration
-        await performRegistration();
+      if (result.success || result.valid) {
+        // Fallback captcha verified, clear error
+        setCaptchaError('');
+        setCaptchaVerified(true);
       } else {
-        throw new Error(result.message || 'کپچای محلی ناموفق بود');
+        setCaptchaError(result.message || result.error || 'پاسخ کپچا اشتباه است');
+        setCaptchaVerified(false);
       }
     } catch (err) {
       console.error('Fallback captcha verification failed:', err);
-      throw err;
+      setCaptchaError('خطا در تایید کپچا');
+      setCaptchaVerified(false);
     }
-  };
+  }, [fallbackChallenge, verifyFallback]);
 
   const performRegistration = async () => {
     const userData = {
@@ -120,6 +142,13 @@ const ContractorRegister = () => {
 
     if (hcaptchaToken) {
       await registerWithCaptcha({ ...userData, hcaptcha_token: hcaptchaToken });
+    } else if (useFallback && fallbackChallenge && fallbackAnswer) {
+      // Use fallback captcha
+      await register({
+        ...userData,
+        fallback_captcha_challenge_id: fallbackChallenge.id,
+        fallback_captcha_answer: fallbackAnswer
+      });
     } else {
       await register(userData);
     }
@@ -130,29 +159,67 @@ const ContractorRegister = () => {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (password !== confirm) return;
+    
+    // Clear previous validation errors
+    setValidationErrors({});
+    setCaptchaError('');
+    
+    // Validate form fields
+    const errors: {[key: string]: string} = {};
+    
+    if (password !== confirm) {
+      errors.confirmPassword = "رمزهای عبور مطابقت ندارند";
+    }
     if (!acceptTerms) {
-      alert("لطفا قوانین و شرایط را بپذیرید");
-      return;
+      errors.acceptTerms = "لطفا قوانین و شرایط را بپذیرید";
     }
     if (!selectedScopeId) {
-      alert("لطفا زمینه فعالیت را انتخاب کنید");
-      return;
+      errors.scope = "لطفا زمینه فعالیت را انتخاب کنید";
     }
     if (selectedServices.length === 0) {
-      alert("لطفا حداقل یک سرویس را انتخاب کنید");
+      errors.services = "لطفا حداقل یک سرویس را انتخاب کنید";
+    }
+    if (!phone.trim()) {
+      errors.phone = "شماره همراه الزامی است";
+    }
+    if (!firstName.trim()) {
+      errors.firstName = "نام الزامی است";
+    }
+    if (!lastName.trim()) {
+      errors.lastName = "نام خانوادگی الزامی است";
+    }
+    if (!email.trim()) {
+      errors.email = "ایمیل الزامی است";
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      errors.email = "فرمت ایمیل صحیح نیست";
+    }
+    if (!password.trim()) {
+      errors.password = "رمز عبور الزامی است";
+    } else if (password.length < 8) {
+      errors.password = "رمز عبور باید حداقل 8 کاراکتر باشد";
+    }
+    
+    // Validate captcha
+    if (useFallback && fallbackChallenge) {
+      if (!fallbackAnswer.trim()) {
+        errors.captcha = "لطفا کپچا را حل کنید";
+      } else if (captchaError) {
+        errors.captcha = captchaError;
+      } else if (!captchaVerified) {
+        errors.captcha = "لطفا کپچا را تایید کنید";
+      }
+    } else if (hcaptchaSiteKey && !hcaptchaToken) {
+      errors.captcha = "لطفا کپچا را تایید کنید";
+    }
+    
+    // If there are validation errors, show them and return
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
       return;
     }
     
     try {
-      if (useFallback && fallbackChallenge) {
-        await handleFallbackVerify(fallbackAnswer);
-      } else if (hcaptchaToken) {
-        await performRegistration();
-      } else {
-        // Try regular registration without captcha
-        await performRegistration();
-      }
+      await performRegistration();
     } catch (err) {
       // Error is handled by the hook
     }
@@ -167,7 +234,7 @@ const ContractorRegister = () => {
     if (isAuthenticated && showPhoneVerification) { 
       navigate("/contractor-dashboard");
     }
-  }, [isAuthenticated, showPhoneVerification, navigate]);
+  }, [isAuthenticated, showPhoneVerification]);
 
   const handleServiceToggle = (serviceId: string) => {
     setSelectedServices(prev => 
@@ -214,10 +281,13 @@ const ContractorRegister = () => {
                     id="phone" 
                     value={phone} 
                     onChange={(e) => setPhone(e.target.value)} 
-                    className="text-right" 
+                    className={`text-right ${validationErrors.phone ? 'border-red-500' : ''}`}
                     placeholder="09123456789" 
                     required 
                   />
+                  {validationErrors.phone && (
+                    <p className="text-xs text-red-500">{validationErrors.phone}</p>
+                  )}
                   <p className="text-xs text-muted-foreground">شماره همراه شما به عنوان نام کاربری استفاده خواهد شد</p>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -227,9 +297,12 @@ const ContractorRegister = () => {
                       id="firstName" 
                       value={firstName} 
                       onChange={(e) => setFirstName(e.target.value)} 
-                      className="text-right" 
+                      className={`text-right ${validationErrors.firstName ? 'border-red-500' : ''}`}
                       required 
                     />
+                    {validationErrors.firstName && (
+                      <p className="text-xs text-red-500">{validationErrors.firstName}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="lastName">نام خانوادگی *</Label>
@@ -237,9 +310,12 @@ const ContractorRegister = () => {
                       id="lastName" 
                       value={lastName} 
                       onChange={(e) => setLastName(e.target.value)} 
-                      className="text-right" 
+                      className={`text-right ${validationErrors.lastName ? 'border-red-500' : ''}`}
                       required 
                     />
+                    {validationErrors.lastName && (
+                      <p className="text-xs text-red-500">{validationErrors.lastName}</p>
+                    )}
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -249,9 +325,12 @@ const ContractorRegister = () => {
                     type="email" 
                     value={email} 
                     onChange={(e) => setEmail(e.target.value)} 
-                    className="text-right" 
+                    className={`text-right ${validationErrors.email ? 'border-red-500' : ''}`}
                     required 
                   />
+                  {validationErrors.email && (
+                    <p className="text-xs text-red-500">{validationErrors.email}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="password">رمز عبور *</Label>
@@ -260,10 +339,13 @@ const ContractorRegister = () => {
                     type="password" 
                     value={password} 
                     onChange={(e) => setPassword(e.target.value)} 
-                    className="text-right" 
+                    className={`text-right ${validationErrors.password ? 'border-red-500' : ''}`}
                     required 
                     minLength={8} 
                   />
+                  {validationErrors.password && (
+                    <p className="text-xs text-red-500">{validationErrors.password}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">تکرار رمز عبور *</Label>
@@ -272,34 +354,40 @@ const ContractorRegister = () => {
                     type="password" 
                     value={confirm} 
                     onChange={(e) => setConfirm(e.target.value)} 
-                    className="text-right" 
+                    className={`text-right ${validationErrors.confirmPassword ? 'border-red-500' : ''}`}
                     required 
                     minLength={8} 
                   />
+                  {validationErrors.confirmPassword && (
+                    <p className="text-xs text-red-500">{validationErrors.confirmPassword}</p>
+                  )}
                 </div>
 
                 {/* Scope Selection */}
                 <div className="space-y-2">
                   <Label htmlFor="scope">زمینه فعالیت *</Label>
                   <Select value={selectedScopeId} onValueChange={setSelectedScopeId}>
-                    <SelectTrigger>
+                    <SelectTrigger className={validationErrors.scope ? 'border-red-500' : ''}>
                       <SelectValue placeholder="زمینه فعالیت خود را انتخاب کنید" />
                     </SelectTrigger>
                     <SelectContent>
-                      {scopes?.map((scope) => (
+                      {Array.isArray(scopes) && scopes.map((scope) => (
                         <SelectItem key={scope.id} value={scope.id}>
                           {scope.display_name}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  {validationErrors.scope && (
+                    <p className="text-xs text-red-500">{validationErrors.scope}</p>
+                  )}
                 </div>
 
                 {/* Services Selection */}
-                {selectedScopeId && services && (
+                {selectedScopeId && services && Array.isArray(services) && (
                   <div className="space-y-2">
                     <Label>خدمات قابل ارائه *</Label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded-md p-3">
+                    <div className={`grid grid-cols-1 md:grid-cols-2 gap-2 max-h-40 overflow-y-auto border rounded-md p-3 ${validationErrors.services ? 'border-red-500' : ''}`}>
                       {services.map((service) => (
                         <div key={service.id} className="flex items-center space-x-2 space-x-reverse">
                           <Checkbox
@@ -313,6 +401,9 @@ const ContractorRegister = () => {
                         </div>
                       ))}
                     </div>
+                    {validationErrors.services && (
+                      <p className="text-xs text-red-500">{validationErrors.services}</p>
+                    )}
                     <p className="text-xs text-muted-foreground">
                       حداقل یک سرویس را انتخاب کنید
                     </p>
@@ -331,11 +422,16 @@ const ContractorRegister = () => {
                 )}
 
                 {useFallback && (
-                  <LocalCaptcha
-                    challenge={fallbackChallenge}
-                    onVerify={handleFallbackVerify}
-                    onRequestChallenge={handleFallbackRequest}
-                  />
+                  <div className="space-y-2">
+                    <LocalCaptcha
+                      challenge={fallbackChallenge}
+                      onVerify={handleFallbackVerify}
+                      onRequestChallenge={handleFallbackRequest}
+                    />
+                    {validationErrors.captcha && (
+                      <p className="text-xs text-red-500">{validationErrors.captcha}</p>
+                    )}
+                  </div>
                 )}
 
                 {showFallback && !useFallback && (
@@ -350,7 +446,7 @@ const ContractorRegister = () => {
                 <TermsAndConditions
                   checked={acceptTerms}
                   onCheckedChange={setAcceptTerms}
-                  error={!acceptTerms ? "لطفا قوانین و شرایط را بپذیرید" : undefined}
+                  error={validationErrors.acceptTerms}
                 />
 
                 {password !== confirm && confirm ? (
@@ -359,11 +455,13 @@ const ContractorRegister = () => {
                   </Alert>
                 ) : null}
 
-                {(error || captchaError) && (
+                {(error || registerCaptchaError) && (
                   <Alert variant="destructive">
                     <AlertDescription>
                       {error instanceof Error ? error.message : 
-                       captchaError instanceof Error ? captchaError.message : 
+                       registerCaptchaError instanceof Error ? registerCaptchaError.message : 
+                       typeof error === 'string' ? error :
+                       typeof registerCaptchaError === 'string' ? registerCaptchaError :
                        'ثبت‌نام با خطا مواجه شد'}
                     </AlertDescription>
                   </Alert>

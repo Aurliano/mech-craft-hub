@@ -115,7 +115,20 @@ export async function loginRequest(params: { username: string; password: string 
   return (await res.json()) as { access: string; refresh: string };
 }
 
-export async function registerRequest(params: { username: string; email: string; phone: string; password: string }) {
+export async function registerRequest(params: { 
+  username: string; 
+  email: string; 
+  phone: string; 
+  password: string;
+  first_name?: string;
+  last_name?: string;
+  role?: string;
+  selected_scope?: string;
+  selected_services?: string[];
+  hcaptcha_token?: string;
+  fallback_captcha_challenge_id?: string;
+  fallback_captcha_answer?: string;
+}) {
   const res = await fetch(`${API_ROOT}/v1/auth/register/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -324,7 +337,13 @@ export async function phoneVerificationConfirm(phone: string, code: string) {
 // Scopes and Services Functions
 export async function getScopes() {
   try {
-    return await fetchJson<any[]>('/v1/scopes/');
+    const response = await fetchJson<any>('/v1/scopes/');
+    // Handle paginated response
+    if (response && typeof response === 'object' && 'results' in response) {
+      return response.results || [];
+    }
+    // Handle direct array response
+    return Array.isArray(response) ? response : [];
   } catch (error) {
     console.error('Error fetching scopes:', error);
     return [];
@@ -333,8 +352,14 @@ export async function getScopes() {
 
 export async function getServices(scopeId?: string) {
   try {
-    const url = scopeId ? `/v1/scopes/${scopeId}/services/` : '/v1/services/';
-    return await fetchJson<any[]>(url);
+    const url = scopeId ? `/v1/services/?scope=${scopeId}` : '/v1/services/';
+    const response = await fetchJson<any>(url);
+    // Handle paginated response from ServiceViewSet
+    if (response && typeof response === 'object' && 'results' in response) {
+      return response.results || [];
+    }
+    // Handle direct array response
+    return Array.isArray(response) ? response : [];
   } catch (error) {
     console.error('Error fetching services:', error);
     return [];
@@ -753,7 +778,25 @@ export async function getFallbackCaptchaStatus() {
 
 export async function getFallbackCaptchaChallenge() {
   try {
-    return await fetchJson<{ challenge_id: string; challenge: string }>('/v1/captcha/fallback/');
+    const response = await fetchJson<{ 
+      available: boolean; 
+      challenge_id?: string; 
+      challenge?: string; 
+      type?: string; 
+    }>('/v1/captcha/fallback/');
+    
+    if (!response.available) {
+      throw new Error('Fallback captcha is not available');
+    }
+    
+    if (!response.challenge_id || !response.challenge) {
+      throw new Error('Invalid challenge data received');
+    }
+    
+    return {
+      challenge_id: response.challenge_id,
+      challenge: response.challenge
+    };
   } catch (error) {
     console.error('Error getting fallback captcha challenge:', error);
     throw error;
@@ -762,7 +805,7 @@ export async function getFallbackCaptchaChallenge() {
 
 export async function verifyFallbackCaptcha(challengeId: string, answer: string) {
   try {
-    return await fetchJson<{ success: boolean; message?: string }>('/v1/captcha/fallback/verify/', {
+    return await fetchJson<{ success: boolean; message?: string; valid?: boolean; error?: string }>('/v1/captcha/fallback/verify/', {
       method: 'POST',
       body: JSON.stringify({ challenge_id: challengeId, answer }),
     });

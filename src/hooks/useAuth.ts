@@ -113,6 +113,7 @@ export function useScopes() {
     queryKey: ['scopes'],
     queryFn: getScopes,
     retry: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
@@ -122,6 +123,7 @@ export function useServices(scopeId?: string) {
     queryFn: () => getServices(scopeId),
     enabled: Boolean(scopeId),
     retry: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
 
@@ -428,9 +430,11 @@ export function useCreateContractorWorkshop() {
 }
 
 export function useCheckContractorManufacturingService() {
+  const enabled = Boolean(getAccessToken());
   return useQuery({
     queryKey: ['contractor-manufacturing-service'],
     queryFn: checkContractorManufacturingService,
+    enabled,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }

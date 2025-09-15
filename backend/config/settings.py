@@ -211,7 +211,7 @@ REST_FRAMEWORK = {
         'api.throttling.CustomUserRateThrottle'
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '100/hour',
+        'anon': '1000/hour',
         'user': '1000/hour',
         'burst': '60/minute',
         'sustained': '1000/hour',
@@ -278,7 +278,7 @@ DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@mechcraft.com')
 HCAPTCHA_SITE_KEY = os.environ.get("HCAPTCHA_SITE_KEY")
 HCAPTCHA_SECRET = os.environ.get("HCAPTCHA_SECRET")
 HCAPTCHA_VERIFY_URL = os.environ.get("HCAPTCHA_VERIFY_URL", "https://hcaptcha.com/siteverify")
-HCAPTCHA_FALLBACK_LOCAL = os.environ.get("HCAPTCHA_FALLBACK_LOCAL", "False").lower() == "true"
+HCAPTCHA_FALLBACK_LOCAL = os.environ.get("HCAPTCHA_FALLBACK_LOCAL", "True").lower() == "true"
 
 # Security Settings for Production
 if not DEBUG:

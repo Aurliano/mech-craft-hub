@@ -201,11 +201,25 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
-    hcaptcha_token = serializers.CharField(write_only=True, required=True)
+    hcaptcha_token = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    fallback_captcha_challenge_id = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    fallback_captcha_answer = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    first_name = serializers.CharField(required=False, allow_blank=True)
+    last_name = serializers.CharField(required=False, allow_blank=True)
+    role = serializers.CharField(required=False, allow_blank=True)
+    selected_scope = serializers.CharField(required=False, allow_blank=True)
+    selected_services = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        allow_empty=True
+    )
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'phone', 'password', 'hcaptcha_token']
+        fields = [
+            'id', 'username', 'email', 'phone', 'password', 'hcaptcha_token',
+            'first_name', 'last_name', 'role', 'selected_scope', 'selected_services'
+        ]
         read_only_fields = ['id']
 
     def validate_hcaptcha_token(self, value):
@@ -213,8 +227,9 @@ class RegisterSerializer(serializers.ModelSerializer):
         from .utils.hcaptcha import verify_hcaptcha_token_sync, HCaptchaError
         from django.conf import settings
         
+        # If no value provided, skip validation (fallback captcha will be used)
         if not value:
-            raise serializers.ValidationError("hCaptcha token is required")
+            return value
         
         # Skip validation if no secret is configured (development mode)
         if not getattr(settings, 'HCAPTCHA_SECRET', None):
@@ -247,12 +262,35 @@ class RegisterSerializer(serializers.ModelSerializer):
         except Exception as e:
             raise serializers.ValidationError(f"hCaptcha verification failed: {str(e)}")
 
+    def validate(self, data):
+        """Validate fallback captcha if hcaptcha_token is not provided"""
+        from .utils.hcaptcha import verify_fallback_captcha
+        
+        hcaptcha_token = data.get('hcaptcha_token')
+        fallback_challenge_id = data.get('fallback_captcha_challenge_id')
+        fallback_answer = data.get('fallback_captcha_answer')
+        
+        # If no hcaptcha_token, validate fallback captcha
+        if not hcaptcha_token:
+            if not fallback_challenge_id or not fallback_answer:
+                raise serializers.ValidationError("Either hCaptcha token or fallback captcha is required")
+            
+            if not verify_fallback_captcha(fallback_challenge_id, fallback_answer):
+                raise serializers.ValidationError("Invalid fallback captcha answer")
+        
+        return data
+
     def create(self, validated_data):
         from .utils.hcaptcha import log_hcaptcha_attempt
         import hashlib
         
         hcaptcha_token = validated_data.pop('hcaptcha_token')
         password = validated_data.pop('password')
+        
+        # Extract contractor-specific fields
+        selected_scope = validated_data.pop('selected_scope', None)
+        selected_services = validated_data.pop('selected_services', [])
+        role = validated_data.pop('role', 'customer')
         
         # Get request context for logging
         request = self.context.get('request')
@@ -270,6 +308,33 @@ class RegisterSerializer(serializers.ModelSerializer):
         user = User(**validated_data)
         user.set_password(password)
         user.save()
+        
+        # Set user role if provided
+        if role and role != 'customer':
+            # You might want to add role assignment logic here
+            # For now, we'll just store it in a custom field or handle it differently
+            pass
+        
+        # Create contractor services if this is a contractor registration
+        if role == 'contractor' and selected_scope and selected_services:
+            from .models import Scope, Service, ContractorService
+            
+            try:
+                scope = Scope.objects.get(id=selected_scope)
+                for service_id in selected_services:
+                    try:
+                        service = Service.objects.get(id=service_id)
+                        ContractorService.objects.create(
+                            contractor=user,
+                            service=service,
+                            is_active=True
+                        )
+                    except Service.DoesNotExist:
+                        # Skip invalid service IDs
+                        continue
+            except Scope.DoesNotExist:
+                # Skip if scope doesn't exist
+                pass
         
         # Log successful hCaptcha attempt
         token_hash = hashlib.sha256(hcaptcha_token.encode('utf-8')).hexdigest()
@@ -297,8 +362,9 @@ class LoginSerializer(serializers.Serializer):
         from .utils.hcaptcha import verify_hcaptcha_token_sync, HCaptchaError
         from django.conf import settings
         
+        # If no value provided, skip validation (fallback captcha will be used)
         if not value:
-            raise serializers.ValidationError("hCaptcha token is required")
+            return value
         
         # Skip validation if no secret is configured (development mode)
         if not getattr(settings, 'HCAPTCHA_SECRET', None):
