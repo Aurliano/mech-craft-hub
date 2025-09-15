@@ -280,6 +280,11 @@ HCAPTCHA_SECRET = os.environ.get("HCAPTCHA_SECRET")
 HCAPTCHA_VERIFY_URL = os.environ.get("HCAPTCHA_VERIFY_URL", "https://hcaptcha.com/siteverify")
 HCAPTCHA_FALLBACK_LOCAL = os.environ.get("HCAPTCHA_FALLBACK_LOCAL", "True").lower() == "true"
 
+# Cloudflare Turnstile Configuration
+TURNSTILE_SITE_KEY = os.environ.get("TURNSTILE_SITE_KEY")
+TURNSTILE_SECRET_KEY = os.environ.get("TURNSTILE_SECRET_KEY")
+TURNSTILE_FALLBACK_LOCAL = os.environ.get("TURNSTILE_FALLBACK_LOCAL", "False").lower() == "true"
+
 # Security Settings for Production
 if not DEBUG:
     SECURE_SSL_REDIRECT = True

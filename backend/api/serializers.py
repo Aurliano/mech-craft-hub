@@ -202,6 +202,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     hcaptcha_token = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    cf_turnstile_response = serializers.CharField(write_only=True, required=False, allow_blank=True)
     fallback_captcha_challenge_id = serializers.CharField(write_only=True, required=False, allow_blank=True)
     fallback_captcha_answer = serializers.CharField(write_only=True, required=False, allow_blank=True)
     first_name = serializers.CharField(required=False, allow_blank=True)
@@ -217,7 +218,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            'id', 'username', 'email', 'phone', 'password', 'hcaptcha_token',
+            'id', 'username', 'email', 'phone', 'password', 'hcaptcha_token', 'cf_turnstile_response',
             'first_name', 'last_name', 'role', 'selected_scope', 'selected_services'
         ]
         read_only_fields = ['id']
@@ -262,21 +263,69 @@ class RegisterSerializer(serializers.ModelSerializer):
         except Exception as e:
             raise serializers.ValidationError(f"hCaptcha verification failed: {str(e)}")
 
+    def validate_cf_turnstile_response(self, value):
+        """Validate Turnstile token"""
+        from .utils.turnstile import verify_turnstile_token_sync, TurnstileError
+        from django.conf import settings
+        
+        # If no value provided, skip validation (other captcha methods will be used)
+        if not value:
+            return value
+        
+        # Skip validation if no secret is configured (development mode)
+        if not getattr(settings, 'TURNSTILE_SECRET_KEY', None):
+            return value
+        
+        try:
+            # Get client IP from request context
+            request = self.context.get('request')
+            remote_ip = None
+            if request:
+                remote_ip = request.META.get('REMOTE_ADDR')
+                # Handle X-Forwarded-For header
+                x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+                if x_forwarded_for:
+                    remote_ip = x_forwarded_for.split(',')[0].strip()
+            
+            success, response_data = verify_turnstile_token_sync(value, remote_ip)
+            
+            if not success:
+                error_codes = response_data.get('error-codes', [])
+                error_message = f"Turnstile verification failed: {', '.join(error_codes)}"
+                raise serializers.ValidationError(error_message)
+            
+            # Store the token for later use in create method
+            self._turnstile_response = response_data
+            return value
+            
+        except TurnstileError as e:
+            raise serializers.ValidationError(f"Turnstile verification error: {str(e)}")
+        except Exception as e:
+            raise serializers.ValidationError(f"Turnstile verification failed: {str(e)}")
+
     def validate(self, data):
-        """Validate fallback captcha if hcaptcha_token is not provided"""
+        """Validate captcha - priority: Turnstile > hCaptcha > fallback"""
         from .utils.hcaptcha import verify_fallback_captcha
         
+        turnstile_token = data.get('cf_turnstile_response')
         hcaptcha_token = data.get('hcaptcha_token')
         fallback_challenge_id = data.get('fallback_captcha_challenge_id')
         fallback_answer = data.get('fallback_captcha_answer')
         
-        # If no hcaptcha_token, validate fallback captcha
-        if not hcaptcha_token:
-            if not fallback_challenge_id or not fallback_answer:
-                raise serializers.ValidationError("Either hCaptcha token or fallback captcha is required")
-            
-            if not verify_fallback_captcha(fallback_challenge_id, fallback_answer):
-                raise serializers.ValidationError("Invalid fallback captcha answer")
+        # If Turnstile token is provided and valid, we're good
+        if turnstile_token:
+            return data
+        
+        # If no Turnstile but hCaptcha token is provided and valid, we're good
+        if hcaptcha_token:
+            return data
+        
+        # If no cloud captcha, validate fallback captcha
+        if not fallback_challenge_id or not fallback_answer:
+            raise serializers.ValidationError("Captcha verification is required")
+        
+        if not verify_fallback_captcha(fallback_challenge_id, fallback_answer):
+            raise serializers.ValidationError("Invalid captcha answer")
         
         return data
 
@@ -284,7 +333,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         from .utils.hcaptcha import log_hcaptcha_attempt
         import hashlib
         
-        hcaptcha_token = validated_data.pop('hcaptcha_token')
+        hcaptcha_token = validated_data.pop('hcaptcha_token', None)
+        turnstile_token = validated_data.pop('cf_turnstile_response', None)
         password = validated_data.pop('password')
         
         # Extract contractor-specific fields
@@ -336,18 +386,28 @@ class RegisterSerializer(serializers.ModelSerializer):
                 # Skip if scope doesn't exist
                 pass
         
-        # Log successful hCaptcha attempt
-        token_hash = hashlib.sha256(hcaptcha_token.encode('utf-8')).hexdigest()
-        # Log successful hCaptcha attempt
-        log_hcaptcha_attempt(
-            ip=remote_ip,
-            user=user,
-            endpoint='/api/v1/auth/register/',
-            success=True,
-            response_data=getattr(self, '_hcaptcha_response', None),
-            token_hash=token_hash,
-            user_agent=user_agent
-        )
+        # Log successful captcha attempt
+        if hcaptcha_token:
+            token_hash = hashlib.sha256(hcaptcha_token.encode('utf-8')).hexdigest()
+            log_hcaptcha_attempt(
+                ip=remote_ip,
+                user=user,
+                endpoint='/api/v1/auth/register/',
+                success=True,
+                response_data=getattr(self, '_hcaptcha_response', None),
+                token_hash=token_hash,
+                user_agent=user_agent
+            )
+        elif turnstile_token:
+            from .utils.turnstile import log_turnstile_attempt
+            log_turnstile_attempt(
+                token=turnstile_token,
+                remote_ip=remote_ip,
+                user=user,
+                endpoint='/api/v1/auth/register/',
+                success=True,
+                response_data=getattr(self, '_turnstile_response', None)
+            )
         
         return user
 
@@ -355,7 +415,10 @@ class RegisterSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField()
-    hcaptcha_token = serializers.CharField(required=True)
+    hcaptcha_token = serializers.CharField(required=False, allow_blank=True)
+    cf_turnstile_response = serializers.CharField(required=False, allow_blank=True)
+    fallback_captcha_challenge_id = serializers.CharField(required=False, allow_blank=True)
+    fallback_captcha_answer = serializers.CharField(required=False, allow_blank=True)
 
     def validate_hcaptcha_token(self, value):
         """Validate hCaptcha token"""
@@ -396,6 +459,70 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError(f"hCaptcha verification error: {str(e)}")
         except Exception as e:
             raise serializers.ValidationError(f"hCaptcha verification failed: {str(e)}")
+
+    def validate_cf_turnstile_response(self, value):
+        """Validate Turnstile token"""
+        from .utils.turnstile import verify_turnstile_token_sync, TurnstileError
+        from django.conf import settings
+        
+        # If no value provided, skip validation
+        if not value:
+            return value
+        
+        # Skip validation if no secret is configured
+        if not getattr(settings, 'TURNSTILE_SECRET_KEY', None):
+            return value
+        
+        try:
+            # Get client IP from request context
+            request = self.context.get('request')
+            remote_ip = None
+            if request:
+                remote_ip = request.META.get('REMOTE_ADDR')
+                x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+                if x_forwarded_for:
+                    remote_ip = x_forwarded_for.split(',')[0].strip()
+            
+            success, response_data = verify_turnstile_token_sync(value, remote_ip)
+            
+            if not success:
+                error_codes = response_data.get('error-codes', [])
+                error_message = f"Turnstile verification failed: {', '.join(error_codes)}"
+                raise serializers.ValidationError(error_message)
+            
+            self._turnstile_response = response_data
+            return value
+            
+        except TurnstileError as e:
+            raise serializers.ValidationError(f"Turnstile verification error: {str(e)}")
+        except Exception as e:
+            raise serializers.ValidationError(f"Turnstile verification failed: {str(e)}")
+
+    def validate(self, data):
+        """Validate captcha - priority: Turnstile > hCaptcha > fallback"""
+        from .utils.hcaptcha import verify_fallback_captcha
+        
+        turnstile_token = data.get('cf_turnstile_response')
+        hcaptcha_token = data.get('hcaptcha_token')
+        fallback_challenge_id = data.get('fallback_captcha_challenge_id')
+        fallback_answer = data.get('fallback_captcha_answer')
+        
+        # If Turnstile token is provided and valid, we're good
+        if turnstile_token:
+            return data
+        
+        # If no Turnstile but hCaptcha token is provided and valid, we're good
+        if hcaptcha_token:
+            return data
+        
+        # If no cloud captcha, validate fallback captcha
+        if not fallback_challenge_id or not fallback_answer:
+            raise serializers.ValidationError("Captcha verification is required")
+        
+        if not verify_fallback_captcha(fallback_challenge_id, fallback_answer):
+            raise serializers.ValidationError("Invalid captcha answer")
+        
+        return data
 
     def validate(self, attrs):
         from django.contrib.auth import authenticate
