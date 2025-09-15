@@ -27,6 +27,13 @@ export function useServiceOrder(serviceId: string) {
     }));
   };
 
+  const updateDocumentationOption = (option: string, checked: boolean) => {
+    setDocumentationOptions(prev => ({
+      ...prev,
+      [option]: checked
+    }));
+  };
+
   const handleSubmit = async () => {
     try {
       // Merge formData and tabFieldValues
@@ -67,6 +74,7 @@ export function useServiceOrder(serviceId: string) {
     documentationOptions,
     updateField,
     updateTabField,
+    updateDocumentationOption,
     setNeedsDocumentation,
     setNotes,
     setDocumentationOptions,

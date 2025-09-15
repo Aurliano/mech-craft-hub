@@ -10,6 +10,7 @@ import { useRegister, usePhoneVerificationRequest, useRegisterWithCaptcha, useFa
 import { useAuth } from "@/contexts/AuthContext";
 import HCaptchaComponent from "@/components/HCaptcha";
 import LocalCaptcha from "@/components/LocalCaptcha";
+import TurnstileCaptcha from "@/components/TurnstileCaptcha";
 import TermsAndConditions from "@/components/TermsAndConditions";
 
 const Register = () => {
@@ -30,16 +31,9 @@ const Register = () => {
   const [confirm, setConfirm] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [showPhoneVerification, setShowPhoneVerification] = useState(false);
-  const [hcaptchaToken, setHcaptchaToken] = useState<string | null>(null);
-  const [useFallback, setUseFallback] = useState(false);
-  const [fallbackChallenge, setFallbackChallenge] = useState<{ id: string; question: string } | null>(null);
-  const [fallbackAnswer, setFallbackAnswer] = useState("");
-  const [showFallback, setShowFallback] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   const hcaptchaRef = useRef<any>(null);
-
-  // Get hCaptcha site key from environment
-  const hcaptchaSiteKey = import.meta.env.VITE_HCAPTCHA_SITE_KEY;
 
   // Redirect if already authenticated
   React.useEffect(() => {
@@ -48,52 +42,8 @@ const Register = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  // Check if fallback is available
-  React.useEffect(() => {
-    if (fallbackStatus?.available && !hcaptchaSiteKey) {
-      setUseFallback(true);
-    }
-  }, [fallbackStatus, hcaptchaSiteKey]);
-
   const handleCaptchaVerify = (token: string) => {
-    setHcaptchaToken(token);
-  };
-
-  const handleCaptchaError = (error: any) => {
-    console.error('hCaptcha error:', error);
-    if (fallbackStatus?.available) {
-      setShowFallback(true);
-    }
-  };
-
-  const handleFallbackRequest = async () => {
-    try {
-      const challenge = await getChallenge();
-      setFallbackChallenge({
-        id: challenge.challenge_id,
-        question: challenge.challenge
-      });
-      setUseFallback(true);
-    } catch (err) {
-      console.error('Failed to get fallback challenge:', err);
-    }
-  };
-
-  const handleFallbackVerify = async (answer: string) => {
-    if (!fallbackChallenge) return;
-    
-    try {
-      const result = await verifyFallback({ challengeId: fallbackChallenge.id, answer });
-      if (result.success) {
-        // Fallback captcha verified, proceed with registration
-        await performRegistration();
-      } else {
-        throw new Error(result.message || 'کپچای محلی ناموفق بود');
-      }
-    } catch (err) {
-      console.error('Fallback captcha verification failed:', err);
-      throw err;
-    }
+    setCaptchaToken(token);
   };
 
   const performRegistration = async () => {
@@ -104,14 +54,19 @@ const Register = () => {
       email,
       phone,
       password,
-      role: 'customer' // Set role as customer
+      role: 'customer', // Set role as customer
+      cf_turnstile_response: captchaToken // Add Turnstile token
     };
 
-    if (hcaptchaToken) {
-      await registerWithCaptcha({ ...userData, hcaptcha_token: hcaptchaToken });
+    if (captchaToken) {
+      await registerWithCaptcha({ ...userData, hcaptcha_token: captchaToken });
     } else {
       await register(userData);
     }
+    
+    // Clear token after use
+    setCaptchaToken(null);
+    
     // After successful registration, request phone verification
     await requestVerification(phone);
     setShowPhoneVerification(true);
@@ -126,16 +81,7 @@ const Register = () => {
     }
     
     try {
-      if (useFallback && fallbackChallenge) {
-        await handleFallbackVerify(fallbackAnswer);
-      } else if (hcaptchaToken) {
-        await performRegistration();
-      } else {
-        // Try regular registration without captcha
-        await register({ username: phone, email, phone, password });
-        await requestVerification(phone);
-        setShowPhoneVerification(true);
-      }
+      await performRegistration();
     } catch (err) {
       // Error is handled by the hook
     }
@@ -253,32 +199,8 @@ const Register = () => {
                   />
                 </div>
 
-                {/* hCaptcha or Fallback Captcha */}
-                {!useFallback && hcaptchaSiteKey && (
-                  <HCaptchaComponent
-                    siteKey={hcaptchaSiteKey}
-                    onVerify={handleCaptchaVerify}
-                    onError={handleCaptchaError}
-                    fallbackAvailable={fallbackStatus?.available || false}
-                    onFallbackRequest={handleFallbackRequest}
-                  />
-                )}
-
-                {useFallback && (
-                  <LocalCaptcha
-                    challenge={fallbackChallenge}
-                    onVerify={handleFallbackVerify}
-                    onRequestChallenge={handleFallbackRequest}
-                  />
-                )}
-
-                {showFallback && !useFallback && (
-                  <Alert>
-                    <AlertDescription>
-                      hCaptcha در دسترس نیست. لطفاً از کپچای محلی استفاده کنید.
-                    </AlertDescription>
-                  </Alert>
-                )}
+                {/* Turnstile Captcha */}
+                <TurnstileCaptcha onVerify={handleCaptchaVerify} />
 
                 {/* Terms and Conditions */}
                 <TermsAndConditions
@@ -307,9 +229,9 @@ const Register = () => {
                   className="w-full" 
                   variant="hero" 
                   type="submit" 
-                  disabled={isPending || isVerifying || isCaptchaPending || isVerifyingFallback || (!hcaptchaToken && !useFallback && hcaptchaSiteKey)}
+                  disabled={isPending || isVerifying || isCaptchaPending || !captchaToken}
                 >
-                  {isPending || isVerifying || isCaptchaPending || isVerifyingFallback ? "در حال ثبت‌نام..." : "ثبت نام"}
+                  {isPending || isVerifying || isCaptchaPending ? "در حال ثبت‌نام..." : "ثبت نام"}
                 </Button>
                 
                 <div className="text-center">

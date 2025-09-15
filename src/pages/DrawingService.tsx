@@ -31,9 +31,12 @@ const DrawingService = () => {
     formData,
     needsDocumentation,
     notes,
+    documentationOptions,
     updateField,
+    updateDocumentationOption,
     setNeedsDocumentation,
     setNotes,
+    setDocumentationOptions,
     handleSubmit,
     isSubmitting,
     error: serviceOrderError
@@ -337,6 +340,8 @@ const DrawingService = () => {
                         onNeedsDocumentationChange={setNeedsDocumentation}
                         notes={notes}
                         onNotesChange={setNotes}
+                        documentationOptions={documentationOptions}
+                        onDocumentationOptionChange={updateDocumentationOption}
                         onSubmit={handleFormSubmit}
                         isSubmitting={isSubmitting}
                       />
@@ -356,6 +361,8 @@ const DrawingService = () => {
                     onNeedsDocumentationChange={setNeedsDocumentation}
                     notes={notes}
                     onNotesChange={setNotes}
+                    documentationOptions={documentationOptions}
+                    onDocumentationOptionChange={updateDocumentationOption}
                     onSubmit={handleFormSubmit}
                     isSubmitting={isSubmitting}
                   />

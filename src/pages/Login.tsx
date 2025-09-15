@@ -8,30 +8,17 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import AuthNavbar from "@/components/AuthNavbar";
 import { useLogin, useLoginWithCaptcha, useFallbackCaptchaStatus, useFallbackCaptchaChallenge, useVerifyFallbackCaptcha } from "@/hooks/useAuth";
 import { useAuth } from "@/contexts/AuthContext";
-import HCaptchaComponent from "@/components/HCaptcha";
-import LocalCaptcha from "@/components/LocalCaptcha";
+import TurnstileCaptcha from "@/components/TurnstileCaptcha";
 
 const Login = () => {
   const navigate = useNavigate();
   const { mutateAsync: login, isPending, error } = useLogin();
   const { mutateAsync: loginWithCaptcha, isPending: isCaptchaPending, error: captchaError } = useLoginWithCaptcha();
   const { isAuthenticated } = useAuth();
-  const { data: fallbackStatus } = useFallbackCaptchaStatus();
-  const { mutateAsync: getChallenge, isPending: isChallengePending } = useFallbackCaptchaChallenge();
-  const { mutateAsync: verifyFallback, isPending: isVerifyingFallback } = useVerifyFallbackCaptcha();
   
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [hcaptchaToken, setHcaptchaToken] = useState<string | null>(null);
-  const [useFallback, setUseFallback] = useState(false);
-  const [fallbackChallenge, setFallbackChallenge] = useState<{ id: string; question: string } | null>(null);
-  const [fallbackAnswer, setFallbackAnswer] = useState("");
-  const [showFallback, setShowFallback] = useState(false);
-
-  const hcaptchaRef = useRef<any>(null);
-
-  // Get hCaptcha site key from environment
-  const hcaptchaSiteKey = import.meta.env.VITE_HCAPTCHA_SITE_KEY;
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   // Redirect if already authenticated
   React.useEffect(() => {
@@ -40,60 +27,25 @@ const Login = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  // Check if fallback is available
-  React.useEffect(() => {
-    if (fallbackStatus?.available && !hcaptchaSiteKey) {
-      setUseFallback(true);
-    }
-  }, [fallbackStatus, hcaptchaSiteKey]);
-
   const handleCaptchaVerify = (token: string) => {
-    setHcaptchaToken(token);
-  };
-
-  const handleCaptchaError = (error: any) => {
-    console.error('hCaptcha error:', error);
-    if (fallbackStatus?.available) {
-      setShowFallback(true);
-    }
-  };
-
-  const handleFallbackRequest = async () => {
-    try {
-      const challenge = await getChallenge();
-      setFallbackChallenge({
-        id: challenge.challenge_id,
-        question: challenge.challenge
-      });
-      setUseFallback(true);
-    } catch (err) {
-      console.error('Failed to get fallback challenge:', err);
-    }
-  };
-
-  const handleFallbackVerify = async (answer: string) => {
-    if (!fallbackChallenge) return;
-    
-    try {
-      const result = await verifyFallback({ challengeId: fallbackChallenge.id, answer });
-      if (result.success) {
-        // Fallback captcha verified, proceed with login
-        await performLogin();
-      } else {
-        throw new Error(result.message || 'کپچای محلی ناموفق بود');
-      }
-    } catch (err) {
-      console.error('Fallback captcha verification failed:', err);
-      throw err;
-    }
+    setCaptchaToken(token);
   };
 
   const performLogin = async () => {
-    if (hcaptchaToken) {
-      await loginWithCaptcha({ username, password, hcaptcha_token: hcaptchaToken });
+    const loginData = {
+      username,
+      password,
+      cf_turnstile_response: captchaToken
+    };
+
+    if (captchaToken) {
+      await loginWithCaptcha({ ...loginData, hcaptcha_token: captchaToken });
     } else {
-      await login({ username, password });
+      await login(loginData);
     }
+    
+    // Clear token after use
+    setCaptchaToken(null);
     navigate("/dashboard");
   };
 
@@ -101,22 +53,14 @@ const Login = () => {
     e.preventDefault();
     
     try {
-      if (useFallback && fallbackChallenge) {
-        await handleFallbackVerify(fallbackAnswer);
-      } else if (hcaptchaToken) {
-        await performLogin();
-      } else {
-        // Try regular login without captcha
-        await login({ username, password });
-        navigate("/dashboard");
-      }
+      await performLogin();
     } catch (err) {
       // Error is handled by the hook
     }
   }
 
   const currentError = error || captchaError;
-  const isPendingAny = isPending || isCaptchaPending || isVerifyingFallback;
+  const isPendingAny = isPending || isCaptchaPending;
 
   return (
     <div className="min-h-screen" dir="rtl">
@@ -151,32 +95,8 @@ const Login = () => {
                 />
               </div>
 
-              {/* hCaptcha or Fallback Captcha */}
-              {!useFallback && hcaptchaSiteKey && (
-                <HCaptchaComponent
-                  siteKey={hcaptchaSiteKey}
-                  onVerify={handleCaptchaVerify}
-                  onError={handleCaptchaError}
-                  fallbackAvailable={fallbackStatus?.available || false}
-                  onFallbackRequest={handleFallbackRequest}
-                />
-              )}
-
-              {useFallback && (
-                <LocalCaptcha
-                  challenge={fallbackChallenge}
-                  onVerify={handleFallbackVerify}
-                  onRequestChallenge={handleFallbackRequest}
-                />
-              )}
-
-              {showFallback && !useFallback && (
-                <Alert>
-                  <AlertDescription>
-                    hCaptcha در دسترس نیست. لطفاً از کپچای محلی استفاده کنید.
-                  </AlertDescription>
-                </Alert>
-              )}
+              {/* Turnstile Captcha */}
+              <TurnstileCaptcha onVerify={handleCaptchaVerify} />
 
               {currentError && (
                 <Alert variant="destructive">
@@ -196,7 +116,7 @@ const Login = () => {
                 className="w-full" 
                 variant="hero" 
                 type="submit" 
-                disabled={isPendingAny || (!hcaptchaToken && !useFallback && hcaptchaSiteKey)}
+                disabled={isPendingAny || !captchaToken}
               >
                 {isPendingAny ? "در حال ورود..." : "ورود"}
               </Button>
