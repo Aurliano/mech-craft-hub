@@ -125,7 +125,7 @@ export async function registerRequest(params: {
   role?: string;
   selected_scope?: string;
   selected_services?: string[];
-  hcaptcha_token?: string;
+  turnstile_token?: string;
   fallback_captcha_challenge_id?: string;
   fallback_captcha_answer?: string;
 }) {
@@ -729,11 +729,11 @@ export async function checkContractorManufacturingService() {
   }
 }
 
-// hCaptcha API Functions
-export async function loginWithCaptcha(params: { 
+// Turnstile API Functions
+export async function loginWithTurnstile(params: { 
   username: string; 
   password: string; 
-  hcaptcha_token: string;
+  turnstile_token: string;
 }) {
   const res = await fetch(`${API_ROOT}/v1/auth/login/`, {
     method: 'POST',
@@ -747,12 +747,12 @@ export async function loginWithCaptcha(params: {
   return (await res.json()) as { access: string; refresh: string };
 }
 
-export async function registerWithCaptcha(params: { 
+export async function registerWithTurnstile(params: { 
   username: string; 
   email: string; 
   phone: string; 
   password: string; 
-  hcaptcha_token: string;
+  turnstile_token: string;
 }) {
   const res = await fetch(`${API_ROOT}/v1/auth/register/`, {
     method: 'POST',
@@ -971,23 +971,6 @@ export async function changePasswordRequest(data: { old_password: string; new_pa
   }
 }
 
-export async function getHCaptchaStats() {
-  try {
-    return await fetchJson<any>('/v1/admin/hcaptcha/stats/');
-  } catch (error) {
-    console.error('Error fetching hCaptcha stats:', error);
-    throw error;
-  }
-}
-
-export async function getHCaptchaAttempts() {
-  try {
-    return await fetchJson<any>('/v1/admin/hcaptcha/attempts/');
-  } catch (error) {
-    console.error('Error fetching hCaptcha attempts:', error);
-    throw error;
-  }
-}
 
 // API object for easy access to all functions
 export const api = {
@@ -1046,12 +1029,12 @@ export const api = {
   createContractorWorkshop,
   checkContractorManufacturingService,
   
-  // hCaptcha
+  // Turnstile
   getFallbackCaptchaStatus,
   getFallbackCaptchaChallenge,
   verifyFallbackCaptcha,
-  getHCaptchaStats,
-  getHCaptchaAttempts,
+  loginWithTurnstile,
+  registerWithTurnstile,
   
   // Tickets
   getTickets,

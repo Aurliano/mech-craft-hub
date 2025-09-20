@@ -769,8 +769,8 @@ class Notification(models.Model):
         return f"{self.user.username} - {self.title}"
 
 
-class HCaptchaAttempt(models.Model):
-    """Audit trail for hCaptcha verification attempts"""
+class TurnstileAttempt(models.Model):
+    """Audit trail for Turnstile verification attempts"""
     
     id = models.BigAutoField(primary_key=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -780,7 +780,7 @@ class HCaptchaAttempt(models.Model):
         null=True, 
         blank=True, 
         on_delete=models.SET_NULL,
-        related_name='hcaptcha_attempts'
+        related_name='turnstile_attempts'
     )
     endpoint = models.CharField(max_length=255)
     success = models.BooleanField()
@@ -790,7 +790,7 @@ class HCaptchaAttempt(models.Model):
     user_agent = models.TextField(blank=True, null=True)
     
     class Meta:
-        db_table = 'hcaptcha_attempts'
+        db_table = 'turnstile_attempts'
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['created_at']),

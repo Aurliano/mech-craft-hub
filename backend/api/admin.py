@@ -6,7 +6,7 @@ from .models import (
     Order, OrderItem, Quote, OrderStatusLog, Payment,
     TicketCategory, Ticket, TicketParticipant, TicketMessage, TicketAttachment,
     MediaFile, Review, PasswordResetToken, PhoneVerificationCode, Notification,
-    HCaptchaAttempt
+    TurnstileAttempt
 )
 
 
@@ -251,8 +251,8 @@ class NotificationAdmin(admin.ModelAdmin):
     readonly_fields = ('created_at',)
 
 
-@admin.register(HCaptchaAttempt)
-class HCaptchaAttemptAdmin(admin.ModelAdmin):
+@admin.register(TurnstileAttempt)
+class TurnstileAttemptAdmin(admin.ModelAdmin):
     list_display = ('id', 'ip', 'user', 'endpoint', 'success', 'created_at', 'token_hash_short')
     list_filter = ('success', 'endpoint', 'created_at', 'user')
     search_fields = ('ip', 'user__username', 'endpoint', 'token_hash', 'error_message')

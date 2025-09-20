@@ -274,11 +274,11 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@mechcraft.com')
 
-# hCaptcha Configuration
-HCAPTCHA_SITE_KEY = os.environ.get("HCAPTCHA_SITE_KEY")
-HCAPTCHA_SECRET = os.environ.get("HCAPTCHA_SECRET")
-HCAPTCHA_VERIFY_URL = os.environ.get("HCAPTCHA_VERIFY_URL", "https://hcaptcha.com/siteverify")
-HCAPTCHA_FALLBACK_LOCAL = os.environ.get("HCAPTCHA_FALLBACK_LOCAL", "True").lower() == "true"
+# Turnstile Configuration
+TURNSTILE_SITE_KEY = os.environ.get("TURNSTILE_SITE_KEY")
+TURNSTILE_SECRET = os.environ.get("TURNSTILE_SECRET")
+TURNSTILE_VERIFY_URL = os.environ.get("TURNSTILE_VERIFY_URL", "https://challenges.cloudflare.com/turnstile/v0/siteverify")
+TURNSTILE_FALLBACK_LOCAL = os.environ.get("TURNSTILE_FALLBACK_LOCAL", "True").lower() == "true"
 
 # Security Settings for Production
 if not DEBUG:

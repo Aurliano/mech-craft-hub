@@ -24,7 +24,7 @@ from .views import (
     # Ticket endpoints
     create_ticket, create_ticket_message,
     # hCaptcha endpoints
-    captcha_fallback_status, captcha_fallback_verify, hcaptcha_stats, hcaptcha_attempts,
+    captcha_fallback_status, captcha_fallback_verify, turnstile_stats, turnstile_attempts,
 )
 
 router = DefaultRouter()
@@ -108,8 +108,8 @@ urlpatterns = [
     path('v1/captcha/fallback/verify/', captcha_fallback_verify, name='captcha_fallback_verify'),
     
     # hCaptcha Admin Endpoints
-    path('v1/admin/hcaptcha/stats/', hcaptcha_stats, name='hcaptcha_stats'),
-    path('v1/admin/hcaptcha/attempts/', hcaptcha_attempts, name='hcaptcha_attempts'),
+    path('v1/admin/turnstile/stats/', turnstile_stats, name='turnstile_stats'),
+    path('v1/admin/turnstile/attempts/', turnstile_attempts, name='turnstile_attempts'),
     
     # Aliases for requested endpoints
     path('v1/categories/', ScopeViewSet.as_view({'get': 'list'}), name='categories'),

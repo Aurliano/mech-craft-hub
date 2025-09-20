@@ -45,9 +45,9 @@ from django.core.mail import send_mail
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from uuid import uuid4
-from .utils.hcaptcha import (
-    verify_hcaptcha_token_sync, log_hcaptcha_attempt, check_fallback_available,
-    get_fallback_captcha_data, verify_fallback_captcha, get_hcaptcha_stats
+from .utils.turnstile import (
+    verify_turnstile_token_sync, log_turnstile_attempt, check_fallback_available,
+    get_fallback_captcha_data, verify_fallback_captcha, get_turnstile_stats
 )
 
 
@@ -1444,7 +1444,7 @@ def check_contractor_manufacturing_service(request):
 @permission_classes([AllowAny])
 def captcha_fallback_status(request):
     """Check if fallback captcha is available"""
-    from .utils.hcaptcha import check_fallback_available, get_fallback_captcha_data
+    from .utils.turnstile import check_fallback_available, get_fallback_captcha_data
     
     if check_fallback_available():
         captcha_data = get_fallback_captcha_data()
@@ -1457,7 +1457,7 @@ def captcha_fallback_status(request):
 @permission_classes([AllowAny])
 def captcha_fallback_verify(request):
     """Verify fallback captcha answer"""
-    from .utils.hcaptcha import verify_fallback_captcha
+    from .utils.turnstile import verify_fallback_captcha
     
     challenge_id = request.data.get('challenge_id')
     answer = request.data.get('answer')
@@ -1479,17 +1479,17 @@ def captcha_fallback_verify(request):
         )
 
 
-# hCaptcha Statistics and Admin
+# Turnstile Statistics and Admin
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
-def hcaptcha_stats(request):
-    """Get hCaptcha statistics for admin"""
-    from .models import HCaptchaAttempt
-    from .utils.hcaptcha import get_hcaptcha_stats
+def turnstile_stats(request):
+    """Get Turnstile statistics for admin"""
+    from .models import TurnstileAttempt
+    from .utils.turnstile import get_turnstile_stats
     
     days = int(request.GET.get('days', 30))
-    stats = HCaptchaAttempt.get_stats(days)
-    system_stats = get_hcaptcha_stats()
+    stats = TurnstileAttempt.get_stats(days)
+    system_stats = get_turnstile_stats()
     
     return Response({
         'attempts': stats,
@@ -1499,12 +1499,12 @@ def hcaptcha_stats(request):
 
 @api_view(["GET"])
 @permission_classes([IsAdminUser])
-def hcaptcha_attempts(request):
-    """Get hCaptcha attempts for admin review"""
-    from .models import HCaptchaAttempt
+def turnstile_attempts(request):
+    """Get Turnstile attempts for admin review"""
+    from .models import TurnstileAttempt
     from django.core.paginator import Paginator
     
-    attempts = HCaptchaAttempt.objects.all().order_by('-created_at')
+    attempts = TurnstileAttempt.objects.all().order_by('-created_at')
     
     # Pagination
     page = int(request.GET.get('page', 1))
