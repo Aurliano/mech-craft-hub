@@ -280,6 +280,11 @@ TURNSTILE_SECRET = os.environ.get("TURNSTILE_SECRET")
 TURNSTILE_VERIFY_URL = os.environ.get("TURNSTILE_VERIFY_URL", "https://challenges.cloudflare.com/turnstile/v0/siteverify")
 TURNSTILE_FALLBACK_LOCAL = os.environ.get("TURNSTILE_FALLBACK_LOCAL", "True").lower() == "true"
 
+# Cloudflare Turnstile Configuration
+TURNSTILE_SITE_KEY = os.environ.get("TURNSTILE_SITE_KEY")
+TURNSTILE_SECRET_KEY = os.environ.get("TURNSTILE_SECRET_KEY")
+TURNSTILE_FALLBACK_LOCAL = os.environ.get("TURNSTILE_FALLBACK_LOCAL", "False").lower() == "true"
+
 # Security Settings for Production
 if not DEBUG:
     SECURE_SSL_REDIRECT = True

@@ -23,8 +23,8 @@ from .views import (
     create_contractor_workshop, check_contractor_manufacturing_service,
     # Ticket endpoints
     create_ticket, create_ticket_message,
-    # hCaptcha endpoints
-    captcha_fallback_status, captcha_fallback_verify, turnstile_stats, turnstile_attempts,
+    # Captcha endpoints (Turnstile + Fallback)
+    captcha_fallback, captcha_fallback_status, captcha_fallback_verify, turnstile_stats, turnstile_attempts,
 )
 
 router = DefaultRouter()
@@ -103,11 +103,12 @@ urlpatterns = [
     path('v1/tickets/create/', create_ticket, name='create_ticket'),
     path('v1/tickets/<uuid:ticket_id>/messages/', create_ticket_message, name='create_ticket_message'),
     
-    # hCaptcha Fallback Endpoints
-    path('v1/captcha/fallback/', captcha_fallback_status, name='captcha_fallback_status'),
+    # Captcha System Endpoints (Turnstile + Fallback)
+    path('v1/captcha/fallback/', captcha_fallback, name='captcha_fallback'),
+    path('v1/captcha/fallback/status/', captcha_fallback_status, name='captcha_fallback_status'),
     path('v1/captcha/fallback/verify/', captcha_fallback_verify, name='captcha_fallback_verify'),
     
-    # hCaptcha Admin Endpoints
+    # Turnstile Admin Endpoints
     path('v1/admin/turnstile/stats/', turnstile_stats, name='turnstile_stats'),
     path('v1/admin/turnstile/attempts/', turnstile_attempts, name='turnstile_attempts'),
     

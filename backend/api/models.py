@@ -873,3 +873,48 @@ class TurnstileAttempt(models.Model):
             'endpoint_stats': list(endpoint_stats),
             'top_failing_ips': list(ip_stats)
         }
+
+
+class TurnstileAttempt(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    ip = models.GenericIPAddressField(null=True, blank=True)
+    endpoint = models.CharField(max_length=255)
+    success = models.BooleanField()
+    response_raw = models.JSONField(null=True, blank=True)
+    token_hash = models.CharField(max_length=64, db_index=True)
+    error_message = models.TextField(null=True, blank=True)
+    user_agent = models.TextField(null=True, blank=True)
+    user = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='turnstile_attempts'
+    )
+
+    class Meta:
+        db_table = 'turnstile_attempts'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['created_at']),
+            models.Index(fields=['ip']),
+            models.Index(fields=['success']),
+            models.Index(fields=['endpoint']),
+        ]
+
+    def __str__(self):
+        return f"Turnstile attempt {self.id} - {self.endpoint} - {'Success' if self.success else 'Failed'}"
+
+    @classmethod
+    def get_stats(cls, days=30):
+        """Get Turnstile statistics for the last N days"""
+        from django.utils import timezone
+        from django.db.models import Count, Q
+        
+        start_date = timezone.now() - timezone.timedelta(days=days)
+        
+        return cls.objects.filter(created_at__gte=start_date).aggregate(
+            total_attempts=Count('id'),
+            successful_attempts=Count('id', filter=Q(success=True)),
+            failed_attempts=Count('id', filter=Q(success=False)),
+        )
