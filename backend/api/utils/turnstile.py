@@ -213,43 +213,107 @@ def check_fallback_available() -> bool:
     return FALLBACK_ENABLED
 
 
-def get_fallback_captcha_data() -> Dict[str, Any]:
-    """Get fallback captcha challenge data."""
+def get_fallback_captcha_data(request=None) -> Dict[str, Any]:
+    """Get fallback captcha challenge data with enhanced security."""
     from django.core.cache import cache
     import uuid
+    import random
+    import hashlib
+    import time
+    
+    # Rate limiting by IP
+    if request:
+        client_ip = request.META.get('REMOTE_ADDR', '')
+        rate_key = f"fallback_captcha_rate:{client_ip}"
+        rate_count = cache.get(rate_key, 0)
+        
+        # Max 10 challenges per minute per IP
+        if rate_count >= 10:
+            return {
+                "available": False,
+                "error": "Too many requests. Please try again later."
+            }
+        
+        # Increment rate counter
+        cache.set(rate_key, rate_count + 1, 60)  # 1 minute window
     
     challenge_id = str(uuid.uuid4())
-    # Simple math challenge
-    import random
-    a = random.randint(1, 10)
-    b = random.randint(1, 10)
-    answer = a + b
-    challenge = f"{a} + {b} = ?"
     
-    # Store answer in cache for verification
-    cache.set(f"fallback_captcha:{challenge_id}", answer, 300)  # 5 minutes
+    # Enhanced math challenge with more complexity
+    operation = random.choice(['+', '-', '*'])
+    if operation == '+':
+        a = random.randint(10, 99)
+        b = random.randint(10, 99)
+        answer = a + b
+        challenge = f"{a} + {b} = ?"
+    elif operation == '-':
+        a = random.randint(20, 99)
+        b = random.randint(10, a-1)
+        answer = a - b
+        challenge = f"{a} - {b} = ?"
+    else:  # multiplication
+        a = random.randint(2, 12)
+        b = random.randint(2, 12)
+        answer = a * b
+        challenge = f"{a} × {b} = ?"
+    
+    # Add timestamp and hash for additional security
+    timestamp = int(time.time())
+    challenge_hash = hashlib.sha256(f"{challenge_id}:{answer}:{timestamp}".encode()).hexdigest()[:16]
+    
+    # Store answer with additional security data
+    cache_data = {
+        'answer': answer,
+        'timestamp': timestamp,
+        'hash': challenge_hash,
+        'attempts': 0
+    }
+    cache.set(f"fallback_captcha:{challenge_id}", cache_data, 300)  # 5 minutes
     
     return {
         "available": True,
         "challenge_id": challenge_id,
         "challenge": challenge,
-        "type": "math"
+        "type": "math",
+        "hash": challenge_hash
     }
 
 
 def verify_fallback_captcha(challenge_id: str, answer: str) -> bool:
-    """Verify fallback captcha answer."""
+    """Verify fallback captcha answer with enhanced security."""
     from django.core.cache import cache
+    import time
     
     try:
-        correct_answer = cache.get(f"fallback_captcha:{challenge_id}")
-        if correct_answer is None:
+        cache_data = cache.get(f"fallback_captcha:{challenge_id}")
+        if cache_data is None:
             return False
         
-        # Remove from cache after verification
-        cache.delete(f"fallback_captcha:{challenge_id}")
+        # Check if challenge is expired (more than 5 minutes old)
+        current_time = int(time.time())
+        if current_time - cache_data.get('timestamp', 0) > 300:
+            cache.delete(f"fallback_captcha:{challenge_id}")
+            return False
         
-        return str(answer).strip() == str(correct_answer)
+        # Check attempt limit (max 3 attempts)
+        attempts = cache_data.get('attempts', 0)
+        if attempts >= 3:
+            cache.delete(f"fallback_captcha:{challenge_id}")
+            return False
+        
+        # Increment attempt counter
+        cache_data['attempts'] = attempts + 1
+        cache.set(f"fallback_captcha:{challenge_id}", cache_data, 300)
+        
+        # Verify answer
+        correct_answer = cache_data.get('answer')
+        is_correct = str(answer).strip() == str(correct_answer)
+        
+        # Remove challenge after successful verification
+        if is_correct:
+            cache.delete(f"fallback_captcha:{challenge_id}")
+        
+        return is_correct
     except Exception:
         return False
 

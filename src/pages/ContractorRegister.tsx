@@ -10,8 +10,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import AuthNavbar from "@/components/AuthNavbar";
 import { useRegister, usePhoneVerificationRequest, useRegisterWithCaptcha, useFallbackCaptchaStatus, useFallbackCaptchaChallenge, useVerifyFallbackCaptcha } from "@/hooks/useAuth";
 import { useAuth } from "@/contexts/AuthContext";
-import HCaptchaComponent from "@/components/HCaptcha";
+import TurnstileComponent from "@/components/Turnstile";
 import LocalCaptcha from "@/components/LocalCaptcha";
+import TurnstileCaptcha from "@/components/TurnstileCaptcha";
 import TermsAndConditions from "@/components/TermsAndConditions";
 import { useScopes, useServices } from "@/hooks/useAuth";
 
@@ -44,7 +45,8 @@ const ContractorRegister = () => {
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [showPhoneVerification, setShowPhoneVerification] = useState(false);
-  const [hcaptchaToken, setHcaptchaToken] = useState<string | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
   const [useFallback, setUseFallback] = useState(false);
   const [fallbackChallenge, setFallbackChallenge] = useState<{ id: string; question: string } | null>(null);
   const [fallbackAnswer, setFallbackAnswer] = useState("");
@@ -53,10 +55,9 @@ const ContractorRegister = () => {
   const [captchaError, setCaptchaError] = useState<string>('');
   const [captchaVerified, setCaptchaVerified] = useState<boolean>(false);
 
-  const hcaptchaRef = useRef<any>(null);
 
-  // Get hCaptcha site key from environment
-  const hcaptchaSiteKey = import.meta.env.VITE_HCAPTCHA_SITE_KEY;
+  // Get Turnstile site key from environment
+  const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
 
   // Redirect if already authenticated
   React.useEffect(() => {
@@ -67,17 +68,18 @@ const ContractorRegister = () => {
 
   // Check if fallback is available
   React.useEffect(() => {
-    if (fallbackStatus?.available && !hcaptchaSiteKey) {
+    if (fallbackStatus?.available && !turnstileSiteKey) {
       setUseFallback(true);
     }
-  }, [fallbackStatus?.available, hcaptchaSiteKey]);
+  }, [fallbackStatus?.available, turnstileSiteKey]);
 
   const handleCaptchaVerify = (token: string) => {
-    setHcaptchaToken(token);
+    setTurnstileToken(token);
+    setIsCaptchaVerified(true);
   };
 
   const handleCaptchaError = (error: any) => {
-    console.error('hCaptcha error:', error);
+    console.error('Turnstile error:', error);
     if (fallbackStatus?.available) {
       setShowFallback(true);
     }
@@ -140,8 +142,8 @@ const ContractorRegister = () => {
       selected_services: selectedServices
     };
 
-    if (hcaptchaToken) {
-      await registerWithCaptcha({ ...userData, hcaptcha_token: hcaptchaToken });
+    if (turnstileToken) {
+      await registerWithCaptcha({ ...userData, turnstile_token: turnstileToken });
     } else if (useFallback && fallbackChallenge && fallbackAnswer) {
       // Use fallback captcha
       await register({
@@ -208,7 +210,7 @@ const ContractorRegister = () => {
       } else if (!captchaVerified) {
         errors.captcha = "لطفا کپچا را تایید کنید";
       }
-    } else if (hcaptchaSiteKey && !hcaptchaToken) {
+    } else if (turnstileSiteKey && !turnstileToken) {
       errors.captcha = "لطفا کپچا را تایید کنید";
     }
     
@@ -410,37 +412,11 @@ const ContractorRegister = () => {
                   </div>
                 )}
 
-                {/* hCaptcha or Fallback Captcha */}
-                {!useFallback && hcaptchaSiteKey && (
-                  <HCaptchaComponent
-                    siteKey={hcaptchaSiteKey}
-                    onVerify={handleCaptchaVerify}
-                    onError={handleCaptchaError}
-                    fallbackAvailable={fallbackStatus?.available || false}
-                    onFallbackRequest={handleFallbackRequest}
-                  />
-                )}
-
-                {useFallback && (
-                  <div className="space-y-2">
-                    <LocalCaptcha
-                      challenge={fallbackChallenge}
-                      onVerify={handleFallbackVerify}
-                      onRequestChallenge={handleFallbackRequest}
-                    />
-                    {validationErrors.captcha && (
-                      <p className="text-xs text-red-500">{validationErrors.captcha}</p>
-                    )}
-                  </div>
-                )}
-
-                {showFallback && !useFallback && (
-                  <Alert>
-                    <AlertDescription>
-                      hCaptcha در دسترس نیست. لطفاً از کپچای محلی استفاده کنید.
-                    </AlertDescription>
-                  </Alert>
-                )}
+                {/* Turnstile Captcha with Fallback */}
+                <TurnstileCaptcha 
+                  onVerify={handleCaptchaVerify}
+                  timeout={8000} // 8 seconds timeout
+                />
 
                 {/* Terms and Conditions */}
                 <TermsAndConditions
@@ -471,7 +447,7 @@ const ContractorRegister = () => {
                   className="w-full" 
                   variant="hero" 
                   type="submit" 
-                  disabled={isPending || isVerifying || isCaptchaPending || isVerifyingFallback || (!hcaptchaToken && !useFallback && hcaptchaSiteKey)}
+                  disabled={isPending || isVerifying || isCaptchaPending || isVerifyingFallback || !isCaptchaVerified || !acceptTerms}
                 >
                   {isPending || isVerifying || isCaptchaPending || isVerifyingFallback ? "در حال ثبت‌نام..." : "ثبت نام پیمانکار"}
                 </Button>

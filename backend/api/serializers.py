@@ -526,7 +526,7 @@ class LoginSerializer(serializers.Serializer):
                 remote_ip = x_forwarded_for.split(',')[0].strip()
         
         # Authenticate user
-        user = authenticate(username=username, password=password)
+        user = authenticate(request=request, username=username, password=password)
         if not user:
             # Log failed Turnstile attempt
             log_turnstile_attempt(

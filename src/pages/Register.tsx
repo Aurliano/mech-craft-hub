@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import AuthNavbar from "@/components/AuthNavbar";
 import { useRegister, usePhoneVerificationRequest, useRegisterWithCaptcha, useFallbackCaptchaStatus, useFallbackCaptchaChallenge, useVerifyFallbackCaptcha } from "@/hooks/useAuth";
 import { useAuth } from "@/contexts/AuthContext";
-import HCaptchaComponent from "@/components/HCaptcha";
+import TurnstileComponent from "@/components/Turnstile";
 import LocalCaptcha from "@/components/LocalCaptcha";
 import TurnstileCaptcha from "@/components/TurnstileCaptcha";
 import TermsAndConditions from "@/components/TermsAndConditions";
@@ -32,8 +32,8 @@ const Register = () => {
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [showPhoneVerification, setShowPhoneVerification] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
 
-  const hcaptchaRef = useRef<any>(null);
 
   // Redirect if already authenticated
   React.useEffect(() => {
@@ -44,6 +44,7 @@ const Register = () => {
 
   const handleCaptchaVerify = (token: string) => {
     setCaptchaToken(token);
+    setIsCaptchaVerified(true);
   };
 
   const performRegistration = async () => {
@@ -59,7 +60,7 @@ const Register = () => {
     };
 
     if (captchaToken) {
-      await registerWithCaptcha({ ...userData, hcaptcha_token: captchaToken });
+      await registerWithCaptcha({ ...userData, turnstile_token: captchaToken });
     } else {
       await register(userData);
     }
@@ -229,7 +230,7 @@ const Register = () => {
                   className="w-full" 
                   variant="hero" 
                   type="submit" 
-                  disabled={isPending || isVerifying || isCaptchaPending || !captchaToken}
+                  disabled={isPending || isVerifying || isCaptchaPending || !isCaptchaVerified || !acceptTerms}
                 >
                   {isPending || isVerifying || isCaptchaPending ? "در حال ثبت‌نام..." : "ثبت نام"}
                 </Button>

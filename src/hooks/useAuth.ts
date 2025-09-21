@@ -10,7 +10,7 @@ import {
   getContractorOrders, getContractorProposals, getContractorActiveProjects,
   getContractorStats, createContractorProposal, getContractorWorkshops,
   createContractorWorkshop, checkContractorManufacturingService,
-  loginWithCaptcha, registerWithCaptcha, getFallbackCaptchaStatus, 
+  loginWithTurnstile, registerWithTurnstile, getFallbackCaptchaStatus, 
   getFallbackCaptchaChallenge, verifyFallbackCaptcha,
   getServiceTabs, getTabFields, getScopes, getServices, getServiceFields, getAllServices
 } from '@/lib/api';
@@ -439,11 +439,11 @@ export function useCheckContractorManufacturingService() {
   });
 }
 
-// hCaptcha Authentication Hooks
+// Turnstile Authentication Hooks
 export function useLoginWithCaptcha() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: loginWithCaptcha,
+    mutationFn: loginWithTurnstile,
     onSuccess: (data) => {
       setTokens(data.access, data.refresh);
       qc.invalidateQueries({ queryKey: ['me'] });
@@ -456,7 +456,7 @@ export function useLoginWithCaptcha() {
 export function useRegisterWithCaptcha() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: registerWithCaptcha,
+    mutationFn: registerWithTurnstile,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['me'] });
       // Redirect to home page and refresh

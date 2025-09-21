@@ -1439,26 +1439,17 @@ def check_contractor_manufacturing_service(request):
         }, status=status.HTTP_404_NOT_FOUND)
 
 
-# Captcha System (Turnstile + hCaptcha + Fallback)
+# Captcha System (Turnstile + Fallback)
 @api_view(["GET"])
 @permission_classes([AllowAny])
 def captcha_fallback(request):
     """Get captcha configuration - determines which captcha to use"""
-    from .utils.hcaptcha import check_fallback_available, get_fallback_captcha_data
-    from .utils.turnstile import check_turnstile_available
+    from .utils.turnstile import check_fallback_available, get_fallback_captcha_data, is_turnstile_enabled
     
-    # Check if Turnstile is available first
-    if check_turnstile_available():
-        return Response({"fallback": "turnstile"})
-    
-    # Fallback to hCaptcha
-    if getattr(settings, 'HCAPTCHA_SECRET', None):
-        return Response({"fallback": "hcaptcha"})
-    
-    # Fallback to local captcha
+    # Always return fallback captcha for now (for testing)
     if check_fallback_available():
-        captcha_data = get_fallback_captcha_data()
-        return Response({"fallback": "local", **captcha_data})
+        captcha_data = get_fallback_captcha_data(request)
+        return Response(captcha_data)
     else:
         return Response({"fallback": "local"})
 

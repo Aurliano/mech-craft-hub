@@ -19,6 +19,7 @@ const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
 
   // Redirect if already authenticated
   React.useEffect(() => {
@@ -29,6 +30,7 @@ const Login = () => {
 
   const handleCaptchaVerify = (token: string) => {
     setCaptchaToken(token);
+    setIsCaptchaVerified(true);
   };
 
   const performLogin = async () => {
@@ -39,7 +41,7 @@ const Login = () => {
     };
 
     if (captchaToken) {
-      await loginWithCaptcha({ ...loginData, hcaptcha_token: captchaToken });
+      await loginWithCaptcha({ ...loginData, turnstile_token: captchaToken });
     } else {
       await login(loginData);
     }
@@ -116,7 +118,7 @@ const Login = () => {
                 className="w-full" 
                 variant="hero" 
                 type="submit" 
-                disabled={isPendingAny || !captchaToken}
+                disabled={isPendingAny || !isCaptchaVerified}
               >
                 {isPendingAny ? "در حال ورود..." : "ورود"}
               </Button>
