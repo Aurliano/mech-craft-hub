@@ -1,7 +1,9 @@
 {
-  "platform": "python",
   "app": "mech-craft-hub-main",
+  "platform": "python",
+  "port": 80,
   "build": {
+    "location": "iran",
     "commands": [
       "cd backend && python manage.py collectstatic --noinput",
       "cd backend && python manage.py migrate"
@@ -10,6 +12,7 @@
   "deploy": {
     "startCommand": "cd backend && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 120"
   },
+  "disks": [],
   "env": {
     "DEBUG": "False",
     "DJANGO_SETTINGS_MODULE": "config.settings",
