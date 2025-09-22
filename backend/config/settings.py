@@ -32,7 +32,7 @@ SECRET_KEY = 'django-insecure-x7)1_$9ap(4g(r%x3csz3f&3&wc@pzj!87$p-7x2@d4b)c_kcg
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver']
 
 # Application definition
 
@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'drf_spectacular_sidecar',
     'axes',  # For login lockout protection
     'captcha',  # For fallback captcha
+    'csp',  # Content Security Policy
     'api',
 ]
 
@@ -64,6 +65,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'api.middleware.JWTAuthenticationMiddleware',  # Custom JWT middleware
     'axes.middleware.AxesMiddleware',  # Must be after AuthenticationMiddleware
+    'csp.middleware.CSPMiddleware',  # Content Security Policy
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -210,16 +212,20 @@ REST_FRAMEWORK = {
         'rest_framework.filters.OrderingFilter',
     ],
     'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
         'api.throttling.CustomAnonRateThrottle',
         'api.throttling.CustomUserRateThrottle'
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '1000/hour',
+        'anon': '100/hour',  # Reduced for security
         'user': '1000/hour',
         'burst': '60/minute',
         'sustained': '1000/hour',
         'upload': '10/hour',
-        'login': '5/minute',
+        'login': '5/minute',  # Strict limit for login
+        'register': '3/minute',  # Strict limit for registration
+        'password_reset': '2/minute',  # Very strict for password reset
         'api': '500/hour'
     },
     'EXCEPTION_HANDLER': 'api.exceptions.custom_exception_handler',
@@ -288,9 +294,62 @@ TURNSTILE_SITE_KEY = os.environ.get("TURNSTILE_SITE_KEY")
 TURNSTILE_SECRET_KEY = os.environ.get("TURNSTILE_SECRET_KEY")
 TURNSTILE_FALLBACK_LOCAL = os.environ.get("TURNSTILE_FALLBACK_LOCAL", "False").lower() == "true"
 
-# Security Settings for Production
+# Security Settings - Quick Wins
+# HTTPS and SSL Security
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_HTTPONLY = True
+
+# HSTS (HTTP Strict Transport Security)
+SECURE_HSTS_SECONDS = 31536000  # 1 year
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+
+# Content Security
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+X_FRAME_OPTIONS = 'DENY'
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+
+# Additional Security Headers
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
+SECURE_CROSS_ORIGIN_EMBEDDER_POLICY = 'require-corp'
+
+# Password Hashing (Argon2 - More secure than PBKDF2)
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.Argon2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+    'django.contrib.auth.hashers.ScryptPasswordHasher',
+]
+
+# Content Security Policy (CSP) - New format for django-csp 4.0+
+CONTENT_SECURITY_POLICY = {
+    'DIRECTIVES': {
+        'default-src': ("'self'",),
+        'script-src': ("'self'", "'unsafe-inline'", "https://challenges.cloudflare.com"),
+        'style-src': ("'self'", "'unsafe-inline'", "https://fonts.googleapis.com"),
+        'font-src': ("'self'", "https://fonts.gstatic.com"),
+        'img-src': ("'self'", "data:", "https:"),
+        'connect-src': ("'self'",),
+        'object-src': ("'none'",),
+        'base-uri': ("'self'",),
+        'frame-ancestors': ("'none'",),
+        'form-action': ("'self'",),
+        'upgrade-insecure-requests': True,
+    }
+}
+
+# Security Settings for Production (override development settings)
 if not DEBUG:
+    # Additional production security settings
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_HTTPONLY = True
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
@@ -324,13 +383,21 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 
-# django-axes Configuration
-AXES_ENABLED = False
+# django-axes Configuration - Enhanced Security
+AXES_ENABLED = True  # Enable axes for production
 AXES_FAILURE_LIMIT = 5  # Lock after 5 failed attempts
 AXES_COOLOFF_TIME = 1  # 1 hour lockout
 AXES_LOCKOUT_TEMPLATE = 'axes/lockout.html'
 AXES_VERBOSE = True
 AXES_LOCKOUT_PARAMETERS = ['ip_address', 'user_agent']
+AXES_RESET_ON_SUCCESS = True
+AXES_DISABLE_ACCESS_LOG = False
+AXES_HANDLER = 'axes.handlers.database.AxesDatabaseHandler'
+AXES_LOCKOUT_URL = '/locked/'
+AXES_ENABLE_ADMIN = True
+AXES_NEVER_LOCKOUT_WHITELIST = True
+AXES_NEVER_LOCKOUT_GET = True
+AXES_LOCKOUT_BY_COMBINATION_USER_AND_IP = True
 
 # django-simple-captcha Configuration (for fallback)
 CAPTCHA_CHALLENGE_FUNCT = 'captcha.helpers.math_challenge'

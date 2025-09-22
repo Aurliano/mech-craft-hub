@@ -14,3 +14,6 @@ django-axes==6.1.1
 django-ratelimit==4.1.0
 redis==5.0.1
 django-simple-captcha==0.6.0
+# Security dependencies
+argon2-cffi==25.1.0
+django-csp==4.0

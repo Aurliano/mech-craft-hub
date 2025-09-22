@@ -133,15 +133,51 @@ class IPBasedThrottle(AnonRateThrottle):
         return f"throttle_ip_{self.get_ident(request)}"
 
 
+class PasswordResetThrottle(AnonRateThrottle):
+    """
+    Throttle for password reset endpoint
+    - 2 requests per minute per IP
+    - 5 requests per minute per authenticated user
+    """
+    scope = 'password_reset'
+    rate = '2/min'
+    
+    def get_cache_key(self, request, view):
+        """Generate cache key for throttling"""
+        if request.user and request.user.is_authenticated:
+            return f"throttle_password_reset_user_{request.user.id}"
+        else:
+            return f"throttle_password_reset_anon_{self.get_ident(request)}"
+
+
+class SensitiveEndpointThrottle(AnonRateThrottle):
+    """
+    Throttle for sensitive endpoints (quotes, orders, etc.)
+    - 20 requests per minute for anonymous users
+    - 100 requests per minute for authenticated users
+    """
+    scope = 'sensitive'
+    rate = '20/min'
+    
+    def get_cache_key(self, request, view):
+        """Generate cache key for throttling"""
+        if request.user and request.user.is_authenticated:
+            return f"throttle_sensitive_user_{request.user.id}"
+        else:
+            return f"throttle_sensitive_anon_{self.get_ident(request)}"
+
+
 def get_throttle_rates():
     """
     Get throttle rates configuration for Django settings
     """
     return {
-        'register': '5/min',
-        'login': '10/min',
+        'register': '3/min',
+        'login': '5/min',
+        'password_reset': '2/min',
         'hcaptcha': '20/min',
         'file_upload': '10/min',
+        'sensitive': '20/min',
         'ip_based': '5/min',
     }
 
