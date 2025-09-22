@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from django.contrib.auth import get_user_model
@@ -116,7 +116,7 @@ class JWTManager:
                 'user': user
             }
         except User.DoesNotExist:
-            logger.warning(f"User not found for token")
+            logger.warning("User not found for token")
             return {
                 'success': False,
                 'error': 'user_not_found',
@@ -145,5 +145,5 @@ class JWTManager:
         try:
             access_token = AccessToken(token)
             return access_token['exp'] < datetime.now().timestamp()
-        except:
+        except Exception:
             return True

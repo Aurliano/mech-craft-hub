@@ -1,7 +1,5 @@
 import logging
-from django.http import JsonResponse
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
-from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils.deprecation import MiddlewareMixin
 
 logger = logging.getLogger(__name__)

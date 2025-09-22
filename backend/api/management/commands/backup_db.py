@@ -3,7 +3,6 @@ Django management command for database backup operations.
 """
 import os
 import subprocess
-import tempfile
 from datetime import datetime
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings

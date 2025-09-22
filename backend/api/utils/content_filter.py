@@ -3,9 +3,8 @@ Content filtering system for preventing contact information sharing
 """
 import re
 import hashlib
-from typing import Dict, List, Tuple, Optional
+from typing import List, Tuple
 from dataclasses import dataclass
-from django.conf import settings
 import logging
 
 logger = logging.getLogger(__name__)

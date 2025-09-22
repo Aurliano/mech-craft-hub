@@ -6,11 +6,8 @@ from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from rest_framework.test import APITestCase
-from rest_framework import status
 from django.core.cache import cache
 from django.conf import settings
-import json
-import time
 
 User = get_user_model()
 
@@ -259,7 +256,7 @@ class RateLimitIntegrationTestCase(APITestCase):
     def test_authenticated_rate_limit(self):
         """Test authenticated user rate limiting"""
         # Create and authenticate a user
-        user = User.objects.create_user(
+        User.objects.create_user(
             username='testuser',
             email='test@example.com',
             password='testpass123'

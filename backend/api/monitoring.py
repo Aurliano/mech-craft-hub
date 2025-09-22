@@ -106,7 +106,7 @@ def track_request_metrics(view_func):
         try:
             response = view_func(request, *args, **kwargs)
             status_code = response.status_code
-        except Exception as e:
+        except Exception:
             status_code = 500
             raise
         finally:

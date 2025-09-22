@@ -13,40 +13,36 @@ from .models import (
     Cart, CartItem, Order, OrderItem, Quote, Workshop, ContractorService,
     Ticket, TicketMessage, TicketAttachment, TicketFileType, TicketCategory, TicketParticipant,
     ContentFilterLog, Review, MediaFile,
-    PasswordResetToken, PhoneVerificationCode, Payment, Notification
+    PasswordResetToken, PhoneVerificationCode, Payment, Notification, OrderStatusLog
 )
-from .pagination import StandardResultsSetPagination, LargeResultsSetPagination, SmallResultsSetPagination
+from .pagination import StandardResultsSetPagination
 from .throttling import (
-    CustomUserRateThrottle, CustomAnonRateThrottle, BurstRateThrottle,
-    SustainedRateThrottle, UploadRateThrottle, LoginRateThrottle, APIRateThrottle,
-    RegisterThrottle, LoginThrottle, HCaptchaThrottle, check_ip_abuse, increment_abuse_counter
+    UploadRateThrottle, RegisterThrottle, LoginThrottle
 )
 from .exceptions import (
-    ValidationException, NotFoundException, PermissionException,
-    BusinessLogicException, RateLimitException
+    NotFoundException
 )
-from .versioning import get_version_info, version_deprecated_response
+from .versioning import get_version_info
 from .serializers import (
     ScopeSerializer, ServiceSerializer, ServiceFieldSerializer, ServiceTabSerializer,
     CartSerializer, CartItemSerializer, OrderSerializer, OrderItemSerializer, QuoteSerializer,
     TicketSerializer, TicketMessageSerializer, TicketAttachmentSerializer, TicketFileTypeSerializer,
-    TicketCategorySerializer, TicketParticipantSerializer, ContentFilterLogSerializer,
+    TicketCategorySerializer, ContentFilterLogSerializer,
     ReviewSerializer, RegisterSerializer, LoginSerializer, UserSerializer,
     PasswordResetRequestSerializer, PasswordResetConfirmSerializer, PhoneVerificationRequestSerializer,
     PhoneVerificationConfirmSerializer, ChangePasswordSerializer,
     CreateOrderSerializer, OrderStatusUpdateSerializer, CreateQuoteSerializer,
-    AddOrderToCartSerializer, ProcessPaymentSerializer, NotificationSerializer
+    NotificationSerializer
 )
 import os
 import random
 import string
 from django.conf import settings
-from django.core.mail import send_mail
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from uuid import uuid4
 from .utils.turnstile import (
-    verify_turnstile_token_sync, log_turnstile_attempt, check_fallback_available,
+    check_fallback_available,
     get_fallback_captcha_data, verify_fallback_captcha, get_turnstile_stats
 )
 
@@ -150,7 +146,6 @@ def register(request):
 @throttle_classes([LoginThrottle])
 def login(request):
     """Login with hCaptcha validation"""
-    from rest_framework_simplejwt.tokens import RefreshToken
     from .utils.jwt_utils import JWTManager
     
     serializer = LoginSerializer(data=request.data, context={'request': request})
@@ -750,7 +745,6 @@ def update_order_item_status(request, item_id):
         if not new_status:
             return Response({'detail': 'وضعیت جدید الزامی است'}, status=status.HTTP_400_BAD_REQUEST)
         
-        old_status = order_item.status
         order_item.status = new_status
         order_item.save()
         
@@ -1029,7 +1023,7 @@ def create_ticket(request):
         
         # Create initial message
         if content:
-            message = TicketMessage.objects.create(
+            TicketMessage.objects.create(
                 ticket=ticket,
                 sender=request.user,
                 content=content,
@@ -1284,7 +1278,7 @@ def process_payment(request):
         order = Order.objects.get(id=order_id, customer=request.user)
         
         # Create payment record
-        payment = Payment.objects.create(
+        Payment.objects.create(
             order=order,
             payment_id=f"PAY_{order.order_number}_{int(timezone.now().timestamp())}",
             amount=amount,
@@ -1644,7 +1638,6 @@ def check_contractor_manufacturing_service(request):
 @permission_classes([AllowAny])
 def captcha_fallback(request):
     """Get captcha configuration - determines which captcha to use"""
-    from .utils.turnstile import check_fallback_available, get_fallback_captcha_data, is_turnstile_enabled
     
     # Always return fallback captcha for now (for testing)
     if check_fallback_available():
@@ -1663,7 +1656,6 @@ def captcha_fallback(request):
 @permission_classes([AllowAny])
 def captcha_fallback_status(request):
     """Check if fallback captcha is available"""
-    from .utils.turnstile import check_fallback_available, get_fallback_captcha_data
     
     if check_fallback_available():
         captcha_data = get_fallback_captcha_data(request)
@@ -1676,7 +1668,6 @@ def captcha_fallback_status(request):
 @permission_classes([AllowAny])
 def captcha_fallback_verify(request):
     """Verify fallback captcha answer"""
-    from .utils.turnstile import verify_fallback_captcha
     
     challenge_id = request.data.get('challenge_id')
     answer = request.data.get('answer')
@@ -1704,7 +1695,6 @@ def captcha_fallback_verify(request):
 def turnstile_stats(request):
     """Get Turnstile statistics for admin"""
     from .models import TurnstileAttempt
-    from .utils.turnstile import get_turnstile_stats
     
     days = int(request.GET.get('days', 30))
     stats = TurnstileAttempt.get_stats(days)
@@ -1732,7 +1722,7 @@ def turnstile_attempts(request):
     
     try:
         page_obj = paginator.page(page)
-    except:
+    except Exception:
         page_obj = paginator.page(1)
     
     return Response({

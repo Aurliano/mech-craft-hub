@@ -3,8 +3,7 @@ from .models import (
     User, Role, UserRole, Scope, Service, ServiceField, ServiceTab,
     Cart, CartItem, Order, OrderItem, Quote, Workshop,
     Ticket, TicketMessage, TicketAttachment, TicketFileType, TicketCategory, TicketParticipant,
-    ContentFilterLog, Review, PasswordResetToken, PhoneVerificationCode, Notification,
-    TurnstileAttempt
+    ContentFilterLog, Review, Notification
 )
 
 
@@ -363,7 +362,6 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         from .utils.turnstile import log_turnstile_attempt
-        import hashlib
         
         # Extract tokens (support both field names)
         turnstile_token = validated_data.pop('turnstile_token', None) or validated_data.pop('cf_turnstile_response', None)
@@ -377,10 +375,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         # Get request context for logging
         request = self.context.get('request')
         remote_ip = None
-        user_agent = None
         if request:
             remote_ip = request.META.get('REMOTE_ADDR')
-            user_agent = request.META.get('HTTP_USER_AGENT')
             # Handle X-Forwarded-For header
             x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
             if x_forwarded_for:
@@ -402,7 +398,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             from .models import Scope, Service, ContractorService
             
             try:
-                scope = Scope.objects.get(id=selected_scope)
+                Scope.objects.get(id=selected_scope)
                 for service_id in selected_services:
                     try:
                         service = Service.objects.get(id=service_id)
@@ -540,55 +536,6 @@ class LoginSerializer(serializers.Serializer):
         
         return data
 
-    def validate(self, attrs):
-        from django.contrib.auth import authenticate
-        from .utils.turnstile import log_turnstile_attempt
-        import hashlib
-        
-        username = attrs.get('username')
-        password = attrs.get('password')
-        turnstile_token = attrs.get('turnstile_token') or attrs.get('cf_turnstile_response')
-        
-        # Get request context for logging
-        request = self.context.get('request')
-        remote_ip = None
-        user_agent = None
-        if request:
-            remote_ip = request.META.get('REMOTE_ADDR')
-            user_agent = request.META.get('HTTP_USER_AGENT')
-            # Handle X-Forwarded-For header
-            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-            if x_forwarded_for:
-                remote_ip = x_forwarded_for.split(',')[0].strip()
-        
-        # Authenticate user
-        user = authenticate(request=request, username=username, password=password)
-        if not user:
-            # Log failed Turnstile attempt
-            log_turnstile_attempt(
-                token=turnstile_token,
-                remoteip=remote_ip,
-                user_id=None,
-                endpoint='/api/v1/auth/login/',
-                success=False,
-                response_data=getattr(self, '_turnstile_response', None),
-                error_message="Authentication failed"
-            )
-            
-            raise serializers.ValidationError("Invalid credentials")
-        
-        # Log successful Turnstile attempt
-        log_turnstile_attempt(
-            token=turnstile_token,
-            remoteip=remote_ip,
-            user_id=user.id,
-            endpoint='/api/v1/auth/login/',
-            success=True,
-            response_data=getattr(self, '_turnstile_response', None)
-        )
-        
-        attrs['user'] = user
-        return attrs
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):

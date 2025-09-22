@@ -110,7 +110,7 @@ def version_deprecated_response(version, sunset_date=None):
     return Response({
         'warning': f'API version {version} is deprecated',
         'sunset_date': sunset_date,
-        'migration_guide': f'Please migrate to the latest version. See /api/version/ for details.',
+        'migration_guide': 'Please migrate to the latest version. See /api/version/ for details.',
         'current_version': 'v1'
     }, status=status.HTTP_200_OK, headers={
         'Deprecation': 'true',

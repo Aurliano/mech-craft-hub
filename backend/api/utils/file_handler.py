@@ -4,10 +4,9 @@ File handling utilities for ticket attachments
 import os
 import uuid
 import mimetypes
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Optional, Tuple
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
-from django.conf import settings
 from PIL import Image
 import logging
 

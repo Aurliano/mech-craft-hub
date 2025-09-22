@@ -153,5 +153,5 @@ if __name__ == '__main__':
     categories_count = create_ticket_categories()
     
     print("\n" + "=" * 50)
-    print(f"Setup completed!")
+    print("Setup completed!")
     print(f"Created {file_types_count} file types and {categories_count} categories")

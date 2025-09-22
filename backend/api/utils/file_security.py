@@ -11,8 +11,6 @@ except ImportError:
 import clamd
 from typing import Tuple, Optional, List
 from django.core.files.uploadedfile import UploadedFile
-from django.conf import settings
-from django.core.exceptions import ValidationError
 
 logger = logging.getLogger(__name__)
 

@@ -3,7 +3,6 @@ Custom throttling classes for hCaptcha integration
 """
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from django.core.cache import cache
-from django.conf import settings
 import logging
 
 logger = logging.getLogger(__name__)

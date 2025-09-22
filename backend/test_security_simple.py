@@ -3,7 +3,6 @@
 Simple security test script to verify security headers and configurations
 """
 import os
-import sys
 import django
 from django.conf import settings
 from django.test import Client
