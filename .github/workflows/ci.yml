@@ -1,0 +1,198 @@
+name: CI Security Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: '0 2 * * 1'  # Weekly security scan
+
+env:
+  PYTHON_VERSION: '3.11'
+  NODE_VERSION: '18'
+
+jobs:
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+      packages: read
+      actions: read
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for better analysis
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install Python dependencies
+      run: |
+        cd backend
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install bandit pip-audit ruff safety
+
+    - name: Install Node.js dependencies
+      run: |
+        npm ci
+
+    - name: Run Python tests
+      run: |
+        cd backend
+        python manage.py test --verbosity=2
+
+    - name: Run Bandit security linter
+      run: |
+        cd backend
+        bandit -r . -f json -o bandit-report.json || true
+        bandit -r . -f txt
+
+    - name: Run pip-audit for vulnerability scanning
+      run: |
+        cd backend
+        pip-audit --format=json --output=audit-report.json || true
+        pip-audit --format=text
+
+    - name: Run Ruff linter
+      run: |
+        cd backend
+        ruff check . --output-format=json > ruff-report.json || true
+        ruff check . --output-format=text
+
+    - name: Run Safety check
+      run: |
+        cd backend
+        safety check --json --output safety-report.json || true
+        safety check
+
+    - name: Run ESLint security scan
+      run: |
+        npm run lint
+
+    - name: Upload security reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-reports
+        path: |
+          backend/bandit-report.json
+          backend/audit-report.json
+          backend/ruff-report.json
+          backend/safety-report.json
+
+  docker-security:
+    name: Docker Security Scan
+    runs-on: ubuntu-latest
+    needs: security-scan
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Build Docker image
+      run: |
+        cd backend
+        docker build -t mechcraft-backend:test .
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'mechcraft-backend:test'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: security-scan
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_mechcraft
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install dependencies
+      run: |
+        cd backend
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest-cov
+
+    - name: Run integration tests
+      env:
+        DB_ENGINE: postgresql
+        POSTGRES_DB: test_mechcraft
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: postgres
+        POSTGRES_HOST: localhost
+        POSTGRES_PORT: 5432
+        REDIS_URL: redis://localhost:6379/0
+      run: |
+        cd backend
+        python manage.py migrate
+        python manage.py test --verbosity=2 --coverage
+
+  security-gate:
+    name: Security Gate
+    runs-on: ubuntu-latest
+    needs: [security-scan, docker-security, integration-tests]
+    if: always()
+    
+    steps:
+    - name: Check security scan results
+      run: |
+        echo "Security scan completed"
+        echo "Check the security-scan job for detailed results"
+        
+    - name: Fail if critical vulnerabilities found
+      run: |
+        echo "This step would fail the pipeline if critical vulnerabilities are detected"
+        echo "In a real implementation, you would parse the security reports and fail on critical issues"

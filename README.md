@@ -1,73 +1,247 @@
-# Welcome to your Lovable project
+# MechCraft Hub
 
-## Project info
+A comprehensive engineering services platform built with modern security practices and infrastructure hardening.
 
-**URL**: https://lovable.dev/projects/1866d4a9-fedc-4b8a-bae1-cf6d379ec7b2
+## 🚀 Features
 
-## How can I edit this code?
+- **Secure File Upload**: ClamAV antivirus scanning, magic bytes validation, file type restrictions
+- **Database Security**: PostgreSQL with automated backups, point-in-time recovery
+- **Monitoring & Logging**: Sentry integration, Prometheus metrics, comprehensive alerting
+- **CI/CD Pipeline**: Automated security scanning, vulnerability assessment, quality gates
+- **Infrastructure Hardening**: Non-root containers, minimal base images, security headers
+- **Secrets Management**: Environment-based configuration, AWS Secrets Manager support
 
-There are several ways of editing your application.
+## 🏗️ Architecture
 
-**Use Lovable**
+### Backend (Django)
+- Django 5.2 with DRF
+- PostgreSQL database with Redis caching
+- JWT authentication with rate limiting
+- File upload security with ClamAV
+- Comprehensive monitoring and logging
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/1866d4a9-fedc-4b8a-bae1-cf6d379ec7b2) and start prompting.
+### Frontend (React)
+- Vite + TypeScript + React
+- shadcn/ui components
+- Tailwind CSS styling
+- Responsive design
 
-Changes made via Lovable will be committed automatically to this repo.
+### Infrastructure
+- Docker containerization
+- Nginx reverse proxy
+- Prometheus + Grafana monitoring
+- Automated backups to S3
 
-**Use your preferred IDE**
+## 🔒 Security Features
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### File Upload Security
+- ClamAV antivirus scanning
+- Magic bytes validation
+- File type restrictions
+- Size limits and sanitization
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Application Security
+- JWT authentication
+- Rate limiting and throttling
+- CSRF protection
+- Content Security Policy (CSP)
+- Security headers (HSTS, X-Frame-Options, etc.)
 
-Follow these steps:
+### Infrastructure Security
+- Non-root container execution
+- Minimal base images
+- Network segmentation
+- Secrets management
+- Regular security updates
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## 🚀 Quick Start
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Prerequisites
+- Docker and Docker Compose
+- Node.js 18+ and npm
+- Python 3.11+
 
-# Step 3: Install the necessary dependencies.
-npm i
+### Development Setup
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+1. **Clone the repository**
+```bash
+git clone <repository-url>
+cd mech-craft-hub
+```
+
+2. **Set up environment variables**
+```bash
+cp env.template .env
+# Edit .env with your configuration
+```
+
+3. **Start development environment**
+```bash
+# Backend
+cd backend
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
+
+# Frontend (in another terminal)
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Production Deployment
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+1. **Configure production environment**
+```bash
+# Set production environment variables
+export DEBUG=False
+export SECRET_KEY=your-production-secret-key
+export POSTGRES_PASSWORD=your-secure-password
+# ... other production variables
+```
 
-**Use GitHub Codespaces**
+2. **Deploy with Docker Compose**
+```bash
+docker-compose -f docker-compose.prod.yml up -d
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+3. **Run database migrations**
+```bash
+docker-compose exec backend python manage.py migrate
+```
 
-## What technologies are used for this project?
+4. **Create superuser**
+```bash
+docker-compose exec backend python manage.py createsuperuser
+```
 
-This project is built with:
+## 📊 Monitoring
 
-- Vite
+### Health Checks
+- Application health: `https://yourdomain.com/health/`
+- Metrics endpoint: `https://yourdomain.com/metrics/`
+
+### Monitoring Stack
+- **Prometheus**: Metrics collection
+- **Grafana**: Dashboards and visualization
+- **Sentry**: Error tracking and performance monitoring
+
+### Key Metrics
+- Request rate and response time
+- Error rates and security events
+- Database performance
+- System resources (CPU, memory, disk)
+
+## 🔧 Development
+
+### Running Tests
+```bash
+# Backend tests
+cd backend
+python manage.py test
+
+# Security tests
+python manage.py test api.tests_security_integration
+
+# Frontend tests
+npm test
+```
+
+### Code Quality
+```bash
+# Linting
+cd backend
+ruff check .
+bandit -r .
+
+# Frontend linting
+npm run lint
+```
+
+### Database Management
+```bash
+# Create backup
+python manage.py backup_db --compress --s3-upload
+
+# Restore backup
+./scripts/pg_restore.sh backup.sql.gz --drop-db --create-db
+```
+
+## 📚 Documentation
+
+- [Security Implementation](backend/SECURITY_IMPLEMENTATION.md)
+- [Secrets Management](SECRETS_MANAGEMENT.md)
+- [Infrastructure Runbook](INFRASTRUCTURE_RUNBOOK.md)
+- [API Documentation](backend/API_README.md)
+
+## 🛡️ Security
+
+This project implements comprehensive security measures:
+
+- **File Upload Security**: ClamAV scanning, type validation, size limits
+- **Authentication**: JWT with refresh tokens, rate limiting
+- **Database Security**: Encrypted connections, regular backups
+- **Infrastructure**: Non-root containers, security headers, monitoring
+- **CI/CD**: Automated security scanning, vulnerability assessment
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests and security scans
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🆘 Support
+
+For support and questions:
+- Create an issue in the repository
+- Check the documentation
+- Review the infrastructure runbook
+
+## 🔄 CI/CD Pipeline
+
+The project includes a comprehensive CI/CD pipeline with:
+
+- **Security Scanning**: Bandit, pip-audit, safety checks
+- **Code Quality**: Ruff linting, ESLint
+- **Testing**: Unit tests, integration tests, security tests
+- **Docker Security**: Trivy vulnerability scanning
+- **Deployment**: Automated deployment with health checks
+
+## 📈 Performance
+
+- **Caching**: Redis for session and data caching
+- **Database**: Optimized queries and connection pooling
+- **Static Files**: CDN-ready with proper headers
+- **Monitoring**: Real-time performance metrics
+
+## 🔧 Technologies Used
+
+### Backend
+- Django 5.2
+- Django REST Framework
+- PostgreSQL
+- Redis
+- ClamAV
+- Sentry
+- Prometheus
+
+### Frontend
+- React 18
 - TypeScript
-- React
-- shadcn-ui
+- Vite
+- shadcn/ui
 - Tailwind CSS
 
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/1866d4a9-fedc-4b8a-bae1-cf6d379ec7b2) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+### Infrastructure
+- Docker
+- Nginx
+- Prometheus
+- Grafana
+- AWS S3

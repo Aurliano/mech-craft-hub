@@ -449,3 +449,28 @@ LOGGING = {
 
 # Create logs directory if it doesn't exist
 os.makedirs(os.path.join(BASE_DIR, 'logs'), exist_ok=True)
+
+# Sentry Configuration
+SENTRY_DSN = os.getenv('SENTRY_DSN')
+SENTRY_ENVIRONMENT = os.getenv('SENTRY_ENVIRONMENT', 'production')
+SENTRY_RELEASE = os.getenv('SENTRY_RELEASE')
+SENTRY_TRACES_SAMPLE_RATE = float(os.getenv('SENTRY_TRACES_SAMPLE_RATE', '0.1'))
+
+# AWS Configuration for S3 backups
+AWS_ACCESS_KEY_ID = os.getenv('AWS_ACCESS_KEY_ID')
+AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
+AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', 'us-east-1')
+S3_BACKUP_BUCKET = os.getenv('S3_BACKUP_BUCKET')
+
+# ClamAV Configuration
+CLAMAV_SOCKET = os.getenv('CLAMAV_SOCKET', '/var/run/clamav/clamd.ctl')
+CLAMAV_ENABLED = os.getenv('CLAMAV_ENABLED', 'True').lower() == 'true'
+
+# File Upload Security
+MAX_FILE_SIZE = int(os.getenv('MAX_FILE_SIZE', '52428800'))  # 50MB
+ALLOWED_FILE_TYPES = os.getenv('ALLOWED_FILE_TYPES', 'pdf,image,document,cad').split(',')
+
+# Initialize Sentry
+if SENTRY_DSN:
+    from api.monitoring import init_sentry
+    init_sentry()
