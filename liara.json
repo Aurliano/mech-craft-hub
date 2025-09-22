@@ -15,7 +15,7 @@
   "disks": [],
   "env": {
     "DEBUG": "False",
-    "DJANGO_SETTINGS_MODULE": "config.settings",
+    "DJANGO_SETTINGS_MODULE": "config.settings_liara",
     "PYTHONPATH": "/app/backend"
   }
 }
