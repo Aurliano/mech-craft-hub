@@ -12,7 +12,8 @@ from .views import (
     phone_verification_confirm, change_password,
     # New order management endpoints
     create_order, get_user_orders, get_order_by_id, update_order_status,
-    create_quote, get_quotes_by_order, accept_quote,
+    update_order_item_status, mark_project_delivered, confirm_project_completion,
+    create_quote, get_quotes_by_order, accept_quote, reject_quote,
     add_order_to_cart, remove_from_cart,
     process_payment, download_invoice, get_service_fields,
     # Notification endpoints
@@ -21,6 +22,7 @@ from .views import (
     get_contractor_orders, get_contractor_proposals, get_contractor_active_projects,
     get_contractor_stats, create_contractor_proposal, get_contractor_workshops,
     create_contractor_workshop, check_contractor_manufacturing_service,
+    get_contractor_ratings, get_contractor_rating_stats,
     # Ticket endpoints
     create_ticket, create_ticket_message,
     # Captcha endpoints (Turnstile + Fallback)
@@ -68,6 +70,11 @@ urlpatterns = [
     path('v1/orders/<uuid:order_id>/', get_order_by_id, name='get_order_by_id'),
     path('v1/orders/<uuid:order_id>/status/', update_order_status, name='update_order_status'),
     
+    # Order Item Status Management
+    path('v1/order-items/<uuid:item_id>/status/', update_order_item_status, name='update_order_item_status'),
+    path('v1/order-items/<uuid:item_id>/deliver/', mark_project_delivered, name='mark_project_delivered'),
+    path('v1/order-items/<uuid:item_id>/confirm/', confirm_project_completion, name='confirm_project_completion'),
+    
     # Service Fields Endpoint
     path('v1/services/<uuid:service_id>/fields/', get_service_fields, name='get_service_fields'),
     
@@ -75,6 +82,7 @@ urlpatterns = [
     path('v1/quotes/', create_quote, name='create_quote'),
     path('v1/quotes/order/<uuid:order_id>/', get_quotes_by_order, name='get_quotes_by_order'),
     path('v1/quotes/<uuid:quote_id>/accept/', accept_quote, name='accept_quote'),
+    path('v1/quotes/<uuid:quote_id>/reject/', reject_quote, name='reject_quote'),
     
     # Cart Management Endpoints
     path('v1/cart/add-order/', add_order_to_cart, name='add_order_to_cart'),
@@ -98,6 +106,8 @@ urlpatterns = [
     path('v1/contractor/workshops/', get_contractor_workshops, name='get_contractor_workshops'),
     path('v1/contractor/workshops/create/', create_contractor_workshop, name='create_contractor_workshop'),
     path('v1/contractor/check-manufacturing/', check_contractor_manufacturing_service, name='check_contractor_manufacturing_service'),
+    path('v1/contractor/ratings/', get_contractor_ratings, name='get_contractor_ratings'),
+    path('v1/contractor/rating-stats/', get_contractor_rating_stats, name='get_contractor_rating_stats'),
     
     # Ticket Management Endpoints
     path('v1/tickets/create/', create_ticket, name='create_ticket'),

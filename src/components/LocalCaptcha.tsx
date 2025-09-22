@@ -69,7 +69,7 @@ export const LocalCaptcha: React.FC<LocalCaptchaProps> = ({
     if (onRequestChallenge && !challenge) {
       onRequestChallenge();
     }
-  }, [challenge]); // Remove onRequestChallenge from dependencies
+  }, [challenge, onRequestChallenge]);
 
   if (!challenge) {
     return (
@@ -94,21 +94,21 @@ export const LocalCaptcha: React.FC<LocalCaptchaProps> = ({
   return (
     <div className={`space-y-4 ${className}`}>
       <div className="space-y-2">
-        <Label htmlFor="captcha-question">سوال:</Label>
-        <div className="p-3 bg-muted rounded-md text-center text-lg font-mono">
+        <Label htmlFor="captcha-question" className="text-sm font-medium text-gray-700">سوال ریاضی:</Label>
+        <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg text-center text-xl font-bold text-blue-800" dir="ltr">
           {challenge.question}
         </div>
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="captcha-answer">پاسخ:</Label>
+        <Label htmlFor="captcha-answer" className="text-sm font-medium text-gray-700">پاسخ شما:</Label>
         <Input
           id="captcha-answer"
           type="text"
           value={answer}
           onChange={(e) => setAnswer(e.target.value)}
-          placeholder="پاسخ خود را وارد کنید"
-          className="text-center"
+          placeholder="عدد را وارد کنید"
+          className="text-center text-lg font-mono border-2 focus:border-blue-500"
           dir="ltr"
         />
       </div>
@@ -119,23 +119,23 @@ export const LocalCaptcha: React.FC<LocalCaptchaProps> = ({
         </Alert>
       )}
 
-      <div className="flex gap-2">
+      <div className="flex gap-3">
         <Button 
           type="button" 
           onClick={handleSubmit}
           disabled={isVerifying || !answer.trim()}
-          className="flex-1"
+          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg"
         >
-          {isVerifying ? 'در حال تایید...' : 'تایید'}
+          {isVerifying ? 'در حال تایید...' : 'تایید پاسخ'}
         </Button>
         <Button 
           type="button" 
           variant="outline" 
           onClick={handleRetry}
           disabled={isVerifying}
-          className="flex-1"
+          className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2 px-4 rounded-lg"
         >
-          کپچای جدید
+          سوال جدید
         </Button>
       </div>
     </div>

@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   loginRequest, registerRequest, meRequest, setTokens, clearTokens, getAccessToken,
   passwordResetRequest, passwordResetConfirm, changePassword,
   phoneVerificationRequest, phoneVerificationConfirm,
   getUserOrders, getUserCart, getUserCartItems, getUserNotifications, getUserStats,
   createOrder, getOrderById, updateOrderStatus, createQuote, getQuotesByOrder, 
-  acceptQuote, addOrderToCart, removeFromCart, processPayment, downloadInvoice,
+  acceptQuote, rejectQuote, addOrderToCart, removeFromCart, processPayment, downloadInvoice,
   markNotificationRead, markAllNotificationsRead,
   getContractorOrders, getContractorProposals, getContractorActiveProjects,
   getContractorStats, createContractorProposal, getContractorWorkshops,
@@ -171,6 +172,7 @@ export function useUserOrders() {
     queryFn: getUserOrders,
     enabled,
     retry: false,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -200,7 +202,8 @@ export function useUserNotifications() {
     queryKey: ['userNotifications'],
     queryFn: getUserNotifications,
     enabled,
-    retry: false,
+    retry: 1,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -222,6 +225,9 @@ export function useCreateOrder() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['userOrders'] });
       qc.invalidateQueries({ queryKey: ['userStats'] });
+      qc.invalidateQueries({ queryKey: ['contractorOrders'] });
+      qc.invalidateQueries({ queryKey: ['contractorProposals'] });
+      qc.invalidateQueries({ queryKey: ['userNotifications'] });
     },
   });
 }
@@ -256,6 +262,9 @@ export function useCreateQuote() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['quotes'] });
       qc.invalidateQueries({ queryKey: ['userOrders'] });
+      qc.invalidateQueries({ queryKey: ['contractorOrders'] });
+      qc.invalidateQueries({ queryKey: ['contractorProposals'] });
+      qc.invalidateQueries({ queryKey: ['userNotifications'] });
     },
   });
 }
@@ -278,6 +287,23 @@ export function useAcceptQuote() {
       qc.invalidateQueries({ queryKey: ['quotes'] });
       qc.invalidateQueries({ queryKey: ['userOrders'] });
       qc.invalidateQueries({ queryKey: ['userCart'] });
+      qc.invalidateQueries({ queryKey: ['contractorOrders'] });
+      qc.invalidateQueries({ queryKey: ['contractorProposals'] });
+      qc.invalidateQueries({ queryKey: ['userNotifications'] });
+    },
+  });
+}
+
+export function useRejectQuote() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: rejectQuote,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['quotes'] });
+      qc.invalidateQueries({ queryKey: ['userOrders'] });
+      qc.invalidateQueries({ queryKey: ['contractorOrders'] });
+      qc.invalidateQueries({ queryKey: ['contractorProposals'] });
+      qc.invalidateQueries({ queryKey: ['userNotifications'] });
     },
   });
 }
@@ -358,7 +384,8 @@ export function useMarkAllNotificationsRead() {
 
 // Contractor Hooks
 export function useContractorOrders() {
-  const enabled = Boolean(getAccessToken());
+  const { user } = useAuth();
+  const enabled = Boolean(getAccessToken()) && user?.role?.name === 'contractor';
   return useQuery<any[]>({
     queryKey: ['contractorOrders'],
     queryFn: getContractorOrders,
@@ -368,7 +395,8 @@ export function useContractorOrders() {
 }
 
 export function useContractorProposals() {
-  const enabled = Boolean(getAccessToken());
+  const { user } = useAuth();
+  const enabled = Boolean(getAccessToken()) && user?.role?.name === 'contractor';
   return useQuery<any[]>({
     queryKey: ['contractorProposals'],
     queryFn: getContractorProposals,
@@ -378,7 +406,8 @@ export function useContractorProposals() {
 }
 
 export function useContractorActiveProjects() {
-  const enabled = Boolean(getAccessToken());
+  const { user } = useAuth();
+  const enabled = Boolean(getAccessToken()) && user?.role?.name === 'contractor';
   return useQuery<any[]>({
     queryKey: ['contractorActiveProjects'],
     queryFn: getContractorActiveProjects,
@@ -388,7 +417,8 @@ export function useContractorActiveProjects() {
 }
 
 export function useContractorStats() {
-  const enabled = Boolean(getAccessToken());
+  const { user } = useAuth();
+  const enabled = Boolean(getAccessToken()) && user?.role?.name === 'contractor';
   return useQuery<any>({
     queryKey: ['contractorStats'],
     queryFn: getContractorStats,
@@ -410,7 +440,8 @@ export function useCreateContractorProposal() {
 }
 
 export function useContractorWorkshops() {
-  const enabled = Boolean(getAccessToken());
+  const { user } = useAuth();
+  const enabled = Boolean(getAccessToken()) && user?.role?.name === 'contractor';
   return useQuery<any[]>({
     queryKey: ['contractorWorkshops'],
     queryFn: getContractorWorkshops,
@@ -430,7 +461,8 @@ export function useCreateContractorWorkshop() {
 }
 
 export function useCheckContractorManufacturingService() {
-  const enabled = Boolean(getAccessToken());
+  const { user } = useAuth();
+  const enabled = Boolean(getAccessToken()) && user?.role?.name === 'contractor';
   return useQuery({
     queryKey: ['contractor-manufacturing-service'],
     queryFn: checkContractorManufacturingService,
@@ -485,4 +517,4 @@ export function useVerifyFallbackCaptcha() {
     mutationFn: ({ challengeId, answer }: { challengeId: string; answer: string }) =>
       verifyFallbackCaptcha(challengeId, answer),
   });
-} 
+}

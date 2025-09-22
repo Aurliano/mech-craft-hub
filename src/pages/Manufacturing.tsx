@@ -134,8 +134,8 @@ const Manufacturing = () => {
 
 
   const handleFormSubmit = async () => {
-    if (!selectedWorkshopId || files.length === 0 || !formData.description?.trim()) {
-      alert("لطفاً کارگاه، فایل‌ها و توضیحات را تکمیل کنید.");
+    if (!selectedWorkshopId) {
+      alert("لطفاً کارگاه مورد نظر را انتخاب کنید.");
       return;
     }
 

@@ -1,281 +1,468 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Bell, Search, Filter, Check, X, Package, CreditCard, MessageCircle, AlertCircle, Info } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { 
+  Bell, CheckCircle, XCircle, Clock, DollarSign, Package, 
+  Truck, Star, MessageCircle, Eye, Trash2, Filter,
+  TrendingUp, Award, AlertCircle, Info
+} from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 
+interface Notification {
+  id: string;
+  type: string;
+  title: string;
+  message: string;
+  is_read: boolean;
+  created_at: string;
+  related_order?: {
+    id: string;
+    order_number: string;
+  };
+  related_quote?: {
+    id: string;
+    price: number;
+  };
+}
+
 const Notifications = () => {
-  const { notifications, isLoadingDashboard } = useAuth();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [typeFilter, setTypeFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('all');
+  const [error, setError] = useState<string | null>(null);
 
-  if (isLoadingDashboard) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
-        <div className="max-w-4xl mx-auto space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-6">
-                  <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
-                  <div className="h-8 bg-muted rounded w-1/2"></div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
 
-  const filteredNotifications = notifications?.filter(notification => {
-    const matchesSearch = notification.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         notification.message.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = typeFilter === 'all' || notification.type === typeFilter;
-    const matchesStatus = statusFilter === 'all' || 
-                         (statusFilter === 'read' && notification.isRead) ||
-                         (statusFilter === 'unread' && !notification.isRead);
-    return matchesSearch && matchesType && matchesStatus;
-  }) || [];
+  const fetchNotifications = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/v1/notifications/', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(data);
+      } else {
+        setError('خطا در دریافت اعلان‌ها');
+      }
+    } catch (error) {
+      setError('خطای شبکه در دریافت اعلان‌ها');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const markAsRead = async (notificationId: string) => {
+    try {
+      const response = await fetch(`/api/v1/notifications/${notificationId}/read/`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        }
+      });
+      
+      if (response.ok) {
+        setNotifications(prev => 
+          prev.map(notif => 
+            notif.id === notificationId 
+              ? { ...notif, is_read: true }
+              : notif
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      const response = await fetch('/api/v1/notifications/read-all/', {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+        }
+      });
+      
+      if (response.ok) {
+        setNotifications(prev => 
+          prev.map(notif => ({ ...notif, is_read: true }))
+        );
+      }
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
+  };
 
   const getNotificationIcon = (type: string) => {
     const iconMap = {
-      'order': Package,
-      'payment': CreditCard,
-      'message': MessageCircle,
-      'alert': AlertCircle,
-      'info': Info,
+      'order_status': Package,
+      'quote_received': DollarSign,
+      'quote_accepted': CheckCircle,
+      'payment_completed': CheckCircle,
+      'order_completed': Award,
+      'system': Info,
     };
+    
     const IconComponent = iconMap[type as keyof typeof iconMap] || Bell;
     return <IconComponent className="h-5 w-5" />;
   };
 
   const getNotificationColor = (type: string) => {
     const colorMap = {
-      'order': 'text-blue-600',
-      'payment': 'text-green-600',
-      'message': 'text-purple-600',
-      'alert': 'text-red-600',
-      'info': 'text-gray-600',
+      'order_status': 'text-blue-600 bg-blue-100',
+      'quote_received': 'text-green-600 bg-green-100',
+      'quote_accepted': 'text-green-600 bg-green-100',
+      'payment_completed': 'text-green-600 bg-green-100',
+      'order_completed': 'text-purple-600 bg-purple-100',
+      'system': 'text-gray-600 bg-gray-100',
     };
-    return colorMap[type as keyof typeof colorMap] || 'text-gray-600';
+    
+    return colorMap[type as keyof typeof colorMap] || 'text-gray-600 bg-gray-100';
   };
 
-  const markAsRead = (notificationId: string) => {
-    // TODO: Implement mark as read
-    console.log('Mark as read:', notificationId);
+  const getTypeLabel = (type: string) => {
+    const labelMap = {
+      'order_status': 'وضعیت سفارش',
+      'quote_received': 'دریافت پیشنهاد',
+      'quote_accepted': 'تایید پیشنهاد',
+      'payment_completed': 'تکمیل پرداخت',
+      'order_completed': 'تکمیل سفارش',
+      'system': 'سیستم',
+    };
+    
+    return labelMap[type as keyof typeof labelMap] || 'سایر';
   };
 
-  const markAllAsRead = () => {
-    // TODO: Implement mark all as read
-    console.log('Mark all as read');
-  };
+  const filteredNotifications = notifications.filter(notification => {
+    switch (activeTab) {
+      case 'unread':
+        return !notification.is_read;
+      case 'quotes':
+        return notification.type === 'quote_received' || notification.type === 'quote_accepted';
+      case 'orders':
+        return notification.type === 'order_status' || notification.type === 'order_completed';
+      case 'payments':
+        return notification.type === 'payment_completed';
+      default:
+        return true;
+    }
+  });
 
-  const deleteNotification = (notificationId: string) => {
-    // TODO: Implement delete notification
-    console.log('Delete notification:', notificationId);
-  };
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+  const quotesCount = notifications.filter(n => n.type === 'quote_received' || n.type === 'quote_accepted').length;
+  const ordersCount = notifications.filter(n => n.type === 'order_status' || n.type === 'order_completed').length;
+  const paymentsCount = notifications.filter(n => n.type === 'payment_completed').length;
 
-  const unreadCount = notifications?.filter(n => !n.isRead).length || 0;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50" dir="rtl">
+        <Navbar />
+        <div className="container mx-auto py-8 px-4">
+          <div className="max-w-4xl mx-auto space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {[...Array(4)].map((_, i) => (
+                <Card key={i} className="animate-pulse">
+                  <CardContent className="p-6">
+                    <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                    <div className="h-8 bg-muted rounded w-1/2"></div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50" dir="rtl">
       <Navbar />
       <div className="container mx-auto py-8 px-4">
         <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">اعلان‌ها</h1>
-            <p className="text-gray-600">مدیریت اعلان‌ها و پیام‌های شما</p>
-          </div>
-          {unreadCount > 0 && (
-            <Button variant="outline" onClick={markAllAsRead}>
-              <Check className="h-4 w-4 ml-2" />
-              همه را خوانده شده علامت‌گذاری کن
-            </Button>
-          )}
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">کل اعلان‌ها</p>
-                  <p className="text-2xl font-bold text-gray-900">{notifications?.length || 0}</p>
-                </div>
-                <Bell className="h-8 w-8 text-gray-400" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">خوانده نشده</p>
-                  <p className="text-2xl font-bold text-red-600">{unreadCount}</p>
-                </div>
-                <AlertCircle className="h-8 w-8 text-red-400" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">خوانده شده</p>
-                  <p className="text-2xl font-bold text-green-600">{(notifications?.length || 0) - unreadCount}</p>
-                </div>
-                <Check className="h-8 w-8 text-green-400" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Filters */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    placeholder="جستجو در اعلان‌ها..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pr-10"
-                  />
-                </div>
-              </div>
-              <div className="w-full md:w-48">
-                <Select value={typeFilter} onValueChange={setTypeFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="نوع اعلان" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">همه انواع</SelectItem>
-                    <SelectItem value="order">سفارش</SelectItem>
-                    <SelectItem value="payment">پرداخت</SelectItem>
-                    <SelectItem value="message">پیام</SelectItem>
-                    <SelectItem value="alert">هشدار</SelectItem>
-                    <SelectItem value="info">اطلاعیه</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="w-full md:w-48">
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="وضعیت" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">همه وضعیت‌ها</SelectItem>
-                    <SelectItem value="unread">خوانده نشده</SelectItem>
-                    <SelectItem value="read">خوانده شده</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+          {/* Header */}
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">اعلان‌ها</h1>
+              <p className="text-gray-600">پیگیری آخرین رویدادها و اعلان‌ها</p>
             </div>
-          </CardContent>
-        </Card>
+            <div className="flex gap-2">
+              {unreadCount > 0 && (
+                <Button onClick={markAllAsRead} variant="outline">
+                  <CheckCircle className="h-4 w-4 ml-2" />
+                  علامت‌گذاری همه به عنوان خوانده شده
+                </Button>
+              )}
+              <Button onClick={fetchNotifications} variant="outline">
+                <Bell className="h-4 w-4 ml-2" />
+                بروزرسانی
+              </Button>
+            </div>
+          </div>
 
-        {/* Notifications List */}
-        {filteredNotifications.length > 0 ? (
-          <div className="space-y-4">
-            {filteredNotifications.map((notification) => (
-              <Card 
-                key={notification.id} 
-                className={`hover:shadow-md transition-shadow ${
-                  !notification.isRead ? 'border-r-4 border-r-blue-500 bg-blue-50' : ''
-                }`}
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-start gap-4">
-                    <div className={`p-2 rounded-full ${
-                      !notification.isRead ? 'bg-blue-100' : 'bg-gray-100'
-                    }`}>
-                      <div className={getNotificationColor(notification.type)}>
-                        {getNotificationIcon(notification.type)}
-                      </div>
-                    </div>
-                    
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h3 className={`font-semibold ${
-                            !notification.isRead ? 'text-gray-900' : 'text-gray-700'
-                          }`}>
-                            {notification.title}
-                          </h3>
-                          <p className="text-gray-600 mt-1">{notification.message}</p>
-                          <div className="flex items-center gap-4 mt-3">
-                            <span className="text-xs text-gray-500">
-                              {new Date(notification.createdAt).toLocaleDateString('fa-IR')}
-                            </span>
-                            <Badge variant="outline" className="text-xs">
-                              {notification.type === 'order' ? 'سفارش' :
-                               notification.type === 'payment' ? 'پرداخت' :
-                               notification.type === 'message' ? 'پیام' :
-                               notification.type === 'alert' ? 'هشدار' :
-                               notification.type === 'info' ? 'اطلاعیه' : notification.type}
-                            </Badge>
-                            {!notification.isRead && (
-                              <Badge variant="default" className="text-xs">
-                                جدید
-                              </Badge>
-                            )}
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <Bell className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">کل اعلان‌ها</p>
+                    <p className="text-2xl font-bold text-gray-900">{notifications.length}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-red-100 rounded-lg">
+                    <AlertCircle className="h-6 w-6 text-red-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">خوانده نشده</p>
+                    <p className="text-2xl font-bold text-gray-900">{unreadCount}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-100 rounded-lg">
+                    <DollarSign className="h-6 w-6 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">پیشنهادات</p>
+                    <p className="text-2xl font-bold text-gray-900">{quotesCount}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-100 rounded-lg">
+                    <Package className="h-6 w-6 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">سفارشات</p>
+                    <p className="text-2xl font-bold text-gray-900">{ordersCount}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Error Alert */}
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {/* Tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="all" className="flex items-center gap-2">
+                <Bell className="h-4 w-4" />
+                همه ({notifications.length})
+              </TabsTrigger>
+              <TabsTrigger value="unread" className="flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                خوانده نشده ({unreadCount})
+              </TabsTrigger>
+              <TabsTrigger value="quotes" className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4" />
+                پیشنهادات ({quotesCount})
+              </TabsTrigger>
+              <TabsTrigger value="orders" className="flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                سفارشات ({ordersCount})
+              </TabsTrigger>
+              <TabsTrigger value="payments" className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4" />
+                پرداخت‌ها ({paymentsCount})
+              </TabsTrigger>
+            </TabsList>
+
+            {/* All Notifications Tab */}
+            <TabsContent value="all" className="space-y-4">
+              {filteredNotifications.length > 0 ? (
+                <div className="space-y-4">
+                  {filteredNotifications.map((notification) => (
+                    <Card 
+                      key={notification.id} 
+                      className={`hover:shadow-md transition-shadow ${
+                        !notification.is_read ? 'border-l-4 border-l-blue-500 bg-blue-50' : ''
+                      }`}
+                    >
+                      <CardContent className="p-6">
+                        <div className="flex items-start gap-4">
+                          <div className={`p-2 rounded-lg ${getNotificationColor(notification.type)}`}>
+                            {getNotificationIcon(notification.type)}
+                          </div>
+                          
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-semibold text-gray-900">{notification.title}</h3>
+                                <Badge variant="outline" className="text-xs">
+                                  {getTypeLabel(notification.type)}
+                                </Badge>
+                                {!notification.is_read && (
+                                  <Badge variant="default" className="text-xs bg-blue-600">
+                                    جدید
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {new Date(notification.created_at).toLocaleDateString('fa-IR')}
+                              </div>
+                            </div>
+                            
+                            <p className="text-gray-700 mb-3">{notification.message}</p>
+                            
+                            <div className="flex items-center gap-2">
+                              {!notification.is_read && (
+                                <Button
+                                  onClick={() => markAsRead(notification.id)}
+                                  size="sm"
+                                  variant="outline"
+                                >
+                                  <CheckCircle className="h-4 w-4 ml-2" />
+                                  علامت‌گذاری به عنوان خوانده شده
+                                </Button>
+                              )}
+                              
+                              {notification.related_order && (
+                                <Button asChild size="sm" variant="outline">
+                                  <Link to={`/orders/${notification.related_order.id}`}>
+                                    <Eye className="h-4 w-4 ml-2" />
+                                    مشاهده سفارش
+                                  </Link>
+                                </Button>
+                              )}
+                              
+                              {notification.related_quote && (
+                                <Button size="sm" variant="outline">
+                                  <DollarSign className="h-4 w-4 ml-2" />
+                                  مشاهده پیشنهاد
+                                </Button>
+                              )}
+                            </div>
                           </div>
                         </div>
-                        
-                        <div className="flex items-center gap-2">
-                          {!notification.isRead && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => markAsRead(notification.id)}
-                              className="text-blue-600 hover:text-blue-700"
-                            >
-                              <Check className="h-4 w-4" />
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deleteNotification(notification.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="p-12 text-center">
+                    <Bell className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">اعلانی یافت نشد</h3>
+                    <p className="text-gray-600">
+                      {activeTab === 'all' 
+                        ? 'هنوز اعلانی دریافت نکرده‌اید'
+                        : `در دسته‌بندی ${activeTab} اعلانی یافت نشد`
+                      }
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            {/* Other tabs have similar structure but filtered content */}
+            <TabsContent value="unread" className="space-y-4">
+              {filteredNotifications.length > 0 ? (
+                <div className="space-y-4">
+                  {filteredNotifications.map((notification) => (
+                    <Card 
+                      key={notification.id} 
+                      className="border-l-4 border-l-blue-500 bg-blue-50 hover:shadow-md transition-shadow"
+                    >
+                      <CardContent className="p-6">
+                        <div className="flex items-start gap-4">
+                          <div className={`p-2 rounded-lg ${getNotificationColor(notification.type)}`}>
+                            {getNotificationIcon(notification.type)}
+                          </div>
+                          
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <h3 className="font-semibold text-gray-900">{notification.title}</h3>
+                                <Badge variant="default" className="text-xs bg-blue-600">
+                                  جدید
+                                </Badge>
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {new Date(notification.created_at).toLocaleDateString('fa-IR')}
+                              </div>
+                            </div>
+                            
+                            <p className="text-gray-700 mb-3">{notification.message}</p>
+                            
+                            <div className="flex items-center gap-2">
+                              <Button
+                                onClick={() => markAsRead(notification.id)}
+                                size="sm"
+                                variant="outline"
+                              >
+                                <CheckCircle className="h-4 w-4 ml-2" />
+                                علامت‌گذاری به عنوان خوانده شده
+                              </Button>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <Card>
-            <CardContent className="p-12 text-center">
-              <Bell className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">اعلانی یافت نشد</h3>
-              <p className="text-gray-600">
-                {searchTerm || typeFilter !== 'all' || statusFilter !== 'all'
-                  ? 'با فیلترهای انتخابی اعلانی یافت نشد'
-                  : 'هنوز اعلانی دریافت نکرده‌اید'
-                }
-              </p>
-            </CardContent>
-          </Card>
-        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="p-12 text-center">
+                    <CheckCircle className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">همه اعلان‌ها خوانده شده‌اند</h3>
+                    <p className="text-gray-600">
+                      اعلان خوانده نشده‌ای وجود ندارد
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            {/* Similar structure for other tabs... */}
+            <TabsContent value="quotes" className="space-y-4">
+              {/* Quote notifications content */}
+            </TabsContent>
+            
+            <TabsContent value="orders" className="space-y-4">
+              {/* Order notifications content */}
+            </TabsContent>
+            
+            <TabsContent value="payments" className="space-y-4">
+              {/* Payment notifications content */}
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>

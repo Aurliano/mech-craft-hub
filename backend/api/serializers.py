@@ -85,10 +85,31 @@ class CartSerializer(serializers.ModelSerializer):
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
+    service = serializers.SerializerMethodField()
+    service_fields = serializers.SerializerMethodField()
+    
     class Meta:
         model = OrderItem
-        fields = ['id', 'order', 'service', 'assigned_contractor', 'status', 'price', 'estimated_delivery', 'actual_delivery', 'field_values', 'needs_documentation', 'created_at', 'updated_at']
+        fields = ['id', 'order', 'service', 'service_fields', 'assigned_contractor', 'status', 'price', 'estimated_delivery', 'actual_delivery', 'field_values', 'needs_documentation', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
+    
+    def get_service(self, obj):
+        if obj.service:
+            return {
+                'id': str(obj.service.id),
+                'name': obj.service.name,
+                'type': obj.service.type,
+                'description': obj.service.description,
+                'scope': obj.service.scope.name if obj.service.scope else None
+            }
+        return None
+    
+    def get_service_fields(self, obj):
+        if obj.service:
+            from .models import ServiceField
+            fields = ServiceField.objects.filter(service=obj.service).order_by('order')
+            return ServiceFieldSerializer(fields, many=True).data
+        return []
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -101,10 +122,25 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
 class QuoteSerializer(serializers.ModelSerializer):
+    order_item = serializers.SerializerMethodField()
+    
     class Meta:
         model = Quote
         fields = ['id', 'order_item', 'contractor', 'price', 'documentation_price', 'delivery_days', 'documentation_days', 'notes', 'status', 'created_at', 'expires_at']
         read_only_fields = ['id', 'created_at']
+    
+    def get_order_item(self, obj):
+        return {
+            'id': str(obj.order_item.id),
+            'service': {
+                'id': str(obj.order_item.service.id) if obj.order_item.service else None,
+                'name': obj.order_item.service.name if obj.order_item.service else 'Unknown Service',
+            },
+            'order': {
+                'id': str(obj.order_item.order.id),
+                'order_number': obj.order_item.order.order_number,
+            }
+        }
 
 
 class TicketFileTypeSerializer(serializers.ModelSerializer):

@@ -10,7 +10,7 @@ interface TurnstileCaptchaProps {
 
 declare global {
   interface Window {
-    turnstile?: {
+    Turnstile?: {
       render: (element: HTMLElement, options: {
         sitekey: string;
         callback: (token: string) => void;
@@ -24,7 +24,7 @@ declare global {
 export default function TurnstileCaptcha({ 
   onVerify, 
   fallbackApi = "/api/v1/captcha/fallback/",
-  timeout = 10000, // 10 seconds default
+  timeout = 30000, // 30 seconds default
   siteKey
 }: TurnstileCaptchaProps) {
   const widgetRef = useRef<HTMLDivElement>(null);
@@ -35,37 +35,62 @@ export default function TurnstileCaptcha({
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Check fallback first
+    // Start with Turnstile first
     let cancelled = false;
-    fetch(fallbackApi, { credentials: 'include' })
-      .then(r => r.json())
-      .then(j => {
-        if (cancelled) return;
-        if (j && j.fallback === "local") {
+    
+    // Check if Turnstile is available
+    const SITEKEY = siteKey || import.meta.env.VITE_TURNSTILE_SITEKEY;
+    if (SITEKEY) {
+      setMode("turnstile");
+      // Start timeout for Turnstile loading
+      timeoutRef.current = setTimeout(() => {
+        if (!turnstileLoaded && !cancelled) {
+          console.log("Turnstile timeout reached, switching to fallback");
+          setTimeoutReached(true);
           setMode("local");
-        } else {
-          setMode("turnstile");
-          // Start timeout for Turnstile loading
-          timeoutRef.current = setTimeout(() => {
-            if (!turnstileLoaded) {
-              console.log("Turnstile timeout reached, switching to fallback");
-              setTimeoutReached(true);
-              setMode("local");
-            }
-          }, timeout);
+          // Request fallback challenge
+          requestFallbackChallenge();
+        }
+      }, timeout);
+    } else {
+      // No Turnstile key, go directly to fallback
+      setMode("local");
+      requestFallbackChallenge();
+    }
+    
+    function requestFallbackChallenge() {
+      if (cancelled) return;
+      
+      // Use full URL with API_ROOT
+      const apiRoot = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+      const fullUrl = `${apiRoot}${fallbackApi}`;
+      
+      fetch(fullUrl, { 
+        headers: {
+          'Content-Type': 'application/json',
         }
       })
-      .catch(() => {
-        setMode("turnstile");
-        // Start timeout for Turnstile loading
-        timeoutRef.current = setTimeout(() => {
-          if (!turnstileLoaded) {
-            console.log("Turnstile timeout reached, switching to fallback");
-            setTimeoutReached(true);
-            setMode("local");
+        .then(r => {
+          if (!r.ok) {
+            throw new Error(`HTTP error! status: ${r.status}`);
           }
-        }, timeout);
-      });
+          return r.json();
+        })
+        .then(j => {
+          if (cancelled) return;
+          if (j && j.challenge_id && j.challenge) {
+            setFallbackChallenge({
+              id: j.challenge_id,
+              question: j.challenge
+            });
+          } else if (j && j.available === false) {
+            console.error('Fallback captcha error:', j.error);
+          }
+        })
+        .catch(err => {
+          console.error('Failed to get fallback challenge:', err);
+        });
+    }
     
     return () => { 
       cancelled = true;
@@ -73,12 +98,12 @@ export default function TurnstileCaptcha({
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [fallbackApi, timeout, turnstileLoaded]);
+  }, [fallbackApi, timeout, turnstileLoaded, siteKey]);
 
   useEffect(() => {
     if (mode !== "turnstile") return;
     
-    const SITEKEY = siteKey || import.meta.env.VITE_TURNSTILE_SITEKEY;
+    const SITEKEY = siteKey || import.meta.env.VITE_TURNSTILE_SITEKEY || "1x00000000000000000000AA";
     if (!SITEKEY) {
       console.error("TURNSTILE: VITE_TURNSTILE_SITEKEY is not set");
       setMode("local");
@@ -146,12 +171,26 @@ export default function TurnstileCaptcha({
         }
       } catch(_) {}
     };
-  }, [mode, onVerify, siteKey]);
+  }, [mode]); // فقط mode را در dependency قرار دادیم
 
   const handleLocalCaptchaRequest = async () => {
     try {
-      const response = await fetch('/api/v1/captcha/fallback/', { credentials: 'include' });
+      // Use full URL with API_ROOT
+      const apiRoot = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+      const fullUrl = `${apiRoot}${fallbackApi}`;
+      
+      const response = await fetch(fullUrl, { 
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
+      console.log('Fallback challenge data:', data);
       setFallbackChallenge({
         id: data.challenge_id,
         question: data.challenge
@@ -162,25 +201,42 @@ export default function TurnstileCaptcha({
   };
 
   const handleLocalCaptchaVerify = async (answer: string) => {
-    if (!fallbackChallenge) return;
+    if (!fallbackChallenge) {
+      console.error('No fallback challenge available');
+      throw new Error('کپچای محلی در دسترس نیست');
+    }
     
     try {
-      const response = await fetch('/api/v1/captcha/verify/', {
+      // Use full URL with API_ROOT
+      const apiRoot = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+      const fullUrl = `${apiRoot}/api/v1/captcha/fallback/verify/`;
+      
+      console.log('Verifying fallback captcha:', {
+        challenge_id: fallbackChallenge.id,
+        answer: answer
+      });
+      
+      const response = await fetch(fullUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           challenge_id: fallbackChallenge.id,
           answer: answer
-        }),
-        credentials: 'include'
+        })
       });
       
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const result = await response.json();
+      console.log('Fallback captcha verification result:', result);
+      
       if (result.success) {
         // Use challenge_id as token for local captcha
         onVerify(fallbackChallenge.id);
       } else {
-        throw new Error(result.message || 'کپچای محلی ناموفق بود');
+        throw new Error(result.error || 'کپچای محلی ناموفق بود');
       }
     } catch (err) {
       console.error('Local captcha verification failed:', err);
@@ -199,16 +255,20 @@ export default function TurnstileCaptcha({
   
   if (mode === "local") {
     return (
-      <div className="space-y-2">
+      <div className="space-y-3 p-4 border border-gray-200 rounded-lg bg-gray-50">
         {timeoutReached && (
-          <div className="text-sm text-amber-600 bg-amber-50 p-2 rounded border">
+          <div className="text-sm text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
             ⚠️ Turnstile در دسترس نیست، از کپچای محلی استفاده می‌شود
           </div>
         )}
+        <div className="text-center text-sm text-gray-600 mb-2">
+          لطفاً سوال زیر را پاسخ دهید:
+        </div>
         <LocalCaptcha
           challenge={fallbackChallenge}
           onVerify={handleLocalCaptchaVerify}
           onRequestChallenge={handleLocalCaptchaRequest}
+          className="bg-white p-3 rounded border"
         />
       </div>
     );

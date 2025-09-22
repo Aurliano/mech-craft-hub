@@ -156,20 +156,29 @@ const ContractorDashboard = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
+                  <Link to="/contractor/quotes">
+                    <Button variant="outline" className="flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4" />
+                      پیشنهادات
+                    </Button>
+                  </Link>
+                  <Link to="/contractor/projects">
+                    <Button variant="outline" className="flex items-center gap-2">
+                      <Package className="h-4 w-4" />
+                      پروژه‌های من
+                    </Button>
+                  </Link>
+                  <Link to="/contractor/ratings">
+                    <Button variant="outline" className="flex items-center gap-2">
+                      <Star className="h-4 w-4" />
+                      امتیازات
+                    </Button>
+                  </Link>
                   <Link to="/profile">
                     <Button variant="outline" className="flex items-center gap-2">
                       <Settings className="h-4 w-4" />
                       ویرایش حساب کاربری
                     </Button>
-                  </Link>
-                  <Link to="/reviews">
-                    <Card className="p-3 cursor-pointer hover:shadow-md transition-shadow">
-                      <div className="flex items-center gap-2">
-                        <Star className="h-5 w-5 text-yellow-500" />
-                        <span className="font-semibold">{contractorStats?.rating || 0}/5</span>
-                      </div>
-                      <p className="text-sm text-gray-600">امتیاز و نظرات</p>
-                    </Card>
                   </Link>
             </div>
           </div>

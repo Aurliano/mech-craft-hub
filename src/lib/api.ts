@@ -1,5 +1,5 @@
 export const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
-export const API_ROOT = `${API_BASE_URL}/api`;
+export const API_ROOT = import.meta.env.DEV ? '/api' : `${API_BASE_URL}/api`;
 
 import { requestQueue } from './requestQueue';
 
@@ -20,15 +20,25 @@ export function clearTokens() {
   localStorage.removeItem(REFRESH_TOKEN_KEY);
 }
 
+export function isAuthenticated(): boolean {
+  const token = getAccessToken();
+  const refreshToken = getRefreshToken();
+  return Boolean(token && refreshToken);
+}
+
 export function getRefreshToken(): string | null {
   return localStorage.getItem(REFRESH_TOKEN_KEY);
 }
 
 export async function refreshAccessToken(): Promise<string | null> {
   const refreshToken = getRefreshToken();
-  if (!refreshToken) return null;
+  if (!refreshToken) {
+    console.log('No refresh token available');
+    return null;
+  }
 
   try {
+    console.log('Attempting to refresh token...');
     const res = await fetch(`${API_ROOT}/token/refresh/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -36,12 +46,16 @@ export async function refreshAccessToken(): Promise<string | null> {
     });
 
     if (!res.ok) {
+      console.error('Token refresh failed with status:', res.status);
+      const errorText = await res.text();
+      console.error('Token refresh error:', errorText);
       clearTokens();
       return null;
     }
 
     const data = await res.json();
-    setTokens(data.access, data.refresh);
+    console.log('Token refresh successful');
+    setTokens(data.access, data.refresh || refreshToken);
     return data.access;
   } catch (error) {
     console.error('Token refresh failed:', error);
@@ -66,8 +80,10 @@ async function simpleFetch<T>(path: string, options: RequestInit = {}): Promise<
 
   // If token expired, try to refresh
   if (res.status === 401 && token) {
+    console.log('Token expired, attempting refresh...');
     const newToken = await refreshAccessToken();
     if (newToken) {
+      console.log('Token refreshed successfully, retrying request...');
       // Retry the request with new token
       const retryHeaders = { ...headers, 'Authorization': `Bearer ${newToken}` };
       const retryRes = await fetch(`${API_ROOT}${path}`, {
@@ -76,13 +92,17 @@ async function simpleFetch<T>(path: string, options: RequestInit = {}): Promise<
       });
       if (!retryRes.ok) {
         const text = await retryRes.text();
+        console.error('Retry request failed:', text);
         throw new Error(text || retryRes.statusText);
       }
       if (retryRes.status === 204) return undefined as unknown as T;
       return (await retryRes.json()) as T;
     } else {
-      // If refresh failed, clear tokens and throw error
+      // If refresh failed, clear tokens and redirect to login
+      console.log('Token refresh failed, clearing tokens and redirecting to login');
       clearTokens();
+      // Redirect to login page
+      window.location.href = '/login';
       throw new Error('Session expired. Please log in again.');
     }
   }
@@ -369,7 +389,7 @@ export async function getServices(scopeId?: string) {
 // Dashboard Data Functions
 export async function getUserOrders() {
   try {
-    return await fetchJson<any[]>('/v1/orders/');
+    return await fetchJson<any[]>('/v1/orders/user/');
   } catch (error) {
     console.error('Error fetching orders:', error);
     return [];
@@ -483,7 +503,7 @@ export async function createQuote(data: {
 
 export async function getQuotesByOrder(orderId: string) {
   try {
-    return await fetchJson<any[]>(`/v1/quotes/?order_item__order=${orderId}`);
+    return await fetchJson<any[]>(`/v1/quotes/order/${orderId}/`);
   } catch (error) {
     console.error('Error fetching quotes:', error);
     return [];
@@ -492,12 +512,22 @@ export async function getQuotesByOrder(orderId: string) {
 
 export async function acceptQuote(quoteId: string) {
   try {
-    return await fetchJson<any>(`/v1/quotes/${quoteId}/`, {
+    return await fetchJson<any>(`/v1/quotes/${quoteId}/accept/`, {
       method: 'PATCH',
-      body: JSON.stringify({ status: 'accepted' }),
     });
   } catch (error) {
     console.error('Error accepting quote:', error);
+    throw error;
+  }
+}
+
+export async function rejectQuote(quoteId: string) {
+  try {
+    return await fetchJson<any>(`/v1/quotes/${quoteId}/reject/`, {
+      method: 'PATCH',
+    });
+  } catch (error) {
+    console.error('Error rejecting quote:', error);
     throw error;
   }
 }
@@ -823,7 +853,7 @@ export async function getTickets(params?: { status?: string; priority?: string; 
     if (params?.priority) queryParams.append('priority', params.priority);
     if (params?.search) queryParams.append('search', params.search);
     
-    const url = `/tickets/${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const url = `/v1/tickets/${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     return await fetchJson<{ results: any[]; count: number }>(url);
   } catch (error) {
     console.error('Error fetching tickets:', error);
@@ -833,7 +863,7 @@ export async function getTickets(params?: { status?: string; priority?: string; 
 
 export async function getTicketById(ticketId: string) {
   try {
-    return await fetchJson<any>(`/tickets/${ticketId}/`);
+    return await fetchJson<any>(`/v1/tickets/${ticketId}/`);
   } catch (error) {
     console.error('Error fetching ticket:', error);
     throw error;
@@ -842,7 +872,7 @@ export async function getTicketById(ticketId: string) {
 
 export async function getTicketMessages(ticketId: string) {
   try {
-    return await fetchJson<{ results: any[]; count: number }>(`/tickets/${ticketId}/messages/`);
+    return await fetchJson<{ results: any[]; count: number }>(`/v1/tickets/${ticketId}/messages/`);
   } catch (error) {
     console.error('Error fetching ticket messages:', error);
     throw error;
@@ -857,7 +887,7 @@ export async function createTicket(data: {
   priority?: string;
 }) {
   try {
-    return await fetchJson<{ ticket_id: string; message: string }>('/tickets/create/', {
+    return await fetchJson<{ ticket_id: string; message: string }>('/v1/tickets/create/', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -882,7 +912,7 @@ export async function createTicketMessage(ticketId: string, data: {
       });
     }
 
-    return await fetchJson<{ message_id: string; message: string }>(`/tickets/${ticketId}/messages/`, {
+    return await fetchJson<{ message_id: string; message: string }>(`/v1/tickets/${ticketId}/messages/`, {
       method: 'POST',
       body: formData,
       headers: {
@@ -897,7 +927,7 @@ export async function createTicketMessage(ticketId: string, data: {
 
 export async function getTicketCategories() {
   try {
-    return await fetchJson<any[]>('/ticket-categories/');
+    return await fetchJson<any[]>('/v1/ticket-categories/');
   } catch (error) {
     console.error('Error fetching ticket categories:', error);
     throw error;
@@ -906,7 +936,7 @@ export async function getTicketCategories() {
 
 export async function getTicketFileTypes() {
   try {
-    return await fetchJson<any[]>('/ticket-file-types/');
+    return await fetchJson<any[]>('/v1/ticket-file-types/');
   } catch (error) {
     console.error('Error fetching ticket file types:', error);
     throw error;
@@ -1009,6 +1039,7 @@ export const api = {
   createQuote,
   getQuotesByOrder,
   acceptQuote,
+  rejectQuote,
   
   // Payments
   processPayment,

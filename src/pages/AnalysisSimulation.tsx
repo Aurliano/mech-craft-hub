@@ -5,7 +5,7 @@ import Footer from "@/components/Footer";
 import { useServiceOrder } from "@/hooks/useServiceOrder";
 import { useAuth } from "@/contexts/AuthContext";
 import { useService } from "@/hooks/useAuth";
-import ServiceOrderForm from "@/components/ServiceOrderForm";
+import { DynamicServiceForm } from "@/components/DynamicServiceForm";
 import LoginPrompt from "@/components/LoginPrompt";
 import comsolLogo from "@/assets/comsol.jpg";
 import adamsLogo from "@/assets/adams.png";
@@ -22,12 +22,10 @@ const AnalysisSimulation = () => {
   // Use service order hook
   const {
     formData,
-    tabFieldValues,
     needsDocumentation,
     notes,
     documentationOptions,
     updateField,
-    updateTabField,
     setNeedsDocumentation,
     setNotes,
     setDocumentationOptions,
@@ -190,19 +188,18 @@ const AnalysisSimulation = () => {
       <section className="py-16">
         <div className="max-w-6xl mx-auto px-4">
           {isAuthenticated ? (
-            <ServiceOrderForm
+            <DynamicServiceForm
               serviceId="550e8400-e29b-41d4-a716-446655440001"
-              service={service}
               formData={formData}
-              tabFieldValues={tabFieldValues}
+              onFieldChange={updateField}
               needsDocumentation={needsDocumentation}
               onNeedsDocumentationChange={setNeedsDocumentation}
+              documentationOptions={documentationOptions}
+              onDocumentationOptionChange={(option, checked) => 
+                setDocumentationOptions(prev => ({ ...prev, [option]: checked }))
+              }
               notes={notes}
               onNotesChange={setNotes}
-              onFieldChange={updateField}
-              onTabFieldChange={updateTabField}
-              documentationOptions={documentationOptions}
-              onDocumentationOptionsChange={setDocumentationOptions}
               onSubmit={handleFormSubmit}
               isSubmitting={isSubmitting}
             />

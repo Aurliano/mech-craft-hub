@@ -87,7 +87,7 @@ const Support = () => {
   const handleTicketCreated = (ticketId: string) => {
     fetchTickets();
     // Optionally select the new ticket
-    const newTicket = tickets.find(t => t.id === ticketId);
+    const newTicket = tickets?.find(t => t.id === ticketId);
     if (newTicket) {
       handleSelectTicket(newTicket);
     }
@@ -226,7 +226,7 @@ const Support = () => {
 
         {/* Create Ticket Modal */}
         <CreateTicketModal onTicketCreated={handleTicketCreated}>
-          <Button className="fixed bottom-6 right-6 rounded-full w-14 h-14 shadow-lg">
+          <Button className="fixed bottom-6 right-6 rounded-full w-14 h-14 shadow-lg bg-blue-600 hover:bg-blue-700 text-white">
             <Plus className="w-6 h-6" />
           </Button>
         </CreateTicketModal>

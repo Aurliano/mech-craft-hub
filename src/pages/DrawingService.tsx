@@ -60,26 +60,20 @@ const DrawingService = () => {
 
   useEffect(() => {
     const fetchService = async () => {
-      console.log('🔍 شروع دریافت سرویس...');
       setLoading(true);
       setError(null);
       
       try {
         const response = await getServices();
-        console.log('✅ پاسخ API دریافت شد:', response);
   
         let services: any[] = [];
         if (response) {
           services = Array.isArray(response) ? response : (response as any).results || [];
         }
-        console.log('🔍 سرویس‌ها (array):', services);
   
         if (Array.isArray(services)) {
           const drawing = services.find((s: any) => s.type === 'drawing') || services.find((s: any) => /draw|نقشه/i.test(s.name));
-          console.log('🔍 سرویس نقشه‌کشی:', drawing);
           if (drawing) {
-            console.log('🔍 Tabs:', drawing.tabs);
-            console.log('🔍 Fields:', drawing.fields);
             setService(drawing);
             if (drawing.tabs && drawing.tabs.length > 0) {
               setActiveTab(drawing.tabs[0].name);
@@ -87,9 +81,7 @@ const DrawingService = () => {
               // اگر تب‌ها وجود ندارند، از نام سرویس استفاده کن
               setActiveTab('default');
             }
-            console.log('✅ سرویس تنظیم شد:', drawing);
           } else {
-            console.log('❌ سرویس نقشه‌کشی پیدا نشد - استفاده از Mock Data');
             // Mock data برای تست
             const mockService = {
               id: '550e8400-e29b-41d4-a716-446655440004',
@@ -128,13 +120,12 @@ const DrawingService = () => {
             };
             setService(mockService);
             setActiveTab('technical_drawing');
-            console.log('✅ Mock Service تنظیم شد:', mockService);
           }
         } else {
           setError('فرمت پاسخ API نامعتبر است');
         }
       } catch (e) {
-        console.error('❌ خطا در دریافت سرویس:', e);
+        console.error('خطا در دریافت سرویس:', e);
         setError(e instanceof Error ? e.message : 'خطا در دریافت سرویس');
       } finally {
         setLoading(false);
@@ -299,16 +290,6 @@ const DrawingService = () => {
           </div>
         </div>
 
-        {/* Debug Information */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="max-w-6xl mx-auto mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <h3 className="font-semibold text-yellow-800 mb-2">Debug Info:</h3>
-            <p className="text-sm text-yellow-700">Service: {service ? 'Loaded' : 'Not loaded'}</p>
-            <p className="text-sm text-yellow-700">Tabs: {service?.tabs?.length || 0}</p>
-            <p className="text-sm text-yellow-700">Active Tab: {activeTab}</p>
-            <p className="text-sm text-yellow-700">Authenticated: {isAuthenticated ? 'Yes' : 'No'}</p>
-          </div>
-        )}
 
         {/* Dynamic Form Section */}
         {isAuthenticated ? (

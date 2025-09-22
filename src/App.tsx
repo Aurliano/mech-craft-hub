@@ -23,6 +23,10 @@ import Design from "./pages/Design";
 import DrawingService from "./pages/DrawingService";
 import Manufacturing from "./pages/Manufacturing";
 import ContractorDashboard from "./pages/ContractorDashboard";
+import ContractorQuotes from "./pages/ContractorQuotes";
+import ContractorProjects from "./pages/ContractorProjects";
+import ContractorRatings from "./pages/ContractorRatings";
+import CustomerQuotes from "./pages/CustomerQuotes";
 import MyWorkshops from "./pages/MyWorkshops";
 import OrderDetails from "./pages/OrderDetails";
 import FileUploadDemo from "./pages/FileUploadDemo";
@@ -82,9 +86,41 @@ const App = () => (
                   <ContractorDashboard />
                 </RoleBasedRoute>
               } />
+              <Route path="/contractor/quotes" element={
+                <RoleBasedRoute allowedRoles={['contractor']} fallbackPath="/dashboard">
+                  <ContractorQuotes />
+                </RoleBasedRoute>
+              } />
+              <Route path="/contractor/projects" element={
+                <RoleBasedRoute allowedRoles={['contractor']} fallbackPath="/dashboard">
+                  <ContractorProjects />
+                </RoleBasedRoute>
+              } />
+              <Route path="/contractor/ratings" element={
+                <RoleBasedRoute allowedRoles={['contractor']} fallbackPath="/dashboard">
+                  <ContractorRatings />
+                </RoleBasedRoute>
+              } />
+              <Route path="/contractor/orders" element={
+                <RoleBasedRoute allowedRoles={['contractor']} fallbackPath="/dashboard">
+                  <ContractorQuotes />
+                </RoleBasedRoute>
+              } />
               <Route path="/my-workshops" element={
                 <RoleBasedRoute allowedRoles={['contractor']} fallbackPath="/dashboard">
                   <MyWorkshops />
+                </RoleBasedRoute>
+              } />
+              
+              {/* Customer Quote Management */}
+              <Route path="/quotes" element={
+                <RoleBasedRoute allowedRoles={['customer']} fallbackPath="/contractor-dashboard">
+                  <CustomerQuotes />
+                </RoleBasedRoute>
+              } />
+              <Route path="/orders/:orderId" element={
+                <RoleBasedRoute allowedRoles={['customer', 'contractor']} fallbackPath="/dashboard">
+                  <OrderDetails />
                 </RoleBasedRoute>
               } />
               

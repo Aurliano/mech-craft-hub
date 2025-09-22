@@ -67,17 +67,6 @@ const Design = () => {
   };
 
   const handleFormSubmit = async () => {
-    // Check required fields
-    if (!formData.description?.trim()) {
-      alert("لطفا توضیحات پروژه را وارد کنید");
-      return;
-    }
-
-    if (!file) {
-      alert("لطفا فایل پروژه را آپلود کنید");
-      return;
-    }
-
     if (!acceptTerms) {
       alert("لطفا قوانین و شرایط را بپذیرید");
       return;

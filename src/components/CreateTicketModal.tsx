@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -75,18 +75,20 @@ const CreateTicketModal: React.FC<CreateTicketModalProps> = ({
   const fetchCategories = async () => {
     try {
       const response = await api.getTicketCategories();
-      setCategories(response);
+      setCategories(Array.isArray(response) ? response : []);
     } catch (error) {
       console.error('Error fetching categories:', error);
+      setCategories([]);
     }
   };
 
   const fetchUserOrders = async () => {
     try {
       const response = await api.getUserOrders();
-      setOrders(response.filter((order: Order) => order.status === 'in_progress'));
+      setOrders(Array.isArray(response) ? response.filter((order: Order) => order.status === 'in_progress') : []);
     } catch (error) {
       console.error('Error fetching orders:', error);
+      setOrders([]);
     }
   };
 
@@ -161,7 +163,7 @@ const CreateTicketModal: React.FC<CreateTicketModalProps> = ({
       newErrors.content = 'محتوای تیکت الزامی است';
     }
 
-    const selectedCategory = categories.find(cat => cat.id === formData.category_id);
+    const selectedCategory = categories?.find(cat => cat.id === formData.category_id);
     if (selectedCategory?.requires_order && !formData.order_id) {
       newErrors.order_id = 'برای این نوع تیکت، انتخاب سفارش الزامی است';
     }
@@ -226,7 +228,7 @@ const CreateTicketModal: React.FC<CreateTicketModalProps> = ({
     }
   };
 
-  const selectedCategory = categories.find(cat => cat.id === formData.category_id);
+  const selectedCategory = categories?.find(cat => cat.id === formData.category_id);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -242,6 +244,9 @@ const CreateTicketModal: React.FC<CreateTicketModalProps> = ({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>ایجاد تیکت جدید</DialogTitle>
+          <DialogDescription>
+            برای ایجاد تیکت جدید، اطلاعات مورد نیاز را پر کنید
+          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-6">

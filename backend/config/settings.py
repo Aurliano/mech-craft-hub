@@ -187,6 +187,9 @@ CORS_ALLOW_METHODS = [
     'PUT',
 ]
 
+# Allow credentials for CORS
+CORS_ALLOW_CREDENTIALS = True
+
 
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8080',
@@ -322,7 +325,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # django-axes Configuration
-AXES_ENABLED = True
+AXES_ENABLED = False
 AXES_FAILURE_LIMIT = 5  # Lock after 5 failed attempts
 AXES_COOLOFF_TIME = 1  # 1 hour lockout
 AXES_LOCKOUT_TEMPLATE = 'axes/lockout.html'

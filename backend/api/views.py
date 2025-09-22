@@ -421,7 +421,7 @@ class TicketFileTypeViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class TicketCategoryViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = TicketCategory.objects.all()
+    queryset = TicketCategory.objects.all().order_by('name')
     serializer_class = TicketCategorySerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -680,10 +680,20 @@ def get_user_orders(request):
 def get_order_by_id(request, order_id):
     """Get specific order by ID"""
     try:
-        order = Order.objects.get(id=order_id, customer=request.user)
+        # Allow both customers and contractors to view orders
+        if hasattr(request.user, 'role') and request.user.role.name == 'contractor':
+            # Contractors can view orders they have quotes for
+            order = Order.objects.get(id=order_id)
+            # Check if contractor has any quotes for this order
+            from .models import Quote
+            if not Quote.objects.filter(order_item__order=order, contractor=request.user).exists():
+                return Response({'detail': 'شما دسترسی به این سفارش ندارید'}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            # Customers can view their own orders
+            order = Order.objects.get(id=order_id, customer=request.user)
         return Response(OrderSerializer(order).data)
     except Order.DoesNotExist:
-        raise NotFoundException('سفارش یافت نشد', 'سفارش مورد نظر وجود ندارد یا متعلق به شما نیست')
+        return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
 
 
 @api_view(["GET"])
@@ -707,12 +717,121 @@ def update_order_status(request, order_id):
     
     try:
         order = Order.objects.get(id=order_id, customer=request.user)
+        old_status = order.status
         order.status = serializer.validated_data['status']
         order.save()
+        
+        # Log status change
+        OrderStatusLog.objects.create(
+            order=order,
+            previous_status=old_status,
+            new_status=order.status,
+            changed_by=request.user,
+            reason=serializer.validated_data.get('reason', '')
+        )
         
         return Response(OrderSerializer(order).data)
     except Order.DoesNotExist:
         return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
+def update_order_item_status(request, item_id):
+    """Update order item status"""
+    try:
+        order_item = OrderItem.objects.get(id=item_id)
+        
+        # Check permissions
+        if order_item.order.customer != request.user and order_item.assigned_contractor != request.user:
+            return Response({'detail': 'دسترسی غیرمجاز'}, status=status.HTTP_403_FORBIDDEN)
+        
+        new_status = request.data.get('status')
+        if not new_status:
+            return Response({'detail': 'وضعیت جدید الزامی است'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        old_status = order_item.status
+        order_item.status = new_status
+        order_item.save()
+        
+        # Update order status based on item status
+        if new_status == 'in_progress':
+            order_item.order.status = 'in_progress'
+            order_item.order.save()
+        elif new_status == 'completed':
+            # Check if all items are completed
+            all_completed = not order_item.order.items.filter(status__in=['pending', 'quoted', 'accepted', 'in_progress']).exists()
+            if all_completed:
+                order_item.order.status = 'completed'
+                order_item.order.save()
+        
+        return Response(OrderItemSerializer(order_item).data)
+    except OrderItem.DoesNotExist:
+        return Response({'detail': 'آیتم سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def mark_project_delivered(request, item_id):
+    """Mark project as delivered by contractor"""
+    try:
+        order_item = OrderItem.objects.get(id=item_id, assigned_contractor=request.user)
+        
+        if order_item.status != 'in_progress':
+            return Response({'detail': 'فقط پروژه‌های در حال انجام قابل تحویل هستند'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+        
+        order_item.status = 'delivered'
+        order_item.actual_delivery = timezone.now()
+        order_item.save()
+        
+        # Create notification for customer
+        create_notification(
+            user=order_item.order.customer,
+            notification_type='order_completed',
+            title='پروژه تحویل داده شد',
+            message=f'پروژه {order_item.service.name} توسط پیمانکار تحویل داده شد',
+            related_order=order_item.order
+        )
+        
+        return Response(OrderItemSerializer(order_item).data)
+    except OrderItem.DoesNotExist:
+        return Response({'detail': 'آیتم سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def confirm_project_completion(request, item_id):
+    """Confirm project completion by customer"""
+    try:
+        order_item = OrderItem.objects.get(id=item_id)
+        
+        if order_item.order.customer != request.user:
+            return Response({'detail': 'دسترسی غیرمجاز'}, status=status.HTTP_403_FORBIDDEN)
+        
+        if order_item.status != 'delivered':
+            return Response({'detail': 'فقط پروژه‌های تحویل داده شده قابل تایید هستند'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+        
+        order_item.status = 'completed'
+        order_item.save()
+        
+        # Update order status
+        order_item.order.status = 'completed'
+        order_item.order.save()
+        
+        # Create notification for contractor
+        create_notification(
+            user=order_item.assigned_contractor,
+            notification_type='order_completed',
+            title='پروژه تایید شد',
+            message=f'پروژه {order_item.service.name} توسط مشتری تایید شد',
+            related_order=order_item.order
+        )
+        
+        return Response(OrderItemSerializer(order_item).data)
+    except OrderItem.DoesNotExist:
+        return Response({'detail': 'آیتم سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
 
 
 # Ticket Management Endpoints
@@ -940,7 +1059,19 @@ def create_quote(request):
         
         # Check if contractor has permission for this service
         order_item = OrderItem.objects.get(id=data['order_item'])
-        # Add permission check here if needed
+        
+        # Check if contractor already has a quote for this order item
+        existing_quote = Quote.objects.filter(
+            order_item=order_item,
+            contractor=contractor
+        ).first()
+        
+        if existing_quote:
+            return Response({
+                'detail': 'شما قبلاً برای این آیتم سفارش پیشنهاد ارسال کرده‌اید',
+                'existing_quote_id': str(existing_quote.id),
+                'existing_quote_status': existing_quote.status
+            }, status=status.HTTP_400_BAD_REQUEST)
         
         quote = Quote.objects.create(
             order_item=order_item,
@@ -973,8 +1104,20 @@ def create_quote(request):
 @permission_classes([IsAuthenticated])
 def get_quotes_by_order(request, order_id):
     """Get quotes for a specific order"""
+    from .models import Quote
+    
     try:
-        order = Order.objects.get(id=order_id, customer=request.user)
+        # Allow both customers and contractors to view quotes
+        if hasattr(request.user, 'role') and request.user.role.name == 'contractor':
+            # Contractors can view quotes for orders they have access to
+            order = Order.objects.get(id=order_id)
+            # Check if contractor has any quotes for this order
+            if not Quote.objects.filter(order_item__order=order, contractor=request.user).exists():
+                return Response({'detail': 'شما دسترسی به این سفارش ندارید'}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            # Customers can view quotes for their own orders
+            order = Order.objects.get(id=order_id, customer=request.user)
+        
         quotes = Quote.objects.filter(order_item__order=order)
         return Response(QuoteSerializer(quotes, many=True).data)
     except Order.DoesNotExist:
@@ -993,6 +1136,17 @@ def accept_quote(request, quote_id):
         if order.customer != request.user:
             return Response({'detail': 'دسترسی غیرمجاز'}, status=status.HTTP_403_FORBIDDEN)
         
+        # Check if quote is still pending
+        if quote.status != 'pending':
+            return Response({'detail': 'این پیشنهاد قبلاً تایید یا رد شده است'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+        
+        # Reject all other quotes for this order item
+        Quote.objects.filter(
+            order_item=quote.order_item,
+            status='pending'
+        ).exclude(id=quote.id).update(status='rejected')
+        
         # Accept the quote
         quote.status = 'accepted'
         quote.save()
@@ -1001,10 +1155,12 @@ def accept_quote(request, quote_id):
         quote.order_item.status = 'accepted'
         quote.order_item.assigned_contractor = quote.contractor
         quote.order_item.price = quote.price
+        quote.order_item.estimated_delivery = timezone.now() + timezone.timedelta(days=quote.delivery_days)
         quote.order_item.save()
         
         # Update order status
         order.status = 'quoted'
+        order.total_amount = quote.price + quote.documentation_price
         order.save()
         
         # Create notification for quote acceptance
@@ -1013,6 +1169,57 @@ def accept_quote(request, quote_id):
             notification_type='quote_accepted',
             title='پیشنهاد شما تایید شد',
             message=f'پیشنهاد شما برای سفارش {order.order_number} توسط مشتری تایید شد',
+            related_order=order,
+            related_quote=quote
+        )
+        
+        # Create notification for rejected quotes
+        rejected_quotes = Quote.objects.filter(
+            order_item=quote.order_item,
+            status='rejected'
+        )
+        for rejected_quote in rejected_quotes:
+            create_notification(
+                user=rejected_quote.contractor,
+                notification_type='quote_rejected',
+                title='پیشنهاد شما رد شد',
+                message=f'پیشنهاد شما برای سفارش {order.order_number} رد شد',
+                related_order=order,
+                related_quote=rejected_quote
+            )
+        
+        return Response(QuoteSerializer(quote).data)
+    except Quote.DoesNotExist:
+        return Response({'detail': 'پیشنهاد یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
+def reject_quote(request, quote_id):
+    """Reject a quote"""
+    try:
+        quote = Quote.objects.get(id=quote_id)
+        order = quote.order_item.order
+        
+        # Check if user is the customer
+        if order.customer != request.user:
+            return Response({'detail': 'دسترسی غیرمجاز'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Check if quote is still pending
+        if quote.status != 'pending':
+            return Response({'detail': 'این پیشنهاد قبلاً تایید یا رد شده است'}, 
+                          status=status.HTTP_400_BAD_REQUEST)
+        
+        # Reject the quote
+        quote.status = 'rejected'
+        quote.save()
+        
+        # Create notification for quote rejection
+        create_notification(
+            user=quote.contractor,
+            notification_type='quote_rejected',
+            title='پیشنهاد شما رد شد',
+            message=f'پیشنهاد شما برای سفارش {order.order_number} رد شد',
             related_order=order,
             related_quote=quote
         )
@@ -1315,16 +1522,9 @@ def get_contractor_workshops(request):
         ).exists()
         
         if not contractor_manufacturing:
-            return Response({
-                'error': True,
-                'message': 'شما دسترسی به این بخش را ندارید',
-                'details': 'فقط پیمانکارانی که سرویس ساخت و تولید ارائه می‌دهند می‌توانند کارگاه ثبت کنند'
-            }, status=status.HTTP_403_FORBIDDEN)
+            return Response([])
     except Service.DoesNotExist:
-        return Response({
-            'error': True,
-            'message': 'سرویس ساخت و تولید یافت نشد'
-        }, status=status.HTTP_404_NOT_FOUND)
+        return Response([])
     
     workshops = Workshop.objects.filter(owner=request.user, is_active=True)
     
@@ -1449,9 +1649,14 @@ def captcha_fallback(request):
     # Always return fallback captcha for now (for testing)
     if check_fallback_available():
         captcha_data = get_fallback_captcha_data(request)
+        # If rate limited, return error
+        if not captcha_data.get("available", True):
+            return Response(captcha_data, status=status.HTTP_429_TOO_MANY_REQUESTS)
         return Response(captcha_data)
     else:
-        return Response({"fallback": "local"})
+        # Return fallback captcha data directly
+        captcha_data = get_fallback_captcha_data(request)
+        return Response(captcha_data)
 
 
 @api_view(["GET"])
@@ -1461,7 +1666,7 @@ def captcha_fallback_status(request):
     from .utils.turnstile import check_fallback_available, get_fallback_captcha_data
     
     if check_fallback_available():
-        captcha_data = get_fallback_captcha_data()
+        captcha_data = get_fallback_captcha_data(request)
         return Response(captcha_data)
     else:
         return Response({"available": False})
@@ -1485,10 +1690,10 @@ def captcha_fallback_verify(request):
     is_valid = verify_fallback_captcha(challenge_id, answer)
     
     if is_valid:
-        return Response({"valid": True})
+        return Response({"success": True, "valid": True})
     else:
         return Response(
-            {"valid": False, "error": "Invalid answer"}, 
+            {"success": False, "valid": False, "error": "Invalid answer"}, 
             status=status.HTTP_400_BAD_REQUEST
         )
 
@@ -1548,3 +1753,85 @@ def turnstile_attempts(request):
             for attempt in page_obj.object_list
         ]
     })
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_contractor_ratings(request):
+    """Get all ratings for a contractor"""
+    try:
+        # Get all reviews for the contractor
+        reviews = Review.objects.filter(
+            contractor=request.user,
+            is_approved=True
+        ).select_related('customer', 'order_item').order_by('-created_at')
+        
+        # Serialize the reviews
+        ratings_data = []
+        for review in reviews:
+            ratings_data.append({
+                'id': str(review.id),
+                'customer': {
+                    'id': str(review.customer.id),
+                    'username': review.customer.username,
+                    'first_name': review.customer.first_name,
+                    'last_name': review.customer.last_name,
+                },
+                'order_item': {
+                    'id': str(review.order_item.id),
+                    'service_name': review.order_item.service.name if review.order_item.service else 'Unknown Service',
+                },
+                'rating': review.rating,
+                'comment': review.comment,
+                'created_at': review.created_at.isoformat(),
+            })
+        
+        return Response(ratings_data)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_contractor_rating_stats(request):
+    """Get rating statistics for a contractor"""
+    try:
+        # Get all approved reviews for the contractor
+        reviews = Review.objects.filter(
+            contractor=request.user,
+            is_approved=True
+        )
+        
+        if not reviews.exists():
+            return Response({
+                'total_ratings': 0,
+                'average_rating': 0,
+                'rating_breakdown': {
+                    '5_star': 0,
+                    '4_star': 0,
+                    '3_star': 0,
+                    '2_star': 0,
+                    '1_star': 0,
+                }
+            })
+        
+        # Calculate statistics
+        total_ratings = reviews.count()
+        average_rating = sum(review.rating for review in reviews) / total_ratings
+        
+        # Calculate rating breakdown
+        rating_breakdown = {
+            '5_star': reviews.filter(rating=5).count(),
+            '4_star': reviews.filter(rating=4).count(),
+            '3_star': reviews.filter(rating=3).count(),
+            '2_star': reviews.filter(rating=2).count(),
+            '1_star': reviews.filter(rating=1).count(),
+        }
+        
+        return Response({
+            'total_ratings': total_ratings,
+            'average_rating': round(average_rating, 1),
+            'rating_breakdown': rating_breakdown
+        })
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
