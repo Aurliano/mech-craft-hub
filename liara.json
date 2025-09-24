@@ -12,7 +12,7 @@
   "deploy": {
     "startCommand": "cd backend; gunicorn config.wsgi:application --bind 0.0.0.0:80 --workers 3 --timeout 120"
   },
-  "disks": [],
+  "disks": ["my-disk"],
   "env": {
     "DEBUG": "False",
     "DJANGO_SETTINGS_MODULE": "config.settings_ultra_simple",
