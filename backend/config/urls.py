@@ -25,13 +25,22 @@ from api.monitoring import metrics_view, health_check
 import os
 
 def home_view(request):
-    return JsonResponse({
-        'message': 'MechCraft Hub API',
-        'version': '1.0.0',
-        'status': 'running',
-        'docs': '/api/docs/',
-        'admin': '/admin/'
-    })
+    # Serve the frontend index.html
+    frontend_path = os.path.join(settings.BASE_DIR.parent, 'dist', 'index.html')
+    if os.path.exists(frontend_path):
+        with open(frontend_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        return HttpResponse(content, content_type='text/html')
+    else:
+        # Fallback to API info if frontend not found
+        return JsonResponse({
+            'message': 'MechCraft Hub API',
+            'version': '1.0.0',
+            'status': 'running',
+            'docs': '/api/docs/',
+            'admin': '/admin/',
+            'note': 'Frontend not found, serving API only'
+        })
 
 def favicon_view(request):
     favicon_path = os.path.join(settings.BASE_DIR, 'static', 'favicon.ico')
@@ -56,3 +65,7 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+# Serve static files for frontend
+urlpatterns += static('/static/', document_root=settings.STATIC_ROOT)
+urlpatterns += static('/assets/', document_root=os.path.join(settings.BASE_DIR.parent, 'dist', 'assets'))

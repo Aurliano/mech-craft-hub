@@ -1,4 +1,5 @@
 from django.urls import path, include
+from django.http import HttpResponseRedirect
 from rest_framework.routers import DefaultRouter
 from .views import (
     health, version_info, api_status,
@@ -131,4 +132,7 @@ urlpatterns = [
     path('tickets/', TicketViewSet.as_view({'get': 'list', 'post': 'create'}), name='tickets_direct'),
     
     path('v1/', include(router.urls)),
+    
+    # Redirect /api/ to /api/v1/
+    path('', lambda request: HttpResponseRedirect('/api/v1/')),
 ] 

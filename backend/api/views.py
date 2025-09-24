@@ -103,6 +103,7 @@ class TicketFilter(filters_drf.FilterSet):
 @permission_classes([AllowAny])
 def health(request):
     """Health check endpoint for Docker and load balancers"""
+    from django.utils import timezone
     try:
         # Test database connection
         from django.db import connection
