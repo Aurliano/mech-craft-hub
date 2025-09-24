@@ -9,7 +9,7 @@ import Navbar from '@/components/Navbar';
 import TicketList from '@/components/TicketList';
 import TicketChat from '@/components/TicketChat';
 import CreateTicketModal from '@/components/CreateTicketModal';
-import { api } from '@/lib/api.ts';
+import { api } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
 
 interface Ticket {
