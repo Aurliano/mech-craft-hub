@@ -64,6 +64,9 @@ README.md
 *.md
 docs/
 
+# Keep main.py for Liara compatibility
+!main.py
+
 # Tests
 tests/
 test_*
