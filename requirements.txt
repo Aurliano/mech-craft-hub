@@ -16,3 +16,6 @@ whitenoise==6.6.0
 
 # Environment
 python-dotenv==1.0.0
+
+# Monitoring
+prometheus-client==0.20.0
