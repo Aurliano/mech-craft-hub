@@ -64,8 +64,9 @@ README.md
 *.md
 docs/
 
-# Keep Procfile for Liara compatibility
+# Keep essential files for Liara compatibility
 !Procfile
+!main.py
 !wsgi.py
 
 # Tests
