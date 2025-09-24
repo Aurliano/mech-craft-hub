@@ -64,8 +64,8 @@ README.md
 *.md
 docs/
 
-# Keep main.py for Liara compatibility
-!main.py
+# Keep Procfile for Liara compatibility
+!Procfile
 
 # Tests
 tests/
