@@ -1,19 +1,17 @@
 {
   "app": "mech-craft-hub-main",
-  "platform": "django",
-  "django": {
-    "mirror": false,
-    "pythonVersion": "3.11",
-    "timezone": "Asia/Tehran",
-    "collectStatic": true,
-    "modifySettings": false,
-    "compileMessages": false
+  "platform": "docker",
+  "port": 80,
+  "build": {
+    "location": "iran",
+    "dockerfile": "Dockerfile.liara"
   },
   "disks": [],
   "env": {
     "DEBUG": "False",
     "SECRET_KEY": "django-insecure-liara-production-key-2024-mechcraft-hub",
     "ALLOWED_HOSTS": "*.liara.run,*.liara.ir",
-    "DJANGO_SETTINGS_MODULE": "backend.config.settings_ultra_simple"
+    "DJANGO_SETTINGS_MODULE": "backend.config.settings_ultra_simple",
+    "PYTHONPATH": "/app"
   }
 }

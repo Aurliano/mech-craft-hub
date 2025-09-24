@@ -65,8 +65,7 @@ README.md
 docs/
 
 # Keep essential files for Liara compatibility
-!main.py
-!liara_pre_start.sh
+!Dockerfile.liara
 !liara_nginx.conf
 
 # Tests

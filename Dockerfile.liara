@@ -1,25 +1,30 @@
-# Multi-stage build optimized for Liara
+# Multi-stage build for Liara deployment
 FROM python:3.11-slim as builder
 
-# Install system dependencies for building
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
     libpq-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js and npm
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs
 
 # Create virtual environment
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Copy requirements and install Python dependencies
-COPY requirements_liara.txt requirements.txt
+COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # Production stage
 FROM python:3.11-slim
 
-# Install runtime dependencies only
+# Install runtime dependencies
 RUN apt-get update && apt-get install -y \
     libpq5 \
     curl \
@@ -28,44 +33,42 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-# Create non-root user
+# Create app user
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 
 # Set working directory
 WORKDIR /app
 
-# Copy virtual environment from builder stage
+# Copy virtual environment from builder
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Copy application code
+# Copy project files
 COPY . .
 
-# Build frontend if src directory exists
+# Build frontend
 RUN if [ -d "src" ]; then \
-        if command -v npm >/dev/null 2>&1; then \
-            npm ci && npm run build; \
-        fi; \
+        npm ci && npm run build; \
     fi
 
-# Create necessary directories with proper permissions
+# Set up Django
 RUN mkdir -p /app/logs /app/media /app/staticfiles && \
     chown -R appuser:appuser /app
 
-# Switch to non-root user
+# Switch to app user
 USER appuser
 
 # Set environment variables
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
-ENV DJANGO_SETTINGS_MODULE=config.settings_ultra_simple
+ENV DJANGO_SETTINGS_MODULE=backend.config.settings_ultra_simple
 
-# Health check - using curl instead of requests for better reliability
+# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:80/health/ || exit 1
 
 # Expose port
 EXPOSE 80
 
-# Default command
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:80", "--workers", "3", "--timeout", "120", "--max-requests", "1000", "--max-requests-jitter", "100", "--preload"]
+# Start command
+CMD ["gunicorn", "backend.config.wsgi:application", "--bind", "0.0.0.0:80", "--workers", "3", "--timeout", "120", "--max-requests", "1000", "--max-requests-jitter", "100", "--preload"]
