@@ -49,9 +49,32 @@ def favicon_view(request):
             return HttpResponse(f.read(), content_type='image/x-icon')
     return HttpResponse(status=404)
 
+def asset_view(request, path):
+    """Serve frontend assets"""
+    asset_path = os.path.join(settings.BASE_DIR.parent, 'dist', 'assets', path)
+    if os.path.exists(asset_path):
+        # Determine content type based on file extension
+        if path.endswith('.css'):
+            content_type = 'text/css'
+        elif path.endswith('.js'):
+            content_type = 'application/javascript'
+        elif path.endswith('.png'):
+            content_type = 'image/png'
+        elif path.endswith('.jpg') or path.endswith('.jpeg'):
+            content_type = 'image/jpeg'
+        elif path.endswith('.svg'):
+            content_type = 'image/svg+xml'
+        else:
+            content_type = 'application/octet-stream'
+        
+        with open(asset_path, 'rb') as f:
+            return HttpResponse(f.read(), content_type=content_type)
+    return HttpResponse(status=404)
+
 urlpatterns = [
     path('', home_view, name='home'),
     path('favicon.ico', favicon_view, name='favicon'),
+    path('assets/<path:path>', asset_view, name='assets'),
     path('admin/', admin.site.urls),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
@@ -63,9 +86,10 @@ urlpatterns = [
     path('metrics/', metrics_view, name='metrics'),
 ]
 
+# Serve media files
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
-# Serve static files for frontend
+# Serve static files for frontend (always, not just in DEBUG)
 urlpatterns += static('/static/', document_root=settings.STATIC_ROOT)
 urlpatterns += static('/assets/', document_root=os.path.join(settings.BASE_DIR.parent, 'dist', 'assets'))
