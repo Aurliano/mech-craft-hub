@@ -10,12 +10,12 @@
     ]
   },
   "deploy": {
-    "startCommand": "cd backend && gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 120"
+    "startCommand": "cd backend && gunicorn config.wsgi:application --bind 0.0.0.0:80 --workers 3 --timeout 120"
   },
   "disks": [],
   "env": {
     "DEBUG": "False",
-    "DJANGO_SETTINGS_MODULE": "config.settings_minimal",
+    "DJANGO_SETTINGS_MODULE": "config.settings_simple",
     "PYTHONPATH": "/app/backend"
   }
 }
