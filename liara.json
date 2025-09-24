@@ -5,6 +5,7 @@
   "build": {
     "location": "iran",
     "commands": [
+      "npm ci && npm run build",
       "cd backend; python manage.py collectstatic --noinput",
       "cd backend; python manage.py migrate --run-syncdb"
     ]

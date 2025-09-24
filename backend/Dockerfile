@@ -1,4 +1,4 @@
-# Multi-stage build for security and optimization
+# Multi-stage build optimized for Liara
 FROM python:3.11-slim as builder
 
 # Install system dependencies for building
@@ -12,7 +12,7 @@ RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Copy requirements and install Python dependencies
-COPY requirements.txt .
+COPY requirements_liara.txt requirements.txt
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
@@ -22,8 +22,7 @@ FROM python:3.11-slim
 # Install runtime dependencies only
 RUN apt-get update && apt-get install -y \
     libpq5 \
-    clamav-daemon \
-    clamav-freshclam \
+    curl \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -44,23 +43,20 @@ COPY . .
 RUN mkdir -p /app/logs /app/media /app/staticfiles && \
     chown -R appuser:appuser /app
 
-# Update ClamAV database
-RUN freshclam
-
 # Switch to non-root user
 USER appuser
 
 # Set environment variables
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
-ENV DJANGO_SETTINGS_MODULE=config.settings
+ENV DJANGO_SETTINGS_MODULE=config.settings_ultra_simple
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:80/health/', timeout=10)" || exit 1
+# Health check - using curl instead of requests for better reliability
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:80/health/ || exit 1
 
 # Expose port
 EXPOSE 80
 
 # Default command
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:80", "--workers", "3", "--timeout", "120"]
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:80", "--workers", "3", "--timeout", "120", "--max-requests", "1000", "--max-requests-jitter", "100", "--preload"]

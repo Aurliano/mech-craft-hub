@@ -78,11 +78,14 @@ fi
 if [ -d "src" ]; then
     print_status "Building frontend..."
     if command -v npm &> /dev/null; then
+        npm ci
         npm run build
         print_success "Frontend built successfully"
     else
         print_warning "npm not found, skipping frontend build"
     fi
+else
+    print_status "Frontend already built in dist/ directory"
 fi
 
 # Deploy to Liara
