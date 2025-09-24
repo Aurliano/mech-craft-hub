@@ -8,9 +8,9 @@ echo "Starting MechCraft Hub..."
 # Change to backend directory
 cd /app/backend
 
-# Test database connection first
+# Test database connection using Django
 echo "Testing database connection..."
-python test_db_connection.py
+python manage.py check --database default
 
 # Run database migrations
 echo "Running database migrations..."

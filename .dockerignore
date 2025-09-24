@@ -74,8 +74,6 @@ docs/
 tests/
 test_*
 *_test.py
-# Allow database test script in backend
-!backend/test_db_connection.py
 
 # Development files
 docker-compose.yml
