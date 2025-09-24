@@ -28,7 +28,7 @@ COPY . .
 # Set environment variables (available at build-time for management commands)
 ENV PYTHONPATH=/app/backend
 ENV PYTHONUNBUFFERED=1
-ENV DJANGO_SETTINGS_MODULE=backend.config.settings_ultra_simple
+ENV DJANGO_SETTINGS_MODULE=config.settings_ultra_simple
 ENV SECRET_KEY=docker-build-secret
 
 # Set up Django directories and collect static files
@@ -43,7 +43,7 @@ USER appuser
 # Re-assert runtime environment variables (can be overridden by platform)
 ENV PYTHONPATH=/app/backend
 ENV PYTHONUNBUFFERED=1
-ENV DJANGO_SETTINGS_MODULE=backend.config.settings_ultra_simple
+ENV DJANGO_SETTINGS_MODULE=config.settings_ultra_simple
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
