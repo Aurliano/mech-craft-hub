@@ -6,7 +6,6 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('api', '0011_turnstile_attempt'),
         ('api', '0011_turnstileattempt_delete_hcaptchaattempt_and_more'),
     ]
 

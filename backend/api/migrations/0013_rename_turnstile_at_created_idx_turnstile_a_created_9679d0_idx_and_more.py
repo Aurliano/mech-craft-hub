@@ -3,6 +3,55 @@
 from django.db import migrations, models
 
 
+def rename_indexes_if_exist(apps, schema_editor):
+    """Rename indexes only if they exist"""
+    db_alias = schema_editor.connection.alias
+    
+    with schema_editor.connection.cursor() as cursor:
+        # Check and rename each index if it exists
+        indexes_to_rename = [
+            ('turnstile_at_created_idx', 'turnstile_a_created_9679d0_idx'),
+            ('turnstile_at_ip_idx', 'turnstile_a_ip_8d290d_idx'),
+            ('turnstile_at_success_idx', 'turnstile_a_success_45d9bf_idx'),
+            ('turnstile_at_endpoint_idx', 'turnstile_a_endpoin_c87265_idx'),
+        ]
+        
+        for old_name, new_name in indexes_to_rename:
+            cursor.execute("""
+                SELECT EXISTS (
+                    SELECT FROM pg_indexes 
+                    WHERE indexname = %s
+                );
+            """, [old_name])
+            
+            if cursor.fetchone()[0]:
+                cursor.execute(f'ALTER INDEX "{old_name}" RENAME TO "{new_name}";')
+
+
+def reverse_rename_indexes(apps, schema_editor):
+    """Reverse the index renaming"""
+    db_alias = schema_editor.connection.alias
+    
+    with schema_editor.connection.cursor() as cursor:
+        indexes_to_rename = [
+            ('turnstile_a_created_9679d0_idx', 'turnstile_at_created_idx'),
+            ('turnstile_a_ip_8d290d_idx', 'turnstile_at_ip_idx'),
+            ('turnstile_a_success_45d9bf_idx', 'turnstile_at_success_idx'),
+            ('turnstile_a_endpoin_c87265_idx', 'turnstile_at_endpoint_idx'),
+        ]
+        
+        for old_name, new_name in indexes_to_rename:
+            cursor.execute("""
+                SELECT EXISTS (
+                    SELECT FROM pg_indexes 
+                    WHERE indexname = %s
+                );
+            """, [old_name])
+            
+            if cursor.fetchone()[0]:
+                cursor.execute(f'ALTER INDEX "{old_name}" RENAME TO "{new_name}";')
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -10,25 +59,9 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RenameIndex(
-            model_name='turnstileattempt',
-            new_name='turnstile_a_created_9679d0_idx',
-            old_name='turnstile_at_created_idx',
-        ),
-        migrations.RenameIndex(
-            model_name='turnstileattempt',
-            new_name='turnstile_a_ip_8d290d_idx',
-            old_name='turnstile_at_ip_idx',
-        ),
-        migrations.RenameIndex(
-            model_name='turnstileattempt',
-            new_name='turnstile_a_success_45d9bf_idx',
-            old_name='turnstile_at_success_idx',
-        ),
-        migrations.RenameIndex(
-            model_name='turnstileattempt',
-            new_name='turnstile_a_endpoin_c87265_idx',
-            old_name='turnstile_at_endpoint_idx',
+        migrations.RunPython(
+            rename_indexes_if_exist,
+            reverse_rename_indexes,
         ),
         migrations.AlterField(
             model_name='turnstileattempt',
