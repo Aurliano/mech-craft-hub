@@ -15,8 +15,8 @@ def main():
     os.chdir(backend_dir)
     
     # Set environment variables
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings_ultra_simple')
-    os.environ.setdefault('PYTHONPATH', '/app/backend')
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.config.settings_ultra_simple')
+    os.environ.setdefault('PYTHONPATH', '/app')
     
     # Start Gunicorn (migrations are handled by liara_pre_start.sh)
     print("Starting Gunicorn server...")

@@ -2,6 +2,10 @@
 
 echo "Running pre-start script..."
 
+# Set environment variables
+export DJANGO_SETTINGS_MODULE=backend.config.settings_ultra_simple
+export PYTHONPATH=/app
+
 # Change to backend directory
 cd backend
 
