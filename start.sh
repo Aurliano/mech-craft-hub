@@ -10,11 +10,11 @@ cd /app/backend
 
 # Run database migrations
 echo "Running database migrations..."
-python manage.py migrate --noinput
+python manage.py migrate --noinput --skip-checks
 
 # Collect static files
 echo "Collecting static files..."
-python manage.py collectstatic --noinput
+python manage.py collectstatic --noinput --skip-checks
 
 # Start the application
 echo "Starting Gunicorn server..."

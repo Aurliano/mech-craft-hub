@@ -92,6 +92,8 @@ elif os.getenv('POSTGRES_DB'):
             }
         }
     }
+    # Debug: Print database configuration
+    print(f"Database config: {DATABASES['default']['USER']}@{DATABASES['default']['HOST']}:{DATABASES['default']['PORT']}/{DATABASES['default']['NAME']}")
 else:
     DATABASES = {
         'default': {
@@ -124,6 +126,9 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, '..', 'dist'),
 ]
 
+# Ensure static files are served correctly
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 # Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -139,7 +144,12 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
 # CSRF settings - Allow all for testing
-CSRF_TRUSTED_ORIGINS = ['*']
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.liara.run',
+    'https://*.liara.ir',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000'
+]
 
 # REST Framework
 REST_FRAMEWORK = {
