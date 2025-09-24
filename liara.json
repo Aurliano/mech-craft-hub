@@ -1,23 +1,17 @@
 {
   "app": "mech-craft-hub-main",
-  "platform": "python",
-  "port": 80,
-  "build": {
-    "location": "iran",
-    "commands": [
-      "npm ci && npm run build",
-      "cd backend; python manage.py collectstatic --noinput",
-      "cd backend; python manage.py migrate --run-syncdb"
-    ]
-  },
-  "deploy": {
-    "startCommand": "cd backend; python manage.py migrate --run-syncdb; gunicorn config.wsgi:application --bind 0.0.0.0:80 --workers 3 --timeout 120 --max-requests 1000 --max-requests-jitter 100 --preload"
+  "platform": "django",
+  "django": {
+    "mirror": false,
+    "pythonVersion": "3.11",
+    "timezone": "Asia/Tehran",
+    "collectStatic": true,
+    "modifySettings": false,
+    "compileMessages": false
   },
   "disks": [],
   "env": {
     "DEBUG": "False",
-    "DJANGO_SETTINGS_MODULE": "config.settings_ultra_simple",
-    "PYTHONPATH": "/app/backend",
     "SECRET_KEY": "your-secret-key-here",
     "ALLOWED_HOSTS": "*.liara.run,*.liara.ir"
   }

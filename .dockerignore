@@ -65,9 +65,9 @@ README.md
 docs/
 
 # Keep essential files for Liara compatibility
-!Procfile
 !main.py
-!wsgi.py
+!liara_pre_start.sh
+!liara_nginx.conf
 
 # Tests
 tests/

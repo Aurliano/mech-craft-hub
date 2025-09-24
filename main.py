@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Main entry point for Liara deployment
+Main entry point for Liara Django deployment
 This file ensures compatibility with Liara's default startup process
 """
 
@@ -18,11 +18,7 @@ def main():
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings_ultra_simple')
     os.environ.setdefault('PYTHONPATH', '/app/backend')
     
-    # Run migrations
-    print("Running database migrations...")
-    subprocess.run([sys.executable, 'manage.py', 'migrate', '--run-syncdb'], check=True)
-    
-    # Start Gunicorn
+    # Start Gunicorn (migrations are handled by liara_pre_start.sh)
     print("Starting Gunicorn server...")
     subprocess.run([
         'gunicorn', 

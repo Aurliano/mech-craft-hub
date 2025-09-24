@@ -145,7 +145,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # Frontend build (will be built on Liara)
-dist/
+# dist/
 
 # IDE
 .vscode/
