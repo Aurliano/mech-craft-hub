@@ -10,12 +10,14 @@
     ]
   },
   "deploy": {
-    "startCommand": "cd backend; gunicorn config.wsgi:application --bind 0.0.0.0:80 --workers 3 --timeout 120"
+    "startCommand": "cd backend; gunicorn config.wsgi:application --bind 0.0.0.0:80 --workers 3 --timeout 120 --max-requests 1000 --max-requests-jitter 100"
   },
   "disks": ["my-disk"],
   "env": {
     "DEBUG": "False",
     "DJANGO_SETTINGS_MODULE": "config.settings_ultra_simple",
-    "PYTHONPATH": "/app/backend"
+    "PYTHONPATH": "/app/backend",
+    "SECRET_KEY": "your-secret-key-here",
+    "ALLOWED_HOSTS": "*.liara.run,*.liara.ir"
   }
 }
