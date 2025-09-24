@@ -8,6 +8,10 @@ echo "Starting MechCraft Hub..."
 # Change to backend directory
 cd /app/backend
 
+# Test database connection first
+echo "Testing database connection..."
+python /app/test_db_connection.py
+
 # Run database migrations
 echo "Running database migrations..."
 python manage.py migrate --noinput

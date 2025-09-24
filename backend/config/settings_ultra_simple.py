@@ -70,36 +70,29 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# Database - Use PostgreSQL for production, SQLite for development
-if os.getenv('DATABASE_URL'):
-    import dj_database_url
-    DATABASES = {
-        'default': dj_database_url.parse(os.getenv('DATABASE_URL'))
-    }
-elif os.getenv('POSTGRES_DB'):
-    # Direct PostgreSQL configuration for Liara
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.getenv('POSTGRES_DB', 'postgres'),
-            'USER': os.getenv('POSTGRES_USER', 'root'),
-            'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
-            'HOST': os.getenv('POSTGRES_HOST', 'sayda-db'),
-            'PORT': os.getenv('POSTGRES_PORT', '5432'),
-            'OPTIONS': {
-                'connect_timeout': 10,
-            }
+# Database - Force PostgreSQL configuration for Liara
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('POSTGRES_DB', 'postgres'),
+        'USER': os.getenv('POSTGRES_USER', 'root'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'honm5klCHxMeLN9Rd8vkBegF'),
+        'HOST': os.getenv('POSTGRES_HOST', 'sayda-db'),
+        'PORT': os.getenv('POSTGRES_PORT', '5432'),
+        'OPTIONS': {
+            'connect_timeout': 10,
         }
     }
-    # Debug: Print database configuration
-    print(f"Database config: {DATABASES['default']['USER']}@{DATABASES['default']['HOST']}:{DATABASES['default']['PORT']}/{DATABASES['default']['NAME']}")
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
+}
+
+# Debug: Print database configuration
+print(f"Database config: {DATABASES['default']['USER']}@{DATABASES['default']['HOST']}:{DATABASES['default']['PORT']}/{DATABASES['default']['NAME']}")
+print(f"Environment variables:")
+print(f"  POSTGRES_DB: {os.getenv('POSTGRES_DB')}")
+print(f"  POSTGRES_USER: {os.getenv('POSTGRES_USER')}")
+print(f"  POSTGRES_PASSWORD: {'***' if os.getenv('POSTGRES_PASSWORD') else 'None'}")
+print(f"  POSTGRES_HOST: {os.getenv('POSTGRES_HOST')}")
+print(f"  POSTGRES_PORT: {os.getenv('POSTGRES_PORT')}")
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
