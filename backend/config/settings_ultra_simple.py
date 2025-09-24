@@ -71,14 +71,17 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 # Database - Force PostgreSQL configuration for Liara
+# Override any DATABASE_URL that might be set
+os.environ.pop('DATABASE_URL', None)
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('POSTGRES_DB', 'postgres'),
-        'USER': os.getenv('POSTGRES_USER', 'root'),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'honm5klCHxMeLN9Rd8vkBegF'),
-        'HOST': os.getenv('POSTGRES_HOST', 'sayda-db'),
-        'PORT': os.getenv('POSTGRES_PORT', '5432'),
+        'NAME': 'postgres',
+        'USER': 'root',
+        'PASSWORD': 'honm5klCHxMeLN9Rd8vkBegF',
+        'HOST': 'sayda-db',
+        'PORT': '5432',
         'OPTIONS': {
             'connect_timeout': 10,
         }
@@ -86,13 +89,14 @@ DATABASES = {
 }
 
 # Debug: Print database configuration
-print(f"Database config: {DATABASES['default']['USER']}@{DATABASES['default']['HOST']}:{DATABASES['default']['PORT']}/{DATABASES['default']['NAME']}")
-print(f"Environment variables:")
-print(f"  POSTGRES_DB: {os.getenv('POSTGRES_DB')}")
-print(f"  POSTGRES_USER: {os.getenv('POSTGRES_USER')}")
-print(f"  POSTGRES_PASSWORD: {'***' if os.getenv('POSTGRES_PASSWORD') else 'None'}")
-print(f"  POSTGRES_HOST: {os.getenv('POSTGRES_HOST')}")
-print(f"  POSTGRES_PORT: {os.getenv('POSTGRES_PORT')}")
+print("=" * 50)
+print("DATABASE CONFIGURATION:")
+print(f"User: {DATABASES['default']['USER']}")
+print(f"Host: {DATABASES['default']['HOST']}")
+print(f"Port: {DATABASES['default']['PORT']}")
+print(f"Database: {DATABASES['default']['NAME']}")
+print(f"Password: {'***' if DATABASES['default']['PASSWORD'] else 'None'}")
+print("=" * 50)
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [

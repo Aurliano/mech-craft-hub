@@ -8,9 +8,13 @@ echo "Starting MechCraft Hub..."
 # Change to backend directory
 cd /app/backend
 
+# Copy test script to container
+echo "Copying database test script..."
+cp /app/test_db_connection.py /app/backend/test_db_connection.py
+
 # Test database connection first
 echo "Testing database connection..."
-python /app/test_db_connection.py
+python /app/backend/test_db_connection.py
 
 # Run database migrations
 echo "Running database migrations..."
