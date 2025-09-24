@@ -19,8 +19,7 @@ ALLOWED_HOSTS = [
     '127.0.0.1', 
     '.liara.run',
     '.liara.ir',
-    os.getenv('ALLOWED_HOSTS', '').split(',') if os.getenv('ALLOWED_HOSTS') else []
-]
+] + (os.getenv('ALLOWED_HOSTS', '').split(',') if os.getenv('ALLOWED_HOSTS') else [])
 
 # Application definition
 INSTALLED_APPS = [
@@ -31,7 +30,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
+    'django_filters',
     'corsheaders',
+    'drf_spectacular',
+    'drf_spectacular_sidecar',
     'api',
 ]
 
@@ -139,6 +143,14 @@ SIMPLE_JWT = {
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
     'UPDATE_LAST_LOGIN': True,
+}
+
+# Spectacular settings
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Mech Craft Hub API',
+    'DESCRIPTION': 'API documentation for the Mech Craft Hub backend',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
 }
 
 # Logging

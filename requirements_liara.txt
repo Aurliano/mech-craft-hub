@@ -9,6 +9,9 @@ django-filter==24.2
 Pillow==10.4.0
 python-dotenv==1.0.1
 
+# Additional required packages
+django-redis==5.4.0
+
 # Database
 psycopg2-binary==2.9.9
 
