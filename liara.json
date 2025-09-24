@@ -12,6 +12,6 @@
     "SECRET_KEY": "django-insecure-liara-production-key-2024-mechcraft-hub",
     "ALLOWED_HOSTS": "*.liara.run,*.liara.ir",
     "DJANGO_SETTINGS_MODULE": "backend.config.settings_ultra_simple",
-    "PYTHONPATH": "/app"
+    "PYTHONPATH": "/app/backend"
   }
 }

@@ -33,7 +33,7 @@ RUN mkdir -p /app/logs /app/media /app/staticfiles && \
 USER appuser
 
 # Set environment variables
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app/backend
 ENV PYTHONUNBUFFERED=1
 ENV DJANGO_SETTINGS_MODULE=backend.config.settings_ultra_simple
 
