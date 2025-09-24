@@ -2,11 +2,13 @@
 .git
 .gitignore
 
-# Node.js
+# Node.js (keep dist for pre-built frontend)
 node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+# Keep dist folder for pre-built frontend
+# dist/
 
 # Python
 __pycache__

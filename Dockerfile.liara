@@ -1,13 +1,11 @@
-# Optimized Dockerfile for Liara deployment
+# Optimized Dockerfile for Liara deployment - No Node.js build
 FROM python:3.11-slim
 
-# Install system dependencies in one layer
+# Install system dependencies (no Node.js needed)
 RUN apt-get update && apt-get install -y \
     build-essential \
     libpq-dev \
     curl \
-    nodejs \
-    npm \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
@@ -24,19 +22,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy package files for npm
-COPY package*.json ./
-
-# Install npm dependencies
-RUN npm ci --only=production
-
-# Copy source code
+# Copy source code (including pre-built frontend)
 COPY . .
-
-# Build frontend (skip if already built)
-RUN if [ -d "src" ] && [ ! -d "dist" ]; then \
-        npm run build; \
-    fi
 
 # Set up Django directories
 RUN mkdir -p /app/logs /app/media /app/staticfiles && \
