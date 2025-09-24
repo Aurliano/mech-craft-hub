@@ -24,8 +24,8 @@ from django.conf.urls.static import static
 from api.monitoring import metrics_view, health_check
 import os
 
-def home_view(request):
-    # Serve the frontend index.html
+def home_view(request, path=None):
+    # Serve the frontend index.html for all routes
     frontend_path = os.path.join(settings.BASE_DIR.parent, 'dist', 'index.html')
     if os.path.exists(frontend_path):
         with open(frontend_path, 'r', encoding='utf-8') as f:
@@ -39,7 +39,8 @@ def home_view(request):
             'status': 'running',
             'docs': '/api/docs/',
             'admin': '/admin/',
-            'note': 'Frontend not found, serving API only'
+            'note': 'Frontend not found, serving API only',
+            'requested_path': path
         })
 
 def favicon_view(request):
@@ -84,6 +85,9 @@ urlpatterns = [
     # Monitoring endpoints
     path('health/', health_check, name='health_check'),
     path('metrics/', metrics_view, name='metrics'),
+    
+    # Catch-all route for frontend (must be last!)
+    path('<path:path>', home_view, name='frontend_catch_all'),
 ]
 
 # Serve media files
