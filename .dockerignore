@@ -66,6 +66,7 @@ docs/
 
 # Keep Procfile for Liara compatibility
 !Procfile
+!wsgi.py
 
 # Tests
 tests/
