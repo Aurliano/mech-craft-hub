@@ -99,9 +99,28 @@ class TicketFilter(filters_drf.FilterSet):
         fields = ['status', 'priority', 'category', 'creator', 'created_after', 'created_before']
 
 
-@api_view(["GET"]) 
+@api_view(["GET"])
+@permission_classes([AllowAny])
 def health(request):
-    return Response({"status": "ok"})
+    """Health check endpoint for Docker and load balancers"""
+    try:
+        # Test database connection
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+        
+        return Response({
+            "status": "healthy",
+            "database": "connected",
+            "timestamp": timezone.now().isoformat()
+        })
+    except Exception as e:
+        return Response({
+            "status": "unhealthy",
+            "database": "disconnected",
+            "error": str(e),
+            "timestamp": timezone.now().isoformat()
+        }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 
 @api_view(["GET"])

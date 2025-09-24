@@ -12,6 +12,11 @@
     "SECRET_KEY": "django-insecure-liara-production-key-2024-mechcraft-hub",
     "ALLOWED_HOSTS": "*.liara.run,*.liara.ir",
     "DJANGO_SETTINGS_MODULE": "backend.config.settings_ultra_simple",
-    "PYTHONPATH": "/app/backend"
+    "PYTHONPATH": "/app/backend",
+    "POSTGRES_DB": "postgres",
+    "POSTGRES_USER": "root",
+    "POSTGRES_PASSWORD": "honm5klCHxMeLN9Rd8vkBegF",
+    "POSTGRES_HOST": "sayda-db",
+    "POSTGRES_PORT": "5432"
   }
 }

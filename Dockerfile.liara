@@ -25,9 +25,11 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy source code (including pre-built frontend)
 COPY . .
 
-# Set up Django directories
+# Set up Django directories and collect static files
 RUN mkdir -p /app/logs /app/media /app/staticfiles && \
-    chown -R appuser:appuser /app
+    chown -R appuser:appuser /app && \
+    cd /app/backend && \
+    python manage.py collectstatic --noinput
 
 # Switch to app user
 USER appuser
@@ -44,5 +46,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 # Expose port
 EXPOSE 80
 
+# Make startup script executable
+RUN chmod +x /app/start.sh
+
 # Start command
-CMD ["gunicorn", "backend.config.wsgi:application", "--bind", "0.0.0.0:80", "--workers", "3", "--timeout", "120", "--max-requests", "1000", "--max-requests-jitter", "100", "--preload"]
+CMD ["/app/start.sh"]

@@ -2,11 +2,22 @@
 Cloudflare Turnstile verification utilities with token replay prevention and fallback support.
 """
 import hashlib
-import httpx
 import logging
 from typing import Tuple, Dict, Any, Optional
 from django.conf import settings
 from django.core.cache import cache
+
+# Try to import httpx, fallback to requests if not available
+try:
+    import httpx
+    HTTPX_AVAILABLE = True
+except ImportError:
+    try:
+        import requests
+        HTTPX_AVAILABLE = False
+    except ImportError:
+        HTTPX_AVAILABLE = False
+        requests = None
 
 logger = logging.getLogger('api.turnstile')
 
@@ -89,31 +100,43 @@ async def verify_turnstile_token(
         data["remoteip"] = remoteip
     
     try:
-        async with httpx.AsyncClient(timeout=timeout) as client:
-            response = await client.post(VERIFY_URL, data=data)
+        if HTTPX_AVAILABLE:
+            async with httpx.AsyncClient(timeout=timeout) as client:
+                response = await client.post(VERIFY_URL, data=data)
+                response.raise_for_status()
+                result = response.json()
+        else:
+            # Fallback to requests if httpx is not available
+            if requests is None:
+                logger.error("Neither httpx nor requests is available")
+                raise TurnstileServiceUnavailableError("No HTTP client available")
+            
+            response = requests.post(VERIFY_URL, data=data, timeout=timeout)
             response.raise_for_status()
             result = response.json()
             
-            # Mark token as used to prevent replay
-            cache.set(used_key, True, TOKEN_TTL_SECONDS)
+        # Mark token as used to prevent replay
+        cache.set(used_key, True, TOKEN_TTL_SECONDS)
+        
+        if result.get("success"):
+            logger.info(f"Turnstile verification successful for IP: {remoteip}")
+            return True, result
+        else:
+            error_codes = result.get("error-codes", [])
+            logger.warning(f"Turnstile verification failed: {error_codes}")
+            return False, result
             
-            if result.get("success"):
-                logger.info(f"Turnstile verification successful for IP: {remoteip}")
-                return True, result
-            else:
-                error_codes = result.get("error-codes", [])
-                logger.warning(f"Turnstile verification failed: {error_codes}")
-                return False, result
-                
-    except httpx.TimeoutException:
-        logger.error("Turnstile verification timeout")
-        raise TurnstileServiceUnavailableError("Turnstile service timeout")
-    except httpx.RequestError as e:
-        logger.error(f"Turnstile verification request error: {e}")
-        raise TurnstileServiceUnavailableError(f"Turnstile service error: {e}")
     except Exception as e:
-        logger.error(f"Unexpected error during Turnstile verification: {e}")
-        raise TurnstileVerificationError(f"Verification failed: {e}")
+        if HTTPX_AVAILABLE and hasattr(e, '__class__') and 'httpx' in str(e.__class__):
+            if 'Timeout' in str(e.__class__):
+                logger.error("Turnstile verification timeout")
+                raise TurnstileServiceUnavailableError("Turnstile service timeout")
+            else:
+                logger.error(f"Turnstile verification request error: {e}")
+                raise TurnstileServiceUnavailableError(f"Turnstile service error: {e}")
+        else:
+            logger.error(f"Unexpected error during Turnstile verification: {e}")
+            raise TurnstileVerificationError(f"Verification failed: {e}")
 
 
 def verify_turnstile_token_sync(

@@ -77,6 +77,21 @@ if os.getenv('DATABASE_URL'):
     DATABASES = {
         'default': dj_database_url.parse(os.getenv('DATABASE_URL'))
     }
+elif os.getenv('POSTGRES_DB'):
+    # Direct PostgreSQL configuration for Liara
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('POSTGRES_DB', 'postgres'),
+            'USER': os.getenv('POSTGRES_USER', 'root'),
+            'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
+            'HOST': os.getenv('POSTGRES_HOST', 'sayda-db'),
+            'PORT': os.getenv('POSTGRES_PORT', '5432'),
+            'OPTIONS': {
+                'connect_timeout': 10,
+            }
+        }
+    }
 else:
     DATABASES = {
         'default': {
