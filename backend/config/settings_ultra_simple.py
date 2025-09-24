@@ -44,7 +44,6 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -143,13 +142,10 @@ AUTH_USER_MODEL = 'api.User'
 CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
-# CSRF settings - Allow all for testing
-CSRF_TRUSTED_ORIGINS = [
-    'https://*.liara.run',
-    'https://*.liara.ir',
-    'http://localhost:3000',
-    'http://127.0.0.1:3000'
-]
+# CSRF settings - Disable CSRF for API-only deployment
+CSRF_COOKIE_SECURE = False
+CSRF_COOKIE_HTTPONLY = False
+CSRF_USE_SESSIONS = False
 
 # REST Framework
 REST_FRAMEWORK = {
