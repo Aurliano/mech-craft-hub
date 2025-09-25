@@ -1,5 +1,5 @@
 {
-  "app": "sayda-engineering-platform",
+  "app": "mech-craft-hub-main",
   "platform": "docker",
   "port": 80,
   "build": {
