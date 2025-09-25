@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import AuthNavbar from "@/components/AuthNavbar";
+import Navbar from "@/components/Navbar";
 import { useRegister, usePhoneVerificationRequest, useRegisterWithCaptcha, useFallbackCaptchaStatus, useFallbackCaptchaChallenge, useVerifyFallbackCaptcha } from "@/hooks/useAuth";
 import { useAuth } from "@/contexts/AuthContext";
 import TurnstileComponent from "@/components/Turnstile";
@@ -248,7 +248,7 @@ const ContractorRegister = () => {
 
   return (
     <div className="min-h-screen" dir="rtl">
-      <AuthNavbar />
+      <Navbar />
       <div className="flex items-center justify-center bg-gradient-to-br from-background to-muted p-4 min-h-[calc(100vh-4rem)]">
         <Card className="w-full max-w-2xl">
           <CardHeader className="text-center">

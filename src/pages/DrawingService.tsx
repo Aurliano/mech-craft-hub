@@ -292,7 +292,8 @@ const DrawingService = () => {
 
 
         {/* Dynamic Form Section */}
-        {isAuthenticated ? (
+        {/* Show intro and tabs to everyone; lock only submission for guests */}
+        {service && (
           <Card className="max-w-6xl mx-auto">
             <CardHeader>
               <CardTitle className="text-center">انتخاب نوع نقشه کشی</CardTitle>
@@ -323,9 +324,19 @@ const DrawingService = () => {
                         onNotesChange={setNotes}
                         documentationOptions={documentationOptions}
                         onDocumentationOptionChange={updateDocumentationOption}
-                        onSubmit={handleFormSubmit}
-                        isSubmitting={isSubmitting}
+                        onSubmit={isAuthenticated ? handleFormSubmit : undefined}
+                        isSubmitting={!isAuthenticated || isSubmitting}
                       />
+                      {!isAuthenticated && (
+                        <div className="text-center text-sm text-muted-foreground">
+                          برای ثبت نهایی سفارش، لطفاً ابتدا وارد شوید.
+                          <div className="mt-2">
+                            <Button asChild size="sm" variant="outline">
+                              <Link to="/login">ورود</Link>
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </TabsContent>
                   ))}
                 </Tabs>
@@ -344,19 +355,23 @@ const DrawingService = () => {
                     onNotesChange={setNotes}
                     documentationOptions={documentationOptions}
                     onDocumentationOptionChange={updateDocumentationOption}
-                    onSubmit={handleFormSubmit}
-                    isSubmitting={isSubmitting}
+                    onSubmit={isAuthenticated ? handleFormSubmit : undefined}
+                    isSubmitting={!isAuthenticated || isSubmitting}
                   />
+                  {!isAuthenticated && (
+                    <div className="text-center text-sm text-muted-foreground mt-4">
+                      برای ثبت نهایی سفارش، لطفاً ابتدا وارد شوید.
+                      <div className="mt-2">
+                        <Button asChild size="sm" variant="outline">
+                          <Link to="/login">ورود</Link>
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
           </Card>
-        ) : (
-          <LoginPrompt 
-            title="برای ثبت سفارش وارد شوید"
-            description="برای دسترسی به فرم سفارش نقشه‌کشی، لطفاً وارد حساب کاربری خود شوید."
-            icon={<User className="h-12 w-12 text-muted-foreground mx-auto mb-4" />}
-          />
         )}
       </div>
       <Footer />

@@ -33,6 +33,7 @@ import FileUploadDemo from "./pages/FileUploadDemo";
 import OrderPreviewDemo from "./pages/OrderPreviewDemo";
 import ServicesPage from "./pages/ServicesPage";
 import PortfolioPage from "./pages/PortfolioPage";
+import Blog from "./pages/Blog";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -133,6 +134,7 @@ const App = () => (
               {/* Info Pages */}
               <Route path="/services" element={<ServicesPage />} />
               <Route path="/portfolio" element={<PortfolioPage />} />
+              <Route path="/blog" element={<Blog />} />
               
               {/* Shared Routes */}
               <Route path="/profile" element={<Profile />} />

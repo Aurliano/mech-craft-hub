@@ -77,7 +77,7 @@ const Navbar = () => {
             </div>
 
             {/* Desktop Menu */}
-            <div className="hidden md:flex items-center">
+          <div className="hidden md:flex items-center" dir="rtl">
               <NavigationMenu className="bg-transparent">
                 <NavigationMenuList className="gap-1">
 
@@ -102,6 +102,13 @@ const Navbar = () => {
                   <NavigationMenuItem>
                     <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/portfolio">
                       نمونه کارها
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+
+                  {/* Blog */}
+                  <NavigationMenuItem>
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/blog">
+                      وبلاگ
                     </NavigationMenuLink>
                   </NavigationMenuItem>
 
@@ -185,7 +192,7 @@ const Navbar = () => {
           </div>
 
           {/* Auth Buttons / User Menu */}
-          <div className="hidden md:flex items-center space-x-4 rtl:space-x-reverse">
+          <div className="hidden md:flex items-center space-x-4 rtl:space-x-reverse" dir="rtl">
             {isAuthenticated ? (
               <>
 
@@ -243,7 +250,7 @@ const Navbar = () => {
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className="md:hidden border-t border-border bg-background/95 backdrop-blur-sm">
+          <div className="md:hidden border-t border-border bg-background/95 backdrop-blur-sm" dir="rtl">
             <div className="max-h-[80vh] overflow-y-auto">
               <div className="px-3 py-4 space-y-3">
                 {/* Home Link */}

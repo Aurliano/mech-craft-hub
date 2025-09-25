@@ -135,6 +135,7 @@ const Hero = () => {
             <div className="flex items-center justify-center mb-4">
               <LaptopIcon className="h-8 w-8 text-accent ml-3" />
               <h3 className="text-xl font-bold text-primary-foreground text-center">مهندسی کامپیوتر</h3>
+              <span className="mt-2 inline-block text-xs font-semibold bg-yellow-400/90 text-black px-2 py-0.5 rounded">بزودی...</span>
             </div>
             
             <div className="grid grid-cols-1 gap-3 mb-6">
@@ -178,6 +179,7 @@ const Hero = () => {
             <div className="flex items-center justify-center mb-4">
               <CircuitBoardIcon className="h-8 w-8 text-accent ml-3" />
               <h3 className="text-xl font-bold text-primary-foreground text-center space-y-1">مهندسی‌الکترونیک</h3>
+              <span className="mt-2 inline-block text-xs font-semibold bg-yellow-400/90 text-black px-2 py-0.5 rounded">بزودی...</span>
             </div>
             
             <div className="grid grid-cols-1 gap-3 mb-6">
@@ -217,6 +219,7 @@ const Hero = () => {
           </div>
 
           {/* Metaverse Card - New */}
+          <span className="absolute top-2 left-2 text-xs font-semibold bg-yellow-400/90 text-black px-2 py-0.5 rounded">بزودی...</span>
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
             <div className="flex items-center justify-center mb-4">
               <img src={MetaIcon} alt="آیکون متاورس" className="h-8 w-8 text-accent ml-3" />

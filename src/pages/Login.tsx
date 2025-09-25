@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import AuthNavbar from "@/components/AuthNavbar";
+import Navbar from "@/components/Navbar";
 import { useLogin, useLoginWithCaptcha, useFallbackCaptchaStatus, useFallbackCaptchaChallenge, useVerifyFallbackCaptcha } from "@/hooks/useAuth";
 import { useAuth } from "@/contexts/AuthContext";
 import TurnstileCaptcha from "@/components/TurnstileCaptcha";
@@ -66,7 +66,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen" dir="rtl">
-      <AuthNavbar />
+      <Navbar />
       <div className="flex items-center justify-center bg-gradient-to-br from-background to-muted p-4 min-h-[calc(100vh-4rem)]">
         <Card className="w-full max-w-md">
           <CardHeader className="text-center">

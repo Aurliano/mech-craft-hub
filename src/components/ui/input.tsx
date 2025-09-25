@@ -3,7 +3,16 @@ import * as React from "react"
 import { cn } from "@/lib/utils"
 
 const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
-  ({ className, type, ...props }, ref) => {
+  ({ className, type = "text", ...props }, ref) => {
+    // Guard against non-string values to prevent input crashes
+    const valueProp = (props as any).value;
+    const safeValue =
+      valueProp === undefined || valueProp === null
+        ? valueProp
+        : typeof valueProp === "string" || typeof valueProp === "number"
+        ? valueProp
+        : String(valueProp);
+    const finalProps = safeValue !== undefined ? { ...(props as any), value: safeValue } : props;
     return (
       <input
         type={type}
@@ -12,7 +21,7 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
           className
         )}
         ref={ref}
-        {...props}
+        {...finalProps}
       />
     )
   }
