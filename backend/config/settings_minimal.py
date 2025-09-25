@@ -15,7 +15,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-fallback-key-for-testing')
 DEBUG = False
 
 ALLOWED_HOSTS = [
-    'mech-craft-hub-main.liara.run',
+    'sayda-engineering-platform.liara.run',
     '.liara.run',
     '.liara.ir',
     'localhost',
@@ -124,14 +124,14 @@ AUTH_USER_MODEL = 'api.User'
 
 # CORS settings
 CORS_ALLOWED_ORIGINS = [
-    'https://mech-craft-hub-main.liara.run',
+    'https://sayda-engineering-platform.liara.run',
 ]
 
 CORS_ALLOW_CREDENTIALS = True
 
 # CSRF settings
 CSRF_TRUSTED_ORIGINS = [
-    'https://mech-craft-hub-main.liara.run',
+    'https://sayda-engineering-platform.liara.run',
 ]
 
 # REST Framework

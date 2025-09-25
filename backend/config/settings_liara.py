@@ -10,7 +10,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-fallback-key')
 
 # Liara specific settings
 ALLOWED_HOSTS = [
-    'mech-craft-hub-main.liara.run',
+    'sayda-engineering-platform.liara.run',
     '.liara.run',
     '.liara.ir',
 ]
@@ -42,14 +42,14 @@ SECURE_HSTS_PRELOAD = False
 
 # CORS settings for Liara
 CORS_ALLOWED_ORIGINS = [
-    'https://mech-craft-hub-main.liara.run',
+    'https://sayda-engineering-platform.liara.run',
 ]
 
 CORS_ALLOW_CREDENTIALS = True
 
 # CSRF settings
 CSRF_TRUSTED_ORIGINS = [
-    'https://mech-craft-hub-main.liara.run',
+    'https://sayda-engineering-platform.liara.run',
 ]
 
 # Logging for Liara

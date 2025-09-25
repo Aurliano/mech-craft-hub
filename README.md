@@ -1,6 +1,6 @@
-# MechCraft Hub
+# پلتفرم مهندسی سایدا
 
-A comprehensive engineering services platform built with modern security practices and infrastructure hardening.
+پلتفرم تخصصی خدمات مهندسی مکانیک با امنیت پیشرفته و زیرساخت سخت‌افزاری بهینه.
 
 ## 🚀 Features
 
