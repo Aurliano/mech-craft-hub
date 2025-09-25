@@ -3,7 +3,7 @@ from .models import (
     User, Role, UserRole, Scope, Service, ServiceField, ServiceTab,
     Cart, CartItem, Order, OrderItem, Quote, Workshop,
     Ticket, TicketMessage, TicketAttachment, TicketFileType, TicketCategory, TicketParticipant,
-    ContentFilterLog, Review, Notification
+    ContentFilterLog, Review, Notification, SupportFeedback
 )
 
 
