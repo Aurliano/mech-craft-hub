@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getApiUrl } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -121,7 +122,7 @@ const ContractorQuotes = () => {
   const fetchOrders = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'}/api/v1/contractor/orders/`, {
+      const response = await fetch(getApiUrl('/api/v1/contractor/orders/'), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`
         }
@@ -140,7 +141,7 @@ const ContractorQuotes = () => {
 
   const fetchQuotes = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000'}/api/v1/contractor/proposals/`, {
+      const response = await fetch(getApiUrl('/api/v1/contractor/proposals/'), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`
         }

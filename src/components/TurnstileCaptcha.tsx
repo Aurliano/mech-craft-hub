@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import LocalCaptcha from "./LocalCaptcha";
+import { getApiUrl } from '@/lib/api';
 
 interface TurnstileCaptchaProps {
   onVerify: (token: string) => void;
@@ -61,9 +62,7 @@ export default function TurnstileCaptcha({
     function requestFallbackChallenge() {
       if (cancelled) return;
       
-      // Use full URL with API_ROOT
-      const apiRoot = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
-      const fullUrl = `${apiRoot}${fallbackApi}`;
+      const fullUrl = getApiUrl(fallbackApi);
       
       fetch(fullUrl, { 
         headers: {
@@ -175,9 +174,7 @@ export default function TurnstileCaptcha({
 
   const handleLocalCaptchaRequest = async () => {
     try {
-      // Use full URL with API_ROOT
-      const apiRoot = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
-      const fullUrl = `${apiRoot}${fallbackApi}`;
+      const fullUrl = getApiUrl(fallbackApi);
       
       const response = await fetch(fullUrl, { 
         headers: {
@@ -207,9 +204,7 @@ export default function TurnstileCaptcha({
     }
     
     try {
-      // Use full URL with API_ROOT
-      const apiRoot = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
-      const fullUrl = `${apiRoot}/api/v1/captcha/fallback/verify/`;
+      const fullUrl = getApiUrl('/api/v1/captcha/fallback/verify/');
       
       console.log('Verifying fallback captcha:', {
         challenge_id: fallbackChallenge.id,

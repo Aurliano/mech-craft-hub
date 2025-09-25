@@ -1,6 +1,17 @@
 export const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
 export const API_ROOT = import.meta.env.DEV ? '/api' : `${API_BASE_URL}/api`;
 
+// Utility function to get the correct API URL for both development and production
+export function getApiUrl(endpoint: string): string {
+  const isProduction = import.meta.env.PROD;
+  if (isProduction) {
+    return endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  } else {
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+    return endpoint.startsWith('/') ? `${baseUrl}${endpoint}` : `${baseUrl}/${endpoint}`;
+  }
+}
+
 import { requestQueue } from './requestQueue';
 
 const ACCESS_TOKEN_KEY = 'access_token';
