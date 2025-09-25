@@ -483,6 +483,10 @@ CLAMAV_ENABLED = os.getenv('CLAMAV_ENABLED', 'True').lower() == 'true'
 MAX_FILE_SIZE = int(os.getenv('MAX_FILE_SIZE', '52428800'))  # 50MB
 ALLOWED_FILE_TYPES = os.getenv('ALLOWED_FILE_TYPES', 'pdf,image,document,cad').split(',')
 
+# Google Generative AI Configuration
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+GEMINI_MODEL_NAME = os.getenv('GEMINI_MODEL_NAME', 'gemini-1.5-flash')
+
 # Initialize Sentry
 if SENTRY_DSN:
     from api.monitoring import init_sentry

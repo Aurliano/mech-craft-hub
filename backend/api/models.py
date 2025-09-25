@@ -875,3 +875,99 @@ class TurnstileAttempt(models.Model):
         }
 
 
+class SupportFeedback(models.Model):
+    """Model for storing user feedback and support interactions"""
+    
+    SATISFACTION_CHOICES = [
+        (0, 'خیلی ضعیف'),
+        (1, 'ضعیف'),
+        (2, 'متوسط'),
+        (3, 'خوب'),
+        (4, 'خیلی خوب'),
+        (5, 'عالی'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='support_feedbacks')
+    
+    # Default feedback questions
+    used_services = models.BooleanField(null=True, blank=True, help_text="آیا از خدمات و محتوای سایت استفاده کردید؟")
+    satisfaction_rating = models.IntegerField(
+        choices=SATISFACTION_CHOICES, 
+        null=True, 
+        blank=True,
+        help_text="تا چه میزان از کیفیت سایت رضایت دارید؟"
+    )
+    personal_feedback = models.TextField(
+        blank=True, 
+        null=True,
+        help_text="نظر شخصی شما راجع به رابط کاربری و محتوای سایت چیست؟"
+    )
+    
+    # AI Support fields
+    ai_response = models.TextField(blank=True, null=True, help_text="پاسخ هوش مصنوعی")
+    ai_model_used = models.CharField(max_length=100, blank=True, null=True, help_text="مدل AI استفاده شده")
+    ai_prompt_tokens = models.IntegerField(null=True, blank=True, help_text="تعداد توکن‌های پرسپت")
+    ai_response_tokens = models.IntegerField(null=True, blank=True, help_text="تعداد توکن‌های پاسخ")
+    
+    # Metadata
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True, null=True)
+    session_id = models.CharField(max_length=100, blank=True, null=True)
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'بازخورد پشتیبانی'
+        verbose_name_plural = 'بازخوردهای پشتیبانی'
+    
+    def __str__(self):
+        user_info = self.user.username if self.user else "ناشناس"
+        return f"بازخورد پشتیبانی - {user_info} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+    
+    @property
+    def satisfaction_display(self):
+        """Return human-readable satisfaction rating"""
+        if self.satisfaction_rating is not None:
+            return dict(self.SATISFACTION_CHOICES)[self.satisfaction_rating]
+        return "نامشخص"
+    
+    @classmethod
+    def get_stats(cls, days: int = 30):
+        """Get support feedback statistics"""
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        since = timezone.now() - timedelta(days=days)
+        feedbacks = cls.objects.filter(created_at__gte=since)
+        
+        total_feedbacks = feedbacks.count()
+        with_ai_response = feedbacks.exclude(ai_response__isnull=True).exclude(ai_response='').count()
+        
+        # Satisfaction distribution
+        satisfaction_stats = {}
+        for rating, label in cls.SATISFACTION_CHOICES:
+            count = feedbacks.filter(satisfaction_rating=rating).count()
+            satisfaction_stats[label] = count
+        
+        # Service usage stats
+        used_services_count = feedbacks.filter(used_services=True).count()
+        not_used_services_count = feedbacks.filter(used_services=False).count()
+        
+        return {
+            'period_days': days,
+            'total_feedbacks': total_feedbacks,
+            'with_ai_response': with_ai_response,
+            'ai_response_rate': (with_ai_response / total_feedbacks * 100) if total_feedbacks > 0 else 0,
+            'satisfaction_distribution': satisfaction_stats,
+            'service_usage': {
+                'used': used_services_count,
+                'not_used': not_used_services_count,
+                'usage_rate': (used_services_count / total_feedbacks * 100) if total_feedbacks > 0 else 0
+            }
+        }
+
+

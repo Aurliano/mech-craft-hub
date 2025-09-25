@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import RoleBasedRoute from "@/components/RoleBasedRoute";
+import SupportWidget from "@/components/SupportWidget";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -148,6 +149,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
+          <SupportWidget />
           <Toaster />
         </TooltipProvider>
       </AuthProvider>

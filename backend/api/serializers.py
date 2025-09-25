@@ -607,3 +607,63 @@ class NotificationSerializer(serializers.ModelSerializer):
         model = Notification
         fields = ['id', 'type', 'title', 'message', 'is_read', 'related_order', 'related_quote', 'created_at']
         read_only_fields = ['id', 'created_at']
+
+
+# Support System Serializers
+class SupportFeedbackSerializer(serializers.ModelSerializer):
+    satisfaction_display = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = SupportFeedback
+        fields = [
+            'id', 'user', 'used_services', 'satisfaction_rating', 'satisfaction_display',
+            'personal_feedback', 'ai_response', 'ai_model_used', 'ai_prompt_tokens',
+            'ai_response_tokens', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'ai_response', 'ai_model_used', 'ai_prompt_tokens', 'ai_response_tokens', 'created_at', 'updated_at']
+    
+    def create(self, validated_data):
+        # Add metadata from request
+        request = self.context.get('request')
+        if request:
+            validated_data['ip_address'] = self.get_client_ip(request)
+            validated_data['user_agent'] = request.META.get('HTTP_USER_AGENT', '')
+            validated_data['session_id'] = request.session.session_key
+        
+        return super().create(validated_data)
+    
+    def get_client_ip(self, request):
+        """Get client IP address from request"""
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
+
+
+class SupportFeedbackCreateSerializer(serializers.Serializer):
+    """Serializer for creating support feedback with AI response"""
+    used_services = serializers.BooleanField(required=False, allow_null=True)
+    satisfaction_rating = serializers.IntegerField(
+        min_value=0, 
+        max_value=5, 
+        required=False, 
+        allow_null=True
+    )
+    personal_feedback = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    
+    def validate_satisfaction_rating(self, value):
+        if value is not None and value not in range(6):
+            raise serializers.ValidationError("امتیاز رضایت باید بین 0 تا 5 باشد.")
+        return value
+
+
+class SupportStatsSerializer(serializers.Serializer):
+    """Serializer for support statistics"""
+    period_days = serializers.IntegerField()
+    total_feedbacks = serializers.IntegerField()
+    with_ai_response = serializers.IntegerField()
+    ai_response_rate = serializers.FloatField()
+    satisfaction_distribution = serializers.DictField()
+    service_usage = serializers.DictField()

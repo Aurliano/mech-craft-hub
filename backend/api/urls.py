@@ -28,6 +28,8 @@ from .views import (
     create_ticket, create_ticket_message,
     # Captcha endpoints (Turnstile + Fallback)
     captcha_fallback, captcha_fallback_status, captcha_fallback_verify, turnstile_stats, turnstile_attempts,
+    # Support system endpoints
+    create_support_feedback, get_support_feedbacks, ask_ai_support, get_support_stats, get_all_support_feedbacks,
 )
 
 router = DefaultRouter()
@@ -122,6 +124,15 @@ urlpatterns = [
     # Turnstile Admin Endpoints
     path('v1/admin/turnstile/stats/', turnstile_stats, name='turnstile_stats'),
     path('v1/admin/turnstile/attempts/', turnstile_attempts, name='turnstile_attempts'),
+    
+    # Support System Endpoints
+    path('v1/support/feedback/', create_support_feedback, name='create_support_feedback'),
+    path('v1/support/feedback/my/', get_support_feedbacks, name='get_support_feedbacks'),
+    path('v1/support/ask/', ask_ai_support, name='ask_ai_support'),
+    
+    # Support Admin Endpoints
+    path('v1/admin/support/stats/', get_support_stats, name='get_support_stats'),
+    path('v1/admin/support/feedbacks/', get_all_support_feedbacks, name='get_all_support_feedbacks'),
     
     # Aliases for requested endpoints
     path('v1/categories/', ScopeViewSet.as_view({'get': 'list'}), name='categories'),

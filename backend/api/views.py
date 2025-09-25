@@ -1845,3 +1845,175 @@ def get_contractor_rating_stats(request):
         })
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# Support System Views
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def create_support_feedback(request):
+    """Create support feedback with AI response"""
+    from .serializers import SupportFeedbackCreateSerializer
+    from .models import SupportFeedback
+    from .utils.gemini_ai import get_ai_response
+    
+    serializer = SupportFeedbackCreateSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        # Create feedback instance
+        feedback_data = serializer.validated_data.copy()
+        
+        # Add user if authenticated
+        if request.user.is_authenticated:
+            feedback_data['user'] = request.user
+        
+        # Create feedback
+        feedback = SupportFeedback.objects.create(**feedback_data)
+        
+        # Generate AI response if there's any user input
+        user_input = ""
+        if feedback.personal_feedback:
+            user_input = feedback.personal_feedback
+        elif feedback.used_services is not None or feedback.satisfaction_rating is not None:
+            # Create a summary of the feedback for AI
+            user_input = f"کاربر بازخورد داده است. استفاده از خدمات: {feedback.used_services}, امتیاز رضایت: {feedback.satisfaction_rating}"
+        
+        if user_input:
+            # Prepare context for AI
+            context = {
+                'used_services': feedback.used_services,
+                'satisfaction_rating': feedback.satisfaction_rating,
+                'personal_feedback': feedback.personal_feedback
+            }
+            
+            # Get AI response
+            ai_result = get_ai_response(user_input, context)
+            
+            # Update feedback with AI response
+            feedback.ai_response = ai_result['response']
+            feedback.ai_model_used = ai_result['model_used']
+            feedback.ai_prompt_tokens = ai_result['prompt_tokens']
+            feedback.ai_response_tokens = ai_result['response_tokens']
+            feedback.save()
+        
+        # Return response
+        from .serializers import SupportFeedbackSerializer
+        response_serializer = SupportFeedbackSerializer(feedback, context={'request': request})
+        
+        return Response({
+            'feedback': response_serializer.data,
+            'ai_response': feedback.ai_response,
+            'message': 'بازخورد شما با موفقیت ثبت شد.'
+        }, status=status.HTTP_201_CREATED)
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_support_feedbacks(request):
+    """Get user's support feedbacks"""
+    from .models import SupportFeedback
+    from .serializers import SupportFeedbackSerializer
+    from django.core.paginator import Paginator
+    
+    feedbacks = SupportFeedback.objects.filter(user=request.user).order_by('-created_at')
+    
+    # Pagination
+    page = int(request.GET.get('page', 1))
+    per_page = int(request.GET.get('per_page', 20))
+    paginator = Paginator(feedbacks, per_page)
+    
+    try:
+        page_obj = paginator.page(page)
+    except Exception:
+        page_obj = paginator.page(1)
+    
+    serializer = SupportFeedbackSerializer(page_obj.object_list, many=True, context={'request': request})
+    
+    return Response({
+        'count': paginator.count,
+        'num_pages': paginator.num_pages,
+        'current_page': page_obj.number,
+        'results': serializer.data
+    })
+
+
+@api_view(["GET"])
+@permission_classes([IsAdminUser])
+def get_support_stats(request):
+    """Get support system statistics for admin"""
+    from .models import SupportFeedback
+    from .serializers import SupportStatsSerializer
+    
+    days = int(request.GET.get('days', 30))
+    stats = SupportFeedback.get_stats(days)
+    
+    serializer = SupportStatsSerializer(stats)
+    return Response(serializer.data)
+
+
+@api_view(["GET"])
+@permission_classes([IsAdminUser])
+def get_all_support_feedbacks(request):
+    """Get all support feedbacks for admin review"""
+    from .models import SupportFeedback
+    from .serializers import SupportFeedbackSerializer
+    from django.core.paginator import Paginator
+    
+    feedbacks = SupportFeedback.objects.all().order_by('-created_at')
+    
+    # Pagination
+    page = int(request.GET.get('page', 1))
+    per_page = int(request.GET.get('per_page', 50))
+    paginator = Paginator(feedbacks, per_page)
+    
+    try:
+        page_obj = paginator.page(page)
+    except Exception:
+        page_obj = paginator.page(1)
+    
+    serializer = SupportFeedbackSerializer(page_obj.object_list, many=True, context={'request': request})
+    
+    return Response({
+        'count': paginator.count,
+        'num_pages': paginator.num_pages,
+        'current_page': page_obj.number,
+        'results': serializer.data
+    })
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def ask_ai_support(request):
+    """Direct AI support question endpoint"""
+    from .utils.gemini_ai import get_ai_response
+    
+    question = request.data.get('question', '').strip()
+    if not question:
+        return Response({'error': 'سوال الزامی است'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        # Prepare context
+        context = {}
+        if request.user.is_authenticated:
+            context['user_authenticated'] = True
+            context['user_type'] = 'authenticated'
+        else:
+            context['user_authenticated'] = False
+            context['user_type'] = 'anonymous'
+        
+        # Get AI response
+        ai_result = get_ai_response(question, context)
+        
+        return Response({
+            'question': question,
+            'response': ai_result['response'],
+            'model_used': ai_result['model_used'],
+            'error': ai_result['error']
+        })
+        
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
