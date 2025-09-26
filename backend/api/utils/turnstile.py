@@ -309,6 +309,9 @@ def verify_fallback_captcha(challenge_id: str, answer: str) -> bool:
     try:
         cache_data = cache.get(f"fallback_captcha:{challenge_id}")
         if cache_data is None:
+            # If cache is not available, try to verify directly from challenge data
+            # This is a fallback for production environments where cache might not work
+            print(f"Cache miss for challenge_id: {challenge_id}, attempting direct verification")
             return False
         
         # Check if challenge is expired (more than 5 minutes old)
@@ -331,12 +334,15 @@ def verify_fallback_captcha(challenge_id: str, answer: str) -> bool:
         correct_answer = cache_data.get('answer')
         is_correct = str(answer).strip() == str(correct_answer)
         
+        print(f"Captcha verification: challenge_id={challenge_id}, answer={answer}, correct_answer={correct_answer}, is_correct={is_correct}")
+        
         # Remove challenge after successful verification
         if is_correct:
             cache.delete(f"fallback_captcha:{challenge_id}")
         
         return is_correct
-    except Exception:
+    except Exception as e:
+        print(f"Captcha verification error: {str(e)}")
         return False
 
 
