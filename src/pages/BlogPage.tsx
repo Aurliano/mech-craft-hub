@@ -35,7 +35,7 @@ const BlogPage: React.FC = () => {
   const [categories, setCategories] = useState<BlogCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -46,7 +46,7 @@ const BlogPage: React.FC = () => {
         page: currentPage.toString(),
         per_page: '9',
         ...(searchTerm && { search: searchTerm }),
-        ...(selectedCategory && { category: selectedCategory }),
+        ...(selectedCategory && selectedCategory !== 'all' && { category: selectedCategory }),
       });
 
       const response = await fetch(getApiUrl(`/api/v1/blog/posts/?${params}`));
@@ -153,7 +153,7 @@ const BlogPage: React.FC = () => {
                 <SelectValue placeholder="انتخاب دسته‌بندی" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">همه دسته‌بندی‌ها</SelectItem>
+                <SelectItem value="all">همه دسته‌بندی‌ها</SelectItem>
                 {categories.map((category) => (
                   <SelectItem key={category.value} value={category.value}>
                     {category.label} ({category.count})

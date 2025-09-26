@@ -143,7 +143,7 @@ export default function SupportWidget({ className = '' }: SupportWidgetProps) {
 
   return (
     <div className={`fixed bottom-6 right-6 z-50 ${className}`}>
-      <Card className="w-80 h-96 shadow-2xl border-0 bg-white">
+      <Card className="w-80 max-h-[calc(100vh-3rem)] shadow-2xl border-0 bg-white">
         <CardHeader className="pb-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -180,7 +180,7 @@ export default function SupportWidget({ className = '' }: SupportWidgetProps) {
         </CardHeader>
 
         {!isMinimized && (
-          <CardContent className="p-0 h-full flex flex-col">
+          <CardContent className="p-0 flex flex-col" style={{ height: 'calc(100% - 60px)' }}>
             {showFeedbackForm ? (
               <FeedbackForm 
                 onClose={() => setShowFeedbackForm(false)}
@@ -343,7 +343,7 @@ function FeedbackForm({ onClose, isAuthenticated, user }: FeedbackFormProps) {
   }
 
   return (
-    <div className="p-4 h-full overflow-y-auto">
+    <div className="p-4 flex flex-col" style={{ height: 'calc(100vh - 200px)', maxHeight: '400px' }}>
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-gray-900">فرم بازخورد</h3>
         <Button variant="ghost" size="sm" onClick={onClose}>
@@ -359,7 +359,7 @@ function FeedbackForm({ onClose, isAuthenticated, user }: FeedbackFormProps) {
         </Alert>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 overflow-y-auto flex-1">
         {/* Service Usage Question */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -431,7 +431,7 @@ function FeedbackForm({ onClose, isAuthenticated, user }: FeedbackFormProps) {
           </Alert>
         )}
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 mt-4 pt-4 border-t">
           <Button
             type="submit"
             disabled={isSubmitting}
