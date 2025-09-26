@@ -971,3 +971,118 @@ class SupportFeedback(models.Model):
         }
 
 
+class BlogPost(models.Model):
+    """Model for blog posts"""
+    
+    STATUS_CHOICES = [
+        ('draft', 'پیش‌نویس'),
+        ('published', 'منتشر شده'),
+        ('archived', 'آرشیو شده'),
+    ]
+    
+    CATEGORY_CHOICES = [
+        ('mechatronics', 'مکاترونیک'),
+        ('mechanical', 'مهندسی مکانیک'),
+        ('electronics', 'مهندسی الکترونیک'),
+        ('computer', 'مهندسی کامپیوتر'),
+        ('metaverse', 'متاورس'),
+        ('ai', 'هوش مصنوعی'),
+        ('simulation', 'شبیه‌سازی'),
+        ('design', 'طراحی'),
+        ('manufacturing', 'ساخت و تولید'),
+        ('general', 'عمومی'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=200, help_text="عنوان مقاله")
+    slug = models.SlugField(max_length=200, unique=True, help_text="آدرس URL مقاله")
+    excerpt = models.TextField(max_length=500, help_text="خلاصه مقاله")
+    content = models.TextField(help_text="محتوای کامل مقاله")
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='general')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    
+    # SEO fields
+    meta_description = models.CharField(max_length=160, blank=True, help_text="توضیحات متا برای SEO")
+    meta_keywords = models.CharField(max_length=200, blank=True, help_text="کلمات کلیدی برای SEO")
+    
+    # Author and publishing
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blog_posts')
+    featured_image = models.URLField(blank=True, null=True, help_text="تصویر شاخص مقاله")
+    
+    # Source information
+    source_url = models.URLField(blank=True, null=True, help_text="لینک منبع اصلی")
+    source_name = models.CharField(max_length=100, blank=True, help_text="نام منبع")
+    
+    # Statistics
+    view_count = models.PositiveIntegerField(default=0)
+    like_count = models.PositiveIntegerField(default=0)
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    published_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-published_at', '-created_at']
+        verbose_name = 'مقاله وبلاگ'
+        verbose_name_plural = 'مقالات وبلاگ'
+    
+    def __str__(self):
+        return self.title
+    
+    def save(self, *args, **kwargs):
+        if self.status == 'published' and not self.published_at:
+            self.published_at = timezone.now()
+        super().save(*args, **kwargs)
+    
+    @property
+    def reading_time(self):
+        """Calculate estimated reading time in minutes"""
+        words_per_minute = 200
+        word_count = len(self.content.split())
+        return max(1, round(word_count / words_per_minute))
+    
+    @classmethod
+    def get_published_posts(cls):
+        """Get all published posts"""
+        return cls.objects.filter(status='published')
+    
+    @classmethod
+    def get_posts_by_category(cls, category):
+        """Get published posts by category"""
+        return cls.objects.filter(status='published', category=category)
+    
+    @classmethod
+    def get_featured_posts(cls, limit=3):
+        """Get featured posts (most viewed)"""
+        return cls.objects.filter(status='published').order_by('-view_count')[:limit]
+    
+    @classmethod
+    def get_recent_posts(cls, limit=5):
+        """Get recent published posts"""
+        return cls.objects.filter(status='published').order_by('-published_at')[:limit]
+
+
+class BlogComment(models.Model):
+    """Model for blog post comments"""
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    post = models.ForeignKey(BlogPost, on_delete=models.CASCADE, related_name='comments')
+    author_name = models.CharField(max_length=100, help_text="نام نویسنده نظر")
+    author_email = models.EmailField(help_text="ایمیل نویسنده نظر")
+    content = models.TextField(help_text="متن نظر")
+    is_approved = models.BooleanField(default=False, help_text="تایید شده")
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'نظر وبلاگ'
+        verbose_name_plural = 'نظرات وبلاگ'
+    
+    def __str__(self):
+        return f"نظر {self.author_name} برای {self.post.title}"
+
+

@@ -35,6 +35,8 @@ import OrderPreviewDemo from "./pages/OrderPreviewDemo";
 import ServicesPage from "./pages/ServicesPage";
 import PortfolioPage from "./pages/PortfolioPage";
 import Blog from "./pages/Blog";
+import BlogPage from "./pages/BlogPage";
+import BlogPostPage from "./pages/BlogPostPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -135,7 +137,8 @@ const App = () => (
               {/* Info Pages */}
               <Route path="/services" element={<ServicesPage />} />
               <Route path="/portfolio" element={<PortfolioPage />} />
-              <Route path="/blog" element={<Blog />} />
+              <Route path="/blog" element={<BlogPage />} />
+              <Route path="/blog/:slug" element={<BlogPostPage />} />
               
               {/* Shared Routes */}
               <Route path="/profile" element={<Profile />} />

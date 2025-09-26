@@ -2017,3 +2017,173 @@ def ask_ai_support(request):
         
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# Blog System Views
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def get_blog_posts(request):
+    """Get published blog posts with pagination"""
+    from .models import BlogPost
+    from .serializers import BlogPostListSerializer
+    from django.core.paginator import Paginator
+    from django.db import models
+    
+    posts = BlogPost.get_published_posts()
+    
+    # Filter by category if provided
+    category = request.GET.get('category')
+    if category:
+        posts = posts.filter(category=category)
+    
+    # Search functionality
+    search = request.GET.get('search')
+    if search:
+        posts = posts.filter(
+            models.Q(title__icontains=search) | 
+            models.Q(excerpt__icontains=search) |
+            models.Q(content__icontains=search)
+        )
+    
+    # Pagination
+    page = int(request.GET.get('page', 1))
+    per_page = int(request.GET.get('per_page', 10))
+    paginator = Paginator(posts, per_page)
+    
+    try:
+        page_obj = paginator.page(page)
+    except Exception:
+        page_obj = paginator.page(1)
+    
+    serializer = BlogPostListSerializer(page_obj.object_list, many=True)
+    
+    return Response({
+        'count': paginator.count,
+        'num_pages': paginator.num_pages,
+        'current_page': page_obj.number,
+        'results': serializer.data
+    })
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def get_blog_post(request, slug):
+    """Get a single blog post by slug"""
+    from .models import BlogPost
+    from .serializers import BlogPostSerializer
+    
+    try:
+        post = BlogPost.objects.get(slug=slug, status='published')
+        
+        # Increment view count
+        post.view_count += 1
+        post.save(update_fields=['view_count'])
+        
+        serializer = BlogPostSerializer(post)
+        return Response(serializer.data)
+    except BlogPost.DoesNotExist:
+        return Response({'error': 'مقاله یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def get_blog_categories(request):
+    """Get blog categories with post counts"""
+    from .models import BlogPost
+    
+    categories = []
+    for choice in BlogPost.CATEGORY_CHOICES:
+        count = BlogPost.get_posts_by_category(choice[0]).count()
+        categories.append({
+            'value': choice[0],
+            'label': choice[1],
+            'count': count
+        })
+    
+    return Response(categories)
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def get_featured_posts(request):
+    """Get featured blog posts"""
+    from .models import BlogPost
+    from .serializers import BlogPostListSerializer
+    
+    limit = int(request.GET.get('limit', 3))
+    posts = BlogPost.get_featured_posts(limit)
+    serializer = BlogPostListSerializer(posts, many=True)
+    
+    return Response(serializer.data)
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def get_recent_posts(request):
+    """Get recent blog posts"""
+    from .models import BlogPost
+    from .serializers import BlogPostListSerializer
+    
+    limit = int(request.GET.get('limit', 5))
+    posts = BlogPost.get_recent_posts(limit)
+    serializer = BlogPostListSerializer(posts, many=True)
+    
+    return Response(serializer.data)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def create_blog_post(request):
+    """Create a new blog post (admin only)"""
+    from .serializers import BlogPostCreateSerializer, BlogPostSerializer
+    
+    serializer = BlogPostCreateSerializer(data=request.data, context={'request': request})
+    if serializer.is_valid():
+        post = serializer.save()
+        return Response({
+            'message': 'مقاله با موفقیت ایجاد شد',
+            'post': BlogPostSerializer(post).data
+        }, status=status.HTTP_201_CREATED)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def create_blog_comment(request, post_slug):
+    """Create a comment for a blog post"""
+    from .models import BlogPost
+    from .serializers import BlogCommentCreateSerializer, BlogCommentSerializer
+    
+    try:
+        post = BlogPost.objects.get(slug=post_slug, status='published')
+    except BlogPost.DoesNotExist:
+        return Response({'error': 'مقاله یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+    
+    serializer = BlogCommentCreateSerializer(data=request.data)
+    if serializer.is_valid():
+        comment = serializer.save(post=post)
+        return Response({
+            'message': 'نظر شما با موفقیت ثبت شد و پس از تایید نمایش داده خواهد شد',
+            'comment': BlogCommentSerializer(comment).data
+        }, status=status.HTTP_201_CREATED)
+    
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def get_blog_comments(request, post_slug):
+    """Get approved comments for a blog post"""
+    from .models import BlogPost
+    from .serializers import BlogCommentSerializer
+    
+    try:
+        post = BlogPost.objects.get(slug=post_slug, status='published')
+    except BlogPost.DoesNotExist:
+        return Response({'error': 'مقاله یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+    
+    comments = post.comments.filter(is_approved=True)
+    serializer = BlogCommentSerializer(comments, many=True)
+    
+    return Response(serializer.data)

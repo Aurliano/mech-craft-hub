@@ -28,8 +28,11 @@ from .views import (
     create_ticket, create_ticket_message,
     # Captcha endpoints (Turnstile + Fallback)
     captcha_fallback, captcha_fallback_status, captcha_fallback_verify, turnstile_stats, turnstile_attempts,
-    # Support system endpoints
-    create_support_feedback, get_support_feedbacks, ask_ai_support, get_support_stats, get_all_support_feedbacks,
+            # Support system endpoints
+            create_support_feedback, get_support_feedbacks, ask_ai_support, get_support_stats, get_all_support_feedbacks,
+            # Blog system endpoints
+            get_blog_posts, get_blog_post, get_blog_categories, get_featured_posts, get_recent_posts,
+            create_blog_post, create_blog_comment, get_blog_comments,
 )
 
 router = DefaultRouter()
@@ -130,9 +133,21 @@ urlpatterns = [
     path('v1/support/feedback/my/', get_support_feedbacks, name='get_support_feedbacks'),
     path('v1/support/ask/', ask_ai_support, name='ask_ai_support'),
     
-    # Support Admin Endpoints
-    path('v1/admin/support/stats/', get_support_stats, name='get_support_stats'),
-    path('v1/admin/support/feedbacks/', get_all_support_feedbacks, name='get_all_support_feedbacks'),
+            # Support Admin Endpoints
+            path('v1/admin/support/stats/', get_support_stats, name='get_support_stats'),
+            path('v1/admin/support/feedbacks/', get_all_support_feedbacks, name='get_all_support_feedbacks'),
+            
+            # Blog System Endpoints
+            path('v1/blog/posts/', get_blog_posts, name='get_blog_posts'),
+            path('v1/blog/posts/<str:slug>/', get_blog_post, name='get_blog_post'),
+            path('v1/blog/categories/', get_blog_categories, name='get_blog_categories'),
+            path('v1/blog/featured/', get_featured_posts, name='get_featured_posts'),
+            path('v1/blog/recent/', get_recent_posts, name='get_recent_posts'),
+            path('v1/blog/posts/<str:slug>/comments/', get_blog_comments, name='get_blog_comments'),
+            path('v1/blog/posts/<str:slug>/comments/create/', create_blog_comment, name='create_blog_comment'),
+            
+            # Blog Admin Endpoints
+            path('v1/admin/blog/posts/create/', create_blog_post, name='create_blog_post'),
     
     # Aliases for requested endpoints
     path('v1/categories/', ScopeViewSet.as_view({'get': 'list'}), name='categories'),

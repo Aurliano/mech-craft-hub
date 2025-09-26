@@ -42,6 +42,19 @@ export default function SupportWidget({ className = '' }: SupportWidgetProps) {
     }
   }, [isOpen, messages.length]);
 
+  // Show login prompt for unauthenticated users
+  useEffect(() => {
+    if (isOpen && !isAuthenticated && messages.length === 1) {
+      const loginPrompt: Message = {
+        id: 'login-prompt',
+        type: 'ai',
+        content: 'برای استفاده از خدمات پشتیبانی، لطفاً وارد شوید یا ثبت نام کنید.',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, loginPrompt]);
+    }
+  }, [isOpen, isAuthenticated, messages.length]);
+
   const sendMessage = async () => {
     if (!inputMessage.trim() || isLoading) return;
 
@@ -210,24 +223,50 @@ export default function SupportWidget({ className = '' }: SupportWidgetProps) {
                 </div>
 
                 {/* Input */}
-                <div className="p-4 border-t">
-                  <div className="flex gap-2">
-                    <Input
-                      value={inputMessage}
-                      onChange={(e) => setInputMessage(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                      placeholder="پیام خود را بنویسید..."
-                      disabled={isLoading}
-                      className="flex-1"
-                    />
-                    <Button
-                      onClick={sendMessage}
-                      disabled={!inputMessage.trim() || isLoading}
-                      size="sm"
-                    >
-                      <Send className="h-4 w-4" />
-                    </Button>
-                  </div>
+                <div className="p-3 border-t bg-gray-50">
+                  {!isAuthenticated ? (
+                    <div className="space-y-3">
+                      <div className="text-center text-sm text-gray-600">
+                        برای استفاده از چت پشتیبانی، لطفاً وارد شوید
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => window.location.href = '/login'}
+                          className="flex-1"
+                          size="sm"
+                        >
+                          ورود
+                        </Button>
+                        <Button
+                          onClick={() => window.location.href = '/register'}
+                          variant="outline"
+                          className="flex-1"
+                          size="sm"
+                        >
+                          ثبت نام
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Input
+                        value={inputMessage}
+                        onChange={(e) => setInputMessage(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        placeholder="پیام خود را بنویسید..."
+                        disabled={isLoading}
+                        className="flex-1"
+                      />
+                      <Button
+                        onClick={sendMessage}
+                        disabled={!inputMessage.trim() || isLoading}
+                        size="sm"
+                        className="px-3"
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </>
             )}
@@ -392,20 +431,30 @@ function FeedbackForm({ onClose, isAuthenticated, user }: FeedbackFormProps) {
           </Alert>
         )}
 
-        <Button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full"
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              در حال ارسال...
-            </>
-          ) : (
-            'ارسال بازخورد'
-          )}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="flex-1"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                در حال ارسال...
+              </>
+            ) : (
+              'ارسال بازخورد'
+            )}
+          </Button>
+          <Button
+            type="button"
+            onClick={onClose}
+            variant="outline"
+            className="px-4"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
       </form>
     </div>
   );

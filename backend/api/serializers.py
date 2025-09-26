@@ -3,7 +3,7 @@ from .models import (
     User, Role, UserRole, Scope, Service, ServiceField, ServiceTab,
     Cart, CartItem, Order, OrderItem, Quote, Workshop,
     Ticket, TicketMessage, TicketAttachment, TicketFileType, TicketCategory, TicketParticipant,
-    ContentFilterLog, Review, Notification, SupportFeedback
+    ContentFilterLog, Review, Notification, SupportFeedback, BlogPost, BlogComment
 )
 
 
@@ -667,3 +667,75 @@ class SupportStatsSerializer(serializers.Serializer):
     ai_response_rate = serializers.FloatField()
     satisfaction_distribution = serializers.DictField()
     service_usage = serializers.DictField()
+
+
+# Blog System Serializers
+class BlogPostSerializer(serializers.ModelSerializer):
+    author_name = serializers.CharField(source='author.username', read_only=True)
+    reading_time = serializers.ReadOnlyField()
+    comments_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = BlogPost
+        fields = [
+            'id', 'title', 'slug', 'excerpt', 'content', 'category', 'status',
+            'meta_description', 'meta_keywords', 'author', 'author_name',
+            'featured_image', 'source_url', 'source_name', 'view_count',
+            'like_count', 'reading_time', 'comments_count', 'created_at',
+            'updated_at', 'published_at'
+        ]
+        read_only_fields = ['id', 'author', 'view_count', 'like_count', 'created_at', 'updated_at', 'published_at']
+    
+    def get_comments_count(self, obj):
+        return obj.comments.filter(is_approved=True).count()
+
+
+class BlogPostListSerializer(serializers.ModelSerializer):
+    """Simplified serializer for blog post lists"""
+    author_name = serializers.CharField(source='author.username', read_only=True)
+    reading_time = serializers.ReadOnlyField()
+    comments_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = BlogPost
+        fields = [
+            'id', 'title', 'slug', 'excerpt', 'category', 'author_name',
+            'featured_image', 'source_name', 'view_count', 'like_count',
+            'reading_time', 'comments_count', 'published_at'
+        ]
+    
+    def get_comments_count(self, obj):
+        return obj.comments.filter(is_approved=True).count()
+
+
+class BlogPostCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating blog posts"""
+    
+    class Meta:
+        model = BlogPost
+        fields = [
+            'title', 'slug', 'excerpt', 'content', 'category', 'status',
+            'meta_description', 'meta_keywords', 'featured_image',
+            'source_url', 'source_name'
+        ]
+    
+    def create(self, validated_data):
+        validated_data['author'] = self.context['request'].user
+        return super().create(validated_data)
+
+
+class BlogCommentSerializer(serializers.ModelSerializer):
+    """Serializer for blog comments"""
+    
+    class Meta:
+        model = BlogComment
+        fields = ['id', 'post', 'author_name', 'author_email', 'content', 'is_approved', 'created_at']
+        read_only_fields = ['id', 'is_approved', 'created_at']
+
+
+class BlogCommentCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating blog comments"""
+    
+    class Meta:
+        model = BlogComment
+        fields = ['post', 'author_name', 'author_email', 'content']
