@@ -5,7 +5,9 @@ export const API_ROOT = import.meta.env.DEV ? '/api' : `${API_BASE_URL}/api`;
 export function getApiUrl(endpoint: string): string {
   const isProduction = import.meta.env.PROD;
   if (isProduction) {
-    return endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    // In production, use the full URL with the production domain
+    const baseUrl = 'https://mech-craft-hub-main.liara.run';
+    return endpoint.startsWith('/') ? `${baseUrl}${endpoint}` : `${baseUrl}/${endpoint}`;
   } else {
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
     return endpoint.startsWith('/') ? `${baseUrl}${endpoint}` : `${baseUrl}/${endpoint}`;
