@@ -516,8 +516,9 @@ class LoginSerializer(serializers.Serializer):
             raise serializers.ValidationError(f"Turnstile verification failed: {str(e)}")
 
     def validate(self, data):
-        """Validate captcha - priority: Turnstile > fallback"""
+        """Validate captcha and authenticate user"""
         from .utils.turnstile import verify_fallback_captcha
+        from django.contrib.auth import authenticate
         
         turnstile_token = data.get('turnstile_token') or data.get('cf_turnstile_response')
         fallback_challenge_id = data.get('fallback_captcha_challenge_id')
@@ -525,17 +526,29 @@ class LoginSerializer(serializers.Serializer):
         
         # If Turnstile token is provided and valid, we're good
         if turnstile_token:
-            return data
+            pass  # Already validated in validate_turnstile_token
+        else:
+            # If no Turnstile, validate fallback captcha
+            if not fallback_challenge_id or not fallback_answer:
+                raise serializers.ValidationError("Captcha verification is required")
+            
+            if not verify_fallback_captcha(fallback_challenge_id, fallback_answer):
+                raise serializers.ValidationError("Invalid captcha answer")
         
-        # If no Turnstile, validate fallback captcha
-        if not fallback_challenge_id or not fallback_answer:
-            raise serializers.ValidationError("Captcha verification is required")
+        # Authenticate user
+        username = data.get('username')
+        password = data.get('password')
         
-        if not verify_fallback_captcha(fallback_challenge_id, fallback_answer):
-            raise serializers.ValidationError("Invalid captcha answer")
+        if username and password:
+            user = authenticate(username=username, password=password)
+            if user:
+                data['user'] = user
+            else:
+                raise serializers.ValidationError("Invalid username or password")
+        else:
+            raise serializers.ValidationError("Username and password are required")
         
         return data
-
 
 
 class PasswordResetRequestSerializer(serializers.Serializer):

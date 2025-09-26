@@ -14,35 +14,35 @@ const Portfolio = () => {
       id: 1,
       title: "سیستم مدیریت کارخانه",
       description: "پلتفرم جامع مدیریت تولید و کنترل کیفیت برای صنایع تولیدی",
-      image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600&h=400&fit=crop",
+      image: "/src/assets/hero-engineering.jpg",
       category: "نرم‌افزار صنعتی"
     },
     {
       id: 2,
       title: "اپلیکیشن IoT مانیتورینگ",
       description: "سیستم نظارت و کنترل هوشمند تجهیزات صنعتی با اینترنت اشیاء",
-      image: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&h=400&fit=crop", 
+      image: "/src/assets/hero-engineering.jpg", 
       category: "IoT و اتوماسیون"
     },
     {
       id: 3,
       title: "پلتفرم تجزیه و تحلیل داده",
       description: "ابزار هوشمند تحلیل داده‌های صنعتی و تولید گزارش‌های تحلیلی",
-      image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=600&h=400&fit=crop",
+      image: "/src/assets/hero-engineering.jpg",
       category: "تحلیل داده"
     },
     {
       id: 4,
       title: "سیستم اتوماسیون انبار",
       description: "راه‌حل هوشمند مدیریت انبار و کنترل موجودی برای صنایع بزرگ",
-      image: "https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?w=600&h=400&fit=crop",
+      image: "/src/assets/hero-engineering.jpg",
       category: "اتوماسیون انبار"
     },
     {
       id: 5,
       title: "سیستم کنترل کیفیت",
       description: "پلتفرم پیشرفته بازرسی و کنترل کیفیت محصولات صنعتی",
-      image: "https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=600&h=400&fit=crop",
+      image: "/src/assets/hero-engineering.jpg",
       category: "کنترل کیفیت"
     }
   ];
