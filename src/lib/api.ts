@@ -1,4 +1,15 @@
-export const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+// Type definitions for import.meta.env
+interface ImportMetaEnv {
+  readonly VITE_API_BASE_URL?: string;
+  readonly DEV: boolean;
+  readonly PROD: boolean;
+}
+
+interface ImportMeta {
+  readonly env: ImportMetaEnv;
+}
+
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
 export const API_ROOT = import.meta.env.DEV ? '/api' : `${API_BASE_URL}/api`;
 
 // Utility function to get the correct API URL for both development and production
@@ -176,17 +187,17 @@ export async function registerRequest(params: {
     const errorText = await res.text();
     throw new Error(errorText || 'Registration failed');
   }
-  return (await res.json()) as any;
+  return (await res.json()) as unknown;
 }
 
 export async function meRequest() {
-  return fetchJson<any>('/v1/auth/me/', { method: 'GET' });
+  return fetchJson<unknown>('/v1/auth/me/', { method: 'GET' });
 }
 
 export async function getAllServices() {
   try {
-    const response = await fetchJson<any>('/v1/services/');
-    return Array.isArray(response) ? response : (response.results || []);
+    const response = await fetchJson<unknown>('/v1/services/');
+    return Array.isArray(response) ? response : ((response as { results?: unknown[] }).results || []);
   } catch (error) {
     console.error('Error fetching services:', error);
     return [];
@@ -198,9 +209,9 @@ export async function getServiceFields(serviceId: string, tabId?: string) {
     const url = tabId 
       ? `/v1/service-fields/?service=${serviceId}&tab=${tabId}`
       : `/v1/service-fields/?service=${serviceId}`;
-    const response = await fetchJson<any>(url);
+    const response = await fetchJson<unknown>(url);
     // اگر response یک object با results است، results را برگردان، وگرنه خود response را
-    return Array.isArray(response) ? response : (response.results || []);
+    return Array.isArray(response) ? response : ((response as { results?: unknown[] }).results || []);
   } catch (error) {
     console.error('Error fetching service fields:', error);
     return [];
@@ -209,8 +220,8 @@ export async function getServiceFields(serviceId: string, tabId?: string) {
 
 export async function getServiceTabs(serviceId: string) {
   try {
-    const response = await fetchJson<any>(`/v1/service-tabs/?service=${serviceId}`);
-    return Array.isArray(response) ? response : (response.results || []);
+    const response = await fetchJson<unknown>(`/v1/service-tabs/?service=${serviceId}`);
+    return Array.isArray(response) ? response : ((response as { results?: unknown[] }).results || []);
   } catch (error) {
     console.error('Error fetching service tabs:', error);
     return [];
@@ -219,8 +230,8 @@ export async function getServiceTabs(serviceId: string) {
 
 export async function getTabFields(tabId: string) {
   try {
-    const response = await fetchJson<any>(`/v1/service-fields/?tab=${tabId}`);
-    return Array.isArray(response) ? response : (response.results || []);
+    const response = await fetchJson<unknown>(`/v1/service-fields/?tab=${tabId}`);
+    return Array.isArray(response) ? response : ((response as { results?: unknown[] }).results || []);
   } catch (error) {
     console.error('Error fetching tab fields:', error);
     return [];
@@ -228,7 +239,7 @@ export async function getTabFields(tabId: string) {
 }
 
 export async function createCart(customer: string) {
-  return fetchJson<any>('/v1/carts/', {
+  return fetchJson<unknown>('/v1/carts/', {
     method: 'POST',
     body: JSON.stringify({ customer }),
   });
@@ -237,10 +248,10 @@ export async function createCart(customer: string) {
 export async function createCartItem(data: {
   cart: string;
   service: string;
-  field_values: Record<string, any>;
+  field_values: Record<string, unknown>;
   needs_documentation?: boolean;
 }) {
-  return fetchJson<any>('/v1/cart-items/', {
+  return fetchJson<unknown>('/v1/cart-items/', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -375,7 +386,7 @@ export async function phoneVerificationConfirm(phone: string, code: string) {
 // Scopes and Services Functions
 export async function getScopes() {
   try {
-    const response = await fetchJson<any>('/v1/scopes/');
+    const response = await fetchJson<unknown>('/v1/scopes/');
     // Handle paginated response
     if (response && typeof response === 'object' && 'results' in response) {
       return response.results || [];
@@ -391,7 +402,7 @@ export async function getScopes() {
 export async function getServices(scopeId?: string) {
   try {
     const url = scopeId ? `/v1/services/?scope=${scopeId}` : '/v1/services/';
-    const response = await fetchJson<any>(url);
+    const response = await fetchJson<unknown>(url);
     // Handle paginated response from ServiceViewSet
     if (response && typeof response === 'object' && 'results' in response) {
       return response.results || [];
@@ -407,7 +418,7 @@ export async function getServices(scopeId?: string) {
 // Dashboard Data Functions
 export async function getUserOrders() {
   try {
-    return await fetchJson<any[]>('/v1/orders/user/');
+    return await fetchJson<unknown[]>('/v1/orders/user/');
   } catch (error) {
     console.error('Error fetching orders:', error);
     return [];
@@ -416,7 +427,7 @@ export async function getUserOrders() {
 
 export async function getUserCart() {
   try {
-    return await fetchJson<any>('/v1/carts/');
+    return await fetchJson<unknown>('/v1/carts/');
   } catch (error) {
     console.error('Error fetching cart:', error);
     return null;
@@ -425,7 +436,7 @@ export async function getUserCart() {
 
 export async function getUserCartItems() {
   try {
-    return await fetchJson<any[]>('/v1/cart-items/');
+    return await fetchJson<unknown[]>('/v1/cart-items/');
   } catch (error) {
     console.error('Error fetching cart items:', error);
     return [];
@@ -462,12 +473,12 @@ export async function createOrder(data: {
   notes?: string;
   items: {
     service: string;
-    field_values: Record<string, any>;
+    field_values: Record<string, unknown>;
     needs_documentation?: boolean;
   }[];
 }) {
   try {
-    return await fetchJson<any>('/v1/orders/create/', {
+    return await fetchJson<unknown>('/v1/orders/create/', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -479,7 +490,7 @@ export async function createOrder(data: {
 
 export async function getOrderById(orderId: string) {
   try {
-    return await fetchJson<any>(`/v1/orders/${orderId}/`);
+    return await fetchJson<unknown>(`/v1/orders/${orderId}/`);
   } catch (error) {
     console.error('Error fetching order:', error);
     throw error;
@@ -488,7 +499,7 @@ export async function getOrderById(orderId: string) {
 
 export async function updateOrderStatus(orderId: string, status: string) {
   try {
-    return await fetchJson<any>(`/v1/orders/${orderId}/`, {
+    return await fetchJson<unknown>(`/v1/orders/${orderId}/`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     });
@@ -509,7 +520,7 @@ export async function createQuote(data: {
   notes?: string;
 }) {
   try {
-    return await fetchJson<any>('/v1/quotes/', {
+    return await fetchJson<unknown>('/v1/quotes/', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -521,7 +532,7 @@ export async function createQuote(data: {
 
 export async function getQuotesByOrder(orderId: string) {
   try {
-    return await fetchJson<any[]>(`/v1/quotes/order/${orderId}/`);
+    return await fetchJson<unknown[]>(`/v1/quotes/order/${orderId}/`);
   } catch (error) {
     console.error('Error fetching quotes:', error);
     return [];
@@ -530,7 +541,7 @@ export async function getQuotesByOrder(orderId: string) {
 
 export async function acceptQuote(quoteId: string) {
   try {
-    return await fetchJson<any>(`/v1/quotes/${quoteId}/accept/`, {
+    return await fetchJson<unknown>(`/v1/quotes/${quoteId}/accept/`, {
       method: 'PATCH',
     });
   } catch (error) {
@@ -541,7 +552,7 @@ export async function acceptQuote(quoteId: string) {
 
 export async function rejectQuote(quoteId: string) {
   try {
-    return await fetchJson<any>(`/v1/quotes/${quoteId}/reject/`, {
+    return await fetchJson<unknown>(`/v1/quotes/${quoteId}/reject/`, {
       method: 'PATCH',
     });
   } catch (error) {
@@ -554,11 +565,11 @@ export async function rejectQuote(quoteId: string) {
 export async function addToCart(data: {
   cart: string;
   service: string;
-  field_values: Record<string, any>;
+  field_values: Record<string, unknown>;
   needs_documentation?: boolean;
 }) {
   try {
-    return await fetchJson<any>('/v1/cart-items/', {
+    return await fetchJson<unknown>('/v1/cart-items/', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -570,7 +581,7 @@ export async function addToCart(data: {
 
 export async function addOrderToCart(orderId: string) {
   try {
-    return await fetchJson<any>('/v1/cart-items/', {
+    return await fetchJson<unknown>('/v1/cart-items/', {
       method: 'POST',
       body: JSON.stringify({ 
         order: orderId,
@@ -587,7 +598,7 @@ export async function addOrderToCart(orderId: string) {
 
 export async function removeFromCart(cartItemId: string) {
   try {
-    return await fetchJson<any>(`/v1/cart-items/${cartItemId}/`, {
+    return await fetchJson<unknown>(`/v1/cart-items/${cartItemId}/`, {
       method: 'DELETE',
     });
   } catch (error) {
@@ -600,10 +611,10 @@ export async function removeFromCart(cartItemId: string) {
 export async function processPayment(orderId: string, paymentData: {
   amount: number;
   method: string;
-  gateway_response?: any;
+  gateway_response?: unknown;
 }) {
   try {
-    return await fetchJson<any>('/v1/payments/', {
+    return await fetchJson<unknown>('/v1/payments/', {
       method: 'POST',
       body: JSON.stringify({
         order: orderId,
@@ -646,7 +657,7 @@ export async function downloadInvoice(orderId: string) {
 // Notification Functions
 export async function getUserNotifications() {
   try {
-    return await fetchJson<any[]>('/v1/notifications/');
+    return await fetchJson<unknown[]>('/v1/notifications/');
   } catch (error) {
     console.error('Error fetching notifications:', error);
     return [];
@@ -655,7 +666,7 @@ export async function getUserNotifications() {
 
 export async function markNotificationRead(notificationId: string) {
   try {
-    return await fetchJson<any>(`/v1/notifications/${notificationId}/read/`, {
+    return await fetchJson<unknown>(`/v1/notifications/${notificationId}/read/`, {
       method: 'PATCH',
     });
   } catch (error) {
@@ -666,7 +677,7 @@ export async function markNotificationRead(notificationId: string) {
 
 export async function markAllNotificationsRead() {
   try {
-    return await fetchJson<any>('/v1/notifications/read-all/', {
+    return await fetchJson<unknown>('/v1/notifications/read-all/', {
       method: 'PATCH',
     });
   } catch (error) {
@@ -678,7 +689,7 @@ export async function markAllNotificationsRead() {
 // Contractor API Functions
 export async function getContractorOrders() {
   try {
-    return await fetchJson<any[]>('/v1/contractor/orders/');
+    return await fetchJson<unknown[]>('/v1/contractor/orders/');
   } catch (error) {
     console.error('Error fetching contractor orders:', error);
     return [];
@@ -687,7 +698,7 @@ export async function getContractorOrders() {
 
 export async function getContractorProposals() {
   try {
-    return await fetchJson<any[]>('/v1/contractor/proposals/');
+    return await fetchJson<unknown[]>('/v1/contractor/proposals/');
   } catch (error) {
     console.error('Error fetching contractor proposals:', error);
     return [];
@@ -696,7 +707,7 @@ export async function getContractorProposals() {
 
 export async function getContractorActiveProjects() {
   try {
-    return await fetchJson<any[]>('/v1/contractor/active-projects/');
+    return await fetchJson<unknown[]>('/v1/contractor/active-projects/');
   } catch (error) {
     console.error('Error fetching contractor active projects:', error);
     return [];
@@ -705,7 +716,7 @@ export async function getContractorActiveProjects() {
 
 export async function getContractorStats() {
   try {
-    return await fetchJson<any>('/v1/contractor/stats/');
+    return await fetchJson<unknown>('/v1/contractor/stats/');
   } catch (error) {
     console.error('Error fetching contractor stats:', error);
     return {
@@ -726,7 +737,7 @@ export async function createContractorProposal(proposalData: {
   notes?: string;
 }) {
   try {
-    return await fetchJson<any>('/v1/contractor/proposals/create/', {
+    return await fetchJson<unknown>('/v1/contractor/proposals/create/', {
       method: 'POST',
       body: JSON.stringify(proposalData),
     });
@@ -738,7 +749,7 @@ export async function createContractorProposal(proposalData: {
 
 export async function getContractorWorkshops() {
   try {
-    return await fetchJson<any[]>('/v1/contractor/workshops/');
+    return await fetchJson<unknown[]>('/v1/contractor/workshops/');
   } catch (error) {
     console.error('Error fetching contractor workshops:', error);
     return [];
@@ -758,7 +769,7 @@ export async function createContractorWorkshop(workshopData: {
   machines: { name: string; precision: string }[];
 }) {
   try {
-    return await fetchJson<any>('/v1/contractor/workshops/create/', {
+    return await fetchJson<unknown>('/v1/contractor/workshops/create/', {
       method: 'POST',
       body: JSON.stringify(workshopData),
     });
@@ -770,7 +781,7 @@ export async function createContractorWorkshop(workshopData: {
 
 export async function checkContractorManufacturingService() {
   try {
-    return await fetchJson<any>('/v1/contractor/check-manufacturing/');
+    return await fetchJson<unknown>('/v1/contractor/check-manufacturing/');
   } catch (error) {
     console.error('Error checking contractor manufacturing service:', error);
     throw error;
@@ -811,7 +822,7 @@ export async function registerWithTurnstile(params: {
     const errorText = await res.text();
     throw new Error(errorText || 'Registration failed');
   }
-  return (await res.json()) as any;
+  return (await res.json()) as unknown;
 }
 
 // Fallback Captcha API Functions
@@ -872,7 +883,7 @@ export async function getTickets(params?: { status?: string; priority?: string; 
     if (params?.search) queryParams.append('search', params.search);
     
     const url = `/v1/tickets/${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-    return await fetchJson<{ results: any[]; count: number }>(url);
+    return await fetchJson<{ results: unknown[]; count: number }>(url);
   } catch (error) {
     console.error('Error fetching tickets:', error);
     throw error;
@@ -881,7 +892,7 @@ export async function getTickets(params?: { status?: string; priority?: string; 
 
 export async function getTicketById(ticketId: string) {
   try {
-    return await fetchJson<any>(`/v1/tickets/${ticketId}/`);
+    return await fetchJson<unknown>(`/v1/tickets/${ticketId}/`);
   } catch (error) {
     console.error('Error fetching ticket:', error);
     throw error;
@@ -890,7 +901,7 @@ export async function getTicketById(ticketId: string) {
 
 export async function getTicketMessages(ticketId: string) {
   try {
-    return await fetchJson<{ results: any[]; count: number }>(`/v1/tickets/${ticketId}/messages/`);
+    return await fetchJson<{ results: unknown[]; count: number }>(`/v1/tickets/${ticketId}/messages/`);
   } catch (error) {
     console.error('Error fetching ticket messages:', error);
     throw error;
@@ -945,7 +956,7 @@ export async function createTicketMessage(ticketId: string, data: {
 
 export async function getTicketCategories() {
   try {
-    return await fetchJson<any[]>('/v1/ticket-categories/');
+    return await fetchJson<unknown[]>('/v1/ticket-categories/');
   } catch (error) {
     console.error('Error fetching ticket categories:', error);
     throw error;
@@ -954,7 +965,7 @@ export async function getTicketCategories() {
 
 export async function getTicketFileTypes() {
   try {
-    return await fetchJson<any[]>('/v1/ticket-file-types/');
+    return await fetchJson<unknown[]>('/v1/ticket-file-types/');
   } catch (error) {
     console.error('Error fetching ticket file types:', error);
     throw error;
@@ -987,7 +998,7 @@ export async function getContentFilterLogs(params?: {
     if (params?.page) queryParams.append('page', params.page.toString());
     
     const url = `/content-filter-logs/${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-    return await fetchJson<{ results: any[]; count: number }>(url);
+    return await fetchJson<{ results: unknown[]; count: number }>(url);
   } catch (error) {
     console.error('Error fetching content filter logs:', error);
     throw error;
@@ -1009,7 +1020,7 @@ export async function reviewContentViolation(violationId: string, isFalsePositiv
 // Missing functions that are referenced in api object
 export async function changePasswordRequest(data: { old_password: string; new_password: string }) {
   try {
-    return await fetchJson<any>('/v1/auth/change-password/', {
+    return await fetchJson<unknown>('/v1/auth/change-password/', {
       method: 'POST',
       body: JSON.stringify(data),
     });

@@ -9,6 +9,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Calendar, Clock, Eye, Heart, User, ArrowRight, Send } from 'lucide-react';
 import { getApiUrl } from '@/lib/api';
 import { toast } from '@/components/ui/use-toast';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 interface BlogPost {
   id: string;
@@ -147,8 +149,9 @@ const BlogPostPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="container mx-auto px-4">
+      <div className="min-h-screen bg-background" dir="rtl">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
           <div className="max-w-4xl mx-auto">
             <Card className="animate-pulse">
               <CardHeader>
@@ -166,13 +169,15 @@ const BlogPostPage: React.FC = () => {
             </Card>
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
+      <div className="min-h-screen bg-background" dir="rtl">
+        <Navbar />
         <div className="container mx-auto px-4">
           <Card className="text-center py-12">
             <CardContent>
@@ -187,13 +192,15 @@ const BlogPostPage: React.FC = () => {
             </CardContent>
           </Card>
         </div>
+        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-4">
+    <div className="min-h-screen bg-background" dir="rtl">
+      <Navbar />
+      <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           {/* Breadcrumb */}
           <nav className="mb-6">
@@ -352,6 +359,7 @@ const BlogPostPage: React.FC = () => {
           </Card>
         </div>
       </div>
+      <Footer />
     </div>
   );
 };

@@ -9,7 +9,7 @@ import django
 from django.utils import timezone
 
 # Setup Django environment
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings_simple')
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 django.setup()
 

@@ -109,7 +109,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
 # CSRF settings - Allow all for testing
-CSRF_TRUSTED_ORIGINS = ['*']
+CSRF_TRUSTED_ORIGINS = ['http://localhost:3000', 'https://mech-craft-hub-main.liara.run']
 
 # REST Framework
 REST_FRAMEWORK = {

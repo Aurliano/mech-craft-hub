@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar, Clock, Eye, Heart, Search, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { getApiUrl } from '@/lib/api';
+import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 interface BlogPost {
   id: string;
@@ -103,8 +105,9 @@ const BlogPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="container mx-auto px-4">
+      <div className="min-h-screen bg-background" dir="rtl">
+        <Navbar />
+        <div className="container mx-auto px-4 py-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
               <Card key={i} className="animate-pulse">
@@ -120,13 +123,15 @@ const BlogPage: React.FC = () => {
             ))}
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-4">
+    <div className="min-h-screen bg-background" dir="rtl">
+      <Navbar />
+      <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">وبلاگ مکاترونیک</h1>
@@ -280,6 +285,7 @@ const BlogPage: React.FC = () => {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   );
 };
