@@ -3,7 +3,7 @@ import LocalCaptcha from "./LocalCaptcha";
 import { getApiUrl } from '@/lib/api';
 
 interface TurnstileCaptchaProps {
-  onVerify: (token: string) => void;
+  onVerify: (token: string, type: 'turnstile' | 'fallback', challengeId?: string) => void;
   fallbackApi?: string;
   timeout?: number; // Timeout in milliseconds
   siteKey?: string; // Optional site key override
@@ -145,7 +145,7 @@ export default function TurnstileCaptcha({
         window.turnstile?.render(widgetRef.current, {
           sitekey: SITEKEY,
           callback: (token) => {
-            onVerify && onVerify(token);
+            onVerify && onVerify(token, 'turnstile');
           },
           "error-callback": () => {
             // If widget errors -> fallback to local
@@ -229,7 +229,7 @@ export default function TurnstileCaptcha({
       
       if (result.success) {
         // Use challenge_id as token for local captcha
-        onVerify(fallbackChallenge.id);
+        onVerify(fallbackChallenge.id, 'fallback', fallbackChallenge.id);
       } else {
         throw new Error(result.error || 'کپچای محلی ناموفق بود');
       }

@@ -133,8 +133,13 @@ export async function fetchJson<T>(path: string, options: RequestInit = {}): Pro
 
 
 
-export async function loginRequest(params: { username: string; password: string }) {
-  const res = await fetch(`${API_ROOT}/token/`, {
+export async function loginRequest(params: { 
+  username: string; 
+  password: string;
+  fallback_captcha_challenge_id?: string;
+  fallback_captcha_answer?: string;
+}) {
+  const res = await fetch(getApiUrl('/api/v1/auth/login/'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
@@ -776,7 +781,7 @@ export async function loginWithTurnstile(params: {
   password: string; 
   turnstile_token: string;
 }) {
-  const res = await fetch(`${API_ROOT}/v1/auth/login/`, {
+  const res = await fetch(getApiUrl('/api/v1/auth/login/'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
