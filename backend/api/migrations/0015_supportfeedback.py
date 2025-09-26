@@ -8,7 +8,7 @@ import uuid
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('api', '0014_hcaptchaattempt'),
+        ('api', '0013_rename_turnstile_at_created_idx_turnstile_a_created_9679d0_idx_and_more'),
     ]
 
     operations = [
