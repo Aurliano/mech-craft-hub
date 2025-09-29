@@ -19,6 +19,8 @@ ALLOWED_HOSTS = [
     '127.0.0.1', 
     '.liara.run',
     '.liara.ir',
+    'saydatech.ir',
+    'www.saydatech.ir',
 ] + (os.getenv('ALLOWED_HOSTS', '').split(',') if os.getenv('ALLOWED_HOSTS') else [])
 
 # Application definition
@@ -135,14 +137,37 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Custom User Model
 AUTH_USER_MODEL = 'api.User'
 
-# CORS settings - Allow all for testing
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS settings - Specific origins for production
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOWED_ORIGINS = [
+    'https://saydatech.ir',
+    'https://www.saydatech.ir',
+    'https://sayda-engineering-platform.liara.run',
+]
 CORS_ALLOW_CREDENTIALS = True
 
-# CSRF settings - Disable CSRF for API-only deployment
-CSRF_COOKIE_SECURE = False
-CSRF_COOKIE_HTTPONLY = False
-CSRF_USE_SESSIONS = False
+# Security settings for production
+SECURE_SSL_REDIRECT = True
+SECURE_HSTS_SECONDS = 31536000  # 1 year
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+X_FRAME_OPTIONS = 'DENY'
+
+# CSRF settings - Enable CSRF for production
+CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_HTTPONLY = True
+CSRF_USE_SESSIONS = True
+CSRF_TRUSTED_ORIGINS = [
+    'https://saydatech.ir',
+    'https://www.saydatech.ir',
+    'https://sayda-engineering-platform.liara.run',
+]
+
+# Session settings
+SESSION_COOKIE_SECURE = True
+SESSION_COOKIE_HTTPONLY = True
 
 # REST Framework
 REST_FRAMEWORK = {
