@@ -133,28 +133,28 @@ const BlogPage: React.FC = () => {
       <Navbar />
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">وبلاگ مکاترونیک</h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">وبلاگ مکاترونیک</h1>
+          <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto px-4">
             منتخب ترندها و مقالات به روز به همراه منبع
           </p>
         </div>
 
         {/* Search and Filter */}
-        <div className="mb-8">
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="relative flex-1 max-w-md">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-center justify-between">
+            <div className="relative flex-1 max-w-md w-full">
               <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
                 placeholder="جستجو در مقالات..."
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="pr-10"
+                className="pr-10 w-full"
               />
             </div>
             
             <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-              <SelectTrigger className="w-full md:w-48">
+              <SelectTrigger className="w-full sm:w-48">
                 <SelectValue placeholder="انتخاب دسته‌بندی" />
               </SelectTrigger>
               <SelectContent>
@@ -171,7 +171,7 @@ const BlogPage: React.FC = () => {
 
         {/* Posts Grid */}
         {posts.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
             {posts.map((post) => (
               <Card key={post.id} className="hover:shadow-lg transition-shadow duration-300">
                 <CardHeader>
@@ -184,7 +184,7 @@ const BlogPage: React.FC = () => {
                       {formatDate(post.published_at)}
                     </div>
                   </div>
-                  <CardTitle className="text-lg line-clamp-2">
+                  <CardTitle className="text-base sm:text-lg line-clamp-2">
                     <Link 
                       to={`/blog/${post.slug}`}
                       className="hover:text-blue-600 transition-colors"
@@ -200,16 +200,16 @@ const BlogPage: React.FC = () => {
                   </p>
                   
                   {post.featured_image && (
-                    <div className="mb-4">
+                    <div className="mb-3 sm:mb-4">
                       <img 
                         src={post.featured_image} 
                         alt={post.title}
-                        className="w-full h-48 object-cover rounded-lg"
+                        className="w-full h-32 sm:h-40 md:h-48 object-cover rounded-lg"
                       />
                     </div>
                   )}
                   
-                  <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs text-gray-500 mb-3 sm:mb-4 gap-2 sm:gap-0">
                     <div className="flex items-center">
                       <User className="h-3 w-3 ml-1" />
                       {post.author_name}
@@ -220,8 +220,8 @@ const BlogPage: React.FC = () => {
                     </div>
                   </div>
                   
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+                    <div className="flex items-center gap-3 sm:gap-4 text-xs text-gray-500">
                       <div className="flex items-center">
                         <Eye className="h-3 w-3 ml-1" />
                         {post.view_count}
@@ -233,7 +233,7 @@ const BlogPage: React.FC = () => {
                     </div>
                     
                     {post.source_name && (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="secondary" className="text-xs w-fit">
                         منبع: {post.source_name}
                       </Badge>
                     )}
@@ -255,30 +255,34 @@ const BlogPage: React.FC = () => {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex justify-center gap-2">
+          <div className="flex justify-center gap-1 sm:gap-2 overflow-x-auto">
             <Button
               variant="outline"
               onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
               disabled={currentPage === 1}
+              className="text-xs sm:text-sm"
             >
               قبلی
             </Button>
             
-            {[...Array(totalPages)].map((_, i) => (
-              <Button
-                key={i + 1}
-                variant={currentPage === i + 1 ? "default" : "outline"}
-                onClick={() => setCurrentPage(i + 1)}
-                className="w-10"
-              >
-                {i + 1}
-              </Button>
-            ))}
+            <div className="flex gap-1 sm:gap-2">
+              {[...Array(totalPages)].map((_, i) => (
+                <Button
+                  key={i + 1}
+                  variant={currentPage === i + 1 ? "default" : "outline"}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className="w-8 h-8 sm:w-10 sm:h-10 text-xs sm:text-sm"
+                >
+                  {i + 1}
+                </Button>
+              ))}
+            </div>
             
             <Button
               variant="outline"
               onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
               disabled={currentPage === totalPages}
+              className="text-xs sm:text-sm"
             >
               بعدی
             </Button>

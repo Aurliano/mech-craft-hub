@@ -50,11 +50,11 @@ const Portfolio = () => {
   return (
     <section className="py-20 px-4 bg-background">
       <div className="container mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-primary mb-4">
+        <div className="text-center mb-12 sm:mb-16">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-primary mb-3 sm:mb-4">
             نمونه کارهای ما
           </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto px-4">
             مجموعه‌ای از پروژه‌های موفق که با تخصص و دقت برای مشتریان ما اجرا شده است
           </p>
         </div>
@@ -63,7 +63,7 @@ const Portfolio = () => {
           <Carousel className="w-full">
             <CarouselContent className="-ml-1">
               {portfolioItems.map((item) => (
-                <CarouselItem key={item.id} className="pl-1 md:basis-1/2 lg:basis-1/3">
+                <CarouselItem key={item.id} className="pl-1 sm:basis-1/2 lg:basis-1/3">
                   <div className="p-1">
                     <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
                       <CardContent className="p-0">
@@ -73,17 +73,17 @@ const Portfolio = () => {
                             alt={item.title}
                             className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                           />
-                          <div className="absolute top-4 right-4">
-                            <span className="bg-primary/90 text-primary-foreground px-3 py-1 rounded-full text-sm font-medium shadow-md">
+                          <div className="absolute top-2 right-2 sm:top-4 sm:right-4">
+                            <span className="bg-primary/90 text-primary-foreground px-2 py-1 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm font-medium shadow-md">
                               {item.category}
                             </span>
                           </div>
                         </div>
-                        <div className="p-6">
-                          <h5 className="text-xl font-bold mb-3 text-foreground">
+                        <div className="p-4 sm:p-6">
+                          <h5 className="text-lg sm:text-xl font-bold mb-2 sm:mb-3 text-foreground">
                             {item.title}
                           </h5>
-                          <p className="text-muted-foreground text-sm leading-relaxed">
+                          <p className="text-muted-foreground text-xs sm:text-sm leading-relaxed">
                             {item.description}
                           </p>
                         </div>

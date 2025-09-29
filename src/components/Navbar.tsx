@@ -366,6 +366,15 @@ const Navbar = () => {
                   <span className="font-medium">نمونه کارها</span>
                 </a>
 
+                {/* Blog Link */}
+                <a 
+                  href="/blog" 
+                  className="flex items-center justify-between p-3 rounded-lg bg-muted/30 text-foreground hover:bg-muted hover:text-primary transition-all duration-200"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <span className="font-medium">وبلاگ</span>
+                </a>
+
                 {/* Contact Button */}
                 <button 
                   onClick={() => {
@@ -463,7 +472,7 @@ const Navbar = () => {
                               </Link>
                             </Button>
                             
-                            {manufacturingCheck?.has_manufacturing_service && (
+                            {(manufacturingCheck as any)?.has_manufacturing_service && (
                               <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
                                 <Link to="/my-workshops" onClick={() => setIsOpen(false)}>
                                   <Building2 className="mr-2 h-4 w-4" />
