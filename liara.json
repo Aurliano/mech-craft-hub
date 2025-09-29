@@ -10,7 +10,7 @@
   "env": {
     "DEBUG": "False",
     "SECRET_KEY": "django-insecure-liara-production-key-2024-sayda-engineering",
-    "ALLOWED_HOSTS": "*.liara.run,*.liara.ir",
+    "ALLOWED_HOSTS": "*.liara.run,*.liara.ir,saydatech.ir,www.saydatech.ir",
     "DJANGO_SETTINGS_MODULE": "config.settings_ultra_simple",
     "PYTHONPATH": "/app/backend",
     "POSTGRES_DB": "postgres",
