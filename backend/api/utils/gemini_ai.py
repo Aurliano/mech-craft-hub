@@ -66,7 +66,7 @@ class GeminiAISupport:
 
     def generate_response(self, user_input: str, user_context: Dict[str, Any] = None) -> Dict[str, Any]:
         """
-        Generate AI response for user input
+        Generate AI response for user input using enhanced system
         
         Args:
             user_input: User's question or feedback
@@ -75,63 +75,11 @@ class GeminiAISupport:
         Returns:
             Dict containing response, tokens used, and metadata
         """
-        if not self.enabled:
-            return {
-                'response': 'متأسفانه سرویس پشتیبانی هوش مصنوعی در حال حاضر در دسترس نیست. لطفاً با تیم پشتیبانی تماس بگیرید.',
-                'model_used': None,
-                'prompt_tokens': 0,
-                'response_tokens': 0,
-                'error': 'Gemini AI not configured'
-            }
+        # Import enhanced system
+        from .gemini_ai_enhanced import get_enhanced_ai_response
         
-        try:
-            # Build context-aware prompt
-            system_prompt = self.get_system_prompt()
-            
-            # Add user context if available
-            context_info = ""
-            if user_context:
-                if user_context.get('used_services') is not None:
-                    service_status = "بله" if user_context['used_services'] else "خیر"
-                    context_info += f"کاربر از خدمات سایت استفاده کرده: {service_status}\n"
-                
-                if user_context.get('satisfaction_rating') is not None:
-                    context_info += f"امتیاز رضایت کاربر: {user_context['satisfaction_rating']}/5\n"
-                
-                if user_context.get('personal_feedback'):
-                    context_info += f"نظر شخصی کاربر: {user_context['personal_feedback']}\n"
-            
-            # Combine prompts
-            full_prompt = f"{system_prompt}\n\n{context_info}\n\nسوال یا نظر کاربر: {user_input}"
-            
-            # Generate response
-            response = self.model.generate_content(full_prompt)
-            
-            # Extract token usage if available
-            prompt_tokens = 0
-            response_tokens = 0
-            
-            if hasattr(response, 'usage_metadata'):
-                prompt_tokens = response.usage_metadata.prompt_token_count
-                response_tokens = response.usage_metadata.candidates_token_count
-            
-            return {
-                'response': response.text,
-                'model_used': self.model_name,
-                'prompt_tokens': prompt_tokens,
-                'response_tokens': response_tokens,
-                'error': None
-            }
-            
-        except Exception as e:
-            logger.error(f"Error generating Gemini AI response: {str(e)}")
-            return {
-                'response': 'متأسفانه خطایی در تولید پاسخ رخ داده است. لطفاً دوباره تلاش کنید یا با تیم پشتیبانی تماس بگیرید.',
-                'model_used': self.model_name,
-                'prompt_tokens': 0,
-                'response_tokens': 0,
-                'error': str(e)
-            }
+        # Use enhanced system for better responses
+        return get_enhanced_ai_response(user_input, user_context)
     
     def is_available(self) -> bool:
         """Check if Gemini AI is available and configured"""

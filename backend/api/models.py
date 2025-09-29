@@ -1063,6 +1063,109 @@ class BlogPost(models.Model):
         return cls.objects.filter(status='published').order_by('-published_at')[:limit]
 
 
+class AIInteractionLog(models.Model):
+    """Log AI interactions for learning and improvement"""
+    
+    INTERACTION_TYPES = [
+        ('question', 'سوال'),
+        ('feedback', 'بازخورد'),
+        ('complaint', 'شکایت'),
+        ('compliment', 'تعریف'),
+        ('suggestion', 'پیشنهاد'),
+    ]
+    
+    SATISFACTION_LEVELS = [
+        ('very_dissatisfied', 'خیلی ناراضی'),
+        ('dissatisfied', 'ناراضی'),
+        ('neutral', 'خنثی'),
+        ('satisfied', 'راضی'),
+        ('very_satisfied', 'خیلی راضی'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='ai_interactions')
+    
+    # Interaction details
+    user_input = models.TextField(help_text="ورودی کاربر")
+    ai_response = models.TextField(help_text="پاسخ هوش مصنوعی")
+    interaction_type = models.CharField(max_length=20, choices=INTERACTION_TYPES, default='question')
+    
+    # Context information
+    user_context = models.JSONField(default=dict, help_text="زمینه کاربر")
+    prompt_tokens = models.IntegerField(default=0)
+    response_tokens = models.IntegerField(default=0)
+    
+    # User feedback
+    user_satisfaction = models.CharField(max_length=20, choices=SATISFACTION_LEVELS, null=True, blank=True)
+    user_feedback_text = models.TextField(blank=True, null=True)
+    response_helpful = models.BooleanField(null=True, blank=True)
+    response_accurate = models.BooleanField(null=True, blank=True)
+    
+    # Learning data
+    keywords_detected = models.JSONField(default=list, help_text="کلمات کلیدی تشخیص داده شده")
+    domain_identified = models.CharField(max_length=50, blank=True, help_text="حوزه شناسایی شده")
+    response_quality_score = models.FloatField(default=0.0, help_text="امتیاز کیفیت پاسخ")
+    
+    # Metadata
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.TextField(blank=True, null=True)
+    session_id = models.CharField(max_length=100, blank=True, null=True)
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'لاگ تعامل هوش مصنوعی'
+        verbose_name_plural = 'لاگ‌های تعامل هوش مصنوعی'
+    
+    def __str__(self):
+        user_info = self.user.username if self.user else "ناشناس"
+        return f"تعامل AI - {user_info} - {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+
+
+class AIResponsePattern(models.Model):
+    """Patterns learned from user interactions for improving responses"""
+    
+    PATTERN_TYPES = [
+        ('keyword_response', 'پاسخ بر اساس کلمه کلیدی'),
+        ('domain_response', 'پاسخ بر اساس حوزه'),
+        ('context_response', 'پاسخ بر اساس زمینه'),
+        ('user_type_response', 'پاسخ بر اساس نوع کاربر'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    pattern_type = models.CharField(max_length=30, choices=PATTERN_TYPES)
+    
+    # Pattern definition
+    trigger_keywords = models.JSONField(default=list, help_text="کلمات کلیدی محرک")
+    trigger_domains = models.JSONField(default=list, help_text="حوزه‌های محرک")
+    trigger_context = models.JSONField(default=dict, help_text="زمینه محرک")
+    
+    # Response template
+    response_template = models.TextField(help_text="قالب پاسخ")
+    response_examples = models.JSONField(default=list, help_text="نمونه‌های پاسخ")
+    
+    # Effectiveness metrics
+    usage_count = models.PositiveIntegerField(default=0)
+    success_rate = models.FloatField(default=0.0)
+    average_satisfaction = models.FloatField(default=0.0)
+    
+    # Status
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-success_rate', '-usage_count']
+        verbose_name = 'الگوی پاسخ هوش مصنوعی'
+        verbose_name_plural = 'الگوهای پاسخ هوش مصنوعی'
+    
+    def __str__(self):
+        return f"الگوی {self.pattern_type} - {self.usage_count} استفاده"
+
+
 class BlogComment(models.Model):
     """Model for blog post comments"""
     

@@ -2004,34 +2004,257 @@ def get_all_support_feedbacks(request):
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def ask_ai_support(request):
-    """Direct AI support question endpoint"""
-    from .utils.gemini_ai import get_ai_response
+    """Enhanced AI support question endpoint with context awareness"""
+    from .utils.gemini_ai_enhanced import get_enhanced_ai_response
     
     question = request.data.get('question', '').strip()
     if not question:
         return Response({'error': 'سوال الزامی است'}, status=status.HTTP_400_BAD_REQUEST)
     
     try:
-        # Prepare context
+        # Prepare enhanced context
         context = {}
+        
         if request.user.is_authenticated:
             context['user_authenticated'] = True
             context['user_type'] = 'authenticated'
+            
+            # Get user role
+            user_roles = request.user.user_roles.filter(is_active=True)
+            if user_roles.exists():
+                context['user_role'] = user_roles.first().role.name
+            
+            # Get user's service history
+            user_orders = Order.objects.filter(customer=request.user)
+            context['active_orders_count'] = user_orders.filter(
+                status__in=['submitted', 'in_review', 'quoted', 'accepted', 'in_progress']
+            ).count()
+            
+            # Get user's expertise areas (if contractor)
+            if context.get('user_role') == 'contractor':
+                contractor_services = request.user.contractor_services.filter(is_active=True)
+                expertise_areas = []
+                for cs in contractor_services:
+                    scope_name = cs.service.scope.display_name
+                    if scope_name not in expertise_areas:
+                        expertise_areas.append(scope_name)
+                context['expertise_areas'] = expertise_areas
+            
+            # Check if user has used services before
+            context['used_services'] = user_orders.exists()
+            
         else:
             context['user_authenticated'] = False
             context['user_type'] = 'anonymous'
         
-        # Get AI response
-        ai_result = get_ai_response(question, context)
+        # Get AI response with enhanced context
+        ai_result = get_enhanced_ai_response(question, context)
+        
+        # Log the interaction for learning
+        try:
+            from .models import AIInteractionLog
+            from .utils.ai_learning import feedback_analyzer
+            
+            # Create interaction log
+            interaction = AIInteractionLog.objects.create(
+                user=request.user if request.user.is_authenticated else None,
+                user_input=question,
+                ai_response=ai_result['response'],
+                user_context=context,
+                prompt_tokens=ai_result.get('prompt_tokens', 0),
+                response_tokens=ai_result.get('response_tokens', 0),
+                ip_address=request.META.get('REMOTE_ADDR'),
+                user_agent=request.META.get('HTTP_USER_AGENT', ''),
+                session_id=request.session.session_key
+            )
+            
+            # Analyze interaction for learning
+            feedback_analyzer.analyze_interaction(interaction)
+            
+        except Exception as e:
+            logger.warning(f"Could not log AI interaction: {e}")
         
         return Response({
             'question': question,
             'response': ai_result['response'],
             'model_used': ai_result['model_used'],
-            'error': ai_result['error']
+            'error': ai_result['error'],
+            'context_used': ai_result.get('context_used', False),
+            'specialized_knowledge_used': ai_result.get('specialized_knowledge_used', False)
         })
         
     except Exception as e:
+        logger.error(f"Error in ask_ai_support: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def submit_ai_feedback(request):
+    """Submit feedback for AI responses"""
+    from .models import AIInteractionLog
+    from .utils.ai_learning import response_optimizer
+    
+    interaction_id = request.data.get('interaction_id')
+    satisfaction = request.data.get('satisfaction')
+    feedback_text = request.data.get('feedback_text', '')
+    response_helpful = request.data.get('response_helpful')
+    response_accurate = request.data.get('response_accurate')
+    
+    if not interaction_id:
+        return Response({'error': 'شناسه تعامل الزامی است'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        interaction = AIInteractionLog.objects.get(id=interaction_id)
+        
+        # Update interaction with feedback
+        if satisfaction:
+            interaction.user_satisfaction = satisfaction
+        if feedback_text:
+            interaction.user_feedback_text = feedback_text
+        if response_helpful is not None:
+            interaction.response_helpful = response_helpful
+        if response_accurate is not None:
+            interaction.response_accurate = response_accurate
+        
+        interaction.save()
+        
+        # Update pattern effectiveness if applicable
+        try:
+            from .models import AIResponsePattern
+            patterns = AIResponsePattern.objects.filter(
+                trigger_keywords__overlap=interaction.keywords_detected
+            )
+            for pattern in patterns:
+                response_optimizer.update_pattern_effectiveness(pattern, interaction)
+        except Exception as e:
+            logger.warning(f"Could not update pattern effectiveness: {e}")
+        
+        return Response({
+            'message': 'بازخورد با موفقیت ثبت شد',
+            'interaction_id': str(interaction.id)
+        })
+        
+    except AIInteractionLog.DoesNotExist:
+        return Response({'error': 'تعامل یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        logger.error(f"Error submitting AI feedback: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["GET"])
+@permission_classes([IsAdminUser])
+def get_ai_analytics(request):
+    """Get AI analytics and performance metrics"""
+    from .models import AIInteractionLog, AIResponsePattern
+    
+    try:
+        # Get date range from query parameters
+        days = int(request.GET.get('days', 30))
+        from django.utils import timezone
+        from datetime import timedelta
+        
+        since = timezone.now() - timedelta(days=days)
+        
+        # Basic statistics
+        total_interactions = AIInteractionLog.objects.filter(created_at__gte=since).count()
+        authenticated_interactions = AIInteractionLog.objects.filter(
+            created_at__gte=since, 
+            user__isnull=False
+        ).count()
+        
+        # Satisfaction distribution
+        satisfaction_stats = {}
+        for choice in AIInteractionLog.SATISFACTION_LEVELS:
+            count = AIInteractionLog.objects.filter(
+                created_at__gte=since,
+                user_satisfaction=choice[0]
+            ).count()
+            satisfaction_stats[choice[1]] = count
+        
+        # Domain distribution
+        domain_stats = {}
+        domains = ['مکاترونیک', 'مکانیک', 'کامپیوتر', 'برق', 'متاورس', 'عمومی']
+        for domain in domains:
+            count = AIInteractionLog.objects.filter(
+                created_at__gte=since,
+                domain_identified=domain
+            ).count()
+            domain_stats[domain] = count
+        
+        # Response quality metrics
+        avg_quality_score = AIInteractionLog.objects.filter(
+            created_at__gte=since
+        ).aggregate(avg_score=models.Avg('response_quality_score'))['avg_score'] or 0
+        
+        # Pattern effectiveness
+        active_patterns = AIResponsePattern.objects.filter(is_active=True).count()
+        most_used_pattern = AIResponsePattern.objects.filter(
+            is_active=True
+        ).order_by('-usage_count').first()
+        
+        return Response({
+            'period_days': days,
+            'total_interactions': total_interactions,
+            'authenticated_interactions': authenticated_interactions,
+            'anonymous_interactions': total_interactions - authenticated_interactions,
+            'satisfaction_distribution': satisfaction_stats,
+            'domain_distribution': domain_stats,
+            'average_quality_score': round(avg_quality_score, 2),
+            'active_patterns_count': active_patterns,
+            'most_used_pattern': {
+                'type': most_used_pattern.pattern_type if most_used_pattern else None,
+                'usage_count': most_used_pattern.usage_count if most_used_pattern else 0,
+                'success_rate': most_used_pattern.success_rate if most_used_pattern else 0
+            } if most_used_pattern else None
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting AI analytics: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["GET"])
+@permission_classes([IsAdminUser])
+def get_ai_interactions(request):
+    """Get AI interactions with pagination"""
+    from .models import AIInteractionLog
+    
+    try:
+        page = int(request.GET.get('page', 1))
+        page_size = int(request.GET.get('page_size', 20))
+        
+        interactions = AIInteractionLog.objects.all().order_by('-created_at')
+        
+        # Pagination
+        paginator = Paginator(interactions, page_size)
+        page_obj = paginator.get_page(page)
+        
+        # Serialize interactions
+        interactions_data = []
+        for interaction in page_obj:
+            interactions_data.append({
+                'id': str(interaction.id),
+                'user': interaction.user.username if interaction.user else 'ناشناس',
+                'user_input': interaction.user_input[:100] + '...' if len(interaction.user_input) > 100 else interaction.user_input,
+                'ai_response': interaction.ai_response[:100] + '...' if len(interaction.ai_response) > 100 else interaction.ai_response,
+                'interaction_type': interaction.get_interaction_type_display(),
+                'user_satisfaction': interaction.get_user_satisfaction_display() if interaction.user_satisfaction else None,
+                'response_quality_score': interaction.response_quality_score,
+                'domain_identified': interaction.domain_identified,
+                'keywords_detected': interaction.keywords_detected,
+                'created_at': interaction.created_at
+            })
+        
+        return Response({
+            'total_pages': paginator.num_pages,
+            'current_page': page_obj.number,
+            'total_count': paginator.count,
+            'results': interactions_data
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting AI interactions: {str(e)}")
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 

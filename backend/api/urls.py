@@ -30,6 +30,7 @@ from .views import (
     captcha_fallback, captcha_fallback_status, captcha_fallback_verify, turnstile_stats, turnstile_attempts,
             # Support system endpoints
             create_support_feedback, get_support_feedbacks, ask_ai_support, get_support_stats, get_all_support_feedbacks,
+            submit_ai_feedback, get_ai_analytics, get_ai_interactions,
             # Blog system endpoints
             get_blog_posts, get_blog_post, get_blog_categories, get_featured_posts, get_recent_posts,
             create_blog_post, create_blog_comment, get_blog_comments,
@@ -132,6 +133,11 @@ urlpatterns = [
     path('v1/support/feedback/', create_support_feedback, name='create_support_feedback'),
     path('v1/support/feedback/my/', get_support_feedbacks, name='get_support_feedbacks'),
     path('v1/support/ask/', ask_ai_support, name='ask_ai_support'),
+    
+    # AI Learning Endpoints
+    path('v1/ai/feedback/', submit_ai_feedback, name='submit_ai_feedback'),
+    path('v1/ai/analytics/', get_ai_analytics, name='get_ai_analytics'),
+    path('v1/ai/interactions/', get_ai_interactions, name='get_ai_interactions'),
     
             # Support Admin Endpoints
             path('v1/admin/support/stats/', get_support_stats, name='get_support_stats'),
