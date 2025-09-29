@@ -147,7 +147,7 @@ CORS_ALLOWED_ORIGINS = [
 CORS_ALLOW_CREDENTIALS = True
 
 # Security settings for production
-SECURE_SSL_REDIRECT = True
+SECURE_SSL_REDIRECT = False  # Cloudflare handles SSL redirect
 SECURE_HSTS_SECONDS = 31536000  # 1 year
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
@@ -155,8 +155,8 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 X_FRAME_OPTIONS = 'DENY'
 
-# CSRF settings - Enable CSRF for production
-CSRF_COOKIE_SECURE = True
+# CSRF settings - Allow HTTP for Cloudflare proxy
+CSRF_COOKIE_SECURE = False  # Allow HTTP cookies for Cloudflare
 CSRF_COOKIE_HTTPONLY = True
 CSRF_USE_SESSIONS = True
 CSRF_TRUSTED_ORIGINS = [
@@ -165,9 +165,13 @@ CSRF_TRUSTED_ORIGINS = [
     'https://sayda-engineering-platform.liara.run',
 ]
 
-# Session settings
-SESSION_COOKIE_SECURE = True
+# Session settings - Allow HTTP for Cloudflare proxy
+SESSION_COOKIE_SECURE = False  # Allow HTTP cookies for Cloudflare
 SESSION_COOKIE_HTTPONLY = True
+
+# Cloudflare proxy settings
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # REST Framework
 REST_FRAMEWORK = {
