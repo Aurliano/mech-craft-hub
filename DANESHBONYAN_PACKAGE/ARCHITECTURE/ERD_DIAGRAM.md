@@ -62,6 +62,10 @@
 - **BlogComment**: نظرات مقالات
 - **MediaFile**: مدیریت فایل‌های رسانه
 
+#### ۱۰. AI System Management
+- **AIInteractionLog**: لاگ تعاملات هوش مصنوعی
+- **AIResponsePattern**: الگوهای پاسخ هوش مصنوعی
+
 ---
 
 ## 🔗 روابط اصلی
@@ -97,12 +101,11 @@ Order (1) ←→ (N) Payment
 Order (1) ←→ (N) OrderStatusLog
 ```
 
-### Support Relationships
+### AI System Relationships
 ```
-TicketCategory (1) ←→ (N) Ticket
-Ticket (1) ←→ (N) TicketParticipant ←→ (1) User
-Ticket (1) ←→ (N) TicketMessage ←→ (1) User
-TicketMessage (1) ←→ (N) TicketAttachment ←→ (1) TicketFileType
+User (1) ←→ (N) AIInteractionLog
+AIResponsePattern (1) ←→ (N) AIInteractionLog
+BlogPost (1) ←→ (N) BlogComment
 ```
 
 ---
@@ -160,21 +163,62 @@ CREATE TABLE orders (
 );
 ```
 
-### Quote Model
+### AIInteractionLog Model
 ```sql
-CREATE TABLE quotes (
+CREATE TABLE ai_interaction_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    order_item_id UUID REFERENCES order_items(id) ON DELETE CASCADE,
-    contractor_id UUID REFERENCES api_user(id) ON DELETE CASCADE,
-    price DECIMAL(10,2) NOT NULL,
-    documentation_price DECIMAL(10,2) DEFAULT 0,
-    delivery_days INTEGER NOT NULL,
-    documentation_days INTEGER DEFAULT 0,
-    notes TEXT,
-    status VARCHAR(20) DEFAULT 'pending',
+    user_id UUID REFERENCES api_user(id) ON DELETE SET NULL,
+    user_input TEXT NOT NULL,
+    ai_response TEXT NOT NULL,
+    interaction_type VARCHAR(20) DEFAULT 'question',
+    user_context JSONB DEFAULT '{}',
+    prompt_tokens INTEGER DEFAULT 0,
+    response_tokens INTEGER DEFAULT 0,
+    user_satisfaction VARCHAR(20),
+    user_feedback_text TEXT,
+    response_helpful BOOLEAN,
+    response_accurate BOOLEAN,
+    keywords_detected JSONB DEFAULT '[]',
+    domain_identified VARCHAR(50),
+    response_quality_score FLOAT DEFAULT 0.0,
+    ip_address INET,
+    user_agent TEXT,
+    session_id VARCHAR(100),
     created_at TIMESTAMP DEFAULT NOW(),
-    expires_at TIMESTAMP,
-    UNIQUE(order_item_id, contractor_id)
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### AIResponsePattern Model
+```sql
+CREATE TABLE ai_response_patterns (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    pattern_type VARCHAR(30) NOT NULL,
+    trigger_keywords JSONB DEFAULT '[]',
+    trigger_domains JSONB DEFAULT '[]',
+    trigger_context JSONB DEFAULT '{}',
+    response_template TEXT NOT NULL,
+    response_examples JSONB DEFAULT '[]',
+    usage_count INTEGER DEFAULT 0,
+    success_rate FLOAT DEFAULT 0.0,
+    average_satisfaction FLOAT DEFAULT 0.0,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### BlogComment Model
+```sql
+CREATE TABLE blog_comments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    post_id UUID REFERENCES blog_posts(id) ON DELETE CASCADE,
+    author_name VARCHAR(100) NOT NULL,
+    author_email VARCHAR(254) NOT NULL,
+    content TEXT NOT NULL,
+    is_approved BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
 );
 ```
 
@@ -212,6 +256,21 @@ CREATE INDEX idx_ticket_creator ON tickets(creator_id);
 CREATE INDEX idx_ticket_status ON tickets(status);
 CREATE INDEX idx_ticket_priority ON tickets(priority);
 CREATE INDEX idx_ticket_created_at ON tickets(created_at);
+
+-- AI System indexes
+CREATE INDEX idx_ai_interaction_user ON ai_interaction_logs(user_id);
+CREATE INDEX idx_ai_interaction_type ON ai_interaction_logs(interaction_type);
+CREATE INDEX idx_ai_interaction_created_at ON ai_interaction_logs(created_at);
+CREATE INDEX idx_ai_interaction_satisfaction ON ai_interaction_logs(user_satisfaction);
+
+CREATE INDEX idx_ai_pattern_type ON ai_response_patterns(pattern_type);
+CREATE INDEX idx_ai_pattern_active ON ai_response_patterns(is_active);
+CREATE INDEX idx_ai_pattern_success_rate ON ai_response_patterns(success_rate);
+
+-- Blog indexes
+CREATE INDEX idx_blog_comment_post ON blog_comments(post_id);
+CREATE INDEX idx_blog_comment_approved ON blog_comments(is_approved);
+CREATE INDEX idx_blog_comment_created_at ON blog_comments(created_at);
 ```
 
 ### Composite Indexes
@@ -250,6 +309,9 @@ CREATE INDEX idx_service_scope_active ON services(scope_id, is_active);
 - **quotes**: ~200,000 records
 - **tickets**: ~5,000 records
 - **notifications**: ~100,000 records
+- **ai_interaction_logs**: ~500,000 records
+- **ai_response_patterns**: ~1,000 records
+- **blog_comments**: ~10,000 records
 
 ### Performance Metrics
 - **Query Response Time**: < 100ms
