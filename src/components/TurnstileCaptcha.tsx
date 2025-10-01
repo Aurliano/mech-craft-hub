@@ -20,6 +20,7 @@ declare global {
       remove: (widgetId?: string) => void;
     };
     turnstileScriptLoaded?: boolean;
+    turnstileActiveWidgets?: Set<string>;
   }
 }
 
@@ -42,6 +43,22 @@ export default function TurnstileCaptcha({
     isRenderingRef.current = true;
     
     try {
+      // Initialize global widget tracking
+      if (!window.turnstileActiveWidgets) {
+        window.turnstileActiveWidgets = new Set();
+      }
+
+      // Remove any existing widgets first
+      if (widgetIdRef.current && window.turnstile) {
+        try {
+          window.turnstile.remove(widgetIdRef.current);
+          window.turnstileActiveWidgets.delete(widgetIdRef.current);
+        } catch (err) {
+          console.log("Previous widget already removed");
+        }
+        widgetIdRef.current = null;
+      }
+
       // Clear any existing content
       if (widgetRef.current) {
         widgetRef.current.innerHTML = '';
@@ -68,7 +85,9 @@ export default function TurnstileCaptcha({
       });
       
       widgetIdRef.current = widgetId;
+      window.turnstileActiveWidgets.add(widgetId);
       console.log("Turnstile widget rendered with ID:", widgetId);
+      console.log("Active widgets:", Array.from(window.turnstileActiveWidgets));
     } catch (err) {
       console.error("Error rendering Turnstile widget:", err);
       setError("Failed to render Turnstile widget.");
@@ -148,6 +167,9 @@ export default function TurnstileCaptcha({
       if (widgetIdRef.current && window.turnstile) {
         try {
           window.turnstile.remove(widgetIdRef.current);
+          if (window.turnstileActiveWidgets) {
+            window.turnstileActiveWidgets.delete(widgetIdRef.current);
+          }
         } catch (err) {
           console.error("Error removing Turnstile widget:", err);
         }
