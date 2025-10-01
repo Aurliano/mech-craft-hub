@@ -7,22 +7,22 @@ const Contact = () => {
       icon: Phone,
       title: "تماس تلفنی",
       description: "برای مشاوره رایگان با ما تماس بگیرید",
-      info: "09355430708",
-      action: "tel:+989355430708"
+      info: "09359430708",
+      action: "tel:+989359430708"
     },
     {
       icon: Send,
       title: "تلگرام",
       description: "ارتباط سریع و آسان از طریق تلگرام",
-      info: "@PSGTechCo1",
-      action: "https://t.me/psgtechco1"
+      info: "@saydatech_ir",
+      action: "https://t.me/saydatech_ir"
     },
     {
       icon: MessageCircle,
       title: "ایتا",
       description: "پیام‌رسان داخلی برای ارتباط مستقیم",
-      info: "pedramsepehrgostar@",
-      action: "https://eitaa.com/pedramsepehrgostar"
+      info: "saydatech_ir@",
+      action: "https://eitaa.com/saydatech_ir"
     },
     {
       icon: MapPin,

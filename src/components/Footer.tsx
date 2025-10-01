@@ -14,7 +14,7 @@ const Footer = () => {
               <img src={logo} alt="لوگو" className="h-10 w-auto sm:h-14" />
             </div>
             <p className="text-primary-foreground/80 leading-relaxed text-sm sm:text-base" dir="rtl">
-              ارائه‌دهنده خدمات جامع مهندسی مکانیک با استفاده از جدیدترین تکنولوژی‌ها و بالاترین کیفیت
+              ارائه‌دهنده خدمات جامع مهندسی مکاترونیک با استفاده از جدیدترین تکنولوژی‌ها و بالاترین کیفیت
             </p>
           </div>
 
@@ -34,7 +34,7 @@ const Footer = () => {
             <h3 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">لینک‌های سریع</h3>
             <ul className="space-y-2 text-primary-foreground/80 text-sm sm:text-base">
               <li><a href="/" className="hover:text-accent transition-colors">خانه</a></li>
-              <li><a href="/about" className="hover:text-accent transition-colors">درباره ما</a></li>
+              <li><a href="/about" className="hover:text-accent transition-colors">وبلاگ</a></li>
               <li><a href="/contact" className="hover:text-accent transition-colors">تماس با ما</a></li>
               <li><a href="/portfolio" className="hover:text-accent transition-colors">نمونه کارها</a></li>
             </ul>
@@ -45,15 +45,15 @@ const Footer = () => {
             <h3 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">اطلاعات تماس</h3>
             <div className="space-y-2 sm:space-y-3 text-primary-foreground/80 text-sm sm:text-base">
               <div className="flex items-center justify-end">
-                <span>اصفهان، ایران</span>
+                <span>اصفهان، خمینی شهر</span>
                 <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
               </div>
               <div className="flex items-center justify-end">
-                <span>989921632368+</span>
+                <span>9899359430708+</span>
                 <Phone className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
               </div>
               <div className="flex items-center justify-end">
-                <span>info@saydaco.com</span>
+                <span>info@saydatech.ir</span>
                 <Mail className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
               </div>
             </div>
@@ -61,7 +61,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-primary-foreground/20 mt-6 sm:mt-8 pt-6 sm:pt-8 text-center text-primary-foreground/60 text-sm sm:text-base">
-          <p>&copy; 1404 پلتفرم مکانرونیک سایدا. تمامی حقوق محفوظ است.</p>
+          <p>&copy; 1404 پلتفرم مکاترونیک سایدا. تمامی حقوق محفوظ است.</p>
         </div>
       </div>
     </footer>
