@@ -270,9 +270,9 @@ class TurnstileAttemptAdmin(admin.ModelAdmin):
         return super().get_queryset(request).select_related('user')
     
     def has_add_permission(self, request):
-        """Prevent manual creation of hCaptcha attempts"""
+        """Prevent manual creation of Turnstile attempts"""
         return False
     
     def has_change_permission(self, request, obj=None):
-        """Prevent editing of hCaptcha attempts"""
+        """Prevent editing of Turnstile attempts"""
         return False

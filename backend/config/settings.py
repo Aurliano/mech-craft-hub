@@ -462,11 +462,6 @@ LOGGING = {
             'level': 'INFO',
             'propagate': True,
         },
-        'api.hcaptcha': {
-            'handlers': ['file', 'console'],
-            'level': 'INFO',
-            'propagate': True,
-        },
     },
 }
 

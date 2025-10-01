@@ -1,5 +1,5 @@
 """
-Custom throttling classes for hCaptcha integration
+Custom throttling classes for API endpoints
 """
 from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from django.core.cache import cache
@@ -82,25 +82,6 @@ class LoginThrottle(AnonRateThrottle):
             return f"throttle_login_anon_{self.get_ident(request)}"
 
 
-class HCaptchaThrottle(AnonRateThrottle):
-    """
-    Throttle for hCaptcha verification attempts
-    - 20 requests per minute per IP
-    - 50 requests per minute per authenticated user
-    """
-    scope = 'hcaptcha'
-    rate = '20/min'
-    
-    def get_cache_key(self, request, view):
-        """Generate cache key for throttling"""
-        if request.user and request.user.is_authenticated:
-            # Authenticated users get higher rate limit
-            return f"throttle_hcaptcha_user_{request.user.id}"
-        else:
-            # Anonymous users use IP-based throttling
-            return f"throttle_hcaptcha_anon_{self.get_ident(request)}"
-
-
 class FileUploadThrottle(AnonRateThrottle):
     """
     Throttle for file upload endpoints
@@ -174,7 +155,6 @@ def get_throttle_rates():
         'register': '3/min',
         'login': '5/min',
         'password_reset': '2/min',
-        'hcaptcha': '20/min',
         'file_upload': '10/min',
         'sensitive': '20/min',
         'ip_based': '5/min',

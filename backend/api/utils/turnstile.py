@@ -310,25 +310,9 @@ def verify_fallback_captcha(challenge_id: str, answer: str) -> bool:
     try:
         cache_data = cache.get(f"fallback_captcha:{challenge_id}")
         if cache_data is None:
-            # If cache is not available, try to verify directly from challenge data
-            # This is a fallback for production environments where cache might not work
-            print(f"Cache miss for challenge_id: {challenge_id}, attempting direct verification")
-            
-            # Try to reconstruct the challenge from the challenge_id
-            # This is a temporary solution for production cache issues
-            try:
-                # Extract timestamp from challenge_id (assuming it contains timestamp)
-                # This is a simplified approach - in production you might want to store challenges in database
-                import uuid
-                if len(challenge_id) == 36:  # UUID format
-                    # For now, accept any answer if cache is not working
-                    # This is a temporary fix for production
-                    print("Temporary: accepting any answer due to cache issues")
-                    return True
-                else:
-                    return False
-            except Exception:
-                return False
+            # If cache is not available, reject the verification
+            print(f"Cache miss for challenge_id: {challenge_id}, rejecting verification")
+            return False
         
         # Check if challenge is expired (more than 5 minutes old)
         current_time = int(time.time())
@@ -360,9 +344,9 @@ def verify_fallback_captcha(challenge_id: str, answer: str) -> bool:
         return is_correct
     except Exception as e:
         print(f"Captcha verification error: {str(e)}")
-        # For production stability, accept any answer if there's an error
-        print("Temporary: accepting any answer due to error")
-        return True
+        # Reject verification if there's an error
+        print("Rejecting verification due to error")
+        return False
 
 
 def get_turnstile_stats() -> Dict[str, Any]:

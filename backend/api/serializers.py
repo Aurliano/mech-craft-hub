@@ -236,7 +236,6 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
-    hcaptcha_token = serializers.CharField(write_only=True, required=False, allow_blank=True)
     cf_turnstile_response = serializers.CharField(write_only=True, required=False, allow_blank=True)
     fallback_captcha_challenge_id = serializers.CharField(write_only=True, required=False, allow_blank=True)
     fallback_captcha_answer = serializers.CharField(write_only=True, required=False, allow_blank=True)

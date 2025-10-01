@@ -802,7 +802,7 @@ class TurnstileAttempt(models.Model):
     def __str__(self):
         status = "Success" if self.success else "Failed"
         user_info = self.user.username if self.user else "Anonymous"
-        return f"hCaptcha {status} - {user_info} - {self.endpoint}"
+        return f"Turnstile {status} - {user_info} - {self.endpoint}"
     
     @classmethod
     def create_attempt(
@@ -816,7 +816,7 @@ class TurnstileAttempt(models.Model):
         error_message: str = None,
         user_agent: str = None
     ):
-        """Create a new hCaptcha attempt record."""
+        """Create a new Turnstile attempt record."""
         # Sanitize response data to avoid storing sensitive information
         sanitized_response = None
         if response_data:
@@ -841,7 +841,7 @@ class TurnstileAttempt(models.Model):
     
     @classmethod
     def get_stats(cls, days: int = 30):
-        """Get hCaptcha statistics for the last N days."""
+        """Get Turnstile statistics for the last N days."""
         from django.utils import timezone
         from datetime import timedelta
         

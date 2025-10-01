@@ -154,7 +154,7 @@ def api_status(request):
 @permission_classes([AllowAny])
 @throttle_classes([RegisterThrottle])
 def register(request):
-    """User registration with hCaptcha validation"""
+    """User registration with Turnstile validation"""
     serializer = RegisterSerializer(data=request.data, context={'request': request})
     serializer.is_valid(raise_exception=True)
     user = serializer.save()
@@ -165,7 +165,7 @@ def register(request):
 @permission_classes([AllowAny])
 @throttle_classes([LoginThrottle])
 def login(request):
-    """Login with hCaptcha validation"""
+    """Login with Turnstile validation"""
     from .utils.jwt_utils import JWTManager
     
     serializer = LoginSerializer(data=request.data, context={'request': request})
@@ -1713,9 +1713,7 @@ def captcha_fallback_verify(request):
         if is_valid:
             return Response({"success": True, "valid": True})
         else:
-            # Temporary: accept any answer for debugging
-            print("Temporary: accepting any answer for debugging")
-            return Response({"success": True, "valid": True})
+            return Response({"success": False, "valid": False})
             
     except Exception as e:
         print(f"Captcha verification error: {str(e)}")
