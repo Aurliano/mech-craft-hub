@@ -34,11 +34,19 @@ export default function TurnstileCaptcha({
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const widgetRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
+  const isRenderingRef = useRef(false);
 
   const renderWidget = useCallback((siteKey: string) => {
-    if (!widgetRef.current || !window.turnstile || widgetIdRef.current) return;
+    if (!widgetRef.current || !window.turnstile || widgetIdRef.current || isRenderingRef.current) return;
 
+    isRenderingRef.current = true;
+    
     try {
+      // Clear any existing content
+      if (widgetRef.current) {
+        widgetRef.current.innerHTML = '';
+      }
+
       const widgetId = window.turnstile.render(widgetRef.current, {
         sitekey: siteKey,
         callback: (token: string) => {
@@ -64,6 +72,8 @@ export default function TurnstileCaptcha({
     } catch (err) {
       console.error("Error rendering Turnstile widget:", err);
       setError("Failed to render Turnstile widget.");
+    } finally {
+      isRenderingRef.current = false;
     }
   }, [onVerify]);
 
@@ -81,7 +91,10 @@ export default function TurnstileCaptcha({
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-      renderWidget(siteKey);
+      // Add a small delay to ensure DOM is ready
+      setTimeout(() => {
+        renderWidget(siteKey);
+      }, 100);
     };
     
     script.onerror = () => {
@@ -113,7 +126,10 @@ export default function TurnstileCaptcha({
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-      renderWidget(SITEKEY);
+      // Add a small delay to ensure DOM is ready
+      setTimeout(() => {
+        renderWidget(SITEKEY);
+      }, 100);
     } else if (!window.turnstileScriptLoaded) {
       // Load Turnstile script
       loadTurnstileScript(SITEKEY);
@@ -143,12 +159,31 @@ export default function TurnstileCaptcha({
     return (
       <div className="p-4 border border-red-300 bg-red-50 rounded-md">
         <p className="text-red-700 text-sm">{error}</p>
-        <button 
-          onClick={() => window.location.reload()} 
-          className="mt-2 text-red-600 hover:text-red-800 text-sm underline"
-        >
-          Refresh Page
-        </button>
+        <div className="mt-2 space-x-2">
+          <button 
+            onClick={() => {
+              setError(null);
+              setTurnstileLoaded(false);
+              widgetIdRef.current = null;
+              isRenderingRef.current = false;
+              window.location.reload();
+            }} 
+            className="text-red-600 hover:text-red-800 text-sm underline"
+          >
+            Refresh Page
+          </button>
+          <button 
+            onClick={() => {
+              setError(null);
+              setTurnstileLoaded(false);
+              widgetIdRef.current = null;
+              isRenderingRef.current = false;
+            }} 
+            className="text-red-600 hover:text-red-800 text-sm underline"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
