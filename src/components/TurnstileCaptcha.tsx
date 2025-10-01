@@ -1,10 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
-import LocalCaptcha from "./LocalCaptcha";
-import { getApiUrl } from '@/lib/api';
 
 interface TurnstileCaptchaProps {
-  onVerify: (token: string, type: 'turnstile' | 'fallback', challengeId?: string) => void;
-  fallbackApi?: string;
+  onVerify: (token: string) => void;
   timeout?: number; // Timeout in milliseconds
   siteKey?: string; // Optional site key override
 }
@@ -24,322 +21,135 @@ declare global {
 
 export default function TurnstileCaptcha({ 
   onVerify, 
-  fallbackApi = "/api/v1/captcha/fallback/",
   timeout = 30000, // 30 seconds default
   siteKey
 }: TurnstileCaptchaProps) {
-  const widgetRef = useRef<HTMLDivElement>(null);
-  const [mode, setMode] = useState<"unknown" | "turnstile" | "local">("unknown");
-  const [fallbackChallenge, setFallbackChallenge] = useState<{ id: string; question: string } | null>(null);
+  
   const [turnstileLoaded, setTurnstileLoaded] = useState(false);
   const [timeoutReached, setTimeoutReached] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Function to request fallback challenge
-  const requestFallbackChallenge = React.useCallback(() => {
-    const fullUrl = getApiUrl(fallbackApi);
-    console.log("Requesting fallback challenge from:", fullUrl);
-    
-    fetch(fullUrl, { 
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    })
-      .then(r => {
-        if (!r.ok) {
-          throw new Error(`HTTP error! status: ${r.status}`);
-        }
-        return r.json();
-      })
-      .then(j => {
-        console.log("Fallback challenge response:", j);
-        if (j && j.challenge_id && j.challenge) {
-          setFallbackChallenge({
-            id: j.challenge_id,
-            question: j.challenge
-          });
-        } else if (j && j.available === false) {
-          console.error('Fallback captcha error:', j.error);
-          // Create a simple fallback challenge
-          const simpleChallenge = {
-            id: 'simple-' + Date.now(),
-            question: '2 + 3 = ?'
-          };
-          setFallbackChallenge(simpleChallenge);
-        } else {
-          // Create a simple fallback challenge if API fails
-          const simpleChallenge = {
-            id: 'simple-' + Date.now(),
-            question: '2 + 3 = ?'
-          };
-          setFallbackChallenge(simpleChallenge);
-        }
-      })
-      .catch(err => {
-        console.error('Failed to get fallback challenge:', err);
-        // Create a simple fallback challenge if API fails
-        const simpleChallenge = {
-          id: 'simple-' + Date.now(),
-          question: '2 + 3 = ?'
-        };
-        setFallbackChallenge(simpleChallenge);
-      });
-  }, [fallbackApi]);
+  const widgetRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Start with Turnstile first
-    let cancelled = false;
-    
     // Check if Turnstile is available
     const SITEKEY = siteKey || import.meta.env.VITE_TURNSTILE_SITEKEY;
-    console.log("TurnstileCaptcha: SITEKEY =", SITEKEY);
     
     if (SITEKEY && SITEKEY !== "your-turnstile-site-key" && SITEKEY.startsWith("0x")) {
-      // Check if we're in production and domain is saydatech.ir
-      const isProduction = import.meta.env.PROD;
-      const isSaydatechDomain = window.location.hostname === 'saydatech.ir' || window.location.hostname === 'www.saydatech.ir';
-      
-      if (isProduction && isSaydatechDomain) {
-        // Skip Turnstile in production for saydatech.ir domain due to domain configuration issues
-        console.log("Skipping Turnstile in production for saydatech.ir domain, using fallback captcha");
-        setMode("local");
-        requestFallbackChallenge();
-        return;
-      }
-      
-      setMode("turnstile");
       // Start timeout for Turnstile loading
       timeoutRef.current = setTimeout(() => {
-        if (!turnstileLoaded && !cancelled) {
-          console.log("Turnstile timeout reached, switching to fallback");
+        if (!turnstileLoaded) {
+          console.log("Turnstile timeout reached");
           setTimeoutReached(true);
-          setMode("local");
-          // Request fallback challenge
-          requestFallbackChallenge();
+          setError("Turnstile failed to load. Please refresh the page.");
         }
       }, timeout);
-    } else {
-      // No Turnstile key, go directly to fallback
-      console.log("No valid Turnstile key found, using fallback captcha");
-      setMode("local");
-      requestFallbackChallenge();
-    }
-    
-    return () => { 
-      cancelled = true;
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [fallbackApi, timeout, turnstileLoaded, siteKey, requestFallbackChallenge]);
 
-  // Request fallback challenge when mode changes to local
-  useEffect(() => {
-    if (mode === "local" && !fallbackChallenge) {
-      console.log("Mode is local but no challenge, requesting...");
-      requestFallbackChallenge();
-    }
-  }, [mode, fallbackChallenge, requestFallbackChallenge]);
-
-  useEffect(() => {
-    if (mode !== "turnstile") return;
-    
-    const SITEKEY = siteKey || import.meta.env.VITE_TURNSTILE_SITEKEY;
-    if (!SITEKEY || SITEKEY === "your-turnstile-site-key" || !SITEKEY.startsWith("0x")) {
-      console.error("TURNSTILE: VITE_TURNSTILE_SITEKEY is not set or invalid");
-      setMode("local");
-      return;
-    }
-
-    // Load script if needed
-    if (!window.Turnstile) {
-      const script = document.createElement("script");
-      script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-      script.onload = () => {
+      // Load Turnstile script if not already loaded
+      if (!window.Turnstile) {
+        const script = document.createElement('script');
+        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+        script.async = true;
+        script.defer = true;
+        script.onload = () => {
+          setTurnstileLoaded(true);
+          if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+          }
+          
+          // Render Turnstile widget
+          if (widgetRef.current && window.Turnstile) {
+            try {
+              window.Turnstile.render(widgetRef.current, {
+                sitekey: SITEKEY,
+                callback: (token: string) => {
+                  onVerify(token);
+                },
+                'error-callback': () => {
+                  setError("Turnstile verification failed. Please try again.");
+                }
+              });
+            } catch (err) {
+              console.error("Error rendering Turnstile:", err);
+              setError("Failed to load Turnstile. Please refresh the page.");
+            }
+          }
+        };
+        script.onerror = () => {
+          setError("Failed to load Turnstile. Please check your internet connection.");
+        };
+        document.head.appendChild(script);
+      } else {
+        // Turnstile already loaded
         setTurnstileLoaded(true);
         if (timeoutRef.current) {
           clearTimeout(timeoutRef.current);
         }
-        renderWidget();
-      };
-      script.onerror = () => {
-        console.error("Failed to load Turnstile script");
-        setMode("local");
-      };
+        
+        // Render Turnstile widget
+        if (widgetRef.current && window.Turnstile) {
+          try {
+            window.Turnstile.render(widgetRef.current, {
+              sitekey: SITEKEY,
+              callback: (token: string) => {
+                onVerify(token);
+              },
+              'error-callback': () => {
+                setError("Turnstile verification failed. Please try again.");
+              }
+            });
+          } catch (err) {
+            console.error("Error rendering Turnstile:", err);
+            setError("Failed to load Turnstile. Please refresh the page.");
+          }
+        }
+      }
     } else {
-      setTurnstileLoaded(true);
+      setError("Turnstile is not properly configured.");
+    }
+    
+    return () => {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-      renderWidget();
-    }
-
-    function renderWidget() {
-      if (!widgetRef.current) return;
-      
-      try {
-        // Clear container
-        widgetRef.current.innerHTML = "";
-        
-        window.Turnstile?.render(widgetRef.current, {
-          sitekey: SITEKEY,
-          callback: (token) => {
-            if (onVerify) {
-              onVerify(token, 'turnstile');
-            }
-          },
-          "error-callback": () => {
-            // If widget errors -> fallback to local
-            console.log("Turnstile widget error, switching to fallback");
-            setMode("local");
-          }
-        });
-      } catch (e) {
-        console.error("Turnstile render failed", e);
-        setMode("local");
-      }
-    }
-
-    // Cleanup on unmount
-    return () => {
-      const currentWidget = widgetRef.current;
-      try { 
-        if (currentWidget) {
-          currentWidget.innerHTML = ""; 
-        }
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-        }
-      } catch {
-        // Ignore cleanup errors
-      }
     };
-  }, [mode, siteKey, onVerify]); // Include all dependencies
+  }, [siteKey, timeout, turnstileLoaded, onVerify]);
 
-  const handleLocalCaptchaRequest = React.useCallback(async () => {
-    try {
-      const fullUrl = getApiUrl(fallbackApi);
-      
-      const response = await fetch(fullUrl, { 
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      console.log('Fallback challenge data:', data);
-      setFallbackChallenge({
-        id: data.challenge_id,
-        question: data.challenge
-      });
-    } catch (err) {
-      console.error('Failed to get fallback challenge:', err);
-    }
-  }, [fallbackApi]);
-
-  const handleLocalCaptchaVerify = async (answer: string) => {
-    if (!fallbackChallenge) {
-      console.error('No fallback challenge available');
-      throw new Error('کپچای محلی در دسترس نیست');
-    }
-    
-    // Handle simple challenges
-    if (fallbackChallenge.id.startsWith('simple-')) {
-      console.log('Verifying simple challenge:', {
-        question: fallbackChallenge.question,
-        answer: answer
-      });
-      
-      // Simple verification for basic math questions
-      if (fallbackChallenge.question === '2 + 3 = ?' && answer.trim() === '5') {
-        onVerify(fallbackChallenge.id, 'fallback', fallbackChallenge.id);
-        return;
-      } else {
-        throw new Error('پاسخ نادرست است');
-      }
-    }
-    
-    try {
-      const fullUrl = getApiUrl('/api/v1/captcha/fallback/verify/');
-      
-      console.log('Verifying fallback captcha:', {
-        challenge_id: fallbackChallenge.id,
-        answer: answer
-      });
-      
-      const response = await fetch(fullUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          challenge_id: fallbackChallenge.id,
-          answer: answer
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const result = await response.json();
-      console.log('Fallback captcha verification result:', result);
-      
-      if (result.success) {
-        // Use challenge_id as token for local captcha
-        onVerify(fallbackChallenge.id, 'fallback', fallbackChallenge.id);
-      } else {
-        throw new Error(result.error || 'کپچای محلی ناموفق بود');
-      }
-    } catch (err) {
-      console.error('Local captcha verification failed:', err);
-      throw err;
-    }
-  };
-
-  if (mode === "unknown") {
+  if (error) {
     return (
-      <div className="text-center text-muted-foreground p-4">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto mb-2"></div>
-        در حال بررسی کپچا…
+      <div className="p-4 border border-red-300 bg-red-50 rounded-md">
+        <p className="text-red-700 text-sm">{error}</p>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="mt-2 text-red-600 hover:text-red-800 text-sm underline"
+        >
+          Refresh Page
+        </button>
       </div>
     );
   }
-  
-  if (mode === "local") {
-    console.log("Rendering local captcha mode, challenge:", fallbackChallenge);
+
+  if (timeoutReached) {
     return (
-      <div className="space-y-3 p-4 border border-gray-200 rounded-lg bg-gray-50">
-        {timeoutReached && (
-          <div className="text-sm text-amber-600 bg-amber-50 p-2 rounded border border-amber-200">
-            ⚠️ Turnstile در دسترس نیست، از کپچای محلی استفاده می‌شود
-          </div>
-        )}
-        <div className="text-center text-sm text-gray-600 mb-2">
-          لطفاً سوال زیر را پاسخ دهید:
-        </div>
-        <LocalCaptcha
-          challenge={fallbackChallenge}
-          onVerify={handleLocalCaptchaVerify}
-          onRequestChallenge={handleLocalCaptchaRequest}
-          className="bg-white p-3 rounded border"
-        />
+      <div className="p-4 border border-yellow-300 bg-yellow-50 rounded-md">
+        <p className="text-yellow-700 text-sm">
+          Turnstile is taking longer than expected to load. Please refresh the page.
+        </p>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="mt-2 text-yellow-600 hover:text-yellow-800 text-sm underline"
+        >
+          Refresh Page
+        </button>
       </div>
     );
   }
-  
+
   return (
-    <div className="space-y-2">
-      <div ref={widgetRef} aria-label="turnstile-captcha" className="flex justify-center" />
+    <div className="flex flex-col items-center space-y-2">
+      <div ref={widgetRef} className="turnstile-widget" />
       {!turnstileLoaded && (
-        <div className="text-center text-muted-foreground text-sm">
-          در حال بارگذاری Turnstile...
-        </div>
+        <p className="text-sm text-gray-600">Loading Turnstile...</p>
       )}
     </div>
   );

@@ -6,10 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Navbar from "@/components/Navbar";
-import { useRegister, usePhoneVerificationRequest, useRegisterWithCaptcha, useFallbackCaptchaStatus, useFallbackCaptchaChallenge, useVerifyFallbackCaptcha } from "@/hooks/useAuth";
+import { useRegister, usePhoneVerificationRequest, useRegisterWithCaptcha } from "@/hooks/useAuth";
 import { useAuth } from "@/contexts/AuthContext";
-import TurnstileComponent from "@/components/Turnstile";
-import LocalCaptcha from "@/components/LocalCaptcha";
 import TurnstileCaptcha from "@/components/TurnstileCaptcha";
 import TermsAndConditions from "@/components/TermsAndConditions";
 
@@ -202,6 +200,18 @@ const Register = () => {
 
                 {/* Turnstile Captcha */}
                 <TurnstileCaptcha onVerify={handleCaptchaVerify} />
+
+                {/* Honeypot field - hidden from users */}
+                <div style={{ display: 'none' }}>
+                  <Label htmlFor="website">Website</Label>
+                  <Input 
+                    id="website"
+                    name="website" 
+                    type="text" 
+                    tabIndex={-1}
+                    autoComplete="off"
+                  />
+                </div>
 
                 {/* Terms and Conditions */}
                 <TermsAndConditions

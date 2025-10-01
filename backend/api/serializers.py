@@ -237,8 +237,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     cf_turnstile_response = serializers.CharField(write_only=True, required=False, allow_blank=True)
-    fallback_captcha_challenge_id = serializers.CharField(write_only=True, required=False, allow_blank=True)
-    fallback_captcha_answer = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    website = serializers.CharField(required=False, allow_blank=True)  # Honeypot field
     first_name = serializers.CharField(required=False, allow_blank=True)
     last_name = serializers.CharField(required=False, allow_blank=True)
     role = serializers.CharField(required=False, allow_blank=True)
@@ -253,8 +252,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'username', 'email', 'phone', 'password', 'turnstile_token', 'cf_turnstile_response',
-            'first_name', 'last_name', 'role', 'selected_scope', 'selected_services',
-            'fallback_captcha_challenge_id', 'fallback_captcha_answer'
+            'website', 'first_name', 'last_name', 'role', 'selected_scope', 'selected_services'
         ]
         read_only_fields = ['id']
 
@@ -338,24 +336,19 @@ class RegisterSerializer(serializers.ModelSerializer):
         except Exception as e:
             raise serializers.ValidationError(f"Turnstile verification failed: {str(e)}")
 
+    def validate_website(self, value):
+        """Validate honeypot field - should be empty"""
+        if value:
+            raise serializers.ValidationError("Bot detected")
+        return value
+
     def validate(self, data):
-        """Validate captcha - priority: Turnstile > fallback"""
-        from .utils.turnstile import verify_fallback_captcha
-        
+        """Validate Turnstile token and honeypot"""
         turnstile_token = data.get('turnstile_token') or data.get('cf_turnstile_response')
-        fallback_challenge_id = data.get('fallback_captcha_challenge_id')
-        fallback_answer = data.get('fallback_captcha_answer')
         
-        # If Turnstile token is provided and valid, we're good
-        if turnstile_token:
-            return data
-        
-        # If no Turnstile, validate fallback captcha
-        if not fallback_challenge_id or not fallback_answer:
-            raise serializers.ValidationError("Captcha verification is required")
-        
-        if not verify_fallback_captcha(fallback_challenge_id, fallback_answer):
-            raise serializers.ValidationError("Invalid captcha answer")
+        # Turnstile token is required
+        if not turnstile_token:
+            raise serializers.ValidationError("Turnstile verification is required")
         
         return data
 
@@ -430,11 +423,10 @@ class RegisterSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField()
+    website = serializers.CharField(required=False, allow_blank=True)  # Honeypot field
     # Support both field names for compatibility
     turnstile_token = serializers.CharField(required=False, allow_blank=True)
     cf_turnstile_response = serializers.CharField(required=False, allow_blank=True)
-    fallback_captcha_challenge_id = serializers.CharField(required=False, allow_blank=True)
-    fallback_captcha_answer = serializers.CharField(required=False, allow_blank=True)
 
     def validate_turnstile_token(self, value):
         """Validate Turnstile token"""
@@ -514,25 +506,21 @@ class LoginSerializer(serializers.Serializer):
         except Exception as e:
             raise serializers.ValidationError(f"Turnstile verification failed: {str(e)}")
 
+    def validate_website(self, value):
+        """Validate honeypot field - should be empty"""
+        if value:
+            raise serializers.ValidationError("Bot detected")
+        return value
+
     def validate(self, data):
-        """Validate captcha and authenticate user"""
-        from .utils.turnstile import verify_fallback_captcha
+        """Validate Turnstile token, honeypot and authenticate user"""
         from django.contrib.auth import authenticate
         
         turnstile_token = data.get('turnstile_token') or data.get('cf_turnstile_response')
-        fallback_challenge_id = data.get('fallback_captcha_challenge_id')
-        fallback_answer = data.get('fallback_captcha_answer')
         
-        # If Turnstile token is provided and valid, we're good
-        if turnstile_token:
-            pass  # Already validated in validate_turnstile_token
-        else:
-            # If no Turnstile, validate fallback captcha
-            if not fallback_challenge_id or not fallback_answer:
-                raise serializers.ValidationError("Captcha verification is required")
-            
-            if not verify_fallback_captcha(fallback_challenge_id, fallback_answer):
-                raise serializers.ValidationError("Invalid captcha answer")
+        # Turnstile token is required
+        if not turnstile_token:
+            raise serializers.ValidationError("Turnstile verification is required")
         
         # Authenticate user
         username = data.get('username')

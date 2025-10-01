@@ -8,10 +8,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import Navbar from "@/components/Navbar";
-import { useRegister, usePhoneVerificationRequest, useRegisterWithCaptcha, useFallbackCaptchaStatus, useFallbackCaptchaChallenge, useVerifyFallbackCaptcha } from "@/hooks/useAuth";
+import { useRegister, usePhoneVerificationRequest, useRegisterWithCaptcha } from "@/hooks/useAuth";
 import { useAuth } from "@/contexts/AuthContext";
-import TurnstileComponent from "@/components/Turnstile";
-import LocalCaptcha from "@/components/LocalCaptcha";
 import TurnstileCaptcha from "@/components/TurnstileCaptcha";
 import TermsAndConditions from "@/components/TermsAndConditions";
 import { useScopes, useServices } from "@/hooks/useAuth";
@@ -412,11 +410,23 @@ const ContractorRegister = () => {
                   </div>
                 )}
 
-                {/* Turnstile Captcha with Fallback */}
+                {/* Turnstile Captcha */}
                 <TurnstileCaptcha 
                   onVerify={handleCaptchaVerify}
                   timeout={8000} // 8 seconds timeout
                 />
+
+                {/* Honeypot field - hidden from users */}
+                <div style={{ display: 'none' }}>
+                  <Label htmlFor="website">Website</Label>
+                  <Input 
+                    id="website"
+                    name="website" 
+                    type="text" 
+                    tabIndex={-1}
+                    autoComplete="off"
+                  />
+                </div>
 
                 {/* Terms and Conditions */}
                 <TermsAndConditions

@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Navbar from "@/components/Navbar";
-import { useLogin, useLoginWithCaptcha, useFallbackCaptchaStatus, useFallbackCaptchaChallenge, useVerifyFallbackCaptcha } from "@/hooks/useAuth";
+import { useLogin, useLoginWithCaptcha } from "@/hooks/useAuth";
 import { useAuth } from "@/contexts/AuthContext";
 import TurnstileCaptcha from "@/components/TurnstileCaptcha";
 
@@ -113,6 +113,18 @@ const Login = () => {
 
               {/* Turnstile Captcha */}
               <TurnstileCaptcha onVerify={handleCaptchaVerify} />
+
+              {/* Honeypot field - hidden from users */}
+              <div style={{ display: 'none' }}>
+                <Label htmlFor="website">Website</Label>
+                <Input 
+                  id="website"
+                  name="website" 
+                  type="text" 
+                  tabIndex={-1}
+                  autoComplete="off"
+                />
+              </div>
 
               {currentError && (
                 <Alert variant="destructive">

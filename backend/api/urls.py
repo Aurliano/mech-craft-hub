@@ -26,8 +26,8 @@ from .views import (
     get_contractor_ratings, get_contractor_rating_stats,
     # Ticket endpoints
     create_ticket, create_ticket_message,
-    # Captcha endpoints (Turnstile + Fallback)
-    captcha_fallback, captcha_fallback_status, captcha_fallback_verify, turnstile_stats, turnstile_attempts,
+    # Captcha endpoints (Turnstile only)
+    turnstile_stats, turnstile_attempts,
             # Support system endpoints
             create_support_feedback, get_support_feedbacks, ask_ai_support, get_support_stats, get_all_support_feedbacks,
             submit_ai_feedback, get_ai_analytics, get_ai_interactions,
@@ -119,11 +119,6 @@ urlpatterns = [
     # Ticket Management Endpoints
     path('v1/tickets/create/', create_ticket, name='create_ticket'),
     path('v1/tickets/<uuid:ticket_id>/messages/', create_ticket_message, name='create_ticket_message'),
-    
-    # Captcha System Endpoints (Turnstile + Fallback)
-    path('v1/captcha/fallback/', captcha_fallback, name='captcha_fallback'),
-    path('v1/captcha/fallback/status/', captcha_fallback_status, name='captcha_fallback_status'),
-    path('v1/captcha/fallback/verify/', captcha_fallback_verify, name='captcha_fallback_verify'),
     
     # Turnstile Admin Endpoints
     path('v1/admin/turnstile/stats/', turnstile_stats, name='turnstile_stats'),
