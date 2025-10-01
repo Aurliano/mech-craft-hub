@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 
 interface TurnstileCaptchaProps {
   onVerify: (token: string) => void;
@@ -8,13 +8,16 @@ interface TurnstileCaptchaProps {
 
 declare global {
   interface Window {
-    Turnstile?: {
+    turnstile: {
       render: (element: HTMLElement, options: {
         sitekey: string;
         callback: (token: string) => void;
         'error-callback': () => void;
-      }) => void;
-      reset: (widget?: string) => void;
+        'expired-callback': () => void;
+        'timeout-callback': () => void;
+      }) => string;
+      reset: (widgetId?: string) => void;
+      remove: (widgetId?: string) => void;
     };
     turnstileScriptLoaded?: boolean;
   }
@@ -27,91 +30,93 @@ export default function TurnstileCaptcha({
 }: TurnstileCaptchaProps) {
   
   const [turnstileLoaded, setTurnstileLoaded] = useState(false);
-  const [timeoutReached, setTimeoutReached] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const widgetRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
 
+  const renderWidget = useCallback((siteKey: string) => {
+    if (!widgetRef.current || !window.turnstile || widgetIdRef.current) return;
+
+    try {
+      const widgetId = window.turnstile.render(widgetRef.current, {
+        sitekey: siteKey,
+        callback: (token: string) => {
+          console.log("Turnstile token received:", token);
+          onVerify(token);
+        },
+        'error-callback': () => {
+          console.error("Turnstile error occurred");
+          setError("Turnstile verification failed. Please try again.");
+        },
+        'expired-callback': () => {
+          console.log("Turnstile token expired");
+          setError("Turnstile token expired. Please verify again.");
+        },
+        'timeout-callback': () => {
+          console.log("Turnstile timeout occurred");
+          setError("Turnstile verification timed out. Please try again.");
+        }
+      });
+      
+      widgetIdRef.current = widgetId;
+      console.log("Turnstile widget rendered with ID:", widgetId);
+    } catch (err) {
+      console.error("Error rendering Turnstile widget:", err);
+      setError("Failed to render Turnstile widget.");
+    }
+  }, [onVerify]);
+
+  const loadTurnstileScript = useCallback((siteKey: string) => {
+    if (window.turnstileScriptLoaded) return;
+    
+    window.turnstileScriptLoaded = true;
+    const script = document.createElement('script');
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+    script.async = true;
+    script.defer = true;
+    
+    script.onload = () => {
+      setTurnstileLoaded(true);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      renderWidget(siteKey);
+    };
+    
+    script.onerror = () => {
+      window.turnstileScriptLoaded = false;
+      setError("Failed to load Turnstile script. Please check your internet connection.");
+    };
+    
+    document.head.appendChild(script);
+  }, [renderWidget]);
+
   useEffect(() => {
-    // Check if Turnstile is available
     const SITEKEY = siteKey || import.meta.env.VITE_TURNSTILE_SITEKEY;
     
-    if (SITEKEY && SITEKEY !== "your-turnstile-site-key" && SITEKEY.startsWith("0x")) {
-      // Start timeout for Turnstile loading
-      timeoutRef.current = setTimeout(() => {
-        if (!turnstileLoaded) {
-          console.log("Turnstile timeout reached");
-          setTimeoutReached(true);
-          setError("Turnstile failed to load. Please refresh the page.");
-        }
-      }, timeout);
+    if (!SITEKEY || SITEKEY === "your-turnstile-site-key" || !SITEKEY.startsWith("0x")) {
+      setError("Turnstile site key is not properly configured.");
+      return;
+    }
 
-      // Check if Turnstile script is already loaded
-      if (window.Turnstile && window.turnstileScriptLoaded) {
-        setTurnstileLoaded(true);
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-        }
-        
-        // Render Turnstile widget
-        if (widgetRef.current && !widgetIdRef.current) {
-          try {
-            const widgetId = window.Turnstile.render(widgetRef.current, {
-              sitekey: SITEKEY,
-              callback: (token: string) => {
-                onVerify(token);
-              },
-              'error-callback': () => {
-                setError("Turnstile verification failed. Please try again.");
-              }
-            });
-            widgetIdRef.current = widgetId as unknown as string;
-          } catch (err) {
-            console.error("Error rendering Turnstile:", err);
-            setError("Failed to load Turnstile. Please refresh the page.");
-          }
-        }
-      } else if (!window.turnstileScriptLoaded) {
-        // Load Turnstile script if not already loaded
-        window.turnstileScriptLoaded = true;
-        const script = document.createElement('script');
-        script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
-        script.async = true;
-        script.defer = true;
-        script.onload = () => {
-          setTurnstileLoaded(true);
-          if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-          }
-          
-          // Render Turnstile widget
-          if (widgetRef.current && window.Turnstile && !widgetIdRef.current) {
-            try {
-              const widgetId = window.Turnstile.render(widgetRef.current, {
-                sitekey: SITEKEY,
-                callback: (token: string) => {
-                  onVerify(token);
-                },
-                'error-callback': () => {
-                  setError("Turnstile verification failed. Please try again.");
-                }
-              });
-              widgetIdRef.current = widgetId as unknown as string;
-            } catch (err) {
-              console.error("Error rendering Turnstile:", err);
-              setError("Failed to load Turnstile. Please refresh the page.");
-            }
-          }
-        };
-        script.onerror = () => {
-          window.turnstileScriptLoaded = false;
-          setError("Failed to load Turnstile. Please check your internet connection.");
-        };
-        document.head.appendChild(script);
+    // Start timeout
+    timeoutRef.current = setTimeout(() => {
+      if (!turnstileLoaded) {
+        setError("Turnstile failed to load within timeout period.");
       }
-    } else {
-      setError("Turnstile is not properly configured.");
+    }, timeout);
+
+    // Check if Turnstile is already loaded
+    if (window.turnstile && window.turnstileScriptLoaded) {
+      setTurnstileLoaded(true);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      renderWidget(SITEKEY);
+    } else if (!window.turnstileScriptLoaded) {
+      // Load Turnstile script
+      loadTurnstileScript(SITEKEY);
     }
     
     return () => {
@@ -119,16 +124,16 @@ export default function TurnstileCaptcha({
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [siteKey, timeout, onVerify, turnstileLoaded]);
+  }, [siteKey, timeout, turnstileLoaded, loadTurnstileScript, renderWidget]);
 
-  // Cleanup widget on unmount
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (widgetIdRef.current && window.Turnstile) {
+      if (widgetIdRef.current && window.turnstile) {
         try {
-          window.Turnstile.reset(widgetIdRef.current);
+          window.turnstile.remove(widgetIdRef.current);
         } catch (err) {
-          console.error("Error resetting Turnstile widget:", err);
+          console.error("Error removing Turnstile widget:", err);
         }
       }
     };
@@ -141,22 +146,6 @@ export default function TurnstileCaptcha({
         <button 
           onClick={() => window.location.reload()} 
           className="mt-2 text-red-600 hover:text-red-800 text-sm underline"
-        >
-          Refresh Page
-        </button>
-      </div>
-    );
-  }
-
-  if (timeoutReached) {
-    return (
-      <div className="p-4 border border-yellow-300 bg-yellow-50 rounded-md">
-        <p className="text-yellow-700 text-sm">
-          Turnstile is taking longer than expected to load. Please refresh the page.
-        </p>
-        <button 
-          onClick={() => window.location.reload()} 
-          className="mt-2 text-yellow-600 hover:text-yellow-800 text-sm underline"
         >
           Refresh Page
         </button>
