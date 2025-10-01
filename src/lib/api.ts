@@ -9,8 +9,11 @@ interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
 
+// API_BASE_URL is only used in development
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
-export const API_ROOT = import.meta.env.DEV ? '/api' : `${API_BASE_URL}/api`;
+
+// API_ROOT should always use relative path in production
+export const API_ROOT = '/api';
 
 // Utility function to get the correct API URL for both development and production
 export function getApiUrl(endpoint: string): string {
@@ -22,6 +25,7 @@ export function getApiUrl(endpoint: string): string {
     const apiEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
     return `${baseUrl}${apiEndpoint}`;
   } else {
+    // Development mode - use environment variable or default localhost
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
     return endpoint.startsWith('/') ? `${baseUrl}${endpoint}` : `${baseUrl}/${endpoint}`;
   }
@@ -65,7 +69,7 @@ export async function refreshAccessToken(): Promise<string | null> {
 
   try {
     console.log('Attempting to refresh token...');
-    const res = await fetch(`${API_ROOT}/token/refresh/`, {
+    const res = await fetch(getApiUrl('/token/refresh/'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refresh: refreshToken }),
@@ -99,7 +103,7 @@ async function simpleFetch<T>(path: string, options: RequestInit = {}): Promise<
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  const res = await fetch(`${API_ROOT}${path}`, {
+  const res = await fetch(getApiUrl(path), {
     ...options,
     headers,
   });
@@ -112,7 +116,7 @@ async function simpleFetch<T>(path: string, options: RequestInit = {}): Promise<
       console.log('Token refreshed successfully, retrying request...');
       // Retry the request with new token
       const retryHeaders = { ...headers, 'Authorization': `Bearer ${newToken}` };
-      const retryRes = await fetch(`${API_ROOT}${path}`, {
+      const retryRes = await fetch(getApiUrl(path), {
         ...options,
         headers: retryHeaders,
       });
@@ -187,7 +191,7 @@ export async function registerRequest(params: {
   fallback_captcha_challenge_id?: string;
   fallback_captcha_answer?: string;
 }) {
-  const res = await fetch(`${API_ROOT}/v1/auth/register/`, {
+  const res = await fetch(getApiUrl('/v1/auth/register/'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
@@ -286,7 +290,7 @@ export async function uploadFile(file: File, extra?: { context?: string; context
       console.log(`Upload attempt ${attempt}/${retries}:`, file.name, 'Size:', file.size, 'Type:', file.type);
       console.log('Extra data:', extra);
 
-      const res = await fetch(`${API_ROOT}/v1/upload/`, {
+      const res = await fetch(getApiUrl('/v1/upload/'), {
         method: 'POST',
         headers: headers,
         body: form,
@@ -327,7 +331,7 @@ export async function uploadFile(file: File, extra?: { context?: string; context
 
 // Password Reset Functions
 export async function passwordResetRequest(email: string) {
-  const res = await fetch(`${API_ROOT}/v1/auth/password-reset-request/`, {
+  const res = await fetch(getApiUrl('/v1/auth/password-reset-request/'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email }),
@@ -340,7 +344,7 @@ export async function passwordResetRequest(email: string) {
 }
 
 export async function passwordResetConfirm(token: string, newPassword: string) {
-  const res = await fetch(`${API_ROOT}/v1/auth/password-reset-confirm/`, {
+  const res = await fetch(getApiUrl('/v1/auth/password-reset-confirm/'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ token, new_password: newPassword }),
@@ -353,7 +357,7 @@ export async function passwordResetConfirm(token: string, newPassword: string) {
 }
 
 export async function changePassword(oldPassword: string, newPassword: string) {
-  const res = await fetch(`${API_ROOT}/v1/auth/change-password/`, {
+  const res = await fetch(getApiUrl('/v1/auth/change-password/'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ old_password: oldPassword, new_password: newPassword }),
@@ -367,7 +371,7 @@ export async function changePassword(oldPassword: string, newPassword: string) {
 
 // Phone Verification Functions
 export async function phoneVerificationRequest(phone: string) {
-  const res = await fetch(`${API_ROOT}/v1/auth/phone-verification-request/`, {
+  const res = await fetch(getApiUrl('/v1/auth/phone-verification-request/'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ phone }),
@@ -380,7 +384,7 @@ export async function phoneVerificationRequest(phone: string) {
 }
 
 export async function phoneVerificationConfirm(phone: string, code: string) {
-  const res = await fetch(`${API_ROOT}/v1/auth/phone-verification-confirm/`, {
+  const res = await fetch(getApiUrl('/v1/auth/phone-verification-confirm/'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ phone, code }),
@@ -652,7 +656,7 @@ export async function processPayment(orderId: string, paymentData: {
 
 export async function downloadInvoice(orderId: string) {
   try {
-    const response = await fetch(`${API_ROOT}/v1/orders/${orderId}/invoice/`, {
+    const response = await fetch(getApiUrl(`/v1/orders/${orderId}/invoice/`), {
       headers: {
         'Authorization': `Bearer ${getAccessToken()}`,
       },
@@ -836,7 +840,7 @@ export async function registerWithTurnstile(params: {
   password: string; 
   turnstile_token: string;
 }) {
-  const res = await fetch(`${API_ROOT}/v1/auth/register/`, {
+  const res = await fetch(getApiUrl('/v1/auth/register/'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
