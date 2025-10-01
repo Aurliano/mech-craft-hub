@@ -45,8 +45,32 @@ export default function TurnstileCaptcha({
         }
       }, timeout);
 
-      // Load Turnstile script if not already loaded
-      if (!window.Turnstile) {
+      // Check if Turnstile script is already loaded
+      if (window.Turnstile) {
+        setTurnstileLoaded(true);
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+        
+        // Render Turnstile widget
+        if (widgetRef.current) {
+          try {
+            window.Turnstile.render(widgetRef.current, {
+              sitekey: SITEKEY,
+              callback: (token: string) => {
+                onVerify(token);
+              },
+              'error-callback': () => {
+                setError("Turnstile verification failed. Please try again.");
+              }
+            });
+          } catch (err) {
+            console.error("Error rendering Turnstile:", err);
+            setError("Failed to load Turnstile. Please refresh the page.");
+          }
+        }
+      } else {
+        // Load Turnstile script if not already loaded
         const script = document.createElement('script');
         script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
         script.async = true;
@@ -79,30 +103,6 @@ export default function TurnstileCaptcha({
           setError("Failed to load Turnstile. Please check your internet connection.");
         };
         document.head.appendChild(script);
-      } else {
-        // Turnstile already loaded
-        setTurnstileLoaded(true);
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-        }
-        
-        // Render Turnstile widget
-        if (widgetRef.current && window.Turnstile) {
-          try {
-            window.Turnstile.render(widgetRef.current, {
-              sitekey: SITEKEY,
-              callback: (token: string) => {
-                onVerify(token);
-              },
-              'error-callback': () => {
-                setError("Turnstile verification failed. Please try again.");
-              }
-            });
-          } catch (err) {
-            console.error("Error rendering Turnstile:", err);
-            setError("Failed to load Turnstile. Please refresh the page.");
-          }
-        }
       }
     } else {
       setError("Turnstile is not properly configured.");

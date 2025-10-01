@@ -20,9 +20,6 @@ const ContractorRegister = () => {
   const { mutateAsync: registerWithCaptcha, isPending: isCaptchaPending, error: registerCaptchaError } = useRegisterWithCaptcha();
   const { mutateAsync: requestVerification, isPending: isVerifying } = usePhoneVerificationRequest();
   const { isAuthenticated } = useAuth();
-  const { data: fallbackStatus } = useFallbackCaptchaStatus();
-  const { mutateAsync: getChallenge, isPending: isChallengePending } = useFallbackCaptchaChallenge();
-  const { mutateAsync: verifyFallback, isPending: isVerifyingFallback } = useVerifyFallbackCaptcha();
   
   // Get scopes and services
   const { data: scopes } = useScopes();
@@ -45,13 +42,7 @@ const ContractorRegister = () => {
   const [showPhoneVerification, setShowPhoneVerification] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
-  const [useFallback, setUseFallback] = useState(false);
-  const [fallbackChallenge, setFallbackChallenge] = useState<{ id: string; question: string } | null>(null);
-  const [fallbackAnswer, setFallbackAnswer] = useState("");
-  const [showFallback, setShowFallback] = useState(false);
   const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
-  const [captchaError, setCaptchaError] = useState<string>('');
-  const [captchaVerified, setCaptchaVerified] = useState<boolean>(false);
 
 
   // Get Turnstile site key from environment
@@ -62,70 +53,12 @@ const ContractorRegister = () => {
     if (isAuthenticated) {
       navigate("/contractor-dashboard");
     }
-  }, [isAuthenticated]);
-
-  // Check if fallback is available
-  React.useEffect(() => {
-    if (fallbackStatus?.available && !turnstileSiteKey) {
-      setUseFallback(true);
-    }
-  }, [fallbackStatus?.available, turnstileSiteKey]);
+  }, [isAuthenticated, navigate]);
 
   const handleCaptchaVerify = (token: string) => {
     setTurnstileToken(token);
     setIsCaptchaVerified(true);
   };
-
-  const handleCaptchaError = (error: any) => {
-    console.error('Turnstile error:', error);
-    if (fallbackStatus?.available) {
-      setShowFallback(true);
-    }
-  };
-
-  const handleFallbackRequest = React.useCallback(async () => {
-    try {
-      const challenge = await getChallenge();
-      setFallbackChallenge({
-        id: challenge.challenge_id,
-        question: challenge.challenge
-      });
-      setUseFallback(true);
-    } catch (err) {
-      console.error('Failed to get fallback challenge:', err);
-      // Reset fallback state on error
-      setFallbackChallenge(null);
-      setUseFallback(false);
-    }
-  }, [getChallenge]);
-
-  const handleFallbackVerify = React.useCallback(async (answer: string) => {
-    if (!fallbackChallenge) {
-      setCaptchaError('کپچا در دسترس نیست');
-      setCaptchaVerified(false);
-      return;
-    }
-    
-    // Set the answer in state
-    setFallbackAnswer(answer);
-    setCaptchaError(''); // Clear previous errors
-    
-    try {
-      const result = await verifyFallback({ challengeId: fallbackChallenge.id, answer });
-      if (result.success || result.valid) {
-        // Fallback captcha verified, clear error
-        setCaptchaError('');
-        setCaptchaVerified(true);
-      } else {
-        setCaptchaError(result.message || result.error || 'پاسخ کپچا اشتباه است');
-        setCaptchaVerified(false);
-      }
-    } catch (err) {
-      console.error('Fallback captcha verification failed:', err);
-      setCaptchaError('خطا در تایید کپچا');
-      setCaptchaVerified(false);
-    }
-  }, [fallbackChallenge, verifyFallback]);
 
   const performRegistration = async () => {
     const userData = {
@@ -142,16 +75,10 @@ const ContractorRegister = () => {
 
     if (turnstileToken) {
       await registerWithCaptcha({ ...userData, turnstile_token: turnstileToken });
-    } else if (useFallback && fallbackChallenge && fallbackAnswer) {
-      // Use fallback captcha
-      await register({
-        ...userData,
-        fallback_captcha_challenge_id: fallbackChallenge.id,
-        fallback_captcha_answer: fallbackAnswer
-      });
     } else {
       await register(userData);
     }
+    
     // After successful registration, request phone verification
     await requestVerification(phone);
     setShowPhoneVerification(true);
@@ -162,7 +89,6 @@ const ContractorRegister = () => {
     
     // Clear previous validation errors
     setValidationErrors({});
-    setCaptchaError('');
     
     // Validate form fields
     const errors: {[key: string]: string} = {};
@@ -200,15 +126,7 @@ const ContractorRegister = () => {
     }
     
     // Validate captcha
-    if (useFallback && fallbackChallenge) {
-      if (!fallbackAnswer.trim()) {
-        errors.captcha = "لطفا کپچا را حل کنید";
-      } else if (captchaError) {
-        errors.captcha = captchaError;
-      } else if (!captchaVerified) {
-        errors.captcha = "لطفا کپچا را تایید کنید";
-      }
-    } else if (turnstileSiteKey && !turnstileToken) {
+    if (turnstileSiteKey && !turnstileToken) {
       errors.captcha = "لطفا کپچا را تایید کنید";
     }
     
@@ -234,7 +152,7 @@ const ContractorRegister = () => {
     if (isAuthenticated && showPhoneVerification) { 
       navigate("/contractor-dashboard");
     }
-  }, [isAuthenticated, showPhoneVerification]);
+  }, [isAuthenticated, showPhoneVerification, navigate]);
 
   const handleServiceToggle = (serviceId: string) => {
     setSelectedServices(prev => 
@@ -457,9 +375,9 @@ const ContractorRegister = () => {
                   className="w-full" 
                   variant="hero" 
                   type="submit" 
-                  disabled={isPending || isVerifying || isCaptchaPending || isVerifyingFallback || !isCaptchaVerified || !acceptTerms}
+                  disabled={isPending || isVerifying || isCaptchaPending || !isCaptchaVerified || !acceptTerms}
                 >
-                  {isPending || isVerifying || isCaptchaPending || isVerifyingFallback ? "در حال ثبت‌نام..." : "ثبت نام پیمانکار"}
+                  {isPending || isVerifying || isCaptchaPending ? "در حال ثبت‌نام..." : "ثبت نام پیمانکار"}
                 </Button>
                 
                 <div className="text-center">

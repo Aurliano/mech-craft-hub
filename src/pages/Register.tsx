@@ -17,9 +17,6 @@ const Register = () => {
   const { mutateAsync: registerWithCaptcha, isPending: isCaptchaPending, error: captchaError } = useRegisterWithCaptcha();
   const { mutateAsync: requestVerification, isPending: isVerifying } = usePhoneVerificationRequest();
   const { isAuthenticated } = useAuth();
-  const { data: fallbackStatus } = useFallbackCaptchaStatus();
-  const { mutateAsync: getChallenge, isPending: isChallengePending } = useFallbackCaptchaChallenge();
-  const { mutateAsync: verifyFallback, isPending: isVerifyingFallback } = useVerifyFallbackCaptcha();
   
   const [phone, setPhone] = useState("");
   const [firstName, setFirstName] = useState("");

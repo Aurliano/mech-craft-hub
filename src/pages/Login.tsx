@@ -19,8 +19,6 @@ const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
-  const [captchaType, setCaptchaType] = useState<'turnstile' | 'fallback' | null>(null);
-  const [fallbackChallengeId, setFallbackChallengeId] = useState<string | null>(null);
   const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
 
   // Redirect if already authenticated
@@ -30,10 +28,8 @@ const Login = () => {
     }
   }, [isAuthenticated, navigate]);
 
-  const handleCaptchaVerify = (token: string, type: 'turnstile' | 'fallback', challengeId?: string) => {
+  const handleCaptchaVerify = (token: string) => {
     setCaptchaToken(token);
-    setCaptchaType(type);
-    setFallbackChallengeId(challengeId || null);
     setIsCaptchaVerified(true);
   };
 
@@ -43,16 +39,10 @@ const Login = () => {
       password,
     };
 
-    if (captchaToken && captchaType === 'turnstile') {
+    if (captchaToken) {
       await loginWithCaptcha({ 
         ...loginData, 
         turnstile_token: captchaToken
-      });
-    } else if (captchaToken && captchaType === 'fallback' && fallbackChallengeId) {
-      await login({
-        ...loginData,
-        fallback_captcha_challenge_id: fallbackChallengeId,
-        fallback_captcha_answer: captchaToken
       });
     } else {
       await login(loginData);
@@ -60,8 +50,6 @@ const Login = () => {
     
     // Clear token after use
     setCaptchaToken(null);
-    setCaptchaType(null);
-    setFallbackChallengeId(null);
     navigate("/dashboard");
   };
 
