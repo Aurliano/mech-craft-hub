@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -53,11 +53,7 @@ const TicketList: React.FC<TicketListProps> = ({
   const [statusFilter, setStatusFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
 
-  useEffect(() => {
-    fetchTickets();
-  }, [statusFilter, priorityFilter, searchTerm]);
-
-  const fetchTickets = async () => {
+  const fetchTickets = useCallback(async () => {
     try {
       setLoading(true);
       const response = await api.getTickets({
@@ -65,7 +61,16 @@ const TicketList: React.FC<TicketListProps> = ({
         priority: priorityFilter !== 'all' ? priorityFilter : undefined,
         search: searchTerm || undefined
       });
-      setTickets(Array.isArray(response) ? response : response.results || []);
+      
+      // Type-safe handling of response
+      let ticketsData: Ticket[] = [];
+      if (Array.isArray(response)) {
+        ticketsData = response as Ticket[];
+      } else if (response && typeof response === 'object' && 'results' in response) {
+        ticketsData = (response as { results: Ticket[] }).results || [];
+      }
+      
+      setTickets(ticketsData);
     } catch (error) {
       console.error('Error fetching tickets:', error);
       toast({
@@ -76,7 +81,11 @@ const TicketList: React.FC<TicketListProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter, priorityFilter, searchTerm]);
+
+  useEffect(() => {
+    fetchTickets();
+  }, [fetchTickets]);
 
   const getStatusColor = (status: string) => {
     switch (status) {

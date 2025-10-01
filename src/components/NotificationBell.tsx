@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Bell, CheckCircle, DollarSign, Package, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { getApiUrl } from '@/lib/api';
 
 interface Notification {
   id: string;
@@ -35,7 +36,7 @@ const NotificationBell: React.FC = () => {
   const fetchNotifications = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/v1/notifications/?limit=5', {
+      const response = await fetch(getApiUrl('/api/v1/notifications/?limit=5'), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`
         }
@@ -54,7 +55,7 @@ const NotificationBell: React.FC = () => {
 
   const markAsRead = async (notificationId: string) => {
     try {
-      const response = await fetch(`/api/v1/notifications/${notificationId}/read/`, {
+      const response = await fetch(getApiUrl(`/api/v1/notifications/${notificationId}/read/`), {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`
@@ -77,7 +78,7 @@ const NotificationBell: React.FC = () => {
 
   const markAllAsRead = async () => {
     try {
-      const response = await fetch('/api/v1/notifications/read-all/', {
+      const response = await fetch(getApiUrl('/api/v1/notifications/read-all/'), {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`

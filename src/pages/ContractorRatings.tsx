@@ -11,6 +11,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
+import { getApiUrl } from '@/lib/api';
 
 interface Rating {
   id: string;
@@ -60,7 +61,7 @@ const ContractorRatings = () => {
   const fetchRatings = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/v1/contractor/ratings/', {
+      const response = await fetch(getApiUrl('/api/v1/contractor/ratings/'), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`
         }
@@ -81,7 +82,7 @@ const ContractorRatings = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/v1/contractor/rating-stats/', {
+      const response = await fetch(getApiUrl('/api/v1/contractor/rating-stats/'), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`
         }

@@ -94,7 +94,7 @@ export default function TurnstileCaptcha({
     const SITEKEY = siteKey || import.meta.env.VITE_TURNSTILE_SITEKEY;
     console.log("TurnstileCaptcha: SITEKEY =", SITEKEY);
     
-    if (SITEKEY && SITEKEY !== "your-turnstile-site-key") {
+    if (SITEKEY && SITEKEY !== "your-turnstile-site-key" && SITEKEY.startsWith("0x")) {
       setMode("turnstile");
       // Start timeout for Turnstile loading
       timeoutRef.current = setTimeout(() => {
@@ -132,9 +132,9 @@ export default function TurnstileCaptcha({
   useEffect(() => {
     if (mode !== "turnstile") return;
     
-    const SITEKEY = siteKey || import.meta.env.VITE_TURNSTILE_SITEKEY || "1x00000000000000000000AA";
-    if (!SITEKEY) {
-      console.error("TURNSTILE: VITE_TURNSTILE_SITEKEY is not set");
+    const SITEKEY = siteKey || import.meta.env.VITE_TURNSTILE_SITEKEY;
+    if (!SITEKEY || SITEKEY === "your-turnstile-site-key" || !SITEKEY.startsWith("0x")) {
+      console.error("TURNSTILE: VITE_TURNSTILE_SITEKEY is not set or invalid");
       setMode("local");
       return;
     }
@@ -172,7 +172,7 @@ export default function TurnstileCaptcha({
         // Clear container
         widgetRef.current.innerHTML = "";
         
-        window.turnstile?.render(widgetRef.current, {
+        window.Turnstile?.render(widgetRef.current, {
           sitekey: SITEKEY,
           callback: (token) => {
             onVerify && onVerify(token, 'turnstile');

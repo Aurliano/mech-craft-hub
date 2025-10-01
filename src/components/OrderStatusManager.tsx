@@ -8,6 +8,7 @@ import {
   MessageCircle, Eye, Download, Star
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { getApiUrl } from '@/lib/api';
 
 interface OrderItem {
   id: string;
@@ -110,7 +111,7 @@ const OrderStatusManager: React.FC<OrderStatusManagerProps> = ({
     setError(null);
     
     try {
-      const response = await fetch(`/api/v1/order-items/${orderItem.id}/status/`, {
+      const response = await fetch(getApiUrl(`/api/v1/order-items/${orderItem.id}/status/`), {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -136,7 +137,7 @@ const OrderStatusManager: React.FC<OrderStatusManagerProps> = ({
     setError(null);
     
     try {
-      const response = await fetch(`/api/v1/order-items/${orderItem.id}/deliver/`, {
+      const response = await fetch(getApiUrl(`/api/v1/order-items/${orderItem.id}/deliver/`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -161,7 +162,7 @@ const OrderStatusManager: React.FC<OrderStatusManagerProps> = ({
     setError(null);
     
     try {
-      const response = await fetch(`/api/v1/order-items/${orderItem.id}/confirm/`, {
+      const response = await fetch(getApiUrl(`/api/v1/order-items/${orderItem.id}/confirm/`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

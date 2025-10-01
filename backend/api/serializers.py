@@ -269,7 +269,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             return value
         
         # Skip validation if no secret is configured (development mode)
-        if not getattr(settings, 'TURNSTILE_SECRET', None):
+        if not getattr(settings, 'TURNSTILE_SECRET_KEY', None):
             return value
         
         try:
@@ -447,7 +447,7 @@ class LoginSerializer(serializers.Serializer):
             return value
         
         # Skip validation if no secret is configured (development mode)
-        if not getattr(settings, 'TURNSTILE_SECRET', None):
+        if not getattr(settings, 'TURNSTILE_SECRET_KEY', None):
             return value
         
         try:

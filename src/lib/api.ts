@@ -16,8 +16,8 @@ export const API_ROOT = import.meta.env.DEV ? '/api' : `${API_BASE_URL}/api`;
 export function getApiUrl(endpoint: string): string {
   const isProduction = import.meta.env.PROD;
   if (isProduction) {
-    // In production, use the full URL with the production domain
-    const baseUrl = 'https://mech-craft-hub-main.liara.run';
+    // In production, use the current domain (saydatech.ir)
+    const baseUrl = window.location.origin;
     return endpoint.startsWith('/') ? `${baseUrl}${endpoint}` : `${baseUrl}/${endpoint}`;
   } else {
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
@@ -418,7 +418,21 @@ export async function getServices(scopeId?: string) {
 // Dashboard Data Functions
 export async function getUserOrders() {
   try {
-    return await fetchJson<unknown[]>('/v1/orders/user/');
+    const url = getApiUrl('/api/v1/orders/user/');
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getAccessToken()}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return Array.isArray(data) ? data : (data.results || []);
   } catch (error) {
     console.error('Error fetching orders:', error);
     return [];
@@ -956,19 +970,121 @@ export async function createTicketMessage(ticketId: string, data: {
 
 export async function getTicketCategories() {
   try {
-    return await fetchJson<unknown[]>('/v1/ticket-categories/');
+    const url = getApiUrl('/api/v1/ticket-categories/');
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getAccessToken()}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return Array.isArray(data) ? data : (data.results || []);
   } catch (error) {
     console.error('Error fetching ticket categories:', error);
+    return [];
+  }
+}
+
+// Support System Functions
+export async function createSupportFeedback(data: {
+  used_services?: boolean | null;
+  satisfaction_rating?: number | null;
+  personal_feedback?: string;
+}) {
+  try {
+    const url = getApiUrl('/api/v1/support/feedback/');
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getAccessToken()}`
+      },
+      body: JSON.stringify(data)
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error creating support feedback:', error);
+    throw error;
+  }
+}
+
+export async function getSupportFeedbacks() {
+  try {
+    const url = getApiUrl('/api/v1/support/feedback/my/');
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getAccessToken()}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return Array.isArray(data) ? data : (data.results || []);
+  } catch (error) {
+    console.error('Error fetching support feedbacks:', error);
+    return [];
+  }
+}
+
+export async function askAISupport(question: string) {
+  try {
+    const url = getApiUrl('/api/v1/support/ask/');
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getAccessToken()}`
+      },
+      body: JSON.stringify({ question })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Error asking AI support:', error);
     throw error;
   }
 }
 
 export async function getTicketFileTypes() {
   try {
-    return await fetchJson<unknown[]>('/v1/ticket-file-types/');
+    const url = getApiUrl('/api/v1/ticket-file-types/');
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getAccessToken()}`
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return Array.isArray(data) ? data : (data.results || []);
   } catch (error) {
     console.error('Error fetching ticket file types:', error);
-    throw error;
+    return [];
   }
 }
 
@@ -1104,6 +1220,11 @@ export const api = {
   createTicketMessage,
   getTicketCategories,
   getTicketFileTypes,
+  
+  // Support
+  createSupportFeedback,
+  getSupportFeedbacks,
+  askAISupport,
   updateTicketStatus,
   getContentFilterLogs,
   reviewContentViolation,

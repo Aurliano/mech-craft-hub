@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
-import { getApiUrl } from '@/lib/api';
+import { api } from '@/lib/api';
 
 interface Message {
   id: string;
@@ -70,20 +70,7 @@ export default function SupportWidget({ className = '' }: SupportWidgetProps) {
     setIsLoading(true);
 
     try {
-      const response = await fetch(getApiUrl('/api/v1/support/ask/'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(isAuthenticated && { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` })
-        },
-        body: JSON.stringify({ question: userMessage.content })
-      });
-
-      if (!response.ok) {
-        throw new Error('خطا در ارسال پیام');
-      }
-
-      const data = await response.json();
+      const data = await api.askAISupport(userMessage.content);
       
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -281,7 +268,7 @@ export default function SupportWidget({ className = '' }: SupportWidgetProps) {
 interface FeedbackFormProps {
   onClose: () => void;
   isAuthenticated: boolean;
-  user: any;
+  user: { username: string; email: string } | null;
 }
 
 function FeedbackForm({ onClose, isAuthenticated, user }: FeedbackFormProps) {
@@ -298,20 +285,7 @@ function FeedbackForm({ onClose, isAuthenticated, user }: FeedbackFormProps) {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(getApiUrl('/api/v1/support/feedback/'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(isAuthenticated && { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` })
-        },
-        body: JSON.stringify(formData)
-      });
-
-      if (!response.ok) {
-        throw new Error('خطا در ارسال بازخورد');
-      }
-
-      const data = await response.json();
+      const data = await api.createSupportFeedback(formData);
       setSubmitStatus('success');
       
       // Show AI response if available

@@ -21,6 +21,7 @@ ALLOWED_HOSTS = [
     '.liara.ir',
     'saydatech.ir',
     'www.saydatech.ir',
+    'mech-craft-hub-main.liara.run',
 ] + (os.getenv('ALLOWED_HOSTS', '').split(',') if os.getenv('ALLOWED_HOSTS') else [])
 
 # Application definition
@@ -142,6 +143,7 @@ CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = [
     'https://saydatech.ir',
     'https://www.saydatech.ir',
+    'https://mech-craft-hub-main.liara.run',
     'https://sayda-engineering-platform.liara.run',
 ]
 CORS_ALLOW_CREDENTIALS = True
@@ -162,6 +164,7 @@ CSRF_USE_SESSIONS = True
 CSRF_TRUSTED_ORIGINS = [
     'https://saydatech.ir',
     'https://www.saydatech.ir',
+    'https://mech-craft-hub-main.liara.run',
     'https://sayda-engineering-platform.liara.run',
 ]
 
@@ -198,6 +201,12 @@ SPECTACULAR_SETTINGS = {
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
 }
+
+# Turnstile Configuration
+TURNSTILE_SITE_KEY = os.environ.get("TURNSTILE_SITE_KEY")
+TURNSTILE_SECRET_KEY = os.environ.get("TURNSTILE_SECRET_KEY")
+TURNSTILE_VERIFY_URL = os.environ.get("TURNSTILE_VERIFY_URL", "https://challenges.cloudflare.com/turnstile/v0/siteverify")
+TURNSTILE_FALLBACK_LOCAL = os.environ.get("TURNSTILE_FALLBACK_LOCAL", "False").lower() == "true"
 
 # Logging
 LOGGING = {

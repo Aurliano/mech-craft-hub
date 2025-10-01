@@ -15,6 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import OrderStatusManager from '@/components/OrderStatusManager';
+import { getApiUrl } from '@/lib/api';
 
 interface Project {
   id: string;
@@ -56,7 +57,7 @@ const ContractorProjects = () => {
   const fetchProjects = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/v1/contractor/active-projects/', {
+      const response = await fetch(getApiUrl('/api/v1/contractor/active-projects/'), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`
         }
@@ -75,7 +76,7 @@ const ContractorProjects = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/v1/contractor/stats/', {
+      const response = await fetch(getApiUrl('/api/v1/contractor/stats/'), {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`
         }
