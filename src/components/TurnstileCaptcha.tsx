@@ -95,6 +95,18 @@ export default function TurnstileCaptcha({
     console.log("TurnstileCaptcha: SITEKEY =", SITEKEY);
     
     if (SITEKEY && SITEKEY !== "your-turnstile-site-key" && SITEKEY.startsWith("0x")) {
+      // Check if we're in production and domain is saydatech.ir
+      const isProduction = import.meta.env.PROD;
+      const isSaydatechDomain = window.location.hostname === 'saydatech.ir' || window.location.hostname === 'www.saydatech.ir';
+      
+      if (isProduction && isSaydatechDomain) {
+        // Skip Turnstile in production for saydatech.ir domain due to domain configuration issues
+        console.log("Skipping Turnstile in production for saydatech.ir domain, using fallback captcha");
+        setMode("local");
+        requestFallbackChallenge();
+        return;
+      }
+      
       setMode("turnstile");
       // Start timeout for Turnstile loading
       timeoutRef.current = setTimeout(() => {
@@ -175,7 +187,9 @@ export default function TurnstileCaptcha({
         window.Turnstile?.render(widgetRef.current, {
           sitekey: SITEKEY,
           callback: (token) => {
-            onVerify && onVerify(token, 'turnstile');
+            if (onVerify) {
+              onVerify(token, 'turnstile');
+            }
           },
           "error-callback": () => {
             // If widget errors -> fallback to local
@@ -191,16 +205,19 @@ export default function TurnstileCaptcha({
 
     // Cleanup on unmount
     return () => {
+      const currentWidget = widgetRef.current;
       try { 
-        if (widgetRef.current) {
-          widgetRef.current.innerHTML = ""; 
+        if (currentWidget) {
+          currentWidget.innerHTML = ""; 
         }
         if (timeoutRef.current) {
           clearTimeout(timeoutRef.current);
         }
-      } catch(_) {}
+      } catch {
+        // Ignore cleanup errors
+      }
     };
-  }, [mode]); // فقط mode را در dependency قرار دادیم
+  }, [mode, siteKey, onVerify]); // Include all dependencies
 
   const handleLocalCaptchaRequest = React.useCallback(async () => {
     try {

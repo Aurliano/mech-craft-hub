@@ -18,7 +18,9 @@ export function getApiUrl(endpoint: string): string {
   if (isProduction) {
     // In production, use the current domain (saydatech.ir)
     const baseUrl = window.location.origin;
-    return endpoint.startsWith('/') ? `${baseUrl}${endpoint}` : `${baseUrl}/${endpoint}`;
+    // Ensure endpoint starts with /api
+    const apiEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
+    return `${baseUrl}${apiEndpoint}`;
   } else {
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
     return endpoint.startsWith('/') ? `${baseUrl}${endpoint}` : `${baseUrl}/${endpoint}`;
@@ -141,7 +143,14 @@ async function simpleFetch<T>(path: string, options: RequestInit = {}): Promise<
 
 // Queue-based fetch function with rate limiting
 export async function fetchJson<T>(path: string, options: RequestInit = {}): Promise<T> {
-  return requestQueue.add(() => simpleFetch<T>(path, options), 2);
+  const isProduction = import.meta.env.PROD;
+  if (isProduction) {
+    // In production, use direct fetch to avoid queue issues
+    return simpleFetch<T>(path, options);
+  } else {
+    // In development, use queue for rate limiting
+    return requestQueue.add(() => simpleFetch<T>(path, options), 2);
+  }
 }
 
 
