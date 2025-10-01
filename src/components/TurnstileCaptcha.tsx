@@ -16,6 +16,7 @@ declare global {
       }) => void;
       reset: (widget?: string) => void;
     };
+    turnstileScriptLoaded?: boolean;
   }
 }
 
@@ -30,6 +31,7 @@ export default function TurnstileCaptcha({
   const [error, setError] = useState<string | null>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const widgetRef = useRef<HTMLDivElement>(null);
+  const widgetIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     // Check if Turnstile is available
@@ -46,16 +48,16 @@ export default function TurnstileCaptcha({
       }, timeout);
 
       // Check if Turnstile script is already loaded
-      if (window.Turnstile) {
+      if (window.Turnstile && window.turnstileScriptLoaded) {
         setTurnstileLoaded(true);
         if (timeoutRef.current) {
           clearTimeout(timeoutRef.current);
         }
         
         // Render Turnstile widget
-        if (widgetRef.current) {
+        if (widgetRef.current && !widgetIdRef.current) {
           try {
-            window.Turnstile.render(widgetRef.current, {
+            const widgetId = window.Turnstile.render(widgetRef.current, {
               sitekey: SITEKEY,
               callback: (token: string) => {
                 onVerify(token);
@@ -64,13 +66,15 @@ export default function TurnstileCaptcha({
                 setError("Turnstile verification failed. Please try again.");
               }
             });
+            widgetIdRef.current = widgetId as unknown as string;
           } catch (err) {
             console.error("Error rendering Turnstile:", err);
             setError("Failed to load Turnstile. Please refresh the page.");
           }
         }
-      } else {
+      } else if (!window.turnstileScriptLoaded) {
         // Load Turnstile script if not already loaded
+        window.turnstileScriptLoaded = true;
         const script = document.createElement('script');
         script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
         script.async = true;
@@ -82,9 +86,9 @@ export default function TurnstileCaptcha({
           }
           
           // Render Turnstile widget
-          if (widgetRef.current && window.Turnstile) {
+          if (widgetRef.current && window.Turnstile && !widgetIdRef.current) {
             try {
-              window.Turnstile.render(widgetRef.current, {
+              const widgetId = window.Turnstile.render(widgetRef.current, {
                 sitekey: SITEKEY,
                 callback: (token: string) => {
                   onVerify(token);
@@ -93,6 +97,7 @@ export default function TurnstileCaptcha({
                   setError("Turnstile verification failed. Please try again.");
                 }
               });
+              widgetIdRef.current = widgetId as unknown as string;
             } catch (err) {
               console.error("Error rendering Turnstile:", err);
               setError("Failed to load Turnstile. Please refresh the page.");
@@ -100,6 +105,7 @@ export default function TurnstileCaptcha({
           }
         };
         script.onerror = () => {
+          window.turnstileScriptLoaded = false;
           setError("Failed to load Turnstile. Please check your internet connection.");
         };
         document.head.appendChild(script);
@@ -113,7 +119,20 @@ export default function TurnstileCaptcha({
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [siteKey, timeout, turnstileLoaded, onVerify]);
+  }, [siteKey, timeout, onVerify, turnstileLoaded]);
+
+  // Cleanup widget on unmount
+  useEffect(() => {
+    return () => {
+      if (widgetIdRef.current && window.Turnstile) {
+        try {
+          window.Turnstile.reset(widgetIdRef.current);
+        } catch (err) {
+          console.error("Error resetting Turnstile widget:", err);
+        }
+      }
+    };
+  }, []);
 
   if (error) {
     return (
