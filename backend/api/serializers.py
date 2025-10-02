@@ -283,7 +283,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        from .utils.turnstile import log_turnstile_attempt
+        # from .utils.turnstile import log_turnstile_attempt  # Temporarily disabled
         
         # Extract tokens (support both field names)
         turnstile_token = validated_data.pop('turnstile_token', None) or validated_data.pop('cf_turnstile_response', None)
@@ -315,37 +315,37 @@ class RegisterSerializer(serializers.ModelSerializer):
             # For now, we'll just store it in a custom field or handle it differently
             pass
         
-        # Create contractor services if this is a contractor registration
-        if role == 'contractor' and selected_scope and selected_services:
-            from .models import Scope, Service, ContractorService
-            
-            try:
-                Scope.objects.get(id=selected_scope)
-                for service_id in selected_services:
-                    try:
-                        service = Service.objects.get(id=service_id)
-                        ContractorService.objects.create(
-                            contractor=user,
-                            service=service,
-                            is_active=True
-                        )
-                    except Service.DoesNotExist:
-                        # Skip invalid service IDs
-                        continue
-            except Scope.DoesNotExist:
-                # Skip if scope doesn't exist
-                pass
+        # Create contractor services if this is a contractor registration - Temporarily disabled
+        # if role == 'contractor' and selected_scope and selected_services:
+        #     from .models import Scope, Service, ContractorService
+        #     
+        #     try:
+        #         Scope.objects.get(id=selected_scope)
+        #         for service_id in selected_services:
+        #             try:
+        #                 service = Service.objects.get(id=service_id)
+        #                 ContractorService.objects.create(
+        #                     contractor=user,
+        #                     service=service,
+        #                     is_active=True
+        #                 )
+        #             except Service.DoesNotExist:
+        #                 # Skip invalid service IDs
+        #                 continue
+        #     except Scope.DoesNotExist:
+        #         # Skip if scope doesn't exist
+        #         pass
         
-        # Log successful Turnstile attempt
-        if turnstile_token:
-            log_turnstile_attempt(
-                token=turnstile_token,
-                remote_ip=remote_ip,
-                user=user,
-                endpoint='/api/v1/auth/register/',
-                success=True,
-                response_data=getattr(self, '_turnstile_response', None)
-            )
+        # Log successful Turnstile attempt - Temporarily disabled
+        # if turnstile_token:
+        #     log_turnstile_attempt(
+        #         token=turnstile_token,
+        #         remote_ip=remote_ip,
+        #         user=user,
+        #         endpoint='/api/v1/auth/register/',
+        #         success=True,
+        #         response_data=getattr(self, '_turnstile_response', None)
+        #     )
         
         return user
 
