@@ -113,6 +113,10 @@ ENV/
 env.bak/
 venv.bak/
 
+# Python virtual environments
+backend/venv/
+backend/.venv/
+
 # Secrets and sensitive files
 secrets.json
 config.json
@@ -143,6 +147,12 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# NPM cache
+.npm/
+.npm-cache/
+*.tgz
+*.tar.gz
 
 # Frontend build (will be built on Liara)
 # dist/

@@ -10,13 +10,21 @@ yarn-error.log*
 # Keep dist folder for pre-built frontend
 # dist/
 
+# NPM cache files
+.npm/
+.npm-cache/
+*.tgz
+*.tar.gz
+
 # Python
-__pycache__
+__pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
-env
+env/
+venv/
+.venv/
 pip-log.txt
 pip-delete-this-directory.txt
 .tox
@@ -30,6 +38,10 @@ coverage.xml
 .mypy_cache
 .pytest_cache
 .hypothesis
+
+# Python virtual environments
+backend/venv/
+backend/.venv/
 
 # Django
 *.log
@@ -65,6 +77,17 @@ Thumbs.db
 README.md
 *.md
 docs/
+
+# Large media files (keep only essential ones)
+backend/media/uploads/*.pdf
+backend/media/uploads/*.stp
+backend/media/uploads/*.txt
+!backend/media/uploads/essential_*
+
+# Development and testing files
+test_*
+*_test.py
+tests/
 
 # Keep essential files for Liara compatibility
 !Dockerfile.liara

@@ -36,8 +36,16 @@ WORKDIR /app
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Copy application code
-COPY . .
+# Copy application code (excluding unnecessary files)
+COPY --chown=appuser:appuser . .
+
+# Remove unnecessary files to reduce image size
+RUN find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true && \
+    find . -name "*.pyc" -delete 2>/dev/null || true && \
+    find . -name "*.pyo" -delete 2>/dev/null || true && \
+    find . -name ".pytest_cache" -type d -exec rm -rf {} + 2>/dev/null || true && \
+    find . -name ".mypy_cache" -type d -exec rm -rf {} + 2>/dev/null || true && \
+    find . -name "*.log" -delete 2>/dev/null || true
 
 # Create necessary directories with proper permissions
 RUN mkdir -p /app/logs /app/media /app/staticfiles && \
