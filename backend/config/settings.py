@@ -318,9 +318,9 @@ TURNSTILE_FALLBACK_LOCAL = os.environ.get("TURNSTILE_FALLBACK_LOCAL", "False").l
 # Security Settings - Quick Wins
 # HTTPS and SSL Security (only for production with HTTPS)
 if not DEBUG:
-    SECURE_SSL_REDIRECT = True
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = False  # Temporarily disabled for Turnstile testing
+    SESSION_COOKIE_SECURE = False  # Temporarily disabled for Turnstile testing
+    CSRF_COOKIE_SECURE = False  # Temporarily disabled for Turnstile testing
 SESSION_COOKIE_HTTPONLY = True
 
 # HSTS (HTTP Strict Transport Security) - only for production
