@@ -257,84 +257,14 @@ class RegisterSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
     def validate_turnstile_token(self, value):
-        """Validate Turnstile token"""
-        from .utils.turnstile import verify_turnstile_token_sync, TurnstileError
-        from django.conf import settings
-        
-        # If no value provided, skip validation (fallback captcha will be used)
-        if not value:
-            return value
-        
-        # Skip validation if no secret is configured (development mode)
-        if not getattr(settings, 'TURNSTILE_SECRET_KEY', None):
-            return value
-        
-        try:
-            # Get client IP from request context
-            request = self.context.get('request')
-            remote_ip = None
-            if request:
-                remote_ip = request.META.get('REMOTE_ADDR')
-                # Handle X-Forwarded-For header
-                x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-                if x_forwarded_for:
-                    remote_ip = x_forwarded_for.split(',')[0].strip()
-            
-            success, response_data = verify_turnstile_token_sync(value, remote_ip)
-            
-            if not success:
-                error_codes = response_data.get('error-codes', [])
-                error_message = f"Turnstile verification failed: {', '.join(error_codes)}"
-                raise serializers.ValidationError(error_message)
-            
-            # Store the token for later use in create method
-            self._turnstile_response = response_data
-            return value
-            
-        except TurnstileError as e:
-            raise serializers.ValidationError(f"Turnstile verification error: {str(e)}")
-        except Exception as e:
-            raise serializers.ValidationError(f"Turnstile verification failed: {str(e)}")
+        """Validate Turnstile token - Temporarily disabled"""
+        # Temporarily disabled Turnstile validation
+        return value
 
     def validate_cf_turnstile_response(self, value):
-        """Validate Turnstile token"""
-        from .utils.turnstile import verify_turnstile_token_sync, TurnstileError
-        from django.conf import settings
-        
-        # If no value provided, skip validation (other captcha methods will be used)
-        if not value:
-            return value
-        
-        # Skip validation if no secret is configured (development mode)
-        if not getattr(settings, 'TURNSTILE_SECRET_KEY', None):
-            return value
-        
-        try:
-            # Get client IP from request context
-            request = self.context.get('request')
-            remote_ip = None
-            if request:
-                remote_ip = request.META.get('REMOTE_ADDR')
-                # Handle X-Forwarded-For header
-                x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-                if x_forwarded_for:
-                    remote_ip = x_forwarded_for.split(',')[0].strip()
-            
-            success, response_data = verify_turnstile_token_sync(value, remote_ip)
-            
-            if not success:
-                error_codes = response_data.get('error-codes', [])
-                error_message = f"Turnstile verification failed: {', '.join(error_codes)}"
-                raise serializers.ValidationError(error_message)
-            
-            # Store the token for later use in create method
-            self._turnstile_response = response_data
-            return value
-            
-        except TurnstileError as e:
-            raise serializers.ValidationError(f"Turnstile verification error: {str(e)}")
-        except Exception as e:
-            raise serializers.ValidationError(f"Turnstile verification failed: {str(e)}")
+        """Validate Turnstile token - Temporarily disabled"""
+        # Temporarily disabled Turnstile validation
+        return value
 
     def validate_website(self, value):
         """Validate honeypot field - should be empty"""
@@ -429,82 +359,14 @@ class LoginSerializer(serializers.Serializer):
     cf_turnstile_response = serializers.CharField(required=False, allow_blank=True)
 
     def validate_turnstile_token(self, value):
-        """Validate Turnstile token"""
-        from .utils.turnstile import verify_turnstile_token_sync, TurnstileError
-        from django.conf import settings
-        
-        # If no value provided, skip validation (fallback captcha will be used)
-        if not value:
-            return value
-        
-        # Skip validation if no secret is configured (development mode)
-        if not getattr(settings, 'TURNSTILE_SECRET_KEY', None):
-            return value
-        
-        try:
-            # Get client IP from request context
-            request = self.context.get('request')
-            remote_ip = None
-            if request:
-                remote_ip = request.META.get('REMOTE_ADDR')
-                # Handle X-Forwarded-For header
-                x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-                if x_forwarded_for:
-                    remote_ip = x_forwarded_for.split(',')[0].strip()
-            
-            success, response_data = verify_turnstile_token_sync(value, remote_ip)
-            
-            if not success:
-                error_codes = response_data.get('error-codes', [])
-                error_message = f"Turnstile verification failed: {', '.join(error_codes)}"
-                raise serializers.ValidationError(error_message)
-            
-            # Store the token for later use
-            self._turnstile_response = response_data
-            return value
-            
-        except TurnstileError as e:
-            raise serializers.ValidationError(f"Turnstile verification error: {str(e)}")
-        except Exception as e:
-            raise serializers.ValidationError(f"Turnstile verification failed: {str(e)}")
+        """Validate Turnstile token - Temporarily disabled"""
+        # Temporarily disabled Turnstile validation
+        return value
 
     def validate_cf_turnstile_response(self, value):
-        """Validate Turnstile token"""
-        from .utils.turnstile import verify_turnstile_token_sync, TurnstileError
-        from django.conf import settings
-        
-        # If no value provided, skip validation
-        if not value:
-            return value
-        
-        # Skip validation if no secret is configured
-        if not getattr(settings, 'TURNSTILE_SECRET_KEY', None):
-            return value
-        
-        try:
-            # Get client IP from request context
-            request = self.context.get('request')
-            remote_ip = None
-            if request:
-                remote_ip = request.META.get('REMOTE_ADDR')
-                x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-                if x_forwarded_for:
-                    remote_ip = x_forwarded_for.split(',')[0].strip()
-            
-            success, response_data = verify_turnstile_token_sync(value, remote_ip)
-            
-            if not success:
-                error_codes = response_data.get('error-codes', [])
-                error_message = f"Turnstile verification failed: {', '.join(error_codes)}"
-                raise serializers.ValidationError(error_message)
-            
-            self._turnstile_response = response_data
-            return value
-            
-        except TurnstileError as e:
-            raise serializers.ValidationError(f"Turnstile verification error: {str(e)}")
-        except Exception as e:
-            raise serializers.ValidationError(f"Turnstile verification failed: {str(e)}")
+        """Validate Turnstile token - Temporarily disabled"""
+        # Temporarily disabled Turnstile validation
+        return value
 
     def validate_website(self, value):
         """Validate honeypot field - should be empty"""
