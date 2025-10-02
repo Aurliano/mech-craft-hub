@@ -346,9 +346,9 @@ class RegisterSerializer(serializers.ModelSerializer):
         """Validate Turnstile token and honeypot"""
         turnstile_token = data.get('turnstile_token') or data.get('cf_turnstile_response')
         
-        # Turnstile token is required
-        if not turnstile_token:
-            raise serializers.ValidationError("Turnstile verification is required")
+        # Turnstile token is temporarily disabled
+        # if not turnstile_token:
+        #     raise serializers.ValidationError("Turnstile verification is required")
         
         return data
 
@@ -518,9 +518,9 @@ class LoginSerializer(serializers.Serializer):
         
         turnstile_token = data.get('turnstile_token') or data.get('cf_turnstile_response')
         
-        # Turnstile token is required
-        if not turnstile_token:
-            raise serializers.ValidationError("Turnstile verification is required")
+        # Turnstile token is temporarily disabled
+        # if not turnstile_token:
+        #     raise serializers.ValidationError("Turnstile verification is required")
         
         # Authenticate user
         username = data.get('username')
