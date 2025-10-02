@@ -6,16 +6,19 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Navbar from "@/components/Navbar";
-import { useRegister, usePhoneVerificationRequest, useRegisterWithCaptcha } from "@/hooks/useAuth";
+import { useCustomerRegister, usePhoneVerificationRequest, useRegisterWithCaptcha } from "@/hooks/useAuth";
 import { useAuth } from "@/contexts/AuthContext";
 import TurnstileCaptcha from "@/components/TurnstileCaptcha";
 import TermsAndConditions from "@/components/TermsAndConditions";
+import PasswordStrength from "@/components/PasswordStrength";
+import ErrorDisplay from "@/components/ErrorDisplay";
+import { validatePassword } from "@/lib/passwordValidation";
 
 const Register = () => {
   const navigate = useNavigate();
-  const { mutateAsync: register, isPending, error } = useRegister();
-  const { mutateAsync: registerWithCaptcha, isPending: isCaptchaPending, error: captchaError } = useRegisterWithCaptcha();
+  const { mutateAsync: register, isPending, error } = useCustomerRegister();
   const { mutateAsync: requestVerification, isPending: isVerifying } = usePhoneVerificationRequest();
+  const { mutateAsync: registerWithCaptcha, isPending: isCaptchaPending, error: captchaError } = useRegisterWithCaptcha();
   const { isAuthenticated } = useAuth();
   
   const [phone, setPhone] = useState("");
@@ -63,7 +66,19 @@ const Register = () => {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (password !== confirm) return;
+    
+    // Enhanced validation
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      alert(`رمز عبور ضعیف است:\n${passwordValidation.errors.join('\n')}`);
+      return;
+    }
+    
+    if (password !== confirm) {
+      alert("رمزهای عبور مطابقت ندارند");
+      return;
+    }
+    
     if (!acceptTerms) {
       alert("لطفا قوانین و شرایط را بپذیرید");
       return;
@@ -174,6 +189,7 @@ const Register = () => {
                     required 
                     minLength={8} 
                   />
+                  {password && <PasswordStrength password={password} />}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">تکرار رمز عبور</Label>
@@ -216,15 +232,10 @@ const Register = () => {
                   </Alert>
                 ) : null}
 
-                {(error || captchaError) && (
-                  <Alert variant="destructive">
-                    <AlertDescription>
-                      {error instanceof Error ? error.message : 
-                       captchaError instanceof Error ? captchaError.message : 
-                       'ثبت‌نام با خطا مواجه شد'}
-                    </AlertDescription>
-                  </Alert>
-                )}
+                <ErrorDisplay 
+                  error={error || captchaError} 
+                  onRetry={() => window.location.reload()}
+                />
 
                 <Button 
                   className="w-full" 

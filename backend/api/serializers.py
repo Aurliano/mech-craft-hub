@@ -234,36 +234,27 @@ class ReviewSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'approved_at', 'is_approved', 'approved_by']
 
 
-class RegisterSerializer(serializers.ModelSerializer):
+class CustomerRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     cf_turnstile_response = serializers.CharField(write_only=True, required=False, allow_blank=True)
     website = serializers.CharField(required=False, allow_blank=True)  # Honeypot field
     first_name = serializers.CharField(required=False, allow_blank=True)
     last_name = serializers.CharField(required=False, allow_blank=True)
-    role = serializers.CharField(required=False, allow_blank=True)
-    selected_scope = serializers.CharField(required=False, allow_blank=True)
-    selected_services = serializers.ListField(
-        child=serializers.CharField(),
-        required=False,
-        allow_empty=True
-    )
 
     class Meta:
         model = User
         fields = [
             'id', 'username', 'email', 'phone', 'password', 'turnstile_token', 'cf_turnstile_response',
-            'website', 'first_name', 'last_name', 'role', 'selected_scope', 'selected_services'
+            'website', 'first_name', 'last_name'
         ]
         read_only_fields = ['id']
 
     def validate_turnstile_token(self, value):
         """Validate Turnstile token - Temporarily disabled"""
-        # Temporarily disabled Turnstile validation
         return value
 
     def validate_cf_turnstile_response(self, value):
         """Validate Turnstile token - Temporarily disabled"""
-        # Temporarily disabled Turnstile validation
         return value
 
     def validate_website(self, value):
@@ -283,8 +274,64 @@ class RegisterSerializer(serializers.ModelSerializer):
         return data
 
     def create(self, validated_data):
-        # from .utils.turnstile import log_turnstile_attempt  # Temporarily disabled
+        # Extract tokens (support both field names)
+        turnstile_token = validated_data.pop('turnstile_token', None) or validated_data.pop('cf_turnstile_response', None)
+        password = validated_data.pop('password')
         
+        # Create user
+        user = User(**validated_data)
+        user.set_password(password)
+        user.save()
+        
+        return user
+
+
+class ContractorRegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, min_length=8)
+    cf_turnstile_response = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    website = serializers.CharField(required=False, allow_blank=True)  # Honeypot field
+    first_name = serializers.CharField(required=False, allow_blank=True)
+    last_name = serializers.CharField(required=False, allow_blank=True)
+    selected_scope = serializers.UUIDField(required=False, allow_null=True)
+    selected_services = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        allow_empty=True
+    )
+
+    class Meta:
+        model = User
+        fields = [
+            'id', 'username', 'email', 'phone', 'password', 'turnstile_token', 'cf_turnstile_response',
+            'website', 'first_name', 'last_name', 'selected_scope', 'selected_services'
+        ]
+        read_only_fields = ['id']
+
+    def validate_turnstile_token(self, value):
+        """Validate Turnstile token - Temporarily disabled"""
+        return value
+
+    def validate_cf_turnstile_response(self, value):
+        """Validate Turnstile token - Temporarily disabled"""
+        return value
+
+    def validate_website(self, value):
+        """Validate honeypot field - should be empty"""
+        if value:
+            raise serializers.ValidationError("Bot detected")
+        return value
+
+    def validate(self, data):
+        """Validate Turnstile token and honeypot"""
+        turnstile_token = data.get('turnstile_token') or data.get('cf_turnstile_response')
+        
+        # Turnstile token is temporarily disabled
+        # if not turnstile_token:
+        #     raise serializers.ValidationError("Turnstile verification is required")
+        
+        return data
+
+    def create(self, validated_data):
         # Extract tokens (support both field names)
         turnstile_token = validated_data.pop('turnstile_token', None) or validated_data.pop('cf_turnstile_response', None)
         password = validated_data.pop('password')
@@ -292,60 +339,32 @@ class RegisterSerializer(serializers.ModelSerializer):
         # Extract contractor-specific fields
         selected_scope = validated_data.pop('selected_scope', None)
         selected_services = validated_data.pop('selected_services', [])
-        role = validated_data.pop('role', 'customer')
-        
-        # Get request context for logging
-        request = self.context.get('request')
-        remote_ip = None
-        if request:
-            remote_ip = request.META.get('REMOTE_ADDR')
-            # Handle X-Forwarded-For header
-            x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-            if x_forwarded_for:
-                remote_ip = x_forwarded_for.split(',')[0].strip()
         
         # Create user
         user = User(**validated_data)
         user.set_password(password)
         user.save()
         
-        # Set user role if provided
-        if role and role != 'customer':
-            # You might want to add role assignment logic here
-            # For now, we'll just store it in a custom field or handle it differently
-            pass
-        
-        # Create contractor services if this is a contractor registration - Temporarily disabled
-        # if role == 'contractor' and selected_scope and selected_services:
-        #     from .models import Scope, Service, ContractorService
-        #     
-        #     try:
-        #         Scope.objects.get(id=selected_scope)
-        #         for service_id in selected_services:
-        #             try:
-        #                 service = Service.objects.get(id=service_id)
-        #                 ContractorService.objects.create(
-        #                     contractor=user,
-        #                     service=service,
-        #                     is_active=True
-        #                 )
-        #             except Service.DoesNotExist:
-        #                 # Skip invalid service IDs
-        #                 continue
-        #     except Scope.DoesNotExist:
-        #         # Skip if scope doesn't exist
-        #         pass
-        
-        # Log successful Turnstile attempt - Temporarily disabled
-        # if turnstile_token:
-        #     log_turnstile_attempt(
-        #         token=turnstile_token,
-        #         remote_ip=remote_ip,
-        #         user=user,
-        #         endpoint='/api/v1/auth/register/',
-        #         success=True,
-        #         response_data=getattr(self, '_turnstile_response', None)
-        #     )
+        # Create contractor services if provided
+        if selected_scope and selected_services:
+            from .models import Scope, Service, ContractorService
+            
+            try:
+                Scope.objects.get(id=selected_scope)
+                for service_id in selected_services:
+                    try:
+                        service = Service.objects.get(id=service_id)
+                        ContractorService.objects.create(
+                            contractor=user,
+                            service=service,
+                            is_active=True
+                        )
+                    except Service.DoesNotExist:
+                        # Skip invalid service IDs
+                        continue
+            except Scope.DoesNotExist:
+                # Skip if scope doesn't exist
+                pass
         
         return user
 

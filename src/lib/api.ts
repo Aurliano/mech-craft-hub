@@ -177,28 +177,46 @@ export async function loginRequest(params: {
   return (await res.json()) as { access: string; refresh: string };
 }
 
-export async function registerRequest(params: { 
+export async function customerRegisterRequest(params: { 
   username: string; 
   email: string; 
   phone: string; 
   password: string;
   first_name?: string;
   last_name?: string;
-  role?: string;
-  selected_scope?: string;
-  selected_services?: string[];
   turnstile_token?: string;
-  fallback_captcha_challenge_id?: string;
-  fallback_captcha_answer?: string;
 }) {
-  const res = await fetch(getApiUrl('/v1/auth/register/'), {
+  const res = await fetch(getApiUrl('/v1/auth/customer-register/'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
   });
   if (!res.ok) {
     const errorText = await res.text();
-    throw new Error(errorText || 'Registration failed');
+    throw new Error(errorText || 'Customer registration failed');
+  }
+  return (await res.json()) as unknown;
+}
+
+export async function contractorRegisterRequest(params: { 
+  username: string; 
+  email: string; 
+  phone: string; 
+  password: string;
+  first_name?: string;
+  last_name?: string;
+  selected_scope?: string;
+  selected_services?: string[];
+  turnstile_token?: string;
+}) {
+  const res = await fetch(getApiUrl('/v1/auth/contractor-register/'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || 'Contractor registration failed');
   }
   return (await res.json()) as unknown;
 }

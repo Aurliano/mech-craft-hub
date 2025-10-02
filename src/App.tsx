@@ -3,6 +3,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { SecurityProvider } from "@/contexts/SecurityContext";
+import SecurityHeaders from "@/components/SecurityHeaders";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import RoleBasedRoute from "@/components/RoleBasedRoute";
 import SupportWidget from "@/components/SupportWidget";
@@ -55,9 +57,11 @@ const queryClient = new QueryClient({
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <BrowserRouter>
+      <SecurityProvider>
+        <AuthProvider>
+          <SecurityHeaders>
+            <TooltipProvider>
+              <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
@@ -151,11 +155,13 @@ const App = () => (
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </BrowserRouter>
-          <SupportWidget />
-          <Toaster />
-        </TooltipProvider>
-      </AuthProvider>
+              </BrowserRouter>
+              <SupportWidget />
+              <Toaster />
+            </TooltipProvider>
+          </SecurityHeaders>
+        </AuthProvider>
+      </SecurityProvider>
     </QueryClientProvider>
   </ErrorBoundary>
 );

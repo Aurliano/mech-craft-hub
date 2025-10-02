@@ -9,6 +9,7 @@ import Navbar from "@/components/Navbar";
 import { useLogin, useLoginWithCaptcha } from "@/hooks/useAuth";
 import { useAuth } from "@/contexts/AuthContext";
 import TurnstileCaptcha from "@/components/TurnstileCaptcha";
+import ErrorDisplay from "@/components/ErrorDisplay";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -40,8 +41,12 @@ const Login = () => {
     };
 
     // Since Turnstile is disabled, always use regular login
-    await login(loginData);
-    navigate("/dashboard");
+    try {
+      await login({ username, password });
+      navigate("/dashboard");
+    } catch (err) {
+      // Error is handled by the hook
+    }
   };
 
   async function onSubmit(e: React.FormEvent) {
@@ -105,13 +110,10 @@ const Login = () => {
                 />
               </div>
 
-              {currentError && (
-                <Alert variant="destructive">
-                  <AlertDescription>
-                    {currentError instanceof Error ? currentError.message : 'خطا در ورود'}
-                  </AlertDescription>
-                </Alert>
-              )}
+              <ErrorDisplay 
+                error={currentError} 
+                onRetry={() => window.location.reload()}
+              />
 
               <div className="flex items-center justify-between">
                 <Link to="/forgot-password" className="text-sm text-primary hover:underline">

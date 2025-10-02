@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
-  loginRequest, registerRequest, meRequest, setTokens, clearTokens, getAccessToken,
+  customerRegisterRequest, contractorRegisterRequest, meRequest, setTokens, clearTokens, getAccessToken,
   passwordResetRequest, passwordResetConfirm, changePassword,
   phoneVerificationRequest, phoneVerificationConfirm,
   getUserOrders, getUserCart, getUserCartItems, getUserNotifications, getUserStats,
@@ -29,7 +29,7 @@ export function useMe() {
 export function useLogin() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: loginRequest,
+    mutationFn: (params: { username: string; password: string }) => loginRequest(params),
     onSuccess: (data) => {
       setTokens(data.access, data.refresh);
       qc.invalidateQueries({ queryKey: ['me'] });
@@ -39,10 +39,22 @@ export function useLogin() {
   });
 }
 
-export function useRegister() {
+export function useCustomerRegister() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: registerRequest,
+    mutationFn: customerRegisterRequest,
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['me'] });
+      // Redirect to home page and refresh
+      window.location.href = '/';
+    },
+  });
+}
+
+export function useContractorRegister() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: contractorRegisterRequest,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['me'] });
       // Redirect to home page and refresh

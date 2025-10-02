@@ -116,7 +116,7 @@ export default function SupportWidget({ className = '' }: SupportWidgetProps) {
 
   if (!isOpen) {
     return (
-      <div className={`fixed bottom-[119px] right-6 z-50 ${className}`}>
+      <div className={`fixed bottom-6 right-6 z-50 ${className}`}>
         <Button
           onClick={toggleWidget}
           size="lg"
@@ -129,7 +129,7 @@ export default function SupportWidget({ className = '' }: SupportWidgetProps) {
   }
 
   return (
-    <div className={`fixed bottom-[119px] right-6 z-50 ${className}`}>
+    <div className={`fixed bottom-6 right-6 z-50 ${className}`}>
       <Card className="w-96 max-h-[calc(100vh-3rem)] shadow-2xl border-0 bg-white">
         <CardHeader className="pb-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-lg">
           <div className="flex items-center justify-between">

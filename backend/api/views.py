@@ -153,9 +153,22 @@ def api_status(request):
 @api_view(["POST"]) 
 @permission_classes([AllowAny])
 @throttle_classes([RegisterThrottle])
-def register(request):
-    """User registration with Turnstile validation"""
-    serializer = RegisterSerializer(data=request.data, context={'request': request})
+def customer_register(request):
+    """Customer registration with Turnstile validation"""
+    from .serializers import CustomerRegisterSerializer
+    serializer = CustomerRegisterSerializer(data=request.data, context={'request': request})
+    serializer.is_valid(raise_exception=True)
+    user = serializer.save()
+    return Response(UserSerializer(user).data, status=201)
+
+
+@api_view(["POST"]) 
+@permission_classes([AllowAny])
+@throttle_classes([RegisterThrottle])
+def contractor_register(request):
+    """Contractor registration with Turnstile validation"""
+    from .serializers import ContractorRegisterSerializer
+    serializer = ContractorRegisterSerializer(data=request.data, context={'request': request})
     serializer.is_valid(raise_exception=True)
     user = serializer.save()
     return Response(UserSerializer(user).data, status=201)

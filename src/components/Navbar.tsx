@@ -68,15 +68,13 @@ const Navbar = () => {
     <nav className="bg-background border-b border-border sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Right Section: Logo and Menu */}
-          <div className="flex items-center gap-8">
-            {/* Logo */}
-            <div className="flex items-center gap-3">
-              <img src={logo} alt="لوگو" className="h-16 w-auto" />
-              <span className="text-xl font-bold">پلتفرم مهندسی سایدا</span>
-            </div>
+          {/* Left Section: Logo */}
+          <div className="flex items-center gap-3">
+            <img src={logo} alt="لوگو" className="h-16 w-auto" />
+            <span className="text-xl font-bold">پلتفرم مهندسی سایدا</span>
+          </div>
 
-            {/* Desktop Menu */}
+          {/* Center Section: Desktop Menu */}
           <div className="hidden md:flex items-center" dir="rtl">
               <NavigationMenu className="bg-transparent">
                 <NavigationMenuList className="gap-1">
@@ -191,7 +189,7 @@ const Navbar = () => {
             </div>
           </div>
 
-          {/* Auth Buttons / User Menu */}
+          {/* Right Section: Auth Buttons / User Menu */}
           <div className="hidden md:flex items-center space-x-4 rtl:space-x-reverse" dir="rtl">
             {isAuthenticated ? (
               <>
@@ -472,7 +470,7 @@ const Navbar = () => {
                               </Link>
                             </Button>
                             
-                            {(manufacturingCheck as any)?.has_manufacturing_service && (
+                            {(manufacturingCheck as { has_manufacturing_service?: boolean })?.has_manufacturing_service && (
                               <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
                                 <Link to="/my-workshops" onClick={() => setIsOpen(false)}>
                                   <Building2 className="mr-2 h-4 w-4" />
@@ -526,7 +524,6 @@ const Navbar = () => {
             </div>
           </div>
         )}
-      </div>
     </nav>
   );
 };

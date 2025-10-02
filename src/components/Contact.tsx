@@ -1,5 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Phone, MessageCircle, MapPin, Send } from "lucide-react";
+import { Action, Description } from "@radix-ui/react-toast";
+import { Phone, MessageCircle, MapPin, Send, InstagramIcon } from "lucide-react";
+import { title } from "process";
 
 const Contact = () => {
   const contactMethods = [
@@ -7,20 +9,20 @@ const Contact = () => {
       icon: Phone,
       title: "تماس تلفنی",
       description: "برای مشاوره رایگان با ما تماس بگیرید",
-      info: "09359430708",
-      action: "tel:+989359430708"
+      info: "09917064658",
+      action: "tel:+989917064658"
     },
     {
       icon: Send,
       title: "تلگرام",
-      description: "ارتباط سریع و آسان از طریق تلگرام",
-      info: "@saydatech_ir",
+      description: "ارتباط سریع و آسان از طریق کانال رسمی ما در تلگرام",
+      info: "@saydatech",
       action: "https://t.me/saydatech_ir"
     },
     {
       icon: MessageCircle,
       title: "ایتا",
-      description: "پیام‌رسان داخلی برای ارتباط مستقیم",
+      description: "پیام‌رسان داخلی برای ارتباط مستقیم با پشتیبان",
       info: "saydatech_ir@",
       action: "https://eitaa.com/saydatech_ir"
     },
@@ -28,8 +30,15 @@ const Contact = () => {
       icon: MapPin,
       title: "آدرس",
       description: "مراجعه حضوری به دفتر مرکزی",
-      info: "اصفهان، خمینی شهر",
+      info: "ایران ،اصفهان",
       action: "https://maps.google.com"
+    },
+    {
+      icon: InstagramIcon,
+      title: "صفحه اینستاگرام",
+      description: "صفحه رسمی ما در اینستاگرام را دنبال کنید",
+      info: "saydatech",
+      action: "https://www.instagram.com/saydatech/"
     }
   ];
 

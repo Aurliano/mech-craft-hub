@@ -8,17 +8,20 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import Navbar from "@/components/Navbar";
-import { useRegister, usePhoneVerificationRequest, useRegisterWithCaptcha } from "@/hooks/useAuth";
+import { useContractorRegister, usePhoneVerificationRequest, useRegisterWithCaptcha } from "@/hooks/useAuth";
 import { useAuth } from "@/contexts/AuthContext";
 import TurnstileCaptcha from "@/components/TurnstileCaptcha";
 import TermsAndConditions from "@/components/TermsAndConditions";
+import PasswordStrength from "@/components/PasswordStrength";
+import ErrorDisplay from "@/components/ErrorDisplay";
+import { validatePassword } from "@/lib/passwordValidation";
 import { useScopes, useServices } from "@/hooks/useAuth";
 
 const ContractorRegister = () => {
   const navigate = useNavigate();
-  const { mutateAsync: register, isPending, error } = useRegister();
-  const { mutateAsync: registerWithCaptcha, isPending: isCaptchaPending, error: registerCaptchaError } = useRegisterWithCaptcha();
+  const { mutateAsync: register, isPending, error } = useContractorRegister();
   const { mutateAsync: requestVerification, isPending: isVerifying } = usePhoneVerificationRequest();
+  const { mutateAsync: registerWithCaptcha, isPending: isCaptchaPending, error: registerCaptchaError } = useRegisterWithCaptcha();
   const { isAuthenticated } = useAuth();
   
   // Get scopes and services
@@ -118,8 +121,11 @@ const ContractorRegister = () => {
     }
     if (!password.trim()) {
       errors.password = "رمز عبور الزامی است";
-    } else if (password.length < 8) {
-      errors.password = "رمز عبور باید حداقل 8 کاراکتر باشد";
+    } else {
+      const passwordValidation = validatePassword(password);
+      if (!passwordValidation.isValid) {
+        errors.password = passwordValidation.errors.join('، ');
+      }
     }
     
     // Validate captcha
@@ -258,6 +264,7 @@ const ContractorRegister = () => {
                     required 
                     minLength={8} 
                   />
+                  {password && <PasswordStrength password={password} />}
                   {validationErrors.password && (
                     <p className="text-xs text-red-500">{validationErrors.password}</p>
                   )}
@@ -356,17 +363,10 @@ const ContractorRegister = () => {
                   </Alert>
                 ) : null}
 
-                {(error || registerCaptchaError) && (
-                  <Alert variant="destructive">
-                    <AlertDescription>
-                      {error instanceof Error ? error.message : 
-                       registerCaptchaError instanceof Error ? registerCaptchaError.message : 
-                       typeof error === 'string' ? error :
-                       typeof registerCaptchaError === 'string' ? registerCaptchaError :
-                       'ثبت‌نام با خطا مواجه شد'}
-                    </AlertDescription>
-                  </Alert>
-                )}
+                <ErrorDisplay 
+                  error={error || registerCaptchaError} 
+                  onRetry={() => window.location.reload()}
+                />
 
                 <Button 
                   className="w-full" 

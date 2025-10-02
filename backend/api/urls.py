@@ -8,7 +8,7 @@ from .views import (
     OrderViewSet, OrderItemViewSet, QuoteViewSet,
     TicketViewSet, TicketMessageViewSet, TicketAttachmentViewSet, TicketFileTypeViewSet, 
     TicketCategoryViewSet, ContentFilterLogViewSet, ReviewViewSet,
-    register, login, refresh_token, logout, me, UserViewSet, UploadView,
+    customer_register, contractor_register, login, refresh_token, logout, me, UserViewSet, UploadView,
     password_reset_request, password_reset_confirm, phone_verification_request,
     phone_verification_confirm, change_password,
     # New order management endpoints
@@ -59,7 +59,8 @@ urlpatterns = [
     path('health/', health, name='health'),
     path('version/', version_info, name='version_info'),
     path('status/', api_status, name='api_status'),
-    path('v1/auth/register/', register, name='register'),
+    path('v1/auth/customer-register/', customer_register, name='customer_register'),
+    path('v1/auth/contractor-register/', contractor_register, name='contractor_register'),
     path('v1/auth/login/', login, name='login'),
     path('v1/auth/refresh/', refresh_token, name='refresh_token'),
     path('v1/auth/logout/', logout, name='logout'),
