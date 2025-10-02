@@ -14,6 +14,8 @@ import { useContractorWorkshops, useCreateContractorWorkshop, useCheckContractor
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useToast } from '@/hooks/use-toast';
+import MachineSelector from '@/components/MachineSelector';
+import { SelectedMachine } from '@/data/machines';
 
 const MyWorkshops = () => {
   const { user, isContractor } = useAuth();
@@ -33,10 +35,8 @@ const MyWorkshops = () => {
     manager_name: '',
     manager_phone: '',
     capabilities: [] as string[],
-    machines: [] as { name: string; precision: string }[]
+    machines: [] as SelectedMachine[]
   });
-
-  const [newMachine, setNewMachine] = useState({ name: '', precision: '' });
 
   // Manufacturing processes list
   const manufacturingProcesses = [
@@ -86,8 +86,34 @@ const MyWorkshops = () => {
       return;
     }
 
+    // Validate machines
+    const invalidMachines = newWorkshop.machines.filter(machine => 
+      !machine.description.trim() || machine.quantity < 1
+    );
+    
+    if (invalidMachines.length > 0) {
+      toast({
+        title: "خطا",
+        description: "لطفاً توضیحات و تعداد تمام دستگاه‌ها را وارد کنید.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
-      await createWorkshopMutation.mutateAsync(newWorkshop);
+      // Convert SelectedMachine to the format expected by backend
+      const machinesForBackend = newWorkshop.machines.map(machine => ({
+        name: machine.machineType.name,
+        precision: machine.description,
+        quantity: machine.quantity
+      }));
+
+      const workshopData = {
+        ...newWorkshop,
+        machines: machinesForBackend
+      };
+
+      await createWorkshopMutation.mutateAsync(workshopData);
       toast({
         title: "موفق",
         description: "کارگاه با موفقیت ثبت شد.",
@@ -122,20 +148,10 @@ const MyWorkshops = () => {
     }
   };
 
-  const addMachine = () => {
-    if (newMachine.name.trim() && newMachine.precision.trim()) {
-      setNewWorkshop(prev => ({
-        ...prev,
-        machines: [...prev.machines, { ...newMachine }]
-      }));
-      setNewMachine({ name: '', precision: '' });
-    }
-  };
-
-  const removeMachine = (index: number) => {
+  const handleMachinesChange = (machines: SelectedMachine[]) => {
     setNewWorkshop(prev => ({
       ...prev,
-      machines: prev.machines.filter((_, i) => i !== index)
+      machines
     }));
   };
 
@@ -289,41 +305,10 @@ const MyWorkshops = () => {
                 </div>
 
                 {/* Machines */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">دستگاه‌ها</h3>
-                  <div className="space-y-3">
-                    {newWorkshop.machines.map((machine, index) => (
-                      <div key={index} className="flex items-center gap-2 p-3 border rounded-lg">
-                        <div className="flex-1">
-                          <span className="font-medium">{machine.name}</span>
-                          <span className="text-muted-foreground mr-2">- دقت: {machine.precision}</span>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeMachine(index)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                    <div className="flex gap-2">
-                      <Input
-                        placeholder="نام دستگاه"
-                        value={newMachine.name}
-                        onChange={(e) => setNewMachine({ ...newMachine, name: e.target.value })}
-                      />
-                      <Input
-                        placeholder="دقت دستگاه"
-                        value={newMachine.precision}
-                        onChange={(e) => setNewMachine({ ...newMachine, precision: e.target.value })}
-                      />
-                      <Button onClick={addMachine} disabled={!newMachine.name.trim() || !newMachine.precision.trim()}>
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+                <MachineSelector
+                  selectedMachines={newWorkshop.machines}
+                  onMachinesChange={handleMachinesChange}
+                />
 
                 {/* Description */}
                 <div>
@@ -425,9 +410,16 @@ const MyWorkshops = () => {
                           {workshop.machines.slice(0, 3).map((machine, index) => (
                             <div key={index} className="flex justify-between items-center text-xs">
                               <span className="text-gray-600">{machine.name}</span>
-                              <Badge variant="outline" className="text-xs">
-                                {machine.precision}
-                              </Badge>
+                              <div className="flex gap-1">
+                                <Badge variant="outline" className="text-xs">
+                                  {machine.precision}
+                                </Badge>
+                                {machine.quantity && machine.quantity > 1 && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    {machine.quantity} عدد
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
                           ))}
                           {workshop.machines.length > 3 && (

@@ -72,6 +72,7 @@ export default function TurnstileCaptcha({
         },
         'error-callback': () => {
           console.error("Turnstile error occurred");
+          // Don't set error for 400020, just log it
           setError("Turnstile verification failed. Please try again.");
         },
         'expired-callback': () => {
@@ -125,7 +126,7 @@ export default function TurnstileCaptcha({
   }, [renderWidget]);
 
   useEffect(() => {
-    const SITEKEY = siteKey || import.meta.env.VITE_TURNSTILE_SITEKEY;
+    const SITEKEY = siteKey || import.meta.env.VITE_TURNSTILE_SITEKEY || '0x4AAAAAAB4WRGkdiHvALys6'; // Correct site key
     
     if (!SITEKEY || SITEKEY === "your-turnstile-site-key" || !SITEKEY.startsWith("0x")) {
       setError("Turnstile site key is not properly configured.");
