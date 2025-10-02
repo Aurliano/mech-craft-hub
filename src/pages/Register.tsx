@@ -51,17 +51,10 @@ const Register = () => {
       phone,
       password,
       role: 'customer', // Set role as customer
-      cf_turnstile_response: captchaToken // Add Turnstile token
     };
 
-    if (captchaToken) {
-      await registerWithCaptcha({ ...userData, turnstile_token: captchaToken });
-    } else {
-      await register(userData);
-    }
-    
-    // Clear token after use
-    setCaptchaToken(null);
+    // Since Turnstile is disabled, always use regular registration
+    await register(userData);
     
     // After successful registration, request phone verification
     await requestVerification(phone);
@@ -237,7 +230,7 @@ const Register = () => {
                   className="w-full" 
                   variant="hero" 
                   type="submit" 
-                  disabled={isPending || isVerifying || isCaptchaPending || !isCaptchaVerified || !acceptTerms}
+                  disabled={isPending || isVerifying || isCaptchaPending || !acceptTerms}
                 >
                   {isPending || isVerifying || isCaptchaPending ? "در حال ثبت‌نام..." : "ثبت نام"}
                 </Button>

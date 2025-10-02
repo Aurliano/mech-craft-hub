@@ -39,17 +39,8 @@ const Login = () => {
       password,
     };
 
-    if (captchaToken) {
-      await loginWithCaptcha({ 
-        ...loginData, 
-        turnstile_token: captchaToken
-      });
-    } else {
-      await login(loginData);
-    }
-    
-    // Clear token after use
-    setCaptchaToken(null);
+    // Since Turnstile is disabled, always use regular login
+    await login(loginData);
     navigate("/dashboard");
   };
 
@@ -132,7 +123,7 @@ const Login = () => {
                 className="w-full" 
                 variant="hero" 
                 type="submit" 
-                disabled={isPendingAny || !isCaptchaVerified}
+                disabled={isPendingAny}
               >
                 {isPendingAny ? "در حال ورود..." : "ورود"}
               </Button>

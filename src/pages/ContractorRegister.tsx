@@ -73,11 +73,8 @@ const ContractorRegister = () => {
       selected_services: selectedServices
     };
 
-    if (turnstileToken) {
-      await registerWithCaptcha({ ...userData, turnstile_token: turnstileToken });
-    } else {
-      await register(userData);
-    }
+    // Since Turnstile is disabled, always use regular registration
+    await register(userData);
     
     // After successful registration, request phone verification
     await requestVerification(phone);
@@ -375,7 +372,7 @@ const ContractorRegister = () => {
                   className="w-full" 
                   variant="hero" 
                   type="submit" 
-                  disabled={isPending || isVerifying || isCaptchaPending || !isCaptchaVerified || !acceptTerms}
+                  disabled={isPending || isVerifying || isCaptchaPending || !acceptTerms}
                 >
                   {isPending || isVerifying || isCaptchaPending ? "در حال ثبت‌نام..." : "ثبت نام پیمانکار"}
                 </Button>
