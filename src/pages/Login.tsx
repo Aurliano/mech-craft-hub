@@ -99,8 +99,8 @@ const Login = () => {
                 />
               </div>
 
-              {/* Turnstile Captcha */}
-              <TurnstileCaptcha onVerify={handleCaptchaVerify} />
+              {/* Turnstile Captcha - Temporarily disabled */}
+              {/* <TurnstileCaptcha onVerify={handleCaptchaVerify} /> */}
 
               {/* Honeypot field - hidden from users */}
               <div style={{ display: 'none' }}>

@@ -328,11 +328,11 @@ const ContractorRegister = () => {
                   </div>
                 )}
 
-                {/* Turnstile Captcha */}
-                <TurnstileCaptcha 
+                {/* Turnstile Captcha - Temporarily disabled */}
+                {/* <TurnstileCaptcha 
                   onVerify={handleCaptchaVerify}
                   timeout={8000} // 8 seconds timeout
-                />
+                /> */}
 
                 {/* Honeypot field - hidden from users */}
                 <div style={{ display: 'none' }}>
