@@ -28,7 +28,7 @@ from .serializers import (
     CartSerializer, CartItemSerializer, OrderSerializer, OrderItemSerializer, QuoteSerializer,
     TicketSerializer, TicketMessageSerializer, TicketAttachmentSerializer, TicketFileTypeSerializer,
     TicketCategorySerializer, ContentFilterLogSerializer,
-    ReviewSerializer, RegisterSerializer, LoginSerializer, UserSerializer,
+    ReviewSerializer, CustomerRegisterSerializer, ContractorRegisterSerializer, LoginSerializer, UserSerializer,
     PasswordResetRequestSerializer, PasswordResetConfirmSerializer, PhoneVerificationRequestSerializer,
     PhoneVerificationConfirmSerializer, ChangePasswordSerializer,
     CreateOrderSerializer, OrderStatusUpdateSerializer, CreateQuoteSerializer,
