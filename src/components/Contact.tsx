@@ -54,24 +54,24 @@ const Contact = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
           {contactMethods.map((method, index) => {
             const IconComponent = method.icon;
             return (
               <Card key={index} className="group hover:shadow-elegant transition-all duration-300 hover:-translate-y-2 bg-card border-border cursor-pointer"
                     onClick={() => window.open(method.action, '_blank')}>
-                <CardHeader className="text-center p-4 sm:p-6">
-                  <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-primary rounded-full flex items-center justify-center mb-3 sm:mb-4 group-hover:shadow-glow transition-all duration-300">
-                    <IconComponent className="h-6 w-6 sm:h-8 sm:w-8 text-primary-foreground" />
+                <CardHeader className="text-center p-3 sm:p-4 lg:p-4">
+                  <div className="mx-auto w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-primary rounded-full flex items-center justify-center mb-2 sm:mb-3 group-hover:shadow-glow transition-all duration-300">
+                    <IconComponent className="h-5 w-5 sm:h-6 sm:w-6 lg:h-7 lg:w-7 text-primary-foreground" />
                   </div>
-                  <CardTitle className="text-foreground text-right text-sm sm:text-base">{method.title}</CardTitle>
-                  <CardDescription className="text-muted-foreground text-right text-xs sm:text-sm">
+                  <CardTitle className="text-foreground text-right text-xs sm:text-sm lg:text-sm">{method.title}</CardTitle>
+                  <CardDescription className="text-muted-foreground text-right text-xs sm:text-xs lg:text-xs leading-tight">
                     {method.description}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="text-right p-4 sm:p-6 pt-0">
+                <CardContent className="text-right p-3 sm:p-4 lg:p-4 pt-0">
                   <div className="text-center">
-                    <p className="font-semibold text-primary mb-2 text-sm sm:text-base">{method.info}</p>
+                    <p className="font-semibold text-primary mb-2 text-xs sm:text-sm lg:text-sm truncate">{method.info}</p>
                     <div className="w-full h-px bg-gradient-to-r from-transparent via-border to-transparent"></div>
                   </div>
                 </CardContent>

@@ -352,19 +352,16 @@ PASSWORD_HASHERS = [
 
 # Content Security Policy (CSP) - New format for django-csp 4.0+
 CONTENT_SECURITY_POLICY = {
-    'DIRECTIVES': {
-        'default-src': ("'self'",),
-        'script-src': ("'self'", "'unsafe-inline'", "https://challenges.cloudflare.com"),
-        'style-src': ("'self'", "'unsafe-inline'", "https://fonts.googleapis.com"),
-        'font-src': ("'self'", "https://fonts.gstatic.com"),
-        'img-src': ("'self'", "data:", "https:"),
-        'connect-src': ("'self'",),
-        'object-src': ("'none'",),
-        'base-uri': ("'self'",),
-        'frame-ancestors': ("'none'",),
-        'form-action': ("'self'",),
-        'upgrade-insecure-requests': True,
-    }
+    'default-src': ("'self'",),
+    'script-src': ("'self'", "'unsafe-inline'", "https://challenges.cloudflare.com"),
+    'style-src': ("'self'", "'unsafe-inline'", "https://fonts.googleapis.com"),
+    'font-src': ("'self'", "https://fonts.gstatic.com"),
+    'img-src': ("'self'", "data:", "https:"),
+    'connect-src': ("'self'",),
+    'object-src': ("'none'",),
+    'base-uri': ("'self'",),
+    'form-action': ("'self'",),
+    'upgrade-insecure-requests': True,
 }
 
 # Security Settings for Production (override development settings)
@@ -380,8 +377,11 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_BROWSER_XSS_FILTER = True
-    X_FRAME_OPTIONS = 'DENY'
+    X_FRAME_OPTIONS = 'SAMEORIGIN'
     SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+else:
+    # Development settings
+    X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 # Cache Configuration (Redis for production, local memory for development)
 if os.getenv('REDIS_URL'):

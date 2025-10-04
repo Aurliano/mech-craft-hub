@@ -69,15 +69,15 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Left Section: Logo */}
-          <div className="flex items-center gap-3">
-            <img src={logo} alt="لوگو" className="h-16 w-auto" />
-            <span className="text-xl font-bold">پلتفرم مهندسی سایدا</span>
+          <div className="flex items-center gap-2 min-w-0">
+            <img src={logo} alt="لوگو" className="h-12 w-auto flex-shrink-0" />
+            <span className="text-lg font-bold truncate hidden sm:inline">پلتفرم مهندسی سایدا</span>
           </div>
 
           {/* Center Section: Desktop Menu */}
-          <div className="hidden md:flex items-center" dir="rtl">
+          <div className="hidden lg:flex items-center flex-1 justify-center max-w-lg mx-auto" dir="rtl">
               <NavigationMenu className="bg-transparent">
-                <NavigationMenuList className="gap-1">
+                <NavigationMenuList className="gap-2">
 
                   {/* Contact */}
                   <NavigationMenuItem>
@@ -190,7 +190,7 @@ const Navbar = () => {
           </div>
 
           {/* Right Section: Auth Buttons / User Menu */}
-          <div className="hidden md:flex items-center space-x-4 rtl:space-x-reverse" dir="rtl">
+          <div className="hidden md:flex items-center space-x-2 rtl:space-x-reverse flex-shrink-0" dir="rtl">
             {isAuthenticated ? (
               <>
 
@@ -233,14 +233,14 @@ const Navbar = () => {
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden">
+          <div className="lg:hidden">
             <button
               onClick={() => setIsOpen(!isOpen)}
-              className="text-foreground hover:text-primary transition-colors"
+              className="text-foreground hover:text-primary transition-colors p-2"
               title={isOpen ? "بستن منو" : "باز کردن منو"}
               aria-label={isOpen ? "بستن منو" : "باز کردن منو"}
             >
-              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               <span className="sr-only">{isOpen ? "بستن منو" : "باز کردن منو"}</span>
             </button>
           </div>
@@ -248,7 +248,7 @@ const Navbar = () => {
 
         {/* Mobile Menu */}
         {isOpen && (
-          <div className="md:hidden border-t border-border bg-background/95 backdrop-blur-sm" dir="rtl">
+          <div className="lg:hidden border-t border-border bg-background/95 backdrop-blur-sm" dir="rtl">
             <div className="max-h-[80vh] overflow-y-auto">
               <div className="px-3 py-4 space-y-3">
                 {/* Home Link */}
