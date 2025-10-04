@@ -1183,7 +1183,6 @@ export const api = {
   // Auth
   me: meRequest,
   login: loginRequest,
-  register: registerRequest,
   refreshToken: refreshAccessToken,
   changePassword: changePasswordRequest,
   passwordResetRequest: passwordResetRequest,
