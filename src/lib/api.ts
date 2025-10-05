@@ -165,7 +165,7 @@ export async function loginRequest(params: {
   fallback_captcha_challenge_id?: string;
   fallback_captcha_answer?: string;
 }) {
-  const res = await fetch(getApiUrl('/api/v1/auth/login/'), {
+  const res = await fetch(getApiUrl('/v1/auth/login/'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
@@ -449,7 +449,7 @@ export async function getServices(scopeId?: string) {
 // Dashboard Data Functions
 export async function getUserOrders() {
   try {
-    const url = getApiUrl('/api/v1/orders/user/');
+    const url = getApiUrl('/v1/orders/user/');
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -839,7 +839,7 @@ export async function loginWithTurnstile(params: {
   password: string; 
   turnstile_token: string;
 }) {
-  const res = await fetch(getApiUrl('/api/v1/auth/login/'), {
+  const res = await fetch(getApiUrl('/v1/auth/login/'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
@@ -1001,7 +1001,7 @@ export async function createTicketMessage(ticketId: string, data: {
 
 export async function getTicketCategories() {
   try {
-    const url = getApiUrl('/api/v1/ticket-categories/');
+    const url = getApiUrl('/v1/ticket-categories/');
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -1029,7 +1029,7 @@ export async function createSupportFeedback(data: {
   personal_feedback?: string;
 }) {
   try {
-    const url = getApiUrl('/api/v1/support/feedback/');
+    const url = getApiUrl('/v1/support/feedback/');
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -1052,7 +1052,7 @@ export async function createSupportFeedback(data: {
 
 export async function getSupportFeedbacks() {
   try {
-    const url = getApiUrl('/api/v1/support/feedback/my/');
+    const url = getApiUrl('/v1/support/feedback/my/');
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -1075,7 +1075,7 @@ export async function getSupportFeedbacks() {
 
 export async function askAISupport(question: string) {
   try {
-    const url = getApiUrl('/api/v1/support/ask/');
+    const url = getApiUrl('/v1/support/ask/');
     const response = await fetch(url, {
       method: 'POST',
       headers: {
@@ -1098,7 +1098,7 @@ export async function askAISupport(question: string) {
 
 export async function getTicketFileTypes() {
   try {
-    const url = getApiUrl('/api/v1/ticket-file-types/');
+    const url = getApiUrl('/v1/ticket-file-types/');
     const response = await fetch(url, {
       method: 'GET',
       headers: {
