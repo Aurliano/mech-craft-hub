@@ -15,7 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.http import JsonResponse, HttpResponse
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
@@ -86,8 +86,8 @@ urlpatterns = [
     path('health/', health_check, name='health_check'),
     path('metrics/', metrics_view, name='metrics'),
     
-    # Catch-all route for frontend (must be last!)
-    path('<path:path>', home_view, name='frontend_catch_all'),
+    # SPA fallback (exclude api/admin/static/media/assets)
+    re_path(r'^(?!api/|admin/|static/|media/|assets/).*$', home_view, name='spa_fallback'),
 ]
 
 # Serve media files
