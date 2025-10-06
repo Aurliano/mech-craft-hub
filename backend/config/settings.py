@@ -338,7 +338,7 @@ if not DEBUG:
 # Content Security
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
-X_FRAME_OPTIONS = 'DENY'
+X_FRAME_OPTIONS = 'ALLOWALL'
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 # Additional Security Headers
@@ -365,7 +365,6 @@ CONTENT_SECURITY_POLICY = {
     'object-src': ("'none'",),
     'base-uri': ("'self'",),
     'form-action': ("'self'",),
-    'upgrade-insecure-requests': True,
 }
 
 # Security Settings for Production (override development settings)
@@ -381,11 +380,11 @@ if not DEBUG:
     SECURE_HSTS_PRELOAD = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_BROWSER_XSS_FILTER = True
-    X_FRAME_OPTIONS = 'SAMEORIGIN'
+    X_FRAME_OPTIONS = 'ALLOWALL'
     SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 else:
     # Development settings
-    X_FRAME_OPTIONS = 'SAMEORIGIN'
+    X_FRAME_OPTIONS = 'ALLOWALL'
 
 # Cache Configuration (Redis for production, local memory for development)
 if os.getenv('REDIS_URL'):
