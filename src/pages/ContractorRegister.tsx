@@ -16,6 +16,7 @@ import PasswordStrength from "@/components/PasswordStrength";
 import ErrorDisplay from "@/components/ErrorDisplay";
 import { validatePassword } from "@/lib/passwordValidation";
 import { useScopes, useServices } from "@/hooks/useAuth";
+import { refreshCSRFToken } from "@/lib/csrfProtection";
 
 const ContractorRegister = () => {
   const navigate = useNavigate();
@@ -57,6 +58,18 @@ const ContractorRegister = () => {
       navigate("/contractor-dashboard");
     }
   }, [isAuthenticated, navigate]);
+
+  // Initialize CSRF token
+  React.useEffect(() => {
+    const initializeCSRF = async () => {
+      try {
+        await refreshCSRFToken();
+      } catch (error) {
+        console.error('Failed to initialize CSRF token:', error);
+      }
+    };
+    initializeCSRF();
+  }, []);
 
   const handleCaptchaVerify = (token: string) => {
     setTurnstileToken(token);

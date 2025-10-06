@@ -13,6 +13,7 @@ import TermsAndConditions from "@/components/TermsAndConditions";
 import PasswordStrength from "@/components/PasswordStrength";
 import ErrorDisplay from "@/components/ErrorDisplay";
 import { validatePassword } from "@/lib/passwordValidation";
+import { refreshCSRFToken } from "@/lib/csrfProtection";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -39,6 +40,18 @@ const Register = () => {
       navigate("/dashboard");
     }
   }, [isAuthenticated, navigate]);
+
+  // Initialize CSRF token
+  React.useEffect(() => {
+    const initializeCSRF = async () => {
+      try {
+        await refreshCSRFToken();
+      } catch (error) {
+        console.error('Failed to initialize CSRF token:', error);
+      }
+    };
+    initializeCSRF();
+  }, []);
 
   const handleCaptchaVerify = (token: string) => {
     setCaptchaToken(token);

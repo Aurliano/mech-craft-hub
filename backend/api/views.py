@@ -7,6 +7,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import rest_framework as filters_drf
 from django.db import models
+from django.middleware.csrf import get_token
 from .models import (
     User,
     Scope, Service, ServiceField, ServiceTab,
@@ -122,6 +123,16 @@ def health(request):
             "error": str(e),
             "timestamp": timezone.now().isoformat()
         }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def csrf_token(request):
+    """Get CSRF token for frontend"""
+    token = get_token(request)
+    return Response({
+        "csrfToken": token
+    })
 
 
 @api_view(["GET"])

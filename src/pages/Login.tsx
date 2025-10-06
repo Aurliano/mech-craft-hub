@@ -10,6 +10,7 @@ import { useLogin, useLoginWithCaptcha } from "@/hooks/useAuth";
 import { useAuth } from "@/contexts/AuthContext";
 import TurnstileCaptcha from "@/components/TurnstileCaptcha";
 import ErrorDisplay from "@/components/ErrorDisplay";
+import { refreshCSRFToken } from "@/lib/csrfProtection";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -28,6 +29,18 @@ const Login = () => {
       navigate("/dashboard");
     }
   }, [isAuthenticated, navigate]);
+
+  // Initialize CSRF token
+  React.useEffect(() => {
+    const initializeCSRF = async () => {
+      try {
+        await refreshCSRFToken();
+      } catch (error) {
+        console.error('Failed to initialize CSRF token:', error);
+      }
+    };
+    initializeCSRF();
+  }, []);
 
   const handleCaptchaVerify = (token: string) => {
     setCaptchaToken(token);

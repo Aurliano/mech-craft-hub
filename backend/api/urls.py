@@ -2,7 +2,7 @@ from django.urls import path, include
 from django.http import HttpResponseRedirect
 from rest_framework.routers import DefaultRouter
 from .views import (
-    health, version_info, api_status,
+    health, version_info, api_status, csrf_token,
     ScopeViewSet, ServiceViewSet, ServiceFieldViewSet, ServiceTabViewSet,
     CartViewSet, CartItemViewSet,
     OrderViewSet, OrderItemViewSet, QuoteViewSet,
@@ -57,6 +57,7 @@ router.register(r'reviews', ReviewViewSet, basename='review')
 
 urlpatterns = [
     path('health/', health, name='health'),
+    path('csrf-token/', csrf_token, name='csrf_token'),
     path('version/', version_info, name='version_info'),
     path('status/', api_status, name='api_status'),
     path('v1/auth/customer-register/', customer_register, name='customer_register'),

@@ -47,6 +47,8 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'api.middleware.CSRFProtectionMiddleware',  # Custom CSRF middleware
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -141,12 +143,36 @@ AUTH_USER_MODEL = 'api.User'
 # CORS settings - Specific origins for production
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = [
+    'http://saydatech.ir',
+    'http://www.saydatech.ir',
     'https://saydatech.ir',
     'https://www.saydatech.ir',
     'https://mech-craft-hub-main.liara.run',
     'https://sayda-engineering-platform.liara.run',
 ]
 CORS_ALLOW_CREDENTIALS = True
+
+# CORS headers
+CORS_ALLOWED_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
 
 # Security settings for production
 SECURE_SSL_REDIRECT = False  # Cloudflare handles SSL redirect
@@ -157,11 +183,17 @@ SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 X_FRAME_OPTIONS = 'DENY'
 
+# Cloudflare proxy settings
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # CSRF settings - Allow HTTP for Cloudflare proxy
 CSRF_COOKIE_SECURE = False  # Allow HTTP cookies for Cloudflare
 CSRF_COOKIE_HTTPONLY = True
 CSRF_USE_SESSIONS = True
 CSRF_TRUSTED_ORIGINS = [
+    'http://saydatech.ir',
+    'http://www.saydatech.ir',
     'https://saydatech.ir',
     'https://www.saydatech.ir',
     'https://mech-craft-hub-main.liara.run',

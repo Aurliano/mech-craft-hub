@@ -19,8 +19,8 @@ export const API_ROOT = '/api';
 export function getApiUrl(endpoint: string): string {
   const isProduction = import.meta.env.PROD;
   if (isProduction) {
-    // In production, use the current domain (saydatech.ir)
-    const baseUrl = window.location.origin;
+    // In production, always use HTTPS
+    const baseUrl = 'https://saydatech.ir';
     // Ensure endpoint starts with /api
     const apiEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
     return `${baseUrl}${apiEndpoint}`;
@@ -32,6 +32,7 @@ export function getApiUrl(endpoint: string): string {
 }
 
 import { requestQueue } from './requestQueue';
+import { getCSRFToken } from './csrfProtection';
 
 const ACCESS_TOKEN_KEY = 'access_token';
 const REFRESH_TOKEN_KEY = 'refresh_token';
@@ -69,9 +70,13 @@ export async function refreshAccessToken(): Promise<string | null> {
 
   try {
     console.log('Attempting to refresh token...');
-    const res = await fetch(getApiUrl('/token/refresh/'), {
+    const res = await fetch(getApiUrl('/v1/auth/refresh/'), {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCSRFToken() || '',
+      },
+      credentials: 'include',
       body: JSON.stringify({ refresh: refreshToken }),
     });
 
@@ -99,6 +104,7 @@ async function simpleFetch<T>(path: string, options: RequestInit = {}): Promise<
   const token = getAccessToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    'X-CSRFToken': getCSRFToken() || '',
     ...(options.headers as Record<string, string> | undefined),
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -106,6 +112,7 @@ async function simpleFetch<T>(path: string, options: RequestInit = {}): Promise<
   const res = await fetch(getApiUrl(path), {
     ...options,
     headers,
+    credentials: 'include',
   });
 
   // If token expired, try to refresh
@@ -115,10 +122,15 @@ async function simpleFetch<T>(path: string, options: RequestInit = {}): Promise<
     if (newToken) {
       console.log('Token refreshed successfully, retrying request...');
       // Retry the request with new token
-      const retryHeaders = { ...headers, 'Authorization': `Bearer ${newToken}` };
+      const retryHeaders = { 
+        ...headers, 
+        'Authorization': `Bearer ${newToken}`,
+        'X-CSRFToken': getCSRFToken() || '',
+      };
       const retryRes = await fetch(getApiUrl(path), {
         ...options,
         headers: retryHeaders,
+        credentials: 'include',
       });
       if (!retryRes.ok) {
         const text = await retryRes.text();
@@ -167,7 +179,11 @@ export async function loginRequest(params: {
 }) {
   const res = await fetch(getApiUrl('/v1/auth/login/'), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCSRFToken() || '',
+    },
+    credentials: 'include',
     body: JSON.stringify(params),
   });
   if (!res.ok) {
@@ -188,7 +204,11 @@ export async function customerRegisterRequest(params: {
 }) {
   const res = await fetch(getApiUrl('/v1/auth/customer-register/'), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCSRFToken() || '',
+    },
+    credentials: 'include',
     body: JSON.stringify(params),
   });
   if (!res.ok) {
@@ -211,7 +231,11 @@ export async function contractorRegisterRequest(params: {
 }) {
   const res = await fetch(getApiUrl('/v1/auth/contractor-register/'), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCSRFToken() || '',
+    },
+    credentials: 'include',
     body: JSON.stringify(params),
   });
   if (!res.ok) {
@@ -304,6 +328,7 @@ export async function uploadFile(file: File, extra?: { context?: string; context
 
       const headers = new Headers();
       headers.append('Authorization', `Bearer ${token}`);
+      headers.append('X-CSRFToken', getCSRFToken() || '');
 
       console.log(`Upload attempt ${attempt}/${retries}:`, file.name, 'Size:', file.size, 'Type:', file.type);
       console.log('Extra data:', extra);
@@ -311,6 +336,7 @@ export async function uploadFile(file: File, extra?: { context?: string; context
       const res = await fetch(getApiUrl('/v1/upload/'), {
         method: 'POST',
         headers: headers,
+        credentials: 'include',
         body: form,
       });
 
@@ -351,7 +377,11 @@ export async function uploadFile(file: File, extra?: { context?: string; context
 export async function passwordResetRequest(email: string) {
   const res = await fetch(getApiUrl('/v1/auth/password-reset-request/'), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCSRFToken() || '',
+    },
+    credentials: 'include',
     body: JSON.stringify({ email }),
   });
   if (!res.ok) {
@@ -364,7 +394,11 @@ export async function passwordResetRequest(email: string) {
 export async function passwordResetConfirm(token: string, newPassword: string) {
   const res = await fetch(getApiUrl('/v1/auth/password-reset-confirm/'), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCSRFToken() || '',
+    },
+    credentials: 'include',
     body: JSON.stringify({ token, new_password: newPassword }),
   });
   if (!res.ok) {
@@ -377,7 +411,11 @@ export async function passwordResetConfirm(token: string, newPassword: string) {
 export async function changePassword(oldPassword: string, newPassword: string) {
   const res = await fetch(getApiUrl('/v1/auth/change-password/'), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCSRFToken() || '',
+    },
+    credentials: 'include',
     body: JSON.stringify({ old_password: oldPassword, new_password: newPassword }),
   });
   if (!res.ok) {
@@ -391,7 +429,11 @@ export async function changePassword(oldPassword: string, newPassword: string) {
 export async function phoneVerificationRequest(phone: string) {
   const res = await fetch(getApiUrl('/v1/auth/phone-verification-request/'), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCSRFToken() || '',
+    },
+    credentials: 'include',
     body: JSON.stringify({ phone }),
   });
   if (!res.ok) {
@@ -404,7 +446,11 @@ export async function phoneVerificationRequest(phone: string) {
 export async function phoneVerificationConfirm(phone: string, code: string) {
   const res = await fetch(getApiUrl('/v1/auth/phone-verification-confirm/'), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCSRFToken() || '',
+    },
+    credentials: 'include',
     body: JSON.stringify({ phone, code }),
   });
   if (!res.ok) {
@@ -454,8 +500,10 @@ export async function getUserOrders() {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${getAccessToken()}`
-      }
+        'Authorization': `Bearer ${getAccessToken()}`,
+        'X-CSRFToken': getCSRFToken() || '',
+      },
+      credentials: 'include',
     });
     
     if (!response.ok) {
@@ -677,7 +725,9 @@ export async function downloadInvoice(orderId: string) {
     const response = await fetch(getApiUrl(`/v1/orders/${orderId}/invoice/`), {
       headers: {
         'Authorization': `Bearer ${getAccessToken()}`,
+        'X-CSRFToken': getCSRFToken() || '',
       },
+      credentials: 'include',
     });
     
     if (!response.ok) {
@@ -841,7 +891,11 @@ export async function loginWithTurnstile(params: {
 }) {
   const res = await fetch(getApiUrl('/v1/auth/login/'), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCSRFToken() || '',
+    },
+    credentials: 'include',
     body: JSON.stringify(params),
   });
   if (!res.ok) {
@@ -860,7 +914,11 @@ export async function registerWithTurnstile(params: {
 }) {
   const res = await fetch(getApiUrl('/v1/auth/register/'), {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCSRFToken() || '',
+    },
+    credentials: 'include',
     body: JSON.stringify(params),
   });
   if (!res.ok) {
@@ -1006,8 +1064,10 @@ export async function getTicketCategories() {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${getAccessToken()}`
-      }
+        'Authorization': `Bearer ${getAccessToken()}`,
+        'X-CSRFToken': getCSRFToken() || '',
+      },
+      credentials: 'include',
     });
     
     if (!response.ok) {
@@ -1034,8 +1094,10 @@ export async function createSupportFeedback(data: {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${getAccessToken()}`
+        'Authorization': `Bearer ${getAccessToken()}`,
+        'X-CSRFToken': getCSRFToken() || '',
       },
+      credentials: 'include',
       body: JSON.stringify(data)
     });
     
@@ -1057,8 +1119,10 @@ export async function getSupportFeedbacks() {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${getAccessToken()}`
-      }
+        'Authorization': `Bearer ${getAccessToken()}`,
+        'X-CSRFToken': getCSRFToken() || '',
+      },
+      credentials: 'include',
     });
     
     if (!response.ok) {
@@ -1080,8 +1144,10 @@ export async function askAISupport(question: string) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${getAccessToken()}`
+        'Authorization': `Bearer ${getAccessToken()}`,
+        'X-CSRFToken': getCSRFToken() || '',
       },
+      credentials: 'include',
       body: JSON.stringify({ question })
     });
     
@@ -1103,8 +1169,10 @@ export async function getTicketFileTypes() {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${getAccessToken()}`
-      }
+        'Authorization': `Bearer ${getAccessToken()}`,
+        'X-CSRFToken': getCSRFToken() || '',
+      },
+      credentials: 'include',
     });
     
     if (!response.ok) {

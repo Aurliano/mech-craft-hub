@@ -83,10 +83,8 @@ class CSRFProtectionMiddleware(MiddlewareMixin):
         
         # Skip CSRF for API endpoints that use token authentication
         if request.path.startswith('/api/v1/auth/'):
-            # Check for Authorization header
-            auth_header = request.META.get('HTTP_AUTHORIZATION', '')
-            if auth_header.startswith('Bearer '):
-                return None
+            # Skip CSRF for all auth endpoints (login, register, etc.)
+            return None
         
         # Skip CSRF for file uploads (handled by Django's CSRF middleware)
         if request.path.startswith('/v1/upload/'):

@@ -66,11 +66,11 @@ class RegisterThrottle(AnonRateThrottle):
 class LoginThrottle(AnonRateThrottle):
     """
     Throttle for login endpoint
-    - 10 requests per minute for anonymous users
-    - 20 requests per minute for authenticated users
+    - 60 requests per minute for anonymous users
+    - 120 requests per minute for authenticated users
     """
     scope = 'login'
-    rate = '10/min'
+    rate = '60/min'
     
     def get_cache_key(self, request, view):
         """Generate cache key for throttling"""
