@@ -236,6 +236,7 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 class CustomerRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
+    turnstile_token = serializers.CharField(write_only=True, required=False, allow_blank=True)
     cf_turnstile_response = serializers.CharField(write_only=True, required=False, allow_blank=True)
     website = serializers.CharField(required=False, allow_blank=True)  # Honeypot field
     first_name = serializers.CharField(required=False, allow_blank=True)
@@ -288,6 +289,7 @@ class CustomerRegisterSerializer(serializers.ModelSerializer):
 
 class ContractorRegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
+    turnstile_token = serializers.CharField(write_only=True, required=False, allow_blank=True)
     cf_turnstile_response = serializers.CharField(write_only=True, required=False, allow_blank=True)
     website = serializers.CharField(required=False, allow_blank=True)  # Honeypot field
     first_name = serializers.CharField(required=False, allow_blank=True)
