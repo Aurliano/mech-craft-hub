@@ -2,20 +2,36 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useMe, useLogout, useUserOrders, useUserCart, useUserCartItems, useUserNotifications, useUserStats, useNotifications, useMarkNotificationRead, useMarkAllNotificationsRead } from '@/hooks/useAuth';
 import { isAuthenticated } from '@/lib/api';
 
+interface UserRoleItem {
+  role?: { name?: string };
+  is_active?: boolean;
+}
+
+interface BasicUser {
+  id?: string;
+  username?: string;
+  email?: string;
+  phone?: string;
+  first_name?: string;
+  last_name?: string;
+  roles?: UserRoleItem[];
+  role?: { name?: string };
+}
+
 interface AuthContextType {
   isAuthenticated: boolean;
-  user: any;
+  user: BasicUser | null;
   logout: () => void;
   isLoading: boolean;
   // Role checking
   isContractor: boolean;
   isCustomer: boolean;
   // Dashboard data
-  orders: any[];
-  cart: any;
-  cartItems: any[];
-  notifications: any[];
-  stats: any;
+  orders: unknown[];
+  cart: unknown;
+  cartItems: unknown[];
+  notifications: unknown[];
+  stats: unknown;
   isLoadingDashboard: boolean;
   // Notification actions
   markNotificationRead: (id: string) => void;
@@ -25,7 +41,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [authState, setAuthState] = useState({
+  const [authState, setAuthState] = useState<{ isAuthenticated: boolean; user: BasicUser | null; isLoading: boolean}>({
     isAuthenticated: isAuthenticated(),
     user: null,
     isLoading: true
@@ -76,9 +92,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   
   const isLoadingDashboard = isLoadingOrders || isLoadingCart || isLoadingCartItems || isLoadingNotifications || isLoadingStats;
   
-  // Role checking
-  const isContractor = authState.user?.roles?.some((role: any) => role.role?.name === 'contractor' && role.is_active) || false;
-  const isCustomer = authState.user?.roles?.some((role: any) => role.role?.name === 'customer' && role.is_active) || false;
+  // Role checking (support both roles[] and role)
+  const roleNames: string[] = (() => {
+    const listFromArray = (authState.user?.roles || [])
+      .map((r: UserRoleItem) => (r?.role?.name && r.is_active !== false ? r.role.name : undefined))
+      .filter(Boolean) as string[];
+    const singleRole = authState.user?.role?.name ? [authState.user.role.name as string] : [];
+    return Array.from(new Set([...listFromArray, ...singleRole]));
+  })();
+  const isContractor = roleNames.includes('contractor');
+  const isCustomer = roleNames.includes('customer');
   
   // Log errors for debugging
   if (ordersError) console.warn('Error fetching orders:', ordersError);

@@ -16,19 +16,21 @@ const Login = () => {
   const navigate = useNavigate();
   const { mutateAsync: login, isPending, error } = useLogin();
   const { mutateAsync: loginWithCaptcha, isPending: isCaptchaPending, error: captchaError } = useLoginWithCaptcha();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated (respect role)
   React.useEffect(() => {
     if (isAuthenticated) {
-      navigate("/dashboard");
+      const roles = user?.roles?.map((r: { role?: { name?: string } }) => r.role?.name) || [];
+      const isContractor = roles.includes('contractor');
+      navigate(isContractor ? '/contractor-dashboard' : '/dashboard');
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, user, navigate]);
 
   // Initialize CSRF token
   React.useEffect(() => {
@@ -56,7 +58,9 @@ const Login = () => {
     // Since Turnstile is disabled, always use regular login
     try {
       await login({ username, password });
-      navigate("/dashboard");
+      const roles = user?.roles?.map((r: { role?: { name?: string } }) => r.role?.name) || [];
+      const isContractor = roles.includes('contractor');
+      navigate(isContractor ? '/contractor-dashboard' : '/dashboard');
     } catch (err) {
       // Error is handled by the hook
     }

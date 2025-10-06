@@ -707,7 +707,7 @@ export async function processPayment(orderId: string, paymentData: {
   gateway_response?: unknown;
 }) {
   try {
-    return await fetchJson<unknown>('/v1/payments/', {
+    return await fetchJson<unknown>('/v1/payments/process/', {
       method: 'POST',
       body: JSON.stringify({
         order: orderId,
@@ -1189,7 +1189,7 @@ export async function getTicketFileTypes() {
 
 export async function updateTicketStatus(ticketId: string, status: string) {
   try {
-    return await fetchJson<{ message: string }>(`/tickets/${ticketId}/`, {
+    return await fetchJson<{ message: string }>(`/v1/tickets/${ticketId}/`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     });
@@ -1212,7 +1212,7 @@ export async function getContentFilterLogs(params?: {
     if (params?.user_id) queryParams.append('user_id', params.user_id);
     if (params?.page) queryParams.append('page', params.page.toString());
     
-    const url = `/content-filter-logs/${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    const url = `/v1/content-filter-logs/${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     return await fetchJson<{ results: unknown[]; count: number }>(url);
   } catch (error) {
     console.error('Error fetching content filter logs:', error);
@@ -1222,7 +1222,7 @@ export async function getContentFilterLogs(params?: {
 
 export async function reviewContentViolation(violationId: string, isFalsePositive: boolean) {
   try {
-    return await fetchJson<{ message: string }>(`/content-filter-logs/${violationId}/`, {
+    return await fetchJson<{ message: string }>(`/v1/content-filter-logs/${violationId}/`, {
       method: 'PATCH',
       body: JSON.stringify({ is_false_positive: isFalsePositive }),
     });
