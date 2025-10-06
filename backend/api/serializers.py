@@ -21,11 +21,21 @@ class UserRoleSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     roles = UserRoleSerializer(many=True, read_only=True, source='user_roles')
+    role = serializers.SerializerMethodField()
     
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'phone', 'is_email_verified', 'is_phone_verified', 'roles', 'first_name', 'last_name']
+        fields = ['id', 'username', 'email', 'phone', 'is_email_verified', 'is_phone_verified', 'roles', 'role', 'first_name', 'last_name']
         read_only_fields = ['id', 'is_email_verified', 'is_phone_verified']
+
+    def get_role(self, obj):
+        ur = obj.user_roles.filter(is_active=True).select_related('role').first()
+        if ur and ur.role:
+            return {
+                'name': ur.role.name,
+                'display_name': ur.role.display_name,
+            }
+        return None
 
 class WorkshopSerializer(serializers.ModelSerializer):
     class Meta:

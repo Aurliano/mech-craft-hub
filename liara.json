@@ -7,6 +7,12 @@
     "dockerfile": "Dockerfile.liara"
   },
   "disks": [],
+  "disks": [
+    {
+      "name": "sayda-disk",
+      "mountTo": "/app/backend/media"
+    }
+  ],
   "env": {
     "DEBUG": "False",
     "SECRET_KEY": "django-insecure-liara-production-key-2024-sayda-engineering",
