@@ -54,6 +54,8 @@ class Command(BaseCommand):
         conn = sqlite3.connect(sqlite_path)
         conn.row_factory = sqlite3.Row
         try:
+            # mapping for cases when an object with same business key already exists with a different id
+            self.scope_id_map: dict[str, str] = {}
             with transaction.atomic():
                 self._migrate_scopes(conn)
                 self._migrate_services(conn)
@@ -87,16 +89,44 @@ class Command(BaseCommand):
         rows = self._fetch_all(conn, table)
         created, updated = 0, 0
         for r in rows:
-            obj, was_created = Scope.objects.update_or_create(
-                id=r.get("id"),
-                defaults={
-                    "name": r.get("name"),
-                    "display_name": r.get("display_name") or r.get("name"),
-                    "description": r.get("description") or "",
-                    "icon": r.get("icon"),
-                    "is_active": bool(r.get("is_active", True)),
-                },
-            )
+            sqlite_id = r.get("id")
+            name = r.get("name")
+            # Try find by exact id first
+            obj = Scope.objects.filter(id=sqlite_id).first()
+            if obj:
+                # update fields
+                obj.name = name
+                obj.display_name = r.get("display_name") or name
+                obj.description = r.get("description") or ""
+                obj.icon = r.get("icon")
+                obj.is_active = bool(r.get("is_active", True))
+                obj.save()
+                was_created = False
+            else:
+                # If same name exists with different id, reuse it and map old id -> existing id
+                existing_by_name = Scope.objects.filter(name=name).first()
+                if existing_by_name:
+                    self.scope_id_map[str(sqlite_id)] = str(existing_by_name.id)
+                    # update display fields to latest
+                    existing_by_name.display_name = r.get("display_name") or name
+                    existing_by_name.description = r.get("description") or ""
+                    existing_by_name.icon = r.get("icon")
+                    existing_by_name.is_active = bool(r.get("is_active", True))
+                    existing_by_name.save()
+                    obj = existing_by_name
+                    was_created = False
+                else:
+                    # create with original id to preserve relations
+                    obj = Scope(
+                        id=sqlite_id,
+                        name=name,
+                        display_name=r.get("display_name") or name,
+                        description=r.get("description") or "",
+                        icon=r.get("icon"),
+                        is_active=bool(r.get("is_active", True)),
+                    )
+                    obj.save()
+                    was_created = True
             created += int(was_created)
             updated += int(not was_created)
         self.stdout.write(f"Scopes -> created: {created}, updated: {updated}")
@@ -110,6 +140,9 @@ class Command(BaseCommand):
         created, updated = 0, 0
         for r in rows:
             scope_id = r.get("scope_id") or r.get("scope_id_id") or r.get("scope")
+            # apply mapping if scope existed with different id
+            if scope_id and str(scope_id) in getattr(self, "scope_id_map", {}):
+                scope_id = self.scope_id_map[str(scope_id)]
             scope = Scope.objects.filter(id=scope_id).first()
             if not scope:
                 # try by name fallback
