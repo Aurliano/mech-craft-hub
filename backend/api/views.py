@@ -42,6 +42,7 @@ from django.conf import settings
 from django.utils import timezone
 from django.utils.crypto import get_random_string
 from uuid import uuid4
+import logging
 from .utils.turnstile import (
     check_fallback_available,
     get_fallback_captcha_data, verify_fallback_captcha, get_turnstile_stats
@@ -334,13 +335,17 @@ class ServiceFieldViewSet(viewsets.ReadOnlyModelViewSet):
             else:
                 # اگر سرویس تب دارد، فقط فیلدهای بدون tab (فیلدهای عمومی) را برگردان
                 # اگر سرویس تب ندارد، همه فیلدهای آن سرویس را برگردان
-                service = Service.objects.get(id=service_id)
-                if service.has_tabs:
-                    # سرویس تب دارد، فقط فیلدهای عمومی (بدون tab) را برگردان
-                    queryset = queryset.filter(service_id=service_id, tab__isnull=True)
-                else:
-                    # سرویس تب ندارد، همه فیلدهای آن سرویس را برگردان
-                    queryset = queryset.filter(service_id=service_id)
+                try:
+                    service = Service.objects.get(id=service_id)
+                    if service.has_tabs:
+                        # سرویس تب دارد، فقط فیلدهای عمومی (بدون tab) را برگردان
+                        queryset = queryset.filter(service_id=service_id, tab__isnull=True)
+                    else:
+                        # سرویس تب ندارد، همه فیلدهای آن سرویس را برگردان
+                        queryset = queryset.filter(service_id=service_id)
+                except Service.DoesNotExist:
+                    # اگر سرویس پیدا نشد، کوئری خالی برگردان تا 500 نشود
+                    return queryset.none()
         
         return queryset.order_by('tab', 'order', 'name')
 
@@ -2005,7 +2010,6 @@ def ask_ai_support(request):
         # Log the interaction for learning
         try:
             from .models import AIInteractionLog
-            from .utils.ai_learning import feedback_analyzer
             
             # Create interaction log
             interaction = AIInteractionLog.objects.create(
@@ -2020,10 +2024,10 @@ def ask_ai_support(request):
                 session_id=request.session.session_key
             )
             
-            # Analyze interaction for learning
-            feedback_analyzer.analyze_interaction(interaction)
+            # NOTE: تحلیل یادگیری موقتاً غیرفعال شد تا از تداخل مدل‌ها جلوگیری شود
             
         except Exception as e:
+            logger = logging.getLogger(__name__)
             logger.warning(f"Could not log AI interaction: {e}")
         
         return Response({
@@ -2036,6 +2040,7 @@ def ask_ai_support(request):
         })
         
     except Exception as e:
+        logger = logging.getLogger(__name__)
         logger.error(f"Error in ask_ai_support: {str(e)}")
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
