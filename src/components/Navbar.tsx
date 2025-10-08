@@ -66,66 +66,23 @@ const Navbar = () => {
 
   return (
     <nav className="bg-background border-b border-border sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Desktop Layout */}
-          <div className="hidden lg:flex justify-between items-center w-full">
-            {/* Left Section: Auth Buttons */}
-            <div className="flex items-center space-x-2 rtl:space-x-reverse flex-shrink-0" dir="rtl">
-            {isAuthenticated ? (
-              <>
-
-                {/* Shopping Cart */}
-                {isCustomer && (
-                  <Button variant="ghost" size="sm" className="relative" asChild title="سبد خرید">
-                    <Link to="/cart">
-                      <ShoppingCart className="h-5 w-5" />
-                      <span className="sr-only">سبد خرید</span>
-                      {cartItemsCount > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                          {cartItemsCount}
-                        </span>
-                      )}
-                    </Link>
-                  </Button>
-                )}
-
-                {/* User Account Dropdown */}
-                <UserDropdown 
-                  userName={userName}
-                  unreadNotificationsCount={unreadNotificationsCount}
-                  onLogout={logout}
-                />
-              </>
-            ) : (
-              <>
-                <Link to="/login">
-                  <Button variant="outline" size="sm" title="ورود" className="flex items-center gap-2">
-                    <LogIn className="h-4 w-4" />
-                    ورود
-                  </Button>
-                </Link>
-                <Link to="/register">
-                  <Button variant="outline" size="sm" title="ثبت نام" className="flex items-center gap-2">
-                    <UserPlus className="h-4 w-4" />
-                    ثبت نام
-                  </Button>
-                </Link>
-                <Link to="/contractor-register">
-                  <Button variant="default" size="sm" title="ثبت نام پیمانکاران و کارگاه ها" className="flex items-center gap-2">
-                    <Building2 className="h-4 w-4" />
-                    ثبت نام پیمانکاران و کارگاه ها
-                  </Button>
-                </Link>
-              </>
-            )}
+      <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col">
+          {/* Top Section: Logo and Site Name */}
+          <div className="flex justify-end items-center py-2 border-b border-border/50">
+            <div className="flex items-center gap-3">
+              <img src={logo} alt="لوگو" className="h-10 w-auto flex-shrink-0" />
+              <span className="text-xl font-bold text-primary">پلتفرم مهندسی سایدا</span>
+            </div>
           </div>
-
-            {/* Center Section: Desktop Menu */}
-            <div className="flex items-center flex-1 justify-center max-w-4xl mx-auto" dir="rtl">
+          
+          {/* Main Navigation */}
+          <div className="flex justify-end items-center h-16">
+            {/* Desktop Layout */}
+            <div className="hidden lg:flex justify-end items-center w-full gap-4" dir="rtl">
+              {/* Navigation Menu Items */}
               <NavigationMenu className="bg-transparent">
                 <NavigationMenuList className="gap-2">
-
                   {/* Home */}
                   <NavigationMenuItem>
                     <NavigationMenuLink asChild>
@@ -199,7 +156,6 @@ const Navbar = () => {
                     </NavigationMenuContent>
                   </NavigationMenuItem>
 
-                  
                   {/* Blog */}
                   <NavigationMenuItem>
                     <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/blog">
@@ -234,22 +190,63 @@ const Navbar = () => {
                       تماس با ما
                     </button>
                   </NavigationMenuItem>
-                  
                 </NavigationMenuList>
               </NavigationMenu>
-            </div>
-          </div>
 
-            {/* Right Section: Logo */}
-            <div className="flex items-center gap-2 min-w-0">
-              <img src={logo} alt="لوگو" className="h-12 w-auto flex-shrink-0" />
-              <span className="text-lg font-bold truncate hidden sm:inline">پلتفرم مهندسی سایدا</span>
+              {/* Auth Buttons */}
+              {isAuthenticated ? (
+                <>
+                  {/* Shopping Cart */}
+                  {isCustomer && (
+                    <Button variant="ghost" size="sm" className="relative" asChild title="سبد خرید">
+                      <Link to="/cart">
+                        <ShoppingCart className="h-5 w-5" />
+                        <span className="sr-only">سبد خرید</span>
+                        {cartItemsCount > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                            {cartItemsCount}
+                          </span>
+                        )}
+                      </Link>
+                    </Button>
+                  )}
+
+                  {/* User Account Dropdown */}
+                  <UserDropdown 
+                    userName={userName}
+                    unreadNotificationsCount={unreadNotificationsCount}
+                    onLogout={logout}
+                  />
+                </>
+              ) : (
+                <>
+                  <Link to="/contractor-register">
+                    <Button variant="default" size="sm" title="ثبت نام پیمانکاران و کارگاه ها" className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4" />
+                      ثبت نام پیمانکاران و کارگاه ها
+                    </Button>
+                  </Link>
+                  <Link to="/login">
+                    <Button variant="outline" size="sm" title="ورود" className="flex items-center gap-2">
+                      <LogIn className="h-4 w-4" />
+                      ورود
+                    </Button>
+                  </Link>
+                  <Link to="/register">
+                    <Button variant="outline" size="sm" title="ثبت نام" className="flex items-center gap-2">
+                      <UserPlus className="h-4 w-4" />
+                      ثبت نام
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
+
           </div>
 
           {/* Mobile Layout */}
           <div className="lg:hidden flex items-center justify-between w-full">
-            {/* Mobile menu button - Left side */}
+            {/* Mobile menu button - Right side */}
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="text-foreground hover:text-primary transition-colors p-2"
@@ -262,8 +259,8 @@ const Navbar = () => {
             
             {/* Mobile Logo and Site Name - Center */}
             <div className="flex items-center gap-2">
-              <img src={logo} alt="لوگو" className="h-10 w-auto flex-shrink-0" />
-              <span className="text-base font-bold truncate">پلتفرم مهندسی سایدا</span>
+              <img src={logo} alt="لوگو" className="h-8 w-auto flex-shrink-0" />
+              <span className="text-sm font-bold truncate">پلتفرم مهندسی سایدا</span>
             </div>
             
             {/* Empty div for balance */}
@@ -271,12 +268,16 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Mobile Menu - Maktabkhooneh Style */}
+        {/* Mobile Menu - Right aligned */}
         {isOpen && (
           <div className="lg:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={() => setIsOpen(false)}>
-            <div className="absolute right-0 top-0 h-full w-4/5 max-w-sm bg-white shadow-2xl" dir="rtl" onClick={(e) => e.stopPropagation()}>
+            <div className="absolute left-0 top-0 h-full w-4/5 max-w-sm bg-white shadow-2xl" dir="rtl" onClick={(e) => e.stopPropagation()}>
               {/* Header with close button */}
               <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                <div className="flex items-center gap-2">
+                  <img src={logo} alt="لوگو" className="h-8 w-auto" />
+                  <span className="font-bold text-sm">پلتفرم مهندسی سایدا</span>
+                </div>
                 <button
                   onClick={() => setIsOpen(false)}
                   className="p-2 rounded-full hover:bg-gray-100 transition-colors"
@@ -284,10 +285,6 @@ const Navbar = () => {
                 >
                   <X className="h-5 w-5 text-gray-600" />
                 </button>
-                <div className="flex items-center gap-2">
-                  <img src={logo} alt="لوگو" className="h-8 w-auto" />
-                  <span className="font-bold text-sm">پلتفرم مهندسی سایدا</span>
-                </div>
               </div>
 
               {/* User Profile Section */}
@@ -559,6 +556,12 @@ const Navbar = () => {
                     </div>
                   ) : (
                     <div className="space-y-2">
+                      <Link to="/contractor-register" onClick={() => setIsOpen(false)}>
+                        <Button variant="default" size="lg" className="w-full flex items-center gap-2">
+                          <Building2 className="h-4 w-4" />
+                          ثبت نام پیمانکاران و کارگاه ها
+                        </Button>
+                      </Link>
                       <Link to="/login" onClick={() => setIsOpen(false)}>
                         <Button variant="outline" size="sm" className="w-full flex items-center gap-2">
                           <LogIn className="h-4 w-4" />
@@ -569,12 +572,6 @@ const Navbar = () => {
                         <Button variant="outline" size="sm" className="w-full flex items-center gap-2">
                           <UserPlus className="h-4 w-4" />
                           ثبت نام
-                        </Button>
-                      </Link>
-                      <Link to="/contractor-register" onClick={() => setIsOpen(false)}>
-                        <Button variant="default" size="lg" className="w-full flex items-center gap-2">
-                          <Building2 className="h-4 w-4" />
-                          ثبت نام پیمانکاران و کارگاه ها
                         </Button>
                       </Link>
                     </div>
