@@ -38,9 +38,9 @@ from .views import (
 )
 
 # Import file management views
-# from .file_views import (
-#     upload_content_file, download_content_file, delete_content_file, get_file_info
-# )
+from .file_views import (
+    upload_content_file, download_content_file, delete_content_file, get_file_info
+)
 
 router = DefaultRouter()
 router.register(r'users', UserViewSet, basename='user')
@@ -162,11 +162,11 @@ urlpatterns = [
             # Blog Admin Endpoints
             path('v1/admin/blog/posts/create/', create_blog_post, name='create_blog_post'),
             
-            # File Management Endpoints (موقتاً غیرفعال)
-            # path('v1/files/upload/', upload_content_file, name='upload_content_file'),
-            # path('v1/files/<str:content_id>/download/', download_content_file, name='download_content_file'),
-            # path('v1/files/<str:content_id>/delete/', delete_content_file, name='delete_content_file'),
-            # path('v1/files/<str:content_id>/info/', get_file_info, name='get_file_info'),
+            # File Management Endpoints
+            path('v1/files/upload/', upload_content_file, name='upload_content_file'),
+            path('v1/files/<str:content_id>/download/', download_content_file, name='download_content_file'),
+            path('v1/files/<str:content_id>/delete/', delete_content_file, name='delete_content_file'),
+            path('v1/files/<str:content_id>/info/', get_file_info, name='get_file_info'),
     
     # Aliases for requested endpoints
     path('v1/categories/', ScopeViewSet.as_view({'get': 'list'}), name='categories'),

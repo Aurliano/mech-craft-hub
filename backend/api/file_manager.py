@@ -5,9 +5,17 @@ from datetime import datetime
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
-import boto3
-from botocore.exceptions import ClientError
 import logging
+
+# Import boto3 with fallback
+try:
+    import boto3
+    from botocore.exceptions import ClientError
+    BOTO3_AVAILABLE = True
+except ImportError:
+    BOTO3_AVAILABLE = False
+    boto3 = None
+    ClientError = Exception
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +27,7 @@ class FileManager:
         self.bucket_name = getattr(settings, 'FILE_BUCKET_NAME', 'mechcraft-files')
         self.region = getattr(settings, 'FILE_REGION', 'iran')
         
-        if self.storage_type in ['s3', 'liara']:
+        if self.storage_type in ['s3', 'liara'] and BOTO3_AVAILABLE:
             self.s3_client = boto3.client(
                 's3',
                 endpoint_url=getattr(settings, 'S3_ENDPOINT_URL', None),
@@ -27,6 +35,11 @@ class FileManager:
                 aws_secret_access_key=getattr(settings, 'AWS_SECRET_ACCESS_KEY', None),
                 region_name=self.region
             )
+        else:
+            self.s3_client = None
+            if self.storage_type in ['s3', 'liara'] and not BOTO3_AVAILABLE:
+                logger.warning("boto3 not available, falling back to local storage")
+                self.storage_type = 'local'
     
     def generate_file_path(self, file_name, content_type):
         """تولید مسیر فایل بر اساس نوع محتوا"""
@@ -67,7 +80,7 @@ class FileManager:
                     'file_size': file_obj.size
                 }
             
-            elif self.storage_type in ['s3', 'liara']:
+            elif self.storage_type in ['s3', 'liara'] and self.s3_client:
                 # آپلود به S3/Liara
                 file_obj.seek(0)
                 self.s3_client.upload_fileobj(
@@ -103,6 +116,17 @@ class FileManager:
                     'file_url': file_url,
                     'file_size': file_obj.size
                 }
+            else:
+                # Fallback to local storage if S3/Liara not available
+                logger.warning("S3/Liara not available, using local storage")
+                full_path = default_storage.save(file_path, ContentFile(file_obj.read()))
+                file_obj.seek(0)
+                return {
+                    'success': True,
+                    'file_path': full_path,
+                    'file_url': default_storage.url(full_path),
+                    'file_size': file_obj.size
+                }
             
         except Exception as e:
             logger.error(f"Error uploading file: {str(e)}")
@@ -119,7 +143,7 @@ class FileManager:
                     default_storage.delete(file_path)
                     return {'success': True}
             
-            elif self.storage_type in ['s3', 'liara']:
+            elif self.storage_type in ['s3', 'liara'] and self.s3_client:
                 self.s3_client.delete_object(Bucket=self.bucket_name, Key=file_path)
                 return {'success': True}
             
@@ -136,7 +160,7 @@ class FileManager:
             if self.storage_type == 'local':
                 return default_storage.url(file_path)
             
-            elif self.storage_type in ['s3', 'liara']:
+            elif self.storage_type in ['s3', 'liara'] and self.s3_client:
                 if is_public and getattr(settings, 'FILE_PUBLIC_ACCESS', True):
                     if self.storage_type == 'liara':
                         endpoint_url = getattr(settings, 'S3_ENDPOINT_URL', 'https://storage.c2.liara.space')
@@ -167,7 +191,7 @@ class FileManager:
                     }
                 return {'exists': False}
             
-            elif self.storage_type in ['s3', 'liara']:
+            elif self.storage_type in ['s3', 'liara'] and self.s3_client:
                 response = self.s3_client.head_object(Bucket=self.bucket_name, Key=file_path)
                 return {
                     'exists': True,
