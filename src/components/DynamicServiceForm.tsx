@@ -26,8 +26,8 @@ interface UploadedFile {
 
 interface DynamicServiceFormProps {
   serviceId: string;
-  formData: Record<string, any>;
-  onFieldChange: (fieldKey: string, value: any) => void;
+  formData: Record<string, unknown>;
+  onFieldChange: (fieldKey: string, value: unknown) => void;
   needsDocumentation: boolean;
   onNeedsDocumentationChange: (value: boolean) => void;
   documentationOptions: Record<string, boolean>;
@@ -58,7 +58,7 @@ export function DynamicServiceForm({
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
 
   // Validation functions
-  const validateField = (field: any, value: any): string | null => {
+  const validateField = (field: ServiceField, value: unknown): string | null => {
     if (field.is_required && (!value || (Array.isArray(value) && value.length === 0))) {
       return `${field.name} الزامی است`;
     }
@@ -300,7 +300,7 @@ export function DynamicServiceForm({
                 <SelectValue placeholder={field.help_text} />
               </SelectTrigger>
               <SelectContent>
-                {field.options?.map((option: any, index: number) => {
+                {field.options?.map((option: { value?: string; label?: string } | string, index: number) => {
                   const optionValue = typeof option === 'string' ? option : option.value || option.label || String(option);
                   const optionLabel = typeof option === 'string' ? option : option.label || option.value || String(option);
                   return (
@@ -326,12 +326,12 @@ export function DynamicServiceForm({
           </div>
         );
 
-      case 'multiselect':
+      case 'multiselect': {
         const selectedValues = Array.isArray(value) ? value : [];
         return (
           <div className="space-y-2">
             <div className="space-y-2">
-              {field.options?.map((option: any, index: number) => {
+              {field.options?.map((option: { value?: string; label?: string } | string, index: number) => {
                 const optionValue = typeof option === 'string' ? option : option.value || option.label || String(option);
                 const optionLabel = typeof option === 'string' ? option : option.label || option.value || String(option);
                 return (
@@ -366,6 +366,7 @@ export function DynamicServiceForm({
             )}
           </div>
         );
+      }
 
       case 'checkbox':
         return (

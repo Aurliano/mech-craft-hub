@@ -8,7 +8,7 @@ import { Link } from 'react-router-dom';
 
 const UserDashboard = () => {
   const { user, orders, cartItems, notifications, stats, isLoadingDashboard, logout } = useAuth();
-  const unreadNotificationsCount = Array.isArray(notifications) ? notifications.filter(n => !n.isRead).length : 0;
+  const unreadNotificationsCount = Array.isArray(notifications) ? notifications.filter((n: { isRead?: boolean }) => !n.isRead).length : 0;
   const cartItemsCount = cartItems?.length || 0;
 
   if (isLoadingDashboard) {
@@ -141,7 +141,7 @@ const UserDashboard = () => {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.totalOrders || 0}</div>
+            <div className="text-2xl font-bold">{(stats as { totalOrders?: number })?.totalOrders || 0}</div>
             <p className="text-xs text-muted-foreground">
               +2 از ماه گذشته
             </p>
@@ -154,7 +154,7 @@ const UserDashboard = () => {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.pendingOrders || 0}</div>
+            <div className="text-2xl font-bold">{(stats as { pendingOrders?: number })?.pendingOrders || 0}</div>
             <p className="text-xs text-muted-foreground">
               در حال پردازش
             </p>
@@ -167,7 +167,7 @@ const UserDashboard = () => {
             <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.completedOrders || 0}</div>
+            <div className="text-2xl font-bold">{(stats as { completedOrders?: number })?.completedOrders || 0}</div>
             <p className="text-xs text-muted-foreground">
               با موفقیت تحویل داده شده
             </p>
@@ -199,7 +199,7 @@ const UserDashboard = () => {
         <CardContent>
           {orders && orders.length > 0 ? (
             <div className="space-y-4">
-              {orders.slice(0, 5).map((order: any) => (
+              {orders.slice(0, 5).map((order: { id: string; order_number: string; created_at: string; status: string; total_amount?: number }) => (
                 <div key={order.id} className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="space-y-1">
                     <p className="font-medium">سفارش #{order.order_number}</p>
@@ -248,7 +248,7 @@ const UserDashboard = () => {
         <CardContent>
           {notifications && notifications.length > 0 ? (
             <div className="space-y-3">
-              {notifications.slice(0, 5).map((notification: any) => (
+              {notifications.slice(0, 5).map((notification: { id: string; title: string; message: string; createdAt: string; isRead?: boolean }) => (
                 <div key={notification.id} className={`p-3 rounded-lg border ${
                   !notification.isRead ? 'bg-primary/5 border-primary/20' : 'bg-muted/30'
                 }`}>

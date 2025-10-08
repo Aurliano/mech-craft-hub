@@ -107,7 +107,7 @@ const UserDropdown: React.FC<UserDropdownProps> = ({
               </Link>
             </DropdownMenuItem>
             
-            {manufacturingCheck?.has_manufacturing_service && (
+            {(manufacturingCheck as { has_manufacturing_service?: boolean })?.has_manufacturing_service && (
               <DropdownMenuItem asChild>
                 <Link to="/my-workshops">
                   <Building2 className="mr-2 h-4 w-4" />

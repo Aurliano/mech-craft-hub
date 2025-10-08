@@ -208,7 +208,7 @@ const CreateTicketModal: React.FC<CreateTicketModalProps> = ({
         
         onTicketCreated?.(response.ticket_id);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating ticket:', error);
       
       if (error.response?.data?.violations) {

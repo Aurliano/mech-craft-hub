@@ -245,56 +245,56 @@ export async function contractorRegisterRequest(params: {
   return (await res.json()) as unknown;
 }
 
-export async function meRequest() {
-  return fetchJson<unknown>('/v1/auth/me/', { method: 'GET' });
+export async function meRequest(): Promise<{ id: string; username: string; email: string; first_name?: string; last_name?: string; roles?: { role?: { name?: string } }[]; role?: { name?: string } }> {
+  return fetchJson<{ id: string; username: string; email: string; first_name?: string; last_name?: string; roles?: { role?: { name?: string } }[]; role?: { name?: string } }>('/v1/auth/me/', { method: 'GET' });
 }
 
-export async function getAllServices() {
+export async function getAllServices(): Promise<{ id: string; name: string; type: string; has_tabs?: boolean }[]> {
   try {
-    const response = await fetchJson<unknown>('/v1/services/');
-    return Array.isArray(response) ? response : ((response as { results?: unknown[] }).results || []);
+    const response = await fetchJson<{ id: string; name: string; type: string; has_tabs?: boolean }[]>('/v1/services/');
+    return Array.isArray(response) ? response : ((response as { results?: { id: string; name: string; type: string; has_tabs?: boolean }[] }).results || []);
   } catch (error) {
     console.error('Error fetching services:', error);
     return [];
   }
 }
 
-export async function getServiceFields(serviceId: string, tabId?: string) {
+export async function getServiceFields(serviceId: string, tabId?: string): Promise<{ id: string; name: string; field_key: string; type: string; options?: { value: string; label: string }[]; is_required: boolean; order: number; help_text?: string }[]> {
   try {
     const url = tabId 
       ? `/v1/service-fields/?service=${serviceId}&tab=${tabId}`
       : `/v1/service-fields/?service=${serviceId}`;
-    const response = await fetchJson<unknown>(url);
+    const response = await fetchJson<{ id: string; name: string; field_key: string; type: string; options?: { value: string; label: string }[]; is_required: boolean; order: number; help_text?: string }[]>(url);
     // اگر response یک object با results است، results را برگردان، وگرنه خود response را
-    return Array.isArray(response) ? response : ((response as { results?: unknown[] }).results || []);
+    return Array.isArray(response) ? response : ((response as { results?: { id: string; name: string; field_key: string; type: string; options?: { value: string; label: string }[]; is_required: boolean; order: number; help_text?: string }[] }).results || []);
   } catch (error) {
     console.error('Error fetching service fields:', error);
     return [];
   }
 }
 
-export async function getServiceTabs(serviceId: string) {
+export async function getServiceTabs(serviceId: string): Promise<{ id: string; name: string; display_name: string; description?: string; order: number; is_active: boolean }[]> {
   try {
-    const response = await fetchJson<unknown>(`/v1/service-tabs/?service=${serviceId}`);
-    return Array.isArray(response) ? response : ((response as { results?: unknown[] }).results || []);
+    const response = await fetchJson<{ id: string; name: string; display_name: string; description?: string; order: number; is_active: boolean }[]>(`/v1/service-tabs/?service=${serviceId}`);
+    return Array.isArray(response) ? response : ((response as { results?: { id: string; name: string; display_name: string; description?: string; order: number; is_active: boolean }[] }).results || []);
   } catch (error) {
     console.error('Error fetching service tabs:', error);
     return [];
   }
 }
 
-export async function getTabFields(tabId: string) {
+export async function getTabFields(tabId: string): Promise<{ id: string; name: string; field_key: string; type: string; options?: { value: string; label: string }[]; is_required: boolean; order: number; help_text?: string }[]> {
   try {
-    const response = await fetchJson<unknown>(`/v1/service-fields/?tab=${tabId}`);
-    return Array.isArray(response) ? response : ((response as { results?: unknown[] }).results || []);
+    const response = await fetchJson<{ id: string; name: string; field_key: string; type: string; options?: { value: string; label: string }[]; is_required: boolean; order: number; help_text?: string }[]>(`/v1/service-fields/?tab=${tabId}`);
+    return Array.isArray(response) ? response : ((response as { results?: { id: string; name: string; field_key: string; type: string; options?: { value: string; label: string }[]; is_required: boolean; order: number; help_text?: string }[] }).results || []);
   } catch (error) {
     console.error('Error fetching tab fields:', error);
     return [];
   }
 }
 
-export async function createCart(customer: string) {
-  return fetchJson<unknown>('/v1/carts/', {
+export async function createCart(customer: string): Promise<{ id: string; customer: string; created_at: string }> {
+  return fetchJson<{ id: string; customer: string; created_at: string }>('/v1/carts/', {
     method: 'POST',
     body: JSON.stringify({ customer }),
   });
@@ -305,8 +305,8 @@ export async function createCartItem(data: {
   service: string;
   field_values: Record<string, unknown>;
   needs_documentation?: boolean;
-}) {
-  return fetchJson<unknown>('/v1/cart-items/', {
+}): Promise<{ id: string; cart: string; service: string; field_values: Record<string, unknown>; needs_documentation?: boolean; created_at: string }> {
+  return fetchJson<{ id: string; cart: string; service: string; field_values: Record<string, unknown>; needs_documentation?: boolean; created_at: string }>('/v1/cart-items/', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -461,12 +461,12 @@ export async function phoneVerificationConfirm(phone: string, code: string) {
 }
 
 // Scopes and Services Functions
-export async function getScopes() {
+export async function getScopes(): Promise<{ id: string; name: string; description?: string }[]> {
   try {
-    const response = await fetchJson<unknown>('/v1/scopes/');
+    const response = await fetchJson<{ id: string; name: string; description?: string }[]>('/v1/scopes/');
     // Handle paginated response
     if (response && typeof response === 'object' && 'results' in response) {
-      return response.results || [];
+      return (response as { results?: { id: string; name: string; description?: string }[] }).results || [];
     }
     // Handle direct array response
     return Array.isArray(response) ? response : [];
@@ -476,13 +476,13 @@ export async function getScopes() {
   }
 }
 
-export async function getServices(scopeId?: string) {
+export async function getServices(scopeId?: string): Promise<{ id: string; name: string; type: string; has_tabs?: boolean }[]> {
   try {
     const url = scopeId ? `/v1/services/?scope=${scopeId}` : '/v1/services/';
-    const response = await fetchJson<unknown>(url);
+    const response = await fetchJson<{ id: string; name: string; type: string; has_tabs?: boolean }[]>(url);
     // Handle paginated response from ServiceViewSet
     if (response && typeof response === 'object' && 'results' in response) {
-      return response.results || [];
+      return (response as { results?: { id: string; name: string; type: string; has_tabs?: boolean }[] }).results || [];
     }
     // Handle direct array response
     return Array.isArray(response) ? response : [];
@@ -493,7 +493,7 @@ export async function getServices(scopeId?: string) {
 }
 
 // Dashboard Data Functions
-export async function getUserOrders() {
+export async function getUserOrders(): Promise<{ id: string; order_number: string; status: string; created_at: string; total_amount?: number }[]> {
   try {
     const url = getApiUrl('/v1/orders/user/');
     const response = await fetch(url, {
@@ -518,18 +518,18 @@ export async function getUserOrders() {
   }
 }
 
-export async function getUserCart() {
+export async function getUserCart(): Promise<{ id: string; service_name: string; status: string; created_at: string }[] | null> {
   try {
-    return await fetchJson<unknown>('/v1/carts/');
+    return await fetchJson<{ id: string; service_name: string; status: string; created_at: string }[]>('/v1/carts/');
   } catch (error) {
     console.error('Error fetching cart:', error);
     return null;
   }
 }
 
-export async function getUserCartItems() {
+export async function getUserCartItems(): Promise<{ id: string; service_name: string; status: string; created_at: string }[]> {
   try {
-    return await fetchJson<unknown[]>('/v1/cart-items/');
+    return await fetchJson<{ id: string; service_name: string; status: string; created_at: string }[]>('/v1/cart-items/');
   } catch (error) {
     console.error('Error fetching cart items:', error);
     return [];
@@ -537,7 +537,7 @@ export async function getUserCartItems() {
 }
 
 
-export async function getUserStats() {
+export async function getUserStats(): Promise<{ totalOrders?: number; pendingOrders?: number; completedOrders?: number; cartItems?: number; unreadNotifications?: number }> {
   try {
     // For now, return mock data. In the future, this will be a real endpoint
     return Promise.resolve({
@@ -750,9 +750,9 @@ export async function downloadInvoice(orderId: string) {
 }
 
 // Notification Functions
-export async function getUserNotifications() {
+export async function getUserNotifications(): Promise<{ id: string; title: string; message: string; createdAt: string; isRead?: boolean }[]> {
   try {
-    return await fetchJson<unknown[]>('/v1/notifications/');
+    return await fetchJson<{ id: string; title: string; message: string; createdAt: string; isRead?: boolean }[]>('/v1/notifications/');
   } catch (error) {
     console.error('Error fetching notifications:', error);
     return [];

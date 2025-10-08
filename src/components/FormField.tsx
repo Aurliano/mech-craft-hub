@@ -9,8 +9,8 @@ interface FormFieldProps {
   name: string;
   label: string;
   type?: 'text' | 'email' | 'password' | 'tel' | 'textarea' | 'select';
-  value: any;
-  onChange: (value: any) => void;
+  value: string | number | undefined;
+  onChange: (value: string | number) => void;
   onBlur?: () => void;
   error?: string;
   touched?: boolean;
@@ -67,7 +67,7 @@ const FormField: React.FC<FormFieldProps> = ({
       
       case 'select':
         return (
-          <Select value={value || ''} onValueChange={handleSelectChange}>
+          <Select value={String(value || '')} onValueChange={handleSelectChange}>
             <SelectTrigger className={inputClassName}>
               <SelectValue placeholder={placeholder || `انتخاب ${label}`} />
             </SelectTrigger>

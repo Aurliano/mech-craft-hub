@@ -9,10 +9,22 @@ import { useServiceTabs, useServiceFields } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
 import DocumentationSection from './DocumentationSection';
 
+interface ServiceField {
+  id: string;
+  name: string;
+  field_key: string;
+  type: 'text' | 'number' | 'file' | 'select' | 'multiselect' | 'checkbox' | 'date' | 'textarea';
+  options?: { value: string; label: string }[];
+  is_required: boolean;
+  order: number;
+  help_text?: string;
+  validation_rules?: Record<string, unknown>;
+}
+
 interface ServiceTabsProps {
   serviceId: string;
-  onFieldChange: (tabId: string, fieldKey: string, value: any) => void;
-  fieldValues: Record<string, Record<string, any>>;
+  onFieldChange: (tabId: string, fieldKey: string, value: unknown) => void;
+  fieldValues: Record<string, Record<string, unknown>>;
   needsDocumentation?: boolean;
   onNeedsDocumentationChange?: (value: boolean) => void;
   documentationOptions?: Record<string, boolean>;
@@ -153,10 +165,10 @@ const ServiceTabs: React.FC<ServiceTabsProps> = ({
 
 interface TabFieldsProps {
   tabId: string;
-  fields: any[];
+  fields: ServiceField[];
   fieldsLoading: boolean;
-  onFieldChange: (tabId: string, fieldKey: string, value: any) => void;
-  fieldValues: Record<string, any>;
+  onFieldChange: (tabId: string, fieldKey: string, value: unknown) => void;
+  fieldValues: Record<string, unknown>;
 }
 
 const TabFields: React.FC<TabFieldsProps> = ({ 
@@ -184,7 +196,7 @@ const TabFields: React.FC<TabFieldsProps> = ({
     );
   }
 
-  const handleFieldChange = (fieldKey: string, value: any) => {
+  const handleFieldChange = (fieldKey: string, value: unknown) => {
     onFieldChange(tabId, fieldKey, value);
   };
 
@@ -213,9 +225,9 @@ const TabFields: React.FC<TabFieldsProps> = ({
 };
 
 interface FieldRendererProps {
-  field: any;
-  value: any;
-  onChange: (value: any) => void;
+  field: ServiceField;
+  value: unknown;
+  onChange: (value: unknown) => void;
 }
 
 const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onChange }) => {
@@ -268,7 +280,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onChange })
             <SelectValue placeholder="انتخاب کنید" />
           </SelectTrigger>
           <SelectContent>
-            {field.options?.map((option: any, index: number) => {
+            {field.options?.map((option: { value?: string; label?: string } | string, index: number) => {
               const optionValue = typeof option === 'string' ? option : option.value || option.label || String(option);
               const optionLabel = typeof option === 'string' ? option : option.label || option.value || String(option);
               return (
@@ -284,7 +296,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onChange })
     case 'multiselect':
       return (
         <div className="space-y-2">
-          {field.options?.map((option: any, index: number) => {
+          {field.options?.map((option: { value?: string; label?: string } | string, index: number) => {
             const optionValue = typeof option === 'string' ? option : option.value || option.label || String(option);
             const optionLabel = typeof option === 'string' ? option : option.label || option.value || String(option);
             return (

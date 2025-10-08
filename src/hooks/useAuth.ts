@@ -18,7 +18,7 @@ import {
 
 export function useMe() {
   const enabled = Boolean(getAccessToken());
-  return useQuery<any>({
+  return useQuery<{ id: string; username: string; email: string; first_name?: string; last_name?: string; roles?: { role?: { name?: string } }[]; role?: { name?: string } }>({
     queryKey: ['me'],
     queryFn: meRequest,
     enabled,
@@ -119,7 +119,7 @@ export function usePhoneVerificationConfirm() {
 
 // Scopes and Services Hooks
 export function useScopes() {
-  return useQuery<any[]>({
+  return useQuery<{ id: string; name: string; description?: string }[]>({
     queryKey: ['scopes'],
     queryFn: getScopes,
     retry: false,
@@ -128,7 +128,7 @@ export function useScopes() {
 }
 
 export function useServices(scopeId?: string) {
-  return useQuery<any[]>({
+  return useQuery<{ id: string; name: string; type: string; has_tabs?: boolean }[]>({
     queryKey: ['services', scopeId],
     queryFn: () => getServices(scopeId),
     enabled: Boolean(scopeId),
@@ -138,7 +138,7 @@ export function useServices(scopeId?: string) {
 }
 
 export function useServiceTabs(serviceId: string) {
-  return useQuery<any[]>({
+  return useQuery<{ id: string; name: string; display_name: string; description?: string; order: number; is_active: boolean }[]>({
     queryKey: ['serviceTabs', serviceId],
     queryFn: () => getServiceTabs(serviceId),
     enabled: Boolean(serviceId),
@@ -147,7 +147,7 @@ export function useServiceTabs(serviceId: string) {
 }
 
 export function useTabFields(tabId: string) {
-  return useQuery<any[]>({
+  return useQuery<{ id: string; name: string; field_key: string; type: string; options?: { value: string; label: string }[]; is_required: boolean; order: number; help_text?: string }[]>({
     queryKey: ['tabFields', tabId],
     queryFn: () => getTabFields(tabId),
     enabled: Boolean(tabId),
@@ -156,7 +156,7 @@ export function useTabFields(tabId: string) {
 }
 
 export function useServiceFields(serviceId: string, tabId?: string) {
-  return useQuery<any[]>({
+  return useQuery<{ id: string; name: string; field_key: string; type: string; options?: { value: string; label: string }[]; is_required: boolean; order: number; help_text?: string }[]>({
     queryKey: ['serviceFields', serviceId, tabId],
     queryFn: () => getServiceFields(serviceId, tabId),
     enabled: Boolean(serviceId),
@@ -165,7 +165,7 @@ export function useServiceFields(serviceId: string, tabId?: string) {
 }
 
 export function useService(serviceId: string) {
-  return useQuery<any>({
+  return useQuery<{ id: string; name: string; type: string; has_tabs?: boolean } | undefined>({
     queryKey: ['service', serviceId],
     queryFn: () => getAllServices().then(services => services.find(s => s.id === serviceId)),
     enabled: Boolean(serviceId),
@@ -176,7 +176,7 @@ export function useService(serviceId: string) {
 // Dashboard Hooks
 export function useUserOrders() {
   const enabled = Boolean(getAccessToken());
-  return useQuery<any[]>({
+  return useQuery<{ id: string; order_number: string; status: string; created_at: string; total_amount?: number }[]>({
     queryKey: ['userOrders'],
     queryFn: getUserOrders,
     enabled,
@@ -187,7 +187,7 @@ export function useUserOrders() {
 
 export function useUserCart() {
   const enabled = Boolean(getAccessToken());
-  return useQuery<any>({
+  return useQuery<{ id: string; service_name: string; status: string; created_at: string }[]>({
     queryKey: ['userCart'],
     queryFn: getUserCart,
     enabled,
@@ -197,7 +197,7 @@ export function useUserCart() {
 
 export function useUserCartItems() {
   const enabled = Boolean(getAccessToken());
-  return useQuery<any[]>({
+  return useQuery<{ id: string; service_name: string; status: string; created_at: string }[]>({
     queryKey: ['userCartItems'],
     queryFn: getUserCartItems,
     enabled,
@@ -207,7 +207,7 @@ export function useUserCartItems() {
 
 export function useUserNotifications() {
   const enabled = Boolean(getAccessToken());
-  return useQuery<any[]>({
+  return useQuery<{ id: string; title: string; message: string; createdAt: string; isRead?: boolean }[]>({
     queryKey: ['userNotifications'],
     queryFn: getUserNotifications,
     enabled,
@@ -218,7 +218,7 @@ export function useUserNotifications() {
 
 export function useUserStats() {
   const enabled = Boolean(getAccessToken());
-  return useQuery<any>({
+  return useQuery<{ totalOrders?: number; pendingOrders?: number; completedOrders?: number }>({
     queryKey: ['userStats'],
     queryFn: getUserStats,
     enabled,

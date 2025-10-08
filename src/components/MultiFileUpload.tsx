@@ -118,7 +118,7 @@ const MultiFileUpload: React.FC<MultiFileUploadProps> = ({
         ...uploadedFile,
         id: result.id,
         url: result.url,
-        originalName: (result as any).original_name || uploadedFile.originalName,
+        originalName: (result as { original_name?: string }).original_name || uploadedFile.originalName,
         status: 'completed',
         progress: 100
       };
@@ -208,7 +208,7 @@ const MultiFileUpload: React.FC<MultiFileUploadProps> = ({
     }
 
     setIsUploading(false);
-  }, [uploadedFiles, maxFiles, disabled, onFilesChange, toast, fieldKey]);
+  }, [uploadedFiles, maxFiles, disabled, onFilesChange, toast, fieldKey, uploadSingleFile]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();

@@ -2,8 +2,8 @@ import React, { createContext, useContext, ReactNode } from 'react';
 import { ValidationRule, validateForm, ValidationResult } from '@/lib/formValidation';
 
 interface FormValidatorContextType {
-  validateForm: (data: Record<string, any>, rules: Record<string, ValidationRule>) => ValidationResult;
-  validateField: (value: any, rules: ValidationRule, fieldName: string) => string | null;
+  validateForm: (data: Record<string, unknown>, rules: Record<string, ValidationRule>) => ValidationResult;
+  validateField: (value: unknown, rules: ValidationRule, fieldName: string) => string | null;
 }
 
 const FormValidatorContext = createContext<FormValidatorContextType | undefined>(undefined);
@@ -38,7 +38,7 @@ export const useFormValidator = (): FormValidatorContextType => {
 
 // Helper function for validateField
 const validateField = (
-  value: any,
+  value: unknown,
   rules: ValidationRule,
   fieldName: string
 ): string | null => {

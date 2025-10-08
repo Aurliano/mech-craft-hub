@@ -6,15 +6,15 @@ import { DynamicServiceForm } from './DynamicServiceForm';
 
 interface ServiceOrderFormProps {
   serviceId: string;
-  service: any; // Service object with has_tabs property
-  formData: Record<string, any>;
-  tabFieldValues: Record<string, Record<string, any>>;
+  service: { has_tabs?: boolean; [key: string]: unknown };
+  formData: Record<string, unknown>;
+  tabFieldValues: Record<string, Record<string, unknown>>;
   needsDocumentation: boolean;
   onNeedsDocumentationChange: (value: boolean) => void;
   notes: string;
   onNotesChange: (value: string) => void;
-  onFieldChange: (fieldKey: string, value: any) => void;
-  onTabFieldChange: (tabId: string, fieldKey: string, value: any) => void;
+  onFieldChange: (fieldKey: string, value: unknown) => void;
+  onTabFieldChange: (tabId: string, fieldKey: string, value: unknown) => void;
   documentationOptions: Record<string, boolean>;
   onDocumentationOptionsChange: (options: Record<string, boolean>) => void;
   onSubmit?: () => void;

@@ -39,7 +39,7 @@ const Navbar = () => {
   const { data: manufacturingCheck } = useCheckContractorManufacturingService();
   const userName = user?.username || "کاربر";
   const cartItemsCount = cartItems?.length || 0;
-  const unreadNotificationsCount = notifications?.filter(n => !n.isRead)?.length || 0;
+  const unreadNotificationsCount = notifications?.filter((n: { isRead?: boolean }) => !n.isRead)?.length || 0;
 
   const toggleService = (serviceName: string) => {
     setExpandedServices(prev => 

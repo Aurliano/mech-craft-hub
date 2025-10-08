@@ -268,7 +268,7 @@ export default function SupportWidget({ className = '' }: SupportWidgetProps) {
 interface FeedbackFormProps {
   onClose: () => void;
   isAuthenticated: boolean;
-  user: { username: string; email: string } | null;
+  user: { username?: string; email?: string } | null;
 }
 
 function FeedbackForm({ onClose, isAuthenticated, user }: FeedbackFormProps) {

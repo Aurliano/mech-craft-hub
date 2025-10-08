@@ -18,11 +18,11 @@ interface ServiceField {
   name: string;
   field_key: string;
   type: 'text' | 'number' | 'file' | 'select' | 'multiselect' | 'checkbox' | 'date' | 'textarea';
-  options?: any[];
+  options?: { value: string; label: string }[];
   is_required: boolean;
   order: number;
   help_text?: string;
-  validation_rules?: any;
+  validation_rules?: Record<string, unknown>;
 }
 
 interface ServiceTab {
@@ -56,13 +56,13 @@ interface UploadedFile {
 
 interface DynamicFormProps {
   service: Service;
-  onSubmit: (fieldValues: Record<string, any>, files: UploadedFile[]) => void;
+  onSubmit: (fieldValues: Record<string, unknown>, files: UploadedFile[]) => void;
   loading?: boolean;
 }
 
 const DynamicForm: React.FC<DynamicFormProps> = ({ service, onSubmit, loading = false }) => {
   const [activeTab, setActiveTab] = useState<string>('');
-  const [fieldValues, setFieldValues] = useState<Record<string, any>>({});
+  const [fieldValues, setFieldValues] = useState<Record<string, unknown>>({});
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, UploadedFile[]>>({});
   const [showPreview, setShowPreview] = useState(false);
   const [needsDocumentation, setNeedsDocumentation] = useState(false);
@@ -74,7 +74,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ service, onSubmit, loading = 
     }
   }, [service]);
 
-  const handleFieldChange = (fieldKey: string, value: any) => {
+  const handleFieldChange = (fieldKey: string, value: unknown) => {
     setFieldValues(prev => ({
       ...prev,
       [fieldKey]: value

@@ -151,7 +151,7 @@ const TicketChat: React.FC<TicketChatProps> = ({
         // You might want to refresh the ticket data here
         window.location.reload(); // Simple refresh for now
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error sending message:', error);
       toast({
         title: 'خطا',

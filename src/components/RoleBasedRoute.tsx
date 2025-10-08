@@ -24,7 +24,7 @@ const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
     return <Navigate to="/login" replace />;
   }
 
-  const userRoles = user?.roles?.map((role: any) => role.role?.name) || [];
+  const userRoles = user?.roles?.map((role: { role?: { name?: string } }) => role.role?.name) || [];
   const hasAllowedRole = allowedRoles.some(role => userRoles.includes(role));
 
   if (!hasAllowedRole) {

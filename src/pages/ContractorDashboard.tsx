@@ -27,7 +27,7 @@ const ContractorDashboard = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [selectedOrder, setSelectedOrder] = useState<{ id: string; order_number: string; items?: { id: string }[] } | null>(null);
   const [showQuoteForm, setShowQuoteForm] = useState(false);
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'orders');
   
@@ -224,11 +224,11 @@ const ContractorDashboard = () => {
 
           {/* Main Content Tabs */}
           <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-            <TabsList className={`grid w-full ${manufacturingCheck?.has_manufacturing_service ? 'grid-cols-5' : 'grid-cols-4'}`}>
+            <TabsList className={`grid w-full ${(manufacturingCheck as { has_manufacturing_service?: boolean })?.has_manufacturing_service ? 'grid-cols-5' : 'grid-cols-4'}`}>
               <TabsTrigger value="orders">سفارشات</TabsTrigger>
               <TabsTrigger value="proposals">پیشنهادات من</TabsTrigger>
               <TabsTrigger value="projects">پروژه‌های فعال</TabsTrigger>
-              {manufacturingCheck?.has_manufacturing_service && (
+              {(manufacturingCheck as { has_manufacturing_service?: boolean })?.has_manufacturing_service && (
                 <TabsTrigger value="workshops">کارگاه‌های من</TabsTrigger>
               )}
               <TabsTrigger value="notifications">اعلان‌ها</TabsTrigger>
@@ -408,7 +408,7 @@ const ContractorDashboard = () => {
             </TabsContent>
 
             {/* Workshops Tab */}
-            {manufacturingCheck?.has_manufacturing_service && (
+            {(manufacturingCheck as { has_manufacturing_service?: boolean })?.has_manufacturing_service && (
               <TabsContent value="workshops" className="space-y-6">
               <Card>
                 <CardHeader>

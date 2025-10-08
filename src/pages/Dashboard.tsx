@@ -10,6 +10,13 @@ import Navbar from '@/components/Navbar';
 const Dashboard = () => {
   const { user, orders, cartItems, notifications, stats, isLoadingDashboard } = useAuth();
 
+  console.log('Dashboard - User:', user);
+  console.log('Dashboard - Orders:', orders);
+  console.log('Dashboard - Cart Items:', cartItems);
+  console.log('Dashboard - Notifications:', notifications);
+  console.log('Dashboard - Stats:', stats);
+  console.log('Dashboard - Is Loading:', isLoadingDashboard);
+
   if (isLoadingDashboard) {
     return (
       <div className="min-h-screen" dir="rtl">
@@ -55,6 +62,23 @@ const Dashboard = () => {
               </Button>
             </div>
           </div>
+
+          {/* Debug Info */}
+          <Card>
+            <CardHeader>
+              <CardTitle>اطلاعات Debug</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 text-sm">
+                <p><strong>User:</strong> {user ? JSON.stringify(user, null, 2) : 'null'}</p>
+                <p><strong>Orders Count:</strong> {Array.isArray(orders) ? orders.length : 'Not array'}</p>
+                <p><strong>Cart Items Count:</strong> {Array.isArray(cartItems) ? cartItems.length : 'Not array'}</p>
+                <p><strong>Notifications Count:</strong> {Array.isArray(notifications) ? notifications.length : 'Not array'}</p>
+                <p><strong>Stats:</strong> {stats ? JSON.stringify(stats, null, 2) : 'null'}</p>
+                <p><strong>Is Loading:</strong> {isLoadingDashboard ? 'true' : 'false'}</p>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Stats Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

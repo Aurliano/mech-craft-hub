@@ -10,7 +10,7 @@ import {
 } from '@/lib/errorSanitization';
 
 interface ErrorDisplayProps {
-  error: any;
+  error: Error | string | unknown;
   onRetry?: () => void;
   onDismiss?: () => void;
   className?: string;

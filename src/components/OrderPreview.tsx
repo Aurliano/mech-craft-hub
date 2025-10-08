@@ -22,17 +22,17 @@ interface ServiceField {
   name: string;
   field_key: string;
   type: 'text' | 'number' | 'file' | 'select' | 'multiselect' | 'checkbox' | 'date' | 'textarea';
-  options?: any[];
+  options?: { value: string; label: string }[];
   is_required: boolean;
   order: number;
   help_text?: string;
-  validation_rules?: any;
+  validation_rules?: Record<string, unknown>;
 }
 
 interface OrderPreviewProps {
   serviceName: string;
   fields: ServiceField[];
-  fieldValues: Record<string, any>;
+  fieldValues: Record<string, unknown>;
   uploadedFiles: Record<string, UploadedFile[]>;
   needsDocumentation?: boolean;
   notes?: string;
