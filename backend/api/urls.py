@@ -158,8 +158,8 @@ urlpatterns = [
             path('v1/blog/categories/', get_blog_categories, name='get_blog_categories'),
             path('v1/blog/featured/', get_featured_posts, name='get_featured_posts'),
             path('v1/blog/recent/', get_recent_posts, name='get_recent_posts'),
-            path('v1/blog/posts/<str:slug>/comments/', get_blog_comments, name='get_blog_comments'),
-            path('v1/blog/posts/<str:slug>/comments/create/', create_blog_comment, name='create_blog_comment'),
+            path('v1/blog/posts/<str:post_slug>/comments/', get_blog_comments, name='get_blog_comments'),
+            path('v1/blog/posts/<str:post_slug>/comments/create/', create_blog_comment, name='create_blog_comment'),
             
             # Blog Admin Endpoints
             path('v1/admin/blog/posts/create/', create_blog_post, name='create_blog_post'),

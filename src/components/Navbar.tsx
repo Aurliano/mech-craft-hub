@@ -68,51 +68,63 @@ const Navbar = () => {
     <nav className="bg-background border-b border-border sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Left Section: Logo */}
-          <div className="flex items-center gap-2 min-w-0">
-            <img src={logo} alt="لوگو" className="h-12 w-auto flex-shrink-0" />
-            <span className="text-lg font-bold truncate hidden sm:inline">پلتفرم مهندسی سایدا</span>
+          {/* Desktop Layout */}
+          <div className="hidden lg:flex justify-between items-center w-full">
+            {/* Left Section: Auth Buttons */}
+            <div className="flex items-center space-x-2 rtl:space-x-reverse flex-shrink-0" dir="rtl">
+            {isAuthenticated ? (
+              <>
+
+                {/* Shopping Cart */}
+                {isCustomer && (
+                  <Button variant="ghost" size="sm" className="relative" asChild title="سبد خرید">
+                    <Link to="/cart">
+                      <ShoppingCart className="h-5 w-5" />
+                      <span className="sr-only">سبد خرید</span>
+                      {cartItemsCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                          {cartItemsCount}
+                        </span>
+                      )}
+                    </Link>
+                  </Button>
+                )}
+
+                {/* User Account Dropdown */}
+                <UserDropdown 
+                  userName={userName}
+                  unreadNotificationsCount={unreadNotificationsCount}
+                  onLogout={logout}
+                />
+              </>
+            ) : (
+              <>
+                <Link to="/login">
+                  <Button variant="outline" size="sm" title="ورود" className="flex items-center gap-2">
+                    <LogIn className="h-4 w-4" />
+                    ورود
+                  </Button>
+                </Link>
+                <Link to="/register">
+                  <Button variant="outline" size="sm" title="ثبت نام" className="flex items-center gap-2">
+                    <UserPlus className="h-4 w-4" />
+                    ثبت نام
+                  </Button>
+                </Link>
+                <Link to="/contractor-register">
+                  <Button variant="default" size="sm" title="ثبت نام پیمانکاران و کارگاه ها" className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4" />
+                    ثبت نام پیمانکاران و کارگاه ها
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
-          {/* Center Section: Desktop Menu */}
-          <div className="hidden lg:flex items-center flex-1 justify-center max-w-4xl mx-auto" dir="rtl">
+            {/* Center Section: Desktop Menu */}
+            <div className="flex items-center flex-1 justify-center max-w-4xl mx-auto" dir="rtl">
               <NavigationMenu className="bg-transparent">
                 <NavigationMenuList className="gap-2">
-
-                  {/* Contact */}
-                  <NavigationMenuItem>
-                    <button 
-                      onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-                      className={navigationMenuTriggerStyle()}
-                    >
-                      <Phone className="h-4 w-4 ml-2" />
-                      تماس با ما
-                    </button>
-                  </NavigationMenuItem>
-
-                  {/* Services Page */}
-                  <NavigationMenuItem>
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/services">
-                      <BriefcaseIcon className="h-4 w-4 ml-2" />
-                      خدمات ما
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-
-                  {/* Portfolio */}
-                  <NavigationMenuItem>
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/portfolio">
-                      <Briefcase className="h-4 w-4 ml-2" />
-                      نمونه کارها
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-
-                  {/* Blog */}
-                  <NavigationMenuItem>
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/blog">
-                      <BookOpen className="h-4 w-4 ml-2" />
-                      مقالات و منابع علمی
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
 
                   {/* Home */}
                   <NavigationMenuItem>
@@ -188,64 +200,56 @@ const Navbar = () => {
                   </NavigationMenuItem>
 
                   
+                  {/* Blog */}
+                  <NavigationMenuItem>
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/blog">
+                      <BookOpen className="h-4 w-4 ml-2" />
+                      مقالات و منابع علمی
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+
+                  {/* Portfolio */}
+                  <NavigationMenuItem>
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/portfolio">
+                      <Briefcase className="h-4 w-4 ml-2" />
+                      نمونه کارها
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+
+                  {/* Services Page */}
+                  <NavigationMenuItem>
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/services">
+                      <BriefcaseIcon className="h-4 w-4 ml-2" />
+                      خدمات ما
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+
+                  {/* Contact */}
+                  <NavigationMenuItem>
+                    <button 
+                      onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+                      className={navigationMenuTriggerStyle()}
+                    >
+                      <Phone className="h-4 w-4 ml-2" />
+                      تماس با ما
+                    </button>
+                  </NavigationMenuItem>
+                  
                 </NavigationMenuList>
               </NavigationMenu>
             </div>
           </div>
 
-          {/* Right Section: Auth Buttons / User Menu */}
-          <div className="hidden md:flex items-center space-x-2 rtl:space-x-reverse flex-shrink-0" dir="rtl">
-            {isAuthenticated ? (
-              <>
-
-                {/* Shopping Cart */}
-                {isCustomer && (
-                  <Button variant="ghost" size="sm" className="relative" asChild title="سبد خرید">
-                    <Link to="/cart">
-                      <ShoppingCart className="h-5 w-5" />
-                      <span className="sr-only">سبد خرید</span>
-                      {cartItemsCount > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                          {cartItemsCount}
-                        </span>
-                      )}
-                    </Link>
-                  </Button>
-                )}
-
-                {/* User Account Dropdown */}
-                <UserDropdown 
-                  userName={userName}
-                  unreadNotificationsCount={unreadNotificationsCount}
-                  onLogout={logout}
-                />
-              </>
-            ) : (
-              <>
-                <Link to="/login">
-                  <Button variant="outline" size="sm" title="ورود" className="flex items-center gap-2">
-                    <LogIn className="h-4 w-4" />
-                    ورود
-                  </Button>
-                </Link>
-                <Link to="/register">
-                  <Button variant="outline" size="sm" title="ثبت نام" className="flex items-center gap-2">
-                    <UserPlus className="h-4 w-4" />
-                    ثبت نام
-                  </Button>
-                </Link>
-                <Link to="/contractor-register">
-                  <Button variant="default" size="lg" title="ثبت نام پیمانکاران و کارگاه ها" className="flex items-center gap-2">
-                    <Building2 className="h-4 w-4" />
-                    ثبت نام پیمانکاران و کارگاه ها
-                  </Button>
-                </Link>
-              </>
-            )}
+            {/* Right Section: Logo */}
+            <div className="flex items-center gap-2 min-w-0">
+              <img src={logo} alt="لوگو" className="h-12 w-auto flex-shrink-0" />
+              <span className="text-lg font-bold truncate hidden sm:inline">پلتفرم مهندسی سایدا</span>
+            </div>
           </div>
 
-          {/* Mobile menu button */}
-          <div className="lg:hidden">
+          {/* Mobile Layout */}
+          <div className="lg:hidden flex items-center justify-between w-full">
+            {/* Mobile menu button - Left side */}
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="text-foreground hover:text-primary transition-colors p-2"
@@ -255,6 +259,15 @@ const Navbar = () => {
               {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               <span className="sr-only">{isOpen ? "بستن منو" : "باز کردن منو"}</span>
             </button>
+            
+            {/* Mobile Logo and Site Name - Center */}
+            <div className="flex items-center gap-2">
+              <img src={logo} alt="لوگو" className="h-10 w-auto flex-shrink-0" />
+              <span className="text-base font-bold truncate">پلتفرم مهندسی سایدا</span>
+            </div>
+            
+            {/* Empty div for balance */}
+            <div className="w-10"></div>
           </div>
         </div>
 

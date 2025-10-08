@@ -41,6 +41,7 @@ import PortfolioPage from "./pages/PortfolioPage";
 import Blog from "./pages/Blog";
 import BlogPage from "./pages/BlogPage";
 import BlogPostPage from "./pages/BlogPostPage";
+import FileManager from "./pages/FileManager";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -146,6 +147,13 @@ const App = () => (
               <Route path="/portfolio" element={<PortfolioPage />} />
               <Route path="/blog" element={<BlogPage />} />
               <Route path="/blog/:slug" element={<BlogPostPage />} />
+              
+              {/* Admin Routes */}
+              <Route path="/admin/file-manager" element={
+                <RoleBasedRoute allowedRoles={['admin']}>
+                  <FileManager />
+                </RoleBasedRoute>
+              } />
               
               {/* Shared Routes */}
               <Route path="/profile" element={
