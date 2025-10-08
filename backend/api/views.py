@@ -14,7 +14,8 @@ from .models import (
     Cart, CartItem, Order, OrderItem, Quote, Workshop, ContractorService,
     Ticket, TicketMessage, TicketAttachment, TicketFileType, TicketCategory, TicketParticipant,
     ContentFilterLog, Review, MediaFile,
-    PasswordResetToken, PhoneVerificationCode, Payment, Notification, OrderStatusLog
+    PasswordResetToken, PhoneVerificationCode, Payment, Notification, OrderStatusLog,
+    ScientificContent
 )
 from .pagination import StandardResultsSetPagination
 from .throttling import (
@@ -33,7 +34,7 @@ from .serializers import (
     PasswordResetRequestSerializer, PasswordResetConfirmSerializer, PhoneVerificationRequestSerializer,
     PhoneVerificationConfirmSerializer, ChangePasswordSerializer,
     CreateOrderSerializer, OrderStatusUpdateSerializer, CreateQuoteSerializer,
-    NotificationSerializer
+    NotificationSerializer, ScientificContentSerializer, ScientificContentListSerializer, ScientificContentCreateSerializer
 )
 import os
 import random
@@ -488,6 +489,50 @@ class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.select_related('order_item', 'customer', 'contractor', 'approved_by').all()
     serializer_class = ReviewSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+
+class ScientificContentViewSet(viewsets.ModelViewSet):
+    queryset = ScientificContent.objects.filter(status='published').select_related('author').order_by('-published_at')
+    serializer_class = ScientificContentSerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['content_type', 'category', 'author']
+    search_fields = ['title', 'excerpt', 'content']
+    ordering_fields = ['published_at', 'view_count', 'like_count']
+    ordering = ['-published_at']
+    
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return ScientificContentListSerializer
+        elif self.action == 'create':
+            return ScientificContentCreateSerializer
+        return ScientificContentSerializer
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        
+        # Filter by content type
+        content_type = self.request.query_params.get('content_type')
+        if content_type:
+            queryset = queryset.filter(content_type=content_type)
+        
+        # Filter by category
+        category = self.request.query_params.get('category')
+        if category:
+            queryset = queryset.filter(category=category)
+        
+        return queryset
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_scientific_content_categories(request):
+    """دریافت دسته‌بندی‌های محتوای علمی"""
+    categories = ScientificContent.CATEGORY_CHOICES
+    return Response({
+        'categories': [{'value': value, 'label': label} for value, label in categories]
+    })
 
 
 class UploadView(APIView):

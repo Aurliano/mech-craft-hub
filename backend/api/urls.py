@@ -7,7 +7,7 @@ from .views import (
     CartViewSet, CartItemViewSet,
     OrderViewSet, OrderItemViewSet, QuoteViewSet,
     TicketViewSet, TicketMessageViewSet, TicketAttachmentViewSet, TicketFileTypeViewSet, 
-    TicketCategoryViewSet, ContentFilterLogViewSet, ReviewViewSet,
+    TicketCategoryViewSet, ContentFilterLogViewSet, ReviewViewSet, ScientificContentViewSet,
     customer_register, contractor_register, login, refresh_token, logout, me, UserViewSet, UploadView,
     password_reset_request, password_reset_confirm, phone_verification_request,
     phone_verification_confirm, change_password, password_reset_request_sms, sms_credit,
@@ -35,6 +35,8 @@ from .views import (
             # Blog system endpoints
             get_blog_posts, get_blog_post, get_blog_categories, get_featured_posts, get_recent_posts,
             create_blog_post, create_blog_comment, get_blog_comments,
+            # Scientific content endpoints
+            get_scientific_content_categories,
 )
 
 # Import file management views
@@ -59,7 +61,7 @@ router.register(r'ticket-attachments', TicketAttachmentViewSet, basename='ticket
 router.register(r'ticket-file-types', TicketFileTypeViewSet, basename='ticketfiletype')
 router.register(r'ticket-categories', TicketCategoryViewSet, basename='ticketcategory')
 router.register(r'content-filter-logs', ContentFilterLogViewSet, basename='contentfilterlog')
-router.register(r'reviews', ReviewViewSet, basename='review')
+router.register(r'scientific-content', ScientificContentViewSet, basename='scientificcontent')
 
 urlpatterns = [
     path('health/', health, name='health'),
@@ -167,6 +169,9 @@ urlpatterns = [
             path('v1/files/<str:content_id>/download/', download_content_file, name='download_content_file'),
             path('v1/files/<str:content_id>/delete/', delete_content_file, name='delete_content_file'),
             path('v1/files/<str:content_id>/info/', get_file_info, name='get_file_info'),
+            
+            # Scientific Content Categories
+            path('v1/scientific-content/categories/', get_scientific_content_categories, name='scientific_content_categories'),
     
     # Aliases for requested endpoints
     path('v1/categories/', ScopeViewSet.as_view({'get': 'list'}), name='categories'),
