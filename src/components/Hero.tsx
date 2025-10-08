@@ -52,7 +52,7 @@ const Hero = () => {
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-8 sm:mb-12 justify-center">
             <Button variant="hero" size="lg" className="group" asChild>
               <Link to="/contractor-register">
-                همکاری با ما
+                ثبت نام پیمانکاران و کارگاه ها
                 <ArrowLeft className="mr-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Link>
             </Button>

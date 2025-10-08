@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
-import { Menu, X, ChevronDown, ChevronUp, User, ShoppingCart, Package, HelpCircle, LogOut, Home, LogIn, UserPlus, Bell, BarChart3, Wrench, Settings, Briefcase, MessageSquare, Building2 } from "lucide-react";
+import { Menu, X, ChevronDown, ChevronUp, User, ShoppingCart, Package, HelpCircle, LogOut, Home, LogIn, UserPlus, Bell, BarChart3, Wrench, Settings, Briefcase, MessageSquare, Building2, BookOpen, Briefcase as BriefcaseIcon, Phone } from "lucide-react";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -79,10 +79,46 @@ const Navbar = () => {
               <NavigationMenu className="bg-transparent">
                 <NavigationMenuList className="gap-2">
 
+                  {/* Contact */}
+                  <NavigationMenuItem>
+                    <button 
+                      onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+                      className={navigationMenuTriggerStyle()}
+                    >
+                      <Phone className="h-4 w-4 ml-2" />
+                      تماس با ما
+                    </button>
+                  </NavigationMenuItem>
+
+                  {/* Services Page */}
+                  <NavigationMenuItem>
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/services">
+                      <BriefcaseIcon className="h-4 w-4 ml-2" />
+                      خدمات ما
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+
+                  {/* Portfolio */}
+                  <NavigationMenuItem>
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/portfolio">
+                      <Briefcase className="h-4 w-4 ml-2" />
+                      نمونه کارها
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+
+                  {/* Blog */}
+                  <NavigationMenuItem>
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/blog">
+                      <BookOpen className="h-4 w-4 ml-2" />
+                      مقالات و منابع علمی
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+
                   {/* Home */}
                   <NavigationMenuItem>
                     <NavigationMenuLink asChild>
                       <Link to="/" className={navigationMenuTriggerStyle()} title="خانه">
+                        <Home className="h-4 w-4 ml-2" />
                         خانه
                       </Link>
                     </NavigationMenuLink>
@@ -91,6 +127,7 @@ const Navbar = () => {
                   {/* Services Dropdown */}
                   <NavigationMenuItem>
                     <NavigationMenuTrigger className="bg-transparent hover:bg-muted/50 data-[state=open]:bg-muted/50">
+                      <Wrench className="h-4 w-4 ml-2" />
                       خدمات تخصصی
                     </NavigationMenuTrigger>
                     <NavigationMenuContent className="bg-card/95 backdrop-blur-sm border border-border/50 shadow-elegant">
@@ -150,36 +187,6 @@ const Navbar = () => {
                     </NavigationMenuContent>
                   </NavigationMenuItem>
 
-                  {/* Blog */}
-                  <NavigationMenuItem>
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/blog">
-                      مقالات و منابع علمی
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-
-                  {/* Portfolio */}
-                  <NavigationMenuItem>
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/portfolio">
-                      نمونه کارها
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-
-                  {/* Services Page */}
-                  <NavigationMenuItem>
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/services">
-                      خدمات ما
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-
-                  {/* Contact */}
-                  <NavigationMenuItem>
-                    <button 
-                      onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-                      className={navigationMenuTriggerStyle()}
-                    >
-                      تماس با ما
-                    </button>
-                  </NavigationMenuItem>
                   
                 </NavigationMenuList>
               </NavigationMenu>
@@ -216,17 +223,20 @@ const Navbar = () => {
             ) : (
               <>
                 <Link to="/login">
-                  <Button variant="outline" size="sm" title="ورود">
+                  <Button variant="outline" size="sm" title="ورود" className="flex items-center gap-2">
+                    <LogIn className="h-4 w-4" />
                     ورود
                   </Button>
                 </Link>
                 <Link to="/register">
-                  <Button variant="outline" size="sm" title="ثبت نام">
+                  <Button variant="outline" size="sm" title="ثبت نام" className="flex items-center gap-2">
+                    <UserPlus className="h-4 w-4" />
                     ثبت نام
                   </Button>
                 </Link>
                 <Link to="/contractor-register">
-                  <Button variant="default" size="lg" title="ثبت نام پیمانکاران و کارگاه ها">
+                  <Button variant="default" size="lg" title="ثبت نام پیمانکاران و کارگاه ها" className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4" />
                     ثبت نام پیمانکاران و کارگاه ها
                   </Button>
                 </Link>
@@ -248,283 +258,313 @@ const Navbar = () => {
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Mobile Menu - Maktabkhooneh Style */}
         {isOpen && (
-          <div className="lg:hidden border-t border-border bg-background/95 backdrop-blur-sm" dir="rtl">
-            <div className="max-h-[80vh] overflow-y-auto">
-              <div className="px-3 py-4 space-y-3">
-                {/* Home Link */}
-                <Link 
-                  to="/" 
-                  className="flex items-center justify-between p-3 rounded-lg bg-muted/30 text-foreground hover:bg-muted hover:text-primary transition-all duration-200"
+          <div className="lg:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={() => setIsOpen(false)}>
+            <div className="absolute right-0 top-0 h-full w-4/5 max-w-sm bg-white shadow-2xl" dir="rtl" onClick={(e) => e.stopPropagation()}>
+              {/* Header with close button */}
+              <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                <button
                   onClick={() => setIsOpen(false)}
+                  className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                  title="بستن منو"
                 >
-                  <span className="font-medium flex items-center gap-2">
-                    <Home className="h-5 w-5" />
-                    خانه
-                  </span>
-                </Link>
+                  <X className="h-5 w-5 text-gray-600" />
+                </button>
+                <div className="flex items-center gap-2">
+                  <img src={logo} alt="لوگو" className="h-8 w-auto" />
+                  <span className="font-bold text-sm">پلتفرم مهندسی سایدا</span>
+                </div>
+              </div>
 
-                
-                {/* Services Section */}
-                <div className="bg-muted/20 rounded-lg overflow-hidden">
-                  <button
-                    onClick={() => toggleService('services')}
-                    className="w-full flex items-center justify-between p-3 text-foreground hover:bg-muted transition-colors"
-                  >
-                    <span className="font-medium">خدمات</span>
-                    {expandedServices.includes('services') ? 
-                      <ChevronUp className="h-4 w-4" /> : 
-                      <ChevronDown className="h-4 w-4" />
-                    }
-                  </button>
-                  
-                  {expandedServices.includes('services') && (
-                    <div className="px-3 pb-3 space-y-2">
-                      {services.map((service) => (
-                        <div key={service.name} className="bg-background rounded-md overflow-hidden">
-                          {service.subItems ? (
-                            <div>
-                              <button
-                                onClick={() => toggleService(service.name)}
-                                className="w-full flex items-center justify-between p-2 text-sm text-foreground hover:bg-muted transition-colors"
-                              >
-                                <span>{service.name}</span>
-                                {expandedServices.includes(service.name) ? 
-                                  <ChevronUp className="h-3 w-3" /> : 
-                                  <ChevronDown className="h-3 w-3" />
-                                }
-                              </button>
-                              
-                              {expandedServices.includes(service.name) && (
-                                <div className="px-2 pb-2 space-y-1">
-                                  {service.subItems.map((subItem) => (
-                                    <div key={subItem.name}>
-                                      {subItem.subItems ? (
-                                        <div className="bg-muted/30 rounded-sm overflow-hidden">
-                                          <button
-                                            onClick={() => toggleService(subItem.name)}
-                                            className="w-full flex items-center justify-between p-2 text-xs text-muted-foreground hover:text-primary transition-colors"
-                                          >
-                                            <span>{subItem.name}</span>
-                                            {expandedServices.includes(subItem.name) ? 
-                                              <ChevronUp className="h-3 w-3" /> : 
-                                              <ChevronDown className="h-3 w-3" />
-                                            }
-                                          </button>
-                                          
-                                          {expandedServices.includes(subItem.name) && (
-                                            <div className="px-2 pb-1 space-y-1">
-                                              {subItem.subItems.map((thirdLevelItem) => (
-                                                <a
-                                                  key={thirdLevelItem.name}
-                                                  href={thirdLevelItem.href}
-                                                  className="block p-1 text-xs text-muted-foreground hover:text-primary transition-colors"
-                                                  onClick={() => setIsOpen(false)}
-                                                >
-                                                  • {thirdLevelItem.name}
-                                                </a>
-                                              ))}
-                                            </div>
-                                          )}
-                                        </div>
-                                      ) : (
-                                        <a
-                                          href={subItem.href}
-                                          className="block p-2 text-xs text-muted-foreground hover:text-primary transition-colors rounded-sm hover:bg-muted/50"
-                                          onClick={() => setIsOpen(false)}
-                                        >
-                                          {subItem.name}
-                                        </a>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <a
-                              href={service.href}
-                              className="block p-2 text-sm text-foreground hover:text-primary hover:bg-muted transition-colors"
-                              onClick={() => setIsOpen(false)}
-                            >
-                              {service.name}
-                            </a>
-                          )}
-                        </div>
-                      ))}
+              {/* User Profile Section */}
+              {isAuthenticated ? (
+                <div className="bg-gray-50 p-4 border-b border-gray-200">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                      <User className="h-5 w-5 text-white" />
                     </div>
-                  )}
+                    <div className="flex flex-col">
+                      <span className="font-medium text-sm">{userName}</span>
+                      <span className="text-xs text-gray-500">
+                        {isContractor ? 'پیمانکار' : isCustomer ? 'مشتری' : 'کاربر'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4 text-white">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                      <User className="h-5 w-5" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-medium text-sm">به پلتفرم مهندسی سایدا خوش آمدید</span>
+                      <span className="text-xs opacity-90">برای شروع وارد شوید</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Navigation Menu */}
+              <div className="flex-1 overflow-y-auto py-4">
+                <div className="px-4 space-y-2">
+                  {/* Home Link */}
+                  <Link 
+                    to="/" 
+                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <Home className="h-5 w-5 text-gray-600" />
+                    <span className="font-medium">خانه</span>
+                  </Link>
+
+                  {/* Services Section */}
+                  <div className="bg-gray-50 rounded-lg overflow-hidden">
+                    <button
+                      onClick={() => toggleService('services')}
+                      className="w-full flex items-center justify-between p-3 hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Wrench className="h-5 w-5 text-gray-600" />
+                        <span className="font-medium">خدمات تخصصی</span>
+                      </div>
+                      {expandedServices.includes('services') ? 
+                        <ChevronUp className="h-4 w-4 text-gray-500" /> : 
+                        <ChevronDown className="h-4 w-4 text-gray-500" />
+                      }
+                    </button>
+                    
+                    {expandedServices.includes('services') && (
+                      <div className="px-3 pb-3 space-y-1">
+                        {services.map((service) => (
+                          <div key={service.name} className="bg-white rounded-md overflow-hidden">
+                            {service.subItems ? (
+                              <div>
+                                <button
+                                  onClick={() => toggleService(service.name)}
+                                  className="w-full flex items-center justify-between p-2 text-sm hover:bg-gray-50 transition-colors"
+                                >
+                                  <span>{service.name}</span>
+                                  {expandedServices.includes(service.name) ? 
+                                    <ChevronUp className="h-3 w-3" /> : 
+                                    <ChevronDown className="h-3 w-3" />
+                                  }
+                                </button>
+                                
+                                {expandedServices.includes(service.name) && (
+                                  <div className="px-2 pb-2 space-y-1">
+                                    {service.subItems.map((subItem) => (
+                                      <div key={subItem.name}>
+                                        {subItem.subItems ? (
+                                          <div className="bg-gray-50 rounded-sm overflow-hidden">
+                                            <button
+                                              onClick={() => toggleService(subItem.name)}
+                                              className="w-full flex items-center justify-between p-2 text-xs text-gray-600 hover:text-primary transition-colors"
+                                            >
+                                              <span>{subItem.name}</span>
+                                              {expandedServices.includes(subItem.name) ? 
+                                                <ChevronUp className="h-3 w-3" /> : 
+                                                <ChevronDown className="h-3 w-3" />
+                                              }
+                                            </button>
+                                            
+                                            {expandedServices.includes(subItem.name) && (
+                                              <div className="px-2 pb-1 space-y-1">
+                                                {subItem.subItems.map((thirdLevelItem) => (
+                                                  <a
+                                                    key={thirdLevelItem.name}
+                                                    href={thirdLevelItem.href}
+                                                    className="block p-1 text-xs text-gray-500 hover:text-primary transition-colors"
+                                                    onClick={() => setIsOpen(false)}
+                                                  >
+                                                    • {thirdLevelItem.name}
+                                                  </a>
+                                                ))}
+                                              </div>
+                                            )}
+                                          </div>
+                                        ) : (
+                                          <a
+                                            href={subItem.href}
+                                            className="block p-2 text-xs text-gray-600 hover:text-primary transition-colors rounded-sm hover:bg-gray-50"
+                                            onClick={() => setIsOpen(false)}
+                                          >
+                                            {subItem.name}
+                                          </a>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <a
+                                href={service.href}
+                                className="block p-2 text-sm text-gray-700 hover:text-primary hover:bg-gray-50 transition-colors"
+                                onClick={() => setIsOpen(false)}
+                              >
+                                {service.name}
+                              </a>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Other Navigation Links */}
+                  <Link 
+                    to="/blog" 
+                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <BookOpen className="h-5 w-5 text-gray-600" />
+                    <span className="font-medium">مقالات و منابع علمی</span>
+                  </Link>
+
+                  <Link 
+                    to="/portfolio" 
+                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <Briefcase className="h-5 w-5 text-gray-600" />
+                    <span className="font-medium">نمونه کارها</span>
+                  </Link>
+
+                  <Link 
+                    to="/services" 
+                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <BriefcaseIcon className="h-5 w-5 text-gray-600" />
+                    <span className="font-medium">خدمات ما</span>
+                  </Link>
+
+                  <button 
+                    onClick={() => {
+                      setIsOpen(false);
+                      document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <Phone className="h-5 w-5 text-gray-600" />
+                    <span className="font-medium">تماس با ما</span>
+                  </button>
                 </div>
 
-                {/* Portfolio Link */}
-                <a 
-                  href="/portfolio" 
-                  className="flex items-center justify-between p-3 rounded-lg bg-muted/30 text-foreground hover:bg-muted hover:text-primary transition-all duration-200"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <span className="font-medium">نمونه کارها</span>
-                </a>
-
-                {/* Blog Link */}
-                <a 
-                  href="/blog" 
-                  className="flex items-center justify-between p-3 rounded-lg bg-muted/30 text-foreground hover:bg-muted hover:text-primary transition-all duration-200"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <span className="font-medium">مقالات و منابع علمی</span>
-                </a>
-
-                {/* Contact Button */}
-                <button 
-                  onClick={() => {
-                    setIsOpen(false);
-                    document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                  className="w-full flex items-center justify-between p-3 rounded-lg bg-muted/30 text-foreground hover:bg-muted hover:text-primary transition-all duration-200"
-                >
-                  <span className="font-medium">تماس با ما</span>
-                </button>
-
-                {/* Auth Buttons / User Menu */}
-                <div className="flex flex-col space-y-3 pt-4 border-t border-border">
+                {/* Auth Section */}
+                <div className="px-4 pt-4 border-t border-gray-200 mt-4">
                   {isAuthenticated ? (
-                    <>
+                    <div className="space-y-2">
                       {/* Shopping Cart - Only for customers */}
                       {isCustomer && (
-                      <Button variant="outline" size="sm" className="w-full flex items-center justify-center gap-2" asChild>
-                        <Link to="/cart" onClick={() => setIsOpen(false)}>
-                          <ShoppingCart className="h-4 w-4" />
-                          <span>سبد خرید</span>
-                          {cartItemsCount > 0 && (
-                            <span className="bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                              {cartItemsCount}
-                            </span>
-                          )}
-                        </Link>
-                      </Button>
-                      )}
-
-                      {/* User Account Menu */}
-                      <div className="bg-muted/30 rounded-lg p-3 space-y-2">
-                        <div className="flex items-center gap-2 pb-2 border-b border-border">
-                          <User className="h-4 w-4" />
-                          <div className="flex flex-col">
-                          <span className="font-medium text-sm">{userName}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {isContractor ? 'پیمانکار' : isCustomer ? 'مشتری' : 'کاربر'}
-                            </span>
-                          </div>
-                        </div>
-                        
-                        {/* Common menu items */}
-                        <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
-                          <Link to="/profile" onClick={() => setIsOpen(false)}>
-                            <User className="mr-2 h-4 w-4" />
-                            اطلاعات حساب کاربری
-                          </Link>
-                        </Button>
-                        
-                        <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
-                          <Link to="/notifications" onClick={() => setIsOpen(false)}>
-                            <Bell className="mr-2 h-4 w-4" />
-                            اعلان ها
-                            {unreadNotificationsCount > 0 && (
-                              <span className="mr-auto bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                                {unreadNotificationsCount}
+                        <Button variant="outline" size="sm" className="w-full flex items-center justify-center gap-2" asChild>
+                          <Link to="/cart" onClick={() => setIsOpen(false)}>
+                            <ShoppingCart className="h-4 w-4" />
+                            <span>سبد خرید</span>
+                            {cartItemsCount > 0 && (
+                              <span className="bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                {cartItemsCount}
                               </span>
                             )}
                           </Link>
                         </Button>
-                        
-                        <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
-                          <Link to="/support" onClick={() => setIsOpen(false)}>
-                          <HelpCircle className="mr-2 h-4 w-4" />
-                          پشتیبانی
-                          </Link>
-                        </Button>
-                        
-                        {/* Role-specific menu items */}
-                        {isCustomer && (
-                          <>
+                      )}
+
+                      {/* User Menu Items */}
+                      <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
+                        <Link to="/profile" onClick={() => setIsOpen(false)}>
+                          <User className="mr-2 h-4 w-4" />
+                          اطلاعات حساب کاربری
+                        </Link>
+                      </Button>
+                      
+                      <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
+                        <Link to="/notifications" onClick={() => setIsOpen(false)}>
+                          <Bell className="mr-2 h-4 w-4" />
+                          اعلان ها
+                          {unreadNotificationsCount > 0 && (
+                            <span className="mr-auto bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                              {unreadNotificationsCount}
+                            </span>
+                          )}
+                        </Link>
+                      </Button>
+
+                      {/* Role-specific menu items */}
+                      {isCustomer && (
+                        <>
+                          <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
+                            <Link to="/dashboard" onClick={() => setIsOpen(false)}>
+                              <BarChart3 className="mr-2 h-4 w-4" />
+                              داشبورد
+                            </Link>
+                          </Button>
+                          
+                          <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
+                            <Link to="/orders" onClick={() => setIsOpen(false)}>
+                              <Package className="mr-2 h-4 w-4" />
+                              سفارشات
+                            </Link>
+                          </Button>
+                        </>
+                      )}
+                      
+                      {isContractor && (
+                        <>
+                          <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
+                            <Link to="/contractor-dashboard" onClick={() => setIsOpen(false)}>
+                              <Briefcase className="mr-2 h-4 w-4" />
+                              پنل پیمانکار
+                            </Link>
+                          </Button>
+                          
+                          {(manufacturingCheck as { has_manufacturing_service?: boolean })?.has_manufacturing_service && (
                             <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
-                              <Link to="/dashboard" onClick={() => setIsOpen(false)}>
-                                <BarChart3 className="mr-2 h-4 w-4" />
-                                داشبورد
+                              <Link to="/my-workshops" onClick={() => setIsOpen(false)}>
+                                <Building2 className="mr-2 h-4 w-4" />
+                                کارگاه‌های من
                               </Link>
                             </Button>
-                            
-                            <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
-                              <Link to="/orders" onClick={() => setIsOpen(false)}>
-                                <Package className="mr-2 h-4 w-4" />
-                                سفارشات
-                              </Link>
-                            </Button>
-                          </>
-                        )}
-                        
-                        {isContractor && (
-                          <>
-                            <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
-                              <Link to="/contractor-dashboard" onClick={() => setIsOpen(false)}>
-                                <Briefcase className="mr-2 h-4 w-4" />
-                                پنل پیمانکار
-                              </Link>
-                            </Button>
-                            
-                            {(manufacturingCheck as { has_manufacturing_service?: boolean })?.has_manufacturing_service && (
-                              <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
-                                <Link to="/my-workshops" onClick={() => setIsOpen(false)}>
-                                  <Building2 className="mr-2 h-4 w-4" />
-                                  کارگاه‌های من
-                                </Link>
-                              </Button>
-                            )}
-                            
-                            <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
-                              <Link to="/contractor-dashboard?tab=projects" onClick={() => setIsOpen(false)}>
-                                <Settings className="mr-2 h-4 w-4" />
-                                پروژه‌های فعال
-                              </Link>
-                        </Button>
-                          </>
-                        )}
-                        
-                        <div className="pt-2 border-t border-border">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="w-full justify-start text-destructive hover:text-destructive"
-                          title="خروج از حساب"
-                          onClick={() => {
-                            logout();
-                            setIsOpen(false);
-                          }}
-                        >
-                          <LogOut className="mr-2 h-4 w-4" />
-                          خروج از حساب
-                        </Button>
-                        </div>
-                      </div>
-                    </>
+                          )}
+                        </>
+                      )}
+                      
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                        onClick={() => {
+                          logout();
+                          setIsOpen(false);
+                        }}
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        خروج از حساب
+                      </Button>
+                    </div>
                   ) : (
-                    <>
+                    <div className="space-y-2">
                       <Link to="/login" onClick={() => setIsOpen(false)}>
-                        <Button variant="outline" size="sm" className="w-full" title="ورود">
+                        <Button variant="outline" size="sm" className="w-full flex items-center gap-2">
+                          <LogIn className="h-4 w-4" />
                           ورود
                         </Button>
                       </Link>
                       <Link to="/register" onClick={() => setIsOpen(false)}>
-                        <Button variant="outline" size="sm" className="w-full" title="ثبت نام">
+                        <Button variant="outline" size="sm" className="w-full flex items-center gap-2">
+                          <UserPlus className="h-4 w-4" />
                           ثبت نام
                         </Button>
                       </Link>
                       <Link to="/contractor-register" onClick={() => setIsOpen(false)}>
-                        <Button variant="default" size="lg" className="w-full" title="ثبت نام پیمانکاران و کارگاه ها">
+                        <Button variant="default" size="lg" className="w-full flex items-center gap-2">
+                          <Building2 className="h-4 w-4" />
                           ثبت نام پیمانکاران و کارگاه ها
                         </Button>
                       </Link>
-                    </>
+                    </div>
                   )}
                 </div>
               </div>

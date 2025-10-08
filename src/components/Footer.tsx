@@ -34,8 +34,8 @@ const Footer = () => {
             <h3 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">لینک‌های سریع</h3>
             <ul className="space-y-2 text-primary-foreground/80 text-sm sm:text-base">
               <li><a href="/" className="hover:text-accent transition-colors">خانه</a></li>
-              <li><a href="/about" className="hover:text-accent transition-colors">وبلاگ</a></li>
-              <li><a href="/contact" className="hover:text-accent transition-colors">تماس با ما</a></li>
+              <li><a href="/blog" className="hover:text-accent transition-colors">مقالات و منابع علمی</a></li>
+              <li><a href="/services" className="hover:text-accent transition-colors">خدمات ما</a></li>
               <li><a href="/portfolio" className="hover:text-accent transition-colors">نمونه کارها</a></li>
             </ul>
           </div>
