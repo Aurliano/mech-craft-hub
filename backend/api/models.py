@@ -1014,7 +1014,7 @@ class ScientificContent(models.Model):
     meta_keywords = models.CharField(max_length=200, blank=True, help_text="کلمات کلیدی برای SEO")
     
     # Author and publishing
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='blog_posts')
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='scientific_content')
     featured_image = models.URLField(blank=True, null=True, help_text="تصویر شاخص مقاله")
     
     # Source information
@@ -1030,6 +1030,13 @@ class ScientificContent(models.Model):
     video_url = models.URLField(blank=True, null=True, help_text="لینک ویدیو (برای محتوای ویدیویی)")
     file_size = models.BigIntegerField(null=True, blank=True, help_text="حجم فایل (برای دانلود)")
     duration = models.PositiveIntegerField(null=True, blank=True, help_text="مدت زمان ویدیو (ثانیه)")
+    
+    # File management
+    file_name = models.CharField(max_length=255, blank=True, help_text="نام فایل اصلی")
+    file_type = models.CharField(max_length=50, blank=True, help_text="نوع فایل (pdf, docx, etc)")
+    file_path = models.CharField(max_length=500, blank=True, help_text="مسیر فایل در storage")
+    is_public = models.BooleanField(default=True, help_text="آیا فایل عمومی است یا نیاز به احراز هویت دارد")
+    download_count = models.PositiveIntegerField(default=0, help_text="تعداد دانلودها")
     
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)

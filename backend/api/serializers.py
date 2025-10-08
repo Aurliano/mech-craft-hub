@@ -618,6 +618,7 @@ class ScientificContentSerializer(serializers.ModelSerializer):
             'category', 'category_display', 'status', 'meta_description', 'meta_keywords',
             'author', 'author_name', 'featured_image', 'source_url', 'source_name',
             'view_count', 'like_count', 'download_url', 'video_url', 'file_size', 'duration',
+            'file_name', 'file_type', 'file_path', 'is_public', 'download_count',
             'created_at', 'updated_at', 'published_at', 'reading_time'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'published_at', 'view_count', 'like_count']

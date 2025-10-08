@@ -103,7 +103,7 @@ export default function PhoneVerification({ mode = 'verify', phone: initialPhone
       // Redirect based on mode
       setTimeout(() => {
         if (mode === 'register') {
-          navigate('/register');
+          navigate('/login'); // Redirect to login after phone verification
         } else if (mode === 'reset') {
           navigate('/reset-password');
         } else {

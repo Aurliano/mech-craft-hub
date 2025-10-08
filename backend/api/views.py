@@ -624,6 +624,7 @@ def password_reset_request_sms(request):
         logger.info(f"Password reset SMS sent successfully to {user.phone}")
         return Response({
             'detail': 'کد بازیابی رمز عبور ارسال شد',
+            'phone': user.phone,  # Include phone in response
             'expires_in': 600,  # 10 minutes
             'message_id': sms_result.get('message_id')
         })
@@ -641,6 +642,37 @@ def password_reset_request_sms(request):
             return Response({
                 'detail': 'خطا در ارسال پیامک. لطفاً دوباره تلاش کنید.'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def password_reset_confirm_sms(request):
+    """Confirm password reset code sent via SMS"""
+    serializer = PasswordResetConfirmSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    
+    token = serializer.validated_data['token']  # This is the SMS code
+    new_password = serializer.validated_data['new_password']
+    
+    try:
+        # Find password reset token with SMS code
+        reset_token = PasswordResetToken.objects.get(token=token, is_used=False)
+    except PasswordResetToken.DoesNotExist:
+        return Response({'detail': 'کد تأیید نامعتبر یا استفاده شده'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if reset_token.is_expired():
+        return Response({'detail': 'کد تأیید منقضی شده'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Update password
+    user = reset_token.user
+    user.set_password(new_password)
+    user.save()
+    
+    # Mark token as used
+    reset_token.is_used = True
+    reset_token.save()
+    
+    return Response({'detail': 'رمز عبور با موفقیت تغییر یافت'})
 
 
 @api_view(["POST"])

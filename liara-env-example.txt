@@ -1,0 +1,23 @@
+# Liara Object Storage Configuration
+# این فایل را در تنظیمات محیطی Liara اضافه کنید
+
+# نوع storage
+FILE_STORAGE_TYPE=liara
+
+# نام باکت در لیارا
+FILE_BUCKET_NAME=resources
+
+# منطقه لیارا
+FILE_REGION=iran
+
+# دسترسی عمومی به فایل‌ها
+FILE_PUBLIC_ACCESS=true
+
+# کلیدهای API لیارا (از پنل لیارا دریافت کنید)
+LIARA_ACCESS_KEY=your-access-key
+LIARA_SECRET_KEY=your-secret-key
+LIARA_ENDPOINT_URL=https://storage.c2.liara.space
+
+# تنظیمات فایل
+MAX_FILE_SIZE=104857600  # 100MB
+ALLOWED_FILE_TYPES=application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,video/mp4,video/avi,video/mov,application/zip,application/x-rar-compressed,application/x-7z-compressed

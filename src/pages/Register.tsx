@@ -75,9 +75,13 @@ const Register = () => {
     // Since Turnstile is disabled, always use regular registration
     await register(userData);
     
-    // After successful registration, request phone verification
-    await requestVerification(phone);
-    setShowPhoneVerification(true);
+    // After successful registration, redirect to phone verification
+    navigate("/phone-verification", { 
+      state: { 
+        phone, 
+        mode: 'register' 
+      } 
+    });
   };
 
   async function onSubmit(e: React.FormEvent) {

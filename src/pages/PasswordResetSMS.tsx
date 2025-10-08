@@ -62,6 +62,7 @@ export default function PasswordResetSMS() {
     setMessage('');
 
     try {
+      // Just verify the code, don't reset password yet
       await phoneVerificationConfirm(phone, code);
       setMessage('کد تأیید شد. حالا می‌توانید رمز عبور جدید را تنظیم کنید');
       setStep('success');
@@ -72,7 +73,8 @@ export default function PasswordResetSMS() {
           state: { 
             email, 
             phone, 
-            verified: true 
+            verified: true,
+            smsCode: code
           } 
         });
       }, 2000);

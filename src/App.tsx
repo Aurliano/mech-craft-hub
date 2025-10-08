@@ -15,6 +15,7 @@ import Register from "./pages/Register";
 import ContractorRegister from "./pages/ContractorRegister";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import PasswordResetSMS from "./pages/PasswordResetSMS";
 import PhoneVerification from "./pages/PhoneVerification";
 import Dashboard from "./pages/Dashboard";
 import Orders from "./pages/Orders";
@@ -70,6 +71,7 @@ const App = () => (
               <Route path="/contractor-register" element={<ContractorRegister />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/password-reset-sms" element={<PasswordResetSMS />} />
               <Route path="/phone-verification" element={<PhoneVerification />} />
               
               {/* Customer Routes - Only accessible by customers */}

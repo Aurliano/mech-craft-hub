@@ -1,125 +1,150 @@
-# 🚀 راهنمای Deploy پروژه MechCraft Hub در لیارا
+# راهنمای کامل دیپلوی با باکت لیارا
 
-## 📋 مراحل Deploy
+## 🎯 اطلاعات باکت شما:
+- **نام باکت**: `resources`
+- **Endpoint**: `https://storage.c2.liara.space`
+- **منطقه**: `iran`
 
-### 1️⃣ **آماده‌سازی محیط**
+## 📋 مراحل دیپلوی:
 
-```bash
-# نصب Liara CLI
-npm install -g @liara/cli
+### 1. تنظیم متغیرهای محیطی در Liara
 
-# ورود به حساب کاربری لیارا
-liara login
-```
-
-### 2️⃣ **تنظیم متغیرهای محیطی**
-
-در پنل لیارا، متغیرهای زیر را تنظیم کنید:
-
-```env
-SECRET_KEY=your-secret-key-here
-DEBUG=False
-DJANGO_SETTINGS_MODULE=config.settings_ultra_simple
-PYTHONPATH=/app/backend
-ALLOWED_HOSTS=*.liara.run,*.liara.ir
-DATABASE_URL=postgresql://user:password@host:port/database
-```
-
-### 3️⃣ **Deploy خودکار**
+در پنل کاربری Liara، در بخش **"تنظیمات"** → **"متغیرهای محیطی"** موارد زیر را اضافه کنید:
 
 ```bash
-# اجرای اسکریپت Deploy
-./deploy_liara.sh
+# نوع storage
+FILE_STORAGE_TYPE=liara
+
+# نام باکت
+FILE_BUCKET_NAME=resources
+
+# منطقه لیارا
+FILE_REGION=iran
+
+# دسترسی عمومی
+FILE_PUBLIC_ACCESS=true
+
+# کلیدهای API (از پنل باکت کپی کنید)
+LIARA_ACCESS_KEY=your-access-key-here
+LIARA_SECRET_KEY=your-secret-key-here
+LIARA_ENDPOINT_URL=https://storage.c2.liara.space
+
+# تنظیمات فایل
+MAX_FILE_SIZE=104857600
+ALLOWED_FILE_TYPES=application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.ms-powerpoint,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,video/mp4,video/avi,video/mov,application/zip,application/x-rar-compressed,application/x-7z-compressed
 ```
 
-### 4️⃣ **Deploy دستی**
+### 2. دریافت کلیدهای API
+
+1. به پنل لیارا بروید
+2. **"فضای ذخیره‌سازی ابری"** را انتخاب کنید
+3. باکت `resources` را انتخاب کنید
+4. روی تب **"کلیدها"** کلیک کنید
+5. **"ایجاد کلید"** را کلیک کنید
+6. نام کلید: `mechcraft-file-manager`
+7. سطح دسترسی: **"خواندن و نوشتن"**
+8. کلیدهای تولید شده را کپی کنید
+
+### 3. تست محلی (اختیاری)
 
 ```bash
-# کپی کردن Dockerfile بهینه
-cp Dockerfile.liara backend/Dockerfile
+# تنظیم متغیرهای محیطی محلی
+export LIARA_ACCESS_KEY="your-access-key"
+export LIARA_SECRET_KEY="your-secret-key"
 
-# Deploy به لیارا
-liara deploy
+# تست اتصال
+cd backend
+python quick_test_liara.py
 ```
 
-## 🔧 **تنظیمات مهم**
+### 4. دیپلوی پروژه
 
-### **فایل liara.json**
-- پورت: `80`
-- تنظیمات Gunicorn بهینه شده
-- متغیرهای محیطی ضروری
-
-### **فایل Procfile**
-- دستور شروع بهینه شده
-- تنظیمات Gunicorn برای production
-
-### **Dockerfile.liara**
-- Multi-stage build
-- Health check بهینه
-- Non-root user
-- پورت 80
-
-## 🏥 **Health Check**
-
-پروژه دارای دو endpoint برای health check است:
-
-1. **`/health/`** - Health check ساده
-2. **`/api/health/`** - Health check کامل با بررسی دیتابیس و cache
-
-## 📊 **مانیتورینگ**
-
-- **Logs**: در پنل لیارا قابل مشاهده
-- **Metrics**: `/metrics/` endpoint
-- **Health**: `/health/` endpoint
-
-## 🚨 **رفع مشکلات رایج**
-
-### **مشکل Health Check**
 ```bash
-# بررسی وضعیت container
-liara logs
-
-# بررسی health endpoint
-curl https://your-app.liara.run/health/
+# در Liara
+git push origin main
 ```
 
-### **مشکل Static Files**
+### 5. تست پس از دیپلوی
+
+#### 5.1 تست API آپلود:
 ```bash
-# اجرای collectstatic
-liara run python manage.py collectstatic --noinput
+curl -X POST \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -F "file=@test.pdf" \
+  -F "title=تست کتاب" \
+  -F "content_type=book" \
+  -F "category=mechatronics" \
+  https://your-domain.com/api/v1/files/upload/
 ```
 
-### **مشکل Database**
+#### 5.2 تست API دانلود:
 ```bash
-# اجرای migrations
-liara run python manage.py migrate
+curl -X GET \
+  https://your-domain.com/api/v1/files/{content_id}/download/
 ```
 
-## 🔐 **امنیت**
+## 🔧 استفاده در فرانت‌اند:
 
-- ✅ HTTPS فعال
-- ✅ Security headers
-- ✅ CORS تنظیم شده
-- ✅ Rate limiting
-- ✅ Input validation
+### 1. اضافه کردن route:
+```typescript
+// در App.tsx
+<Route path="/file-manager" element={<FileManager />} />
+```
 
-## 📈 **بهینه‌سازی**
+### 2. لینک در Navbar (برای ادمین‌ها):
+```typescript
+// در Navbar.tsx
+<Link to="/file-manager">مدیریت فایل‌ها</Link>
+```
 
-- ✅ Gunicorn با تنظیمات بهینه
-- ✅ Static files با WhiteNoise
-- ✅ Database connection pooling
-- ✅ Caching با Redis
+## 📊 ساختار فایل‌ها در باکت:
 
-## 🌐 **URLs مهم**
+```
+resources/
+├── scientific-content/
+│   ├── books/
+│   │   └── 2024/01/15/
+│   │       └── book_title_hash.pdf
+│   ├── articles/
+│   │   └── 2024/01/15/
+│   │       └── article_title_hash.pdf
+│   ├── software/
+│   │   └── 2024/01/15/
+│   │       └── software_name_hash.zip
+│   └── videos/
+│       └── 2024/01/15/
+│           └── video_title_hash.mp4
+```
 
-- **App**: `https://mech-craft-hub-main.liara.run`
-- **API Docs**: `https://mech-craft-hub-main.liara.run/api/docs/`
-- **Admin**: `https://mech-craft-hub-main.liara.run/admin/`
-- **Health**: `https://mech-craft-hub-main.liara.run/health/`
+## 🌐 URL فایل‌ها:
 
-## 📞 **پشتیبانی**
+فایل‌های عمومی با URL زیر قابل دسترسی هستند:
+```
+https://storage.c2.liara.space/resources/scientific-content/books/2024/01/15/book_title_hash.pdf
+```
+
+## ⚠️ نکات مهم:
+
+1. **امنیت**: کلیدهای API را در جای امن نگهداری کنید
+2. **حجم فایل**: حداکثر 100MB برای هر فایل
+3. **انواع فایل**: PDF, DOC, DOCX, PPT, PPTX, XLS, XLSX, MP4, AVI, MOV, ZIP, RAR, 7Z
+4. **دسترسی**: فایل‌ها به صورت عمومی قابل دسترسی هستند
+
+## 🚨 عیب‌یابی:
+
+### خطای اتصال:
+- بررسی کلیدهای API
+- بررسی نام باکت
+- بررسی endpoint URL
+
+### خطای آپلود:
+- بررسی حجم فایل
+- بررسی نوع فایل
+- بررسی دسترسی‌های باکت
+
+## 📞 پشتیبانی:
 
 در صورت بروز مشکل:
-1. بررسی logs در پنل لیارا
-2. بررسی health endpoint
-3. تماس با تیم پشتیبانی لیارا
+1. لاگ‌های سرور را بررسی کنید
+2. تست اتصال را اجرا کنید
+3. تنظیمات متغیرهای محیطی را بررسی کنید

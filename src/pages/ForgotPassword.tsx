@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,7 @@ import { usePasswordResetRequest } from "@/hooks/useAuth";
 const ForgotPassword = () => {
   const { mutateAsync: requestReset, isPending, error, isSuccess } = usePasswordResetRequest();
   const [email, setEmail] = useState("");
+  const navigate = useNavigate();
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -20,6 +21,10 @@ const ForgotPassword = () => {
       // Error is handled by the hook
     }
   }
+
+  const handleSMSReset = () => {
+    navigate('/password-reset-sms');
+  };
 
   return (
     <div className="min-h-screen" dir="rtl">
@@ -60,6 +65,25 @@ const ForgotPassword = () => {
                 <Button className="w-full" variant="hero" type="submit" disabled={isPending}>
                   {isPending ? "در حال ارسال..." : "ارسال لینک بازنشانی"}
                 </Button>
+                
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">یا</span>
+                  </div>
+                </div>
+                
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="w-full" 
+                  onClick={handleSMSReset}
+                >
+                  بازیابی با پیامک
+                </Button>
+                
                 <div className="text-center">
                   <span className="text-sm text-muted-foreground">
                     رمز عبور خود را به یاد آوردید؟{" "}

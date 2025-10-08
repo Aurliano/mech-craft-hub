@@ -476,7 +476,24 @@ export async function passwordResetRequestSMS(email: string) {
     const errorText = await res.text();
     throw new Error(errorText || 'SMS password reset request failed');
   }
-  return (await res.json()) as { detail: string; code?: string; expires_in: number; message_id?: string };
+  return (await res.json()) as { detail: string; phone?: string; code?: string; expires_in: number; message_id?: string };
+}
+
+export async function passwordResetConfirmSMS(code: string, newPassword: string) {
+  const res = await fetch(getApiUrl('/v1/auth/password-reset-confirm-sms/'), {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCSRFToken() || '',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ token: code, new_password: newPassword }),
+  });
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || 'SMS password reset confirmation failed');
+  }
+  return (await res.json()) as { detail: string };
 }
 
 // User Phone Verification (for authenticated users)

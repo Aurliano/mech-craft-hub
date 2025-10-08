@@ -29,7 +29,7 @@ class SustainedRateThrottle(AnonRateThrottle):
     scope = 'sustained'
 
 
-class UploadRateThrottle(AnonRateThrottle):
+class UploadRateThrottle(UserRateThrottle):
     """Upload rate throttle for file uploads"""
     scope = 'upload'
 
