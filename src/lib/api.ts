@@ -16,6 +16,7 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0
 export const API_ROOT = '/api';
 
 // Utility function to get the correct API URL for both development and production
+// Version: 2025-10-08-14:00 - Cache bust
 export function getApiUrl(endpoint: string): string {
   const isProduction = import.meta.env.PROD;
   if (isProduction) {
