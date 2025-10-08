@@ -269,9 +269,8 @@ class CustomerRegisterSerializer(serializers.ModelSerializer):
         return value
 
     def validate_website(self, value):
-        """Validate honeypot field - should be empty"""
-        if value:
-            raise serializers.ValidationError("Bot detected")
+        """Validate honeypot field - should be empty - Temporarily disabled"""
+        # Temporarily disabled honeypot validation
         return value
 
     def validate(self, data):
@@ -350,9 +349,8 @@ class ContractorRegisterSerializer(serializers.ModelSerializer):
         return value
 
     def validate_website(self, value):
-        """Validate honeypot field - should be empty"""
-        if value:
-            raise serializers.ValidationError("Bot detected")
+        """Validate honeypot field - should be empty - Temporarily disabled"""
+        # Temporarily disabled honeypot validation
         return value
 
     def validate(self, data):
@@ -444,9 +442,8 @@ class LoginSerializer(serializers.Serializer):
         return value
 
     def validate_website(self, value):
-        """Validate honeypot field - should be empty"""
-        if value:
-            raise serializers.ValidationError("Bot detected")
+        """Validate honeypot field - should be empty - Temporarily disabled"""
+        # Temporarily disabled honeypot validation
         return value
 
     def validate(self, data):

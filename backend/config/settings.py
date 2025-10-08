@@ -47,6 +47,9 @@ ALLOWED_HOSTS = [
     os.getenv('ALLOWED_HOSTS', '')
 ]
 
+# Frontend URL for password reset and other redirects
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://saydatech.ir')
+
 # Application definition
 
 INSTALLED_APPS = [
