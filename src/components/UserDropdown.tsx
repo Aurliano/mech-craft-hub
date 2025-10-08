@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { 
   User, ChevronDown, Bell, HelpCircle, BarChart3, Package, 
-  Briefcase, Settings, LogOut, Building2 
+  Briefcase, Settings, LogOut, Building2, ShoppingCart, MessageSquare, FileText 
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -95,6 +95,13 @@ const UserDropdown: React.FC<UserDropdownProps> = ({
                 <span>سفارشات</span>
               </Link>
             </DropdownMenuItem>
+            
+            <DropdownMenuItem asChild>
+              <Link to="/cart">
+                <ShoppingCart className="mr-2 h-4 w-4" />
+                <span>سبد خرید</span>
+              </Link>
+            </DropdownMenuItem>
           </>
         )}
         
@@ -107,6 +114,20 @@ const UserDropdown: React.FC<UserDropdownProps> = ({
               </Link>
             </DropdownMenuItem>
             
+            <DropdownMenuItem asChild>
+              <Link to="/contractor/quotes">
+                <MessageSquare className="mr-2 h-4 w-4" />
+                <span>پیشنهادات</span>
+              </Link>
+            </DropdownMenuItem>
+            
+            <DropdownMenuItem asChild>
+              <Link to="/contractor/projects">
+                <FileText className="mr-2 h-4 w-4" />
+                <span>پروژه‌های فعال</span>
+              </Link>
+            </DropdownMenuItem>
+            
             {(manufacturingCheck as { has_manufacturing_service?: boolean })?.has_manufacturing_service && (
               <DropdownMenuItem asChild>
                 <Link to="/my-workshops">
@@ -115,13 +136,6 @@ const UserDropdown: React.FC<UserDropdownProps> = ({
                 </Link>
               </DropdownMenuItem>
             )}
-            
-            <DropdownMenuItem asChild>
-              <Link to="/contractor-dashboard?tab=projects">
-                <Settings className="mr-2 h-4 w-4" />
-                <span>پروژه‌های فعال</span>
-              </Link>
-            </DropdownMenuItem>
           </>
         )}
         

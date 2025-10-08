@@ -241,11 +241,11 @@ export function useCreateOrder() {
   });
 }
 
-export function useGetOrderById(orderId: string) {
+export function useGetOrderById(orderId: string | undefined) {
   const enabled = Boolean(getAccessToken() && orderId);
   return useQuery<any>({
     queryKey: ['order', orderId],
-    queryFn: () => getOrderById(orderId),
+    queryFn: () => getOrderById(orderId!),
     enabled,
     retry: false,
   });
@@ -278,11 +278,11 @@ export function useCreateQuote() {
   });
 }
 
-export function useGetQuotesByOrder(orderId: string) {
+export function useGetQuotesByOrder(orderId: string | undefined) {
   const enabled = Boolean(getAccessToken() && orderId);
   return useQuery<any[]>({
     queryKey: ['quotes', orderId],
-    queryFn: () => getQuotesByOrder(orderId),
+    queryFn: () => getQuotesByOrder(orderId!),
     enabled,
     retry: false,
   });

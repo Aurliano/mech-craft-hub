@@ -195,17 +195,19 @@ const Navbar = () => {
               <>
 
                 {/* Shopping Cart */}
-                <Button variant="ghost" size="sm" className="relative" asChild title="سبد خرید">
-                  <Link to="/cart">
-                    <ShoppingCart className="h-5 w-5" />
-                    <span className="sr-only">سبد خرید</span>
-                    {cartItemsCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                        {cartItemsCount}
-                      </span>
-                    )}
-                  </Link>
-                </Button>
+                {isCustomer && (
+                  <Button variant="ghost" size="sm" className="relative" asChild title="سبد خرید">
+                    <Link to="/cart">
+                      <ShoppingCart className="h-5 w-5" />
+                      <span className="sr-only">سبد خرید</span>
+                      {cartItemsCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                          {cartItemsCount}
+                        </span>
+                      )}
+                    </Link>
+                  </Button>
+                )}
 
                 {/* User Account Dropdown */}
                 <UserDropdown 

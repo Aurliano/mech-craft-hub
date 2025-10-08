@@ -76,8 +76,8 @@ const OrderDetails = () => {
   const [activeTab, setActiveTab] = useState('details');
 
   // API Hooks
-  const { data: orderData, isLoading: isLoadingOrder } = useGetOrderById(orderId || '');
-  const { data: quotesData, isLoading: isLoadingQuotes } = useGetQuotesByOrder(orderId || '');
+  const { data: orderData, isLoading: isLoadingOrder } = useGetOrderById(orderId);
+  const { data: quotesData, isLoading: isLoadingQuotes } = useGetQuotesByOrder(orderId);
 
   useEffect(() => {
     if (orderData) {
