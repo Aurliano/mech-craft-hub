@@ -35,8 +35,8 @@ const Hero = () => {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-right space-y-2 py-8 sm:py-16"> {/* Added responsive py-8 sm:py-16 */}
-        <div className="max-w-3xl"> {/* This div now only contains the text and buttons */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-2 py-8 sm:py-16"> {/* Added responsive py-8 sm:py-16 */}
+        <div className="max-w-3xl mx-auto"> {/* This div now only contains the text and buttons */}
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold text-primary-foreground mb-4 sm:mb-6 leading-tight space-y-2 sm:space-y-4 font-yekan">
             پلتفرم جامع مهندسی مکاترونیک 
             <br />
@@ -49,7 +49,7 @@ const Hero = () => {
             با استفاده از جدیدترین تکنولوژی‌ها و نرم‌افزارهای مهندسی، پروژه‌های شما را با بالاترین کیفیت انجام می‌دهیم
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-8 sm:mb-12">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-8 sm:mb-12 justify-center">
             <Button variant="hero" size="lg" className="group" asChild>
               <Link to="/contractor-register">
                 همکاری با ما
@@ -60,13 +60,12 @@ const Hero = () => {
               variant="outline" 
               size="lg" 
               className="bg-white/10 text-white border-white/30 hover:bg-white hover:text-primary"
-              onClick={() => {
-              const servicesSection = document.getElementById('services');
-              servicesSection?.scrollIntoView({ behavior: 'smooth' });
-            }}
-          >
-            مشاهده خدمات
-          </Button>
+              asChild
+            >
+              <Link to="/services">
+                مشاهده خدمات
+              </Link>
+            </Button>
           </div>
         </div>
 

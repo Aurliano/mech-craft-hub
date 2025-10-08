@@ -3,7 +3,7 @@ from .models import (
     User, Role, UserRole, Scope, Service, ServiceField, ServiceTab,
     Cart, CartItem, Order, OrderItem, Quote, Workshop,
     Ticket, TicketMessage, TicketAttachment, TicketFileType, TicketCategory, TicketParticipant,
-    ContentFilterLog, Review, Notification, SupportFeedback, BlogPost, BlogComment
+    ContentFilterLog, Review, Notification, SupportFeedback, BlogPost, BlogComment, ScientificContent
 )
 
 
@@ -604,6 +604,58 @@ class SupportStatsSerializer(serializers.Serializer):
 
 
 # Blog System Serializers
+class ScientificContentSerializer(serializers.ModelSerializer):
+    """Serializer for scientific content"""
+    author_name = serializers.CharField(source='author.username', read_only=True)
+    content_type_display = serializers.CharField(source='get_content_type_display', read_only=True)
+    category_display = serializers.CharField(source='get_category_display', read_only=True)
+    reading_time = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = ScientificContent
+        fields = [
+            'id', 'title', 'slug', 'excerpt', 'content', 'content_type', 'content_type_display',
+            'category', 'category_display', 'status', 'meta_description', 'meta_keywords',
+            'author', 'author_name', 'featured_image', 'source_url', 'source_name',
+            'view_count', 'like_count', 'download_url', 'video_url', 'file_size', 'duration',
+            'created_at', 'updated_at', 'published_at', 'reading_time'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at', 'published_at', 'view_count', 'like_count']
+
+
+class ScientificContentListSerializer(serializers.ModelSerializer):
+    """Serializer for scientific content list view"""
+    author_name = serializers.CharField(source='author.username', read_only=True)
+    content_type_display = serializers.CharField(source='get_content_type_display', read_only=True)
+    category_display = serializers.CharField(source='get_category_display', read_only=True)
+    reading_time = serializers.ReadOnlyField()
+    
+    class Meta:
+        model = ScientificContent
+        fields = [
+            'id', 'title', 'slug', 'excerpt', 'content_type', 'content_type_display',
+            'category', 'category_display', 'author_name', 'featured_image',
+            'view_count', 'like_count', 'download_url', 'video_url', 'file_size', 'duration',
+            'created_at', 'published_at', 'reading_time'
+        ]
+
+
+class ScientificContentCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating scientific content"""
+    
+    class Meta:
+        model = ScientificContent
+        fields = [
+            'title', 'slug', 'excerpt', 'content', 'content_type', 'category', 'status',
+            'meta_description', 'meta_keywords', 'featured_image', 'source_url', 'source_name',
+            'download_url', 'video_url', 'file_size', 'duration'
+        ]
+    
+    def create(self, validated_data):
+        validated_data['author'] = self.context['request'].user
+        return super().create(validated_data)
+
+
 class BlogPostSerializer(serializers.ModelSerializer):
     author_name = serializers.CharField(source='author.username', read_only=True)
     reading_time = serializers.ReadOnlyField()

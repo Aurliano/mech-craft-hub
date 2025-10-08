@@ -75,38 +75,16 @@ const Navbar = () => {
           </div>
 
           {/* Center Section: Desktop Menu */}
-          <div className="hidden lg:flex items-center flex-1 justify-center max-w-lg mx-auto" dir="rtl">
+          <div className="hidden lg:flex items-center flex-1 justify-center max-w-4xl mx-auto" dir="rtl">
               <NavigationMenu className="bg-transparent">
                 <NavigationMenuList className="gap-2">
 
-                  {/* Contact */}
+                  {/* Home */}
                   <NavigationMenuItem>
-                    <button 
-                      onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-                      className={navigationMenuTriggerStyle()}
-                    >
-                      تماس با ما
-                    </button>
-                  </NavigationMenuItem>
-
-                  {/* Services Page */}
-                  <NavigationMenuItem>
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/services">
-                      خدمات ما
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-
-                  {/* Portfolio */}
-                  <NavigationMenuItem>
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/portfolio">
-                      نمونه کارها
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
-
-                  {/* Blog */}
-                  <NavigationMenuItem>
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/blog">
-                      وبلاگ
+                    <NavigationMenuLink asChild>
+                      <Link to="/" className={navigationMenuTriggerStyle()} title="خانه">
+                        خانه
+                      </Link>
                     </NavigationMenuLink>
                   </NavigationMenuItem>
 
@@ -171,18 +149,37 @@ const Navbar = () => {
                       </div>
                     </NavigationMenuContent>
                   </NavigationMenuItem>
-                  
-                  {/* Home */}
+
+                  {/* Blog */}
                   <NavigationMenuItem>
-                    <NavigationMenuLink asChild>
-                      <Link to="/" className={navigationMenuTriggerStyle()} title="خانه">
-                        <Home className="h-5 w-5" />
-                        <span className="sr-only">خانه</span>
-                      </Link>
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/blog">
+                      مقالات و منابع علمی
                     </NavigationMenuLink>
                   </NavigationMenuItem>
-                  
 
+                  {/* Portfolio */}
+                  <NavigationMenuItem>
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/portfolio">
+                      نمونه کارها
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+
+                  {/* Services Page */}
+                  <NavigationMenuItem>
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/services">
+                      خدمات ما
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+
+                  {/* Contact */}
+                  <NavigationMenuItem>
+                    <button 
+                      onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+                      className={navigationMenuTriggerStyle()}
+                    >
+                      تماس با ما
+                    </button>
+                  </NavigationMenuItem>
                   
                 </NavigationMenuList>
               </NavigationMenu>
@@ -220,14 +217,17 @@ const Navbar = () => {
               <>
                 <Link to="/login">
                   <Button variant="outline" size="sm" title="ورود">
-                    <LogIn className="h-5 w-5" />
-                    <span className="sr-only">ورود</span>
+                    ورود
                   </Button>
                 </Link>
                 <Link to="/register">
                   <Button variant="outline" size="sm" title="ثبت نام">
-                    <UserPlus className="h-5 w-5" />
-                    <span className="sr-only">ثبت نام</span>
+                    ثبت نام
+                  </Button>
+                </Link>
+                <Link to="/contractor-register">
+                  <Button variant="default" size="lg" title="ثبت نام پیمانکاران و کارگاه ها">
+                    ثبت نام پیمانکاران و کارگاه ها
                   </Button>
                 </Link>
               </>
@@ -372,7 +372,7 @@ const Navbar = () => {
                   className="flex items-center justify-between p-3 rounded-lg bg-muted/30 text-foreground hover:bg-muted hover:text-primary transition-all duration-200"
                   onClick={() => setIsOpen(false)}
                 >
-                  <span className="font-medium">وبلاگ</span>
+                  <span className="font-medium">مقالات و منابع علمی</span>
                 </a>
 
                 {/* Contact Button */}
@@ -515,8 +515,13 @@ const Navbar = () => {
                         </Button>
                       </Link>
                       <Link to="/register" onClick={() => setIsOpen(false)}>
-                        <Button variant="default" size="sm" className="w-full" title="ثبت نام">
+                        <Button variant="outline" size="sm" className="w-full" title="ثبت نام">
                           ثبت نام
+                        </Button>
+                      </Link>
+                      <Link to="/contractor-register" onClick={() => setIsOpen(false)}>
+                        <Button variant="default" size="lg" className="w-full" title="ثبت نام پیمانکاران و کارگاه ها">
+                          ثبت نام پیمانکاران و کارگاه ها
                         </Button>
                       </Link>
                     </>

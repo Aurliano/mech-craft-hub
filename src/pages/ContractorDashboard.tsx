@@ -144,79 +144,83 @@ const ContractorDashboard = () => {
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Header - Account Section */}
           <Card>
-            <CardContent className="p-6">
-          <div className="flex justify-between items-center">
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-                    <User className="h-8 w-8 text-blue-600" />
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                    <User className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
                   </div>
-            <div>
-                    <h1 className="text-2xl font-bold text-gray-900">خوش آمدید، {user?.first_name || user?.username}</h1>
-                    <p className="text-gray-600">پیمانکار</p>
+                  <div>
+                    <h1 className="text-xl sm:text-2xl font-bold text-gray-900">خوش آمدید، {user?.first_name || user?.username}</h1>
+                    <p className="text-gray-600 text-sm sm:text-base">پیمانکار</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 sm:gap-4">
                   <Link to="/contractor/quotes">
-                    <Button variant="outline" className="flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4" />
-                      پیشنهادات
+                    <Button variant="outline" className="flex items-center gap-2 w-full sm:w-auto text-xs sm:text-sm">
+                      <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span className="hidden sm:inline">پیشنهادات</span>
+                      <span className="sm:hidden">پیشنهادات</span>
                     </Button>
                   </Link>
                   <Link to="/contractor/projects">
-                    <Button variant="outline" className="flex items-center gap-2">
-                      <Package className="h-4 w-4" />
-                      پروژه‌های من
+                    <Button variant="outline" className="flex items-center gap-2 w-full sm:w-auto text-xs sm:text-sm">
+                      <Package className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span className="hidden sm:inline">پروژه‌های من</span>
+                      <span className="sm:hidden">پروژه‌ها</span>
                     </Button>
                   </Link>
                   <Link to="/contractor/ratings">
-                    <Button variant="outline" className="flex items-center gap-2">
-                      <Star className="h-4 w-4" />
-                      امتیازات
+                    <Button variant="outline" className="flex items-center gap-2 w-full sm:w-auto text-xs sm:text-sm">
+                      <Star className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span className="hidden sm:inline">امتیازات</span>
+                      <span className="sm:hidden">امتیازات</span>
                     </Button>
                   </Link>
                   <Link to="/profile">
-                    <Button variant="outline" className="flex items-center gap-2">
-                      <Settings className="h-4 w-4" />
-                      ویرایش حساب کاربری
+                    <Button variant="outline" className="flex items-center gap-2 w-full sm:w-auto text-xs sm:text-sm">
+                      <Settings className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <span className="hidden sm:inline">ویرایش حساب کاربری</span>
+                      <span className="sm:hidden">ویرایش</span>
                     </Button>
                   </Link>
-            </div>
-          </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
           {/* Performance Section */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">تعداد پیشنهادات</p>
-                    <p className="text-2xl font-bold text-gray-900">{contractorStats?.total_proposals || 0}</p>
+                    <p className="text-xs sm:text-sm font-medium text-gray-600">تعداد پیشنهادات</p>
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{contractorStats?.total_proposals || 0}</p>
                   </div>
-                  <TrendingUp className="h-8 w-8 text-blue-600" />
+                  <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
                 </div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">پیشنهادات پذیرفته شده</p>
-                    <p className="text-2xl font-bold text-green-600">{contractorStats?.accepted_proposals || 0}</p>
+                    <p className="text-xs sm:text-sm font-medium text-gray-600">پیشنهادات پذیرفته شده</p>
+                    <p className="text-xl sm:text-2xl font-bold text-green-600">{contractorStats?.accepted_proposals || 0}</p>
                   </div>
-                  <CheckCircle2 className="h-8 w-8 text-green-600" />
+                  <CheckCircle2 className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
                 </div>
               </CardContent>
             </Card>
-          <Card>
-            <CardContent className="p-6">
+            <Card className="sm:col-span-2 lg:col-span-1">
+              <CardContent className="p-4 sm:p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">پروژه‌های فعال</p>
-                    <p className="text-2xl font-bold text-orange-600">{contractorStats?.active_projects || 0}</p>
+                    <p className="text-xs sm:text-sm font-medium text-gray-600">پروژه‌های فعال</p>
+                    <p className="text-xl sm:text-2xl font-bold text-orange-600">{contractorStats?.active_projects || 0}</p>
                   </div>
-                  <Package className="h-8 w-8 text-orange-600" />
+                  <Package className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600" />
                 </div>
               </CardContent>
             </Card>
@@ -224,14 +228,14 @@ const ContractorDashboard = () => {
 
           {/* Main Content Tabs */}
           <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-            <TabsList className={`grid w-full ${(manufacturingCheck as { has_manufacturing_service?: boolean })?.has_manufacturing_service ? 'grid-cols-5' : 'grid-cols-4'}`}>
-              <TabsTrigger value="orders">سفارشات</TabsTrigger>
-              <TabsTrigger value="proposals">پیشنهادات من</TabsTrigger>
-              <TabsTrigger value="projects">پروژه‌های فعال</TabsTrigger>
+            <TabsList className={`grid w-full ${(manufacturingCheck as { has_manufacturing_service?: boolean })?.has_manufacturing_service ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5' : 'grid-cols-2 sm:grid-cols-2 lg:grid-cols-4'} gap-1`}>
+              <TabsTrigger value="orders" className="text-xs sm:text-sm">سفارشات</TabsTrigger>
+              <TabsTrigger value="proposals" className="text-xs sm:text-sm">پیشنهادات من</TabsTrigger>
+              <TabsTrigger value="projects" className="text-xs sm:text-sm">پروژه‌های فعال</TabsTrigger>
               {(manufacturingCheck as { has_manufacturing_service?: boolean })?.has_manufacturing_service && (
-                <TabsTrigger value="workshops">کارگاه‌های من</TabsTrigger>
+                <TabsTrigger value="workshops" className="text-xs sm:text-sm">کارگاه‌های من</TabsTrigger>
               )}
-              <TabsTrigger value="notifications">اعلان‌ها</TabsTrigger>
+              <TabsTrigger value="notifications" className="text-xs sm:text-sm">اعلان‌ها</TabsTrigger>
             </TabsList>
 
             {/* Orders Tab */}
@@ -242,67 +246,68 @@ const ContractorDashboard = () => {
                   <CardDescription>سفارشاتی که می‌توانید برای آن‌ها پیشنهاد ثبت کنید</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex flex-col md:flex-row gap-4 mb-6">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                    <Input
-                      placeholder="جستجو در سفارشات..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pr-10"
-                    />
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6">
+                    <div className="flex-1">
+                      <div className="relative">
+                        <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                        <Input
+                          placeholder="جستجو در سفارشات..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pr-10"
+                        />
+                      </div>
+                    </div>
+                    <div className="w-full sm:w-48">
+                      <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="فیلتر وضعیت" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">همه وضعیت‌ها</SelectItem>
+                          <SelectItem value="pending">در انتظار پیشنهاد</SelectItem>
+                          <SelectItem value="submitted">ارسال شده</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
-                </div>
-                <div className="w-full md:w-48">
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="فیلتر وضعیت" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">همه وضعیت‌ها</SelectItem>
-                      <SelectItem value="pending">در انتظار پیشنهاد</SelectItem>
-                      <SelectItem value="submitted">ارسال شده</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
 
               <div className="space-y-4">
                 {filteredOrders.map((order) => (
                       <Card key={order.id} className="hover:shadow-md transition-shadow">
-                    <CardContent className="p-6">
-                          <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-gray-900">{order.order_number}</h3>
-                            <Badge variant="outline">در انتظار پیشنهاد</Badge>
-                      </div>
-                          <div className="space-y-2 text-sm text-gray-600 mb-4">
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4" />
-                          <span>تاریخ: {new Date(order.created_at).toLocaleDateString('fa-IR')}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Package className="h-4 w-4" />
-                          <span>تعداد آیتم: {order.items?.length || 0}</span>
-                        </div>
-                        {order.notes && (
-                          <p className="text-gray-700 mt-2">{order.notes}</p>
-                        )}
-                      </div>
-                          <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
+                        <CardContent className="p-4 sm:p-6">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4">
+                            <h3 className="text-base sm:text-lg font-semibold text-gray-900">{order.order_number}</h3>
+                            <Badge variant="outline" className="w-fit">در انتظار پیشنهاد</Badge>
+                          </div>
+                          <div className="space-y-2 text-xs sm:text-sm text-gray-600 mb-4">
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
+                              <span>تاریخ: {new Date(order.created_at).toLocaleDateString('fa-IR')}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Package className="h-3 w-3 sm:h-4 sm:w-4" />
+                              <span>تعداد آیتم: {order.items?.length || 0}</span>
+                            </div>
+                            {order.notes && (
+                              <p className="text-gray-700 mt-2 text-xs sm:text-sm">{order.notes}</p>
+                            )}
+                          </div>
+                          <div className="flex flex-col sm:flex-row gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              className="w-full sm:w-auto"
                               onClick={() => {
-                            setSelectedOrder(order);
-                            setShowQuoteForm(true);
-                          }}
-                        >
-                          <DollarSign className="h-4 w-4 ml-2" />
-                          ثبت پیشنهاد
-                        </Button>
-                            <Button variant="ghost" size="sm">
-                              <Eye className="h-4 w-4 ml-2" />
+                                setSelectedOrder(order);
+                                setShowQuoteForm(true);
+                              }}
+                            >
+                              <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 ml-2" />
+                              ثبت پیشنهاد
+                            </Button>
+                            <Button variant="ghost" size="sm" className="w-full sm:w-auto">
+                              <Eye className="h-3 w-3 sm:h-4 sm:w-4 ml-2" />
                               مشاهده جزئیات
                             </Button>
                           </div>
@@ -325,12 +330,12 @@ const ContractorDashboard = () => {
                   <div className="space-y-4">
                     {proposals.map((proposal) => (
                       <Card key={proposal.id} className="hover:shadow-md transition-shadow">
-                        <CardContent className="p-6">
-                          <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-gray-900">{proposal.order_item?.order?.order_number || 'نامشخص'}</h3>
+                        <CardContent className="p-4 sm:p-6">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4">
+                            <h3 className="text-base sm:text-lg font-semibold text-gray-900">{proposal.order_item?.order?.order_number || 'نامشخص'}</h3>
                             {getStatusBadge(proposal.status)}
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs sm:text-sm">
                             <div>
                               <p className="text-gray-600">قیمت پیشنهادی</p>
                               <p className="font-semibold">{proposal.price?.toLocaleString('fa-IR')} تومان</p>
@@ -339,21 +344,21 @@ const ContractorDashboard = () => {
                               <p className="text-gray-600">تاریخ ثبت</p>
                               <p className="font-semibold">{new Date(proposal.created_at).toLocaleDateString('fa-IR')}</p>
                             </div>
-                            <div className="flex gap-2">
-                              <Button variant="outline" size="sm">
-                                <Eye className="h-4 w-4 ml-2" />
+                            <div className="flex flex-col sm:flex-row gap-2 sm:col-span-2 lg:col-span-1">
+                              <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                                <Eye className="h-3 w-3 sm:h-4 sm:w-4 ml-2" />
                                 مشاهده
                               </Button>
                               {proposal.status === 'accepted' && (
-                                <Button variant="default" size="sm">
-                                  <MessageSquare className="h-4 w-4 ml-2" />
+                                <Button variant="default" size="sm" className="w-full sm:w-auto">
+                                  <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4 ml-2" />
                                   ارتباط با مشتری
                                 </Button>
                               )}
                             </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                          </div>
+                        </CardContent>
+                      </Card>
                 ))}
               </div>
                 </CardContent>
@@ -371,12 +376,12 @@ const ContractorDashboard = () => {
                   <div className="space-y-4">
                     {projects.map((project) => (
                       <Card key={project.id} className="hover:shadow-md transition-shadow">
-                        <CardContent className="p-6">
-                          <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-gray-900">{project.title}</h3>
-                            <Badge variant="default">فعال</Badge>
+                        <CardContent className="p-4 sm:p-6">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4">
+                            <h3 className="text-base sm:text-lg font-semibold text-gray-900">{project.title}</h3>
+                            <Badge variant="default" className="w-fit">فعال</Badge>
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs sm:text-sm">
                             <div>
                               <p className="text-gray-600">شماره سفارش</p>
                               <p className="font-semibold">{project.order_number}</p>
@@ -384,17 +389,17 @@ const ContractorDashboard = () => {
                             <div>
                               <p className="text-gray-600">ددلاین باقی‌مانده</p>
                               <p className="font-semibold flex items-center gap-1">
-                                <Timer className="h-4 w-4" />
+                                <Timer className="h-3 w-3 sm:h-4 sm:w-4" />
                                 {project.days_left} روز
                               </p>
                             </div>
-                            <div className="flex gap-2">
-                              <Button variant="outline" size="sm">
-                                <MessageSquare className="h-4 w-4 ml-2" />
+                            <div className="flex flex-col sm:flex-row gap-2 sm:col-span-2 lg:col-span-1">
+                              <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                                <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4 ml-2" />
                                 ارتباط با مشتری
                               </Button>
-                              <Button variant="default" size="sm">
-                                <Calendar className="h-4 w-4 ml-2" />
+                              <Button variant="default" size="sm" className="w-full sm:w-auto">
+                                <Calendar className="h-3 w-3 sm:h-4 sm:w-4 ml-2" />
                                 مشاهده جزئیات
                               </Button>
                             </div>
@@ -412,14 +417,14 @@ const ContractorDashboard = () => {
               <TabsContent value="workshops" className="space-y-6">
               <Card>
                 <CardHeader>
-                  <div className="flex justify-between items-center">
-            <div>
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0">
+                    <div>
                       <CardTitle>کارگاه‌های من</CardTitle>
                       <CardDescription>مدیریت کارگاه‌های شما</CardDescription>
                     </div>
-                    <Button asChild>
+                    <Button asChild className="w-full sm:w-auto">
                       <Link to="/my-workshops">
-                        <Plus className="h-4 w-4 ml-2" />
+                        <Plus className="h-3 w-3 sm:h-4 sm:w-4 ml-2" />
                         مدیریت کارگاه‌ها
                       </Link>
                     </Button>
@@ -429,27 +434,27 @@ const ContractorDashboard = () => {
                   <div className="space-y-4">
                     {workshopsData.map((workshop) => (
                       <Card key={workshop.id} className="hover:shadow-md transition-shadow">
-                        <CardContent className="p-6">
-                          <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-gray-900">{workshop.name}</h3>
-                            <Badge variant="default">{workshop.status}</Badge>
+                        <CardContent className="p-4 sm:p-6">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4">
+                            <h3 className="text-base sm:text-lg font-semibold text-gray-900">{workshop.name}</h3>
+                            <Badge variant="default" className="w-fit">{workshop.status}</Badge>
                           </div>
-                          <div className="space-y-2 text-sm text-gray-600">
+                          <div className="space-y-2 text-xs sm:text-sm text-gray-600">
                             <div className="flex items-center gap-2">
-                              <Factory className="h-4 w-4" />
+                              <Factory className="h-3 w-3 sm:h-4 sm:w-4" />
                               <span>{workshop.address}</span>
                             </div>
                             {workshop.description && (
                               <p className="text-gray-700">{workshop.description}</p>
                             )}
                           </div>
-                          <div className="mt-4 flex gap-2">
-                            <Button variant="outline" size="sm">
-                              <Settings className="h-4 w-4 ml-2" />
+                          <div className="mt-4 flex flex-col sm:flex-row gap-2">
+                            <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                              <Settings className="h-3 w-3 sm:h-4 sm:w-4 ml-2" />
                               ویرایش
                             </Button>
-                            <Button variant="outline" size="sm">
-                              <Eye className="h-4 w-4 ml-2" />
+                            <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                              <Eye className="h-3 w-3 sm:h-4 sm:w-4 ml-2" />
                               مشاهده
                             </Button>
                           </div>
@@ -471,21 +476,21 @@ const ContractorDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    <div className="flex items-center gap-4 p-4 border rounded-lg">
-                      <AlertCircle className="h-5 w-5 text-blue-600" />
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg">
+                      <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600 flex-shrink-0" />
                       <div className="flex-1">
-                        <p className="font-medium">پیشنهاد شما تایید شد</p>
-                        <p className="text-sm text-gray-600">سفارش ORD-2024-002 تایید شد و به پروژه‌های فعال اضافه شد</p>
+                        <p className="font-medium text-sm sm:text-base">پیشنهاد شما تایید شد</p>
+                        <p className="text-xs sm:text-sm text-gray-600">سفارش ORD-2024-002 تایید شد و به پروژه‌های فعال اضافه شد</p>
                       </div>
-                      <span className="text-xs text-gray-500">2 ساعت پیش</span>
+                      <span className="text-xs text-gray-500 self-start sm:self-center">2 ساعت پیش</span>
                     </div>
-                    <div className="flex items-center gap-4 p-4 border rounded-lg">
-                      <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg">
+                      <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0" />
                       <div className="flex-1">
-                        <p className="font-medium">پروژه تکمیل شد</p>
-                        <p className="text-sm text-gray-600">پروژه طراحی سیستم مکانیکی با موفقیت تکمیل شد</p>
+                        <p className="font-medium text-sm sm:text-base">پروژه تکمیل شد</p>
+                        <p className="text-xs sm:text-sm text-gray-600">پروژه طراحی سیستم مکانیکی با موفقیت تکمیل شد</p>
                       </div>
-                      <span className="text-xs text-gray-500">1 روز پیش</span>
+                      <span className="text-xs text-gray-500 self-start sm:self-center">1 روز پیش</span>
                     </div>
                   </div>
                 </CardContent>
@@ -502,7 +507,7 @@ const ContractorDashboard = () => {
                     <CardDescription>لطفا جزئیات پیشنهاد خود را وارد کنید</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="price">قیمت (تومان)</Label>
                         <Input
@@ -525,7 +530,7 @@ const ContractorDashboard = () => {
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="documentation_price">قیمت مستندسازی (تومان)</Label>
                         <Input
@@ -559,14 +564,14 @@ const ContractorDashboard = () => {
                       />
                     </div>
                     
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <Button 
                         onClick={handleCreateQuote}
-                      disabled={createProposalMutation.isPending}
+                        disabled={createProposalMutation.isPending}
                         className="flex-1"
                       >
-                        <CheckCircle className="h-4 w-4 ml-2" />
-                      {createProposalMutation.isPending ? 'در حال ثبت...' : 'ثبت پیشنهاد'}
+                        <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 ml-2" />
+                        {createProposalMutation.isPending ? 'در حال ثبت...' : 'ثبت پیشنهاد'}
                       </Button>
                       <Button 
                         variant="outline"
@@ -574,6 +579,7 @@ const ContractorDashboard = () => {
                           setShowQuoteForm(false);
                           setSelectedOrder(null);
                         }}
+                        className="w-full sm:w-auto"
                       >
                         انصراف
                       </Button>
