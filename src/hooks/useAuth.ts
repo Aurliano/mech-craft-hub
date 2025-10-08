@@ -33,8 +33,7 @@ export function useLogin() {
     onSuccess: (data) => {
       setTokens(data.access, data.refresh);
       qc.invalidateQueries({ queryKey: ['me'] });
-      // Redirect to home page and refresh
-      window.location.href = '/';
+      // Don't redirect here, let the component handle it after user data is loaded
     },
   });
 }
@@ -45,8 +44,7 @@ export function useCustomerRegister() {
     mutationFn: customerRegisterRequest,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['me'] });
-      // Redirect to home page and refresh
-      window.location.href = '/';
+      // Don't redirect here, let the component handle it after user data is loaded
     },
   });
 }
@@ -57,8 +55,7 @@ export function useContractorRegister() {
     mutationFn: contractorRegisterRequest,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['me'] });
-      // Redirect to home page and refresh
-      window.location.href = '/';
+      // Don't redirect here, let the component handle it after user data is loaded
     },
   });
 }

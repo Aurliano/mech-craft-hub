@@ -7,6 +7,7 @@ import { SecurityProvider } from "@/contexts/SecurityContext";
 import SecurityHeaders from "@/components/SecurityHeaders";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import RoleBasedRoute from "@/components/RoleBasedRoute";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import SupportWidget from "@/components/SupportWidget";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
@@ -73,63 +74,63 @@ const App = () => (
               
               {/* Customer Routes - Only accessible by customers */}
               <Route path="/dashboard" element={
-                <RoleBasedRoute allowedRoles={['customer']} fallbackPath="/contractor-dashboard">
+                <ProtectedRoute allowedRoles={['customer']}>
                   <Dashboard />
-                </RoleBasedRoute>
+                </ProtectedRoute>
               } />
               <Route path="/orders" element={
-                <RoleBasedRoute allowedRoles={['customer']} fallbackPath="/contractor-dashboard">
+                <ProtectedRoute allowedRoles={['customer']}>
                   <Orders />
-                </RoleBasedRoute>
+                </ProtectedRoute>
               } />
               <Route path="/cart" element={
-                <RoleBasedRoute allowedRoles={['customer']} fallbackPath="/contractor-dashboard">
+                <ProtectedRoute allowedRoles={['customer']}>
                   <Cart />
-                </RoleBasedRoute>
+                </ProtectedRoute>
               } />
               
               {/* Contractor Routes - Only accessible by contractors */}
               <Route path="/contractor-dashboard" element={
-                <RoleBasedRoute allowedRoles={['contractor']} fallbackPath="/dashboard">
+                <ProtectedRoute allowedRoles={['contractor']}>
                   <ContractorDashboard />
-                </RoleBasedRoute>
+                </ProtectedRoute>
               } />
               <Route path="/contractor/quotes" element={
-                <RoleBasedRoute allowedRoles={['contractor']} fallbackPath="/dashboard">
+                <ProtectedRoute allowedRoles={['contractor']}>
                   <ContractorQuotes />
-                </RoleBasedRoute>
+                </ProtectedRoute>
               } />
               <Route path="/contractor/projects" element={
-                <RoleBasedRoute allowedRoles={['contractor']} fallbackPath="/dashboard">
+                <ProtectedRoute allowedRoles={['contractor']}>
                   <ContractorProjects />
-                </RoleBasedRoute>
+                </ProtectedRoute>
               } />
               <Route path="/contractor/ratings" element={
-                <RoleBasedRoute allowedRoles={['contractor']} fallbackPath="/dashboard">
+                <ProtectedRoute allowedRoles={['contractor']}>
                   <ContractorRatings />
-                </RoleBasedRoute>
+                </ProtectedRoute>
               } />
               <Route path="/contractor/orders" element={
-                <RoleBasedRoute allowedRoles={['contractor']} fallbackPath="/dashboard">
+                <ProtectedRoute allowedRoles={['contractor']}>
                   <ContractorQuotes />
-                </RoleBasedRoute>
+                </ProtectedRoute>
               } />
               <Route path="/my-workshops" element={
-                <RoleBasedRoute allowedRoles={['contractor']} fallbackPath="/dashboard">
+                <ProtectedRoute allowedRoles={['contractor']}>
                   <MyWorkshops />
-                </RoleBasedRoute>
+                </ProtectedRoute>
               } />
               
               {/* Customer Quote Management */}
               <Route path="/quotes" element={
-                <RoleBasedRoute allowedRoles={['customer']} fallbackPath="/contractor-dashboard">
+                <ProtectedRoute allowedRoles={['customer']}>
                   <CustomerQuotes />
-                </RoleBasedRoute>
+                </ProtectedRoute>
               } />
               <Route path="/orders/:orderId" element={
-                <RoleBasedRoute allowedRoles={['customer', 'contractor']} fallbackPath="/dashboard">
+                <ProtectedRoute>
                   <OrderDetails />
-                </RoleBasedRoute>
+                </ProtectedRoute>
               } />
               
               {/* Service Pages - Accessible by everyone, but show LoginPrompt for unauthenticated users */}
@@ -145,10 +146,21 @@ const App = () => (
               <Route path="/blog/:slug" element={<BlogPostPage />} />
               
               {/* Shared Routes */}
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/notifications" element={<Notifications />} />
-              <Route path="/support" element={<Support />} />
-              <Route path="/orders/:orderId" element={<OrderDetails />} />
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              } />
+              <Route path="/notifications" element={
+                <ProtectedRoute>
+                  <Notifications />
+                </ProtectedRoute>
+              } />
+              <Route path="/support" element={
+                <ProtectedRoute>
+                  <Support />
+                </ProtectedRoute>
+              } />
               <Route path="/file-upload-demo" element={<FileUploadDemo />} />
               <Route path="/order-preview-demo" element={<OrderPreviewDemo />} />
               

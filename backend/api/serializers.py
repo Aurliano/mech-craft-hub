@@ -294,6 +294,28 @@ class CustomerRegisterSerializer(serializers.ModelSerializer):
         user.set_password(password)
         user.save()
         
+        # Assign customer role to the user
+        try:
+            from .models import Role, UserRole
+            customer_role = Role.objects.get(name='customer')
+            UserRole.objects.create(
+                user=user,
+                role=customer_role,
+                is_active=True
+            )
+        except Role.DoesNotExist:
+            # If customer role doesn't exist, create it
+            customer_role = Role.objects.create(
+                name='customer',
+                display_name='مشتری',
+                description='کاربران عادی که خدمات را سفارش می‌دهند'
+            )
+            UserRole.objects.create(
+                user=user,
+                role=customer_role,
+                is_active=True
+            )
+        
         return user
 
 
@@ -356,6 +378,28 @@ class ContractorRegisterSerializer(serializers.ModelSerializer):
         user = User(**validated_data)
         user.set_password(password)
         user.save()
+        
+        # Assign contractor role to the user
+        try:
+            from .models import Role, UserRole
+            contractor_role = Role.objects.get(name='contractor')
+            UserRole.objects.create(
+                user=user,
+                role=contractor_role,
+                is_active=True
+            )
+        except Role.DoesNotExist:
+            # If contractor role doesn't exist, create it
+            contractor_role = Role.objects.create(
+                name='contractor',
+                display_name='پیمانکار',
+                description='پیمانکاران که خدمات را ارائه می‌دهند'
+            )
+            UserRole.objects.create(
+                user=user,
+                role=contractor_role,
+                is_active=True
+            )
         
         # Create contractor services if provided
         if selected_scope and selected_services:

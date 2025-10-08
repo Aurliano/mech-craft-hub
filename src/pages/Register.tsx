@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Eye, EyeOff, Info, AlertCircle, CheckCircle } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import { useCustomerRegister, usePhoneVerificationRequest, useRegisterWithCaptcha } from "@/hooks/useAuth";
 import { useAuth } from "@/contexts/AuthContext";
@@ -28,6 +29,8 @@ const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [showPhoneVerification, setShowPhoneVerification] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
@@ -81,6 +84,26 @@ const Register = () => {
     e.preventDefault();
     
     // Enhanced validation
+    if (!firstName.trim()) {
+      alert("لطفاً نام خود را وارد کنید");
+      return;
+    }
+    
+    if (!lastName.trim()) {
+      alert("لطفاً نام خانوادگی خود را وارد کنید");
+      return;
+    }
+    
+    if (!phone.trim()) {
+      alert("لطفاً شماره همراه خود را وارد کنید");
+      return;
+    }
+    
+    if (!email.trim()) {
+      alert("لطفاً ایمیل خود را وارد کنید");
+      return;
+    }
+    
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.isValid) {
       alert(`رمز عبور ضعیف است:\n${passwordValidation.errors.join('\n')}`);
@@ -156,7 +179,10 @@ const Register = () => {
                     placeholder="09123456789" 
                     required 
                   />
-                  <p className="text-xs text-muted-foreground">شماره همراه شما به عنوان نام کاربری استفاده خواهد شد</p>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Info className="h-4 w-4" />
+                    <span>شماره همراه شما به عنوان نام کاربری استفاده خواهد شد</span>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -192,29 +218,65 @@ const Register = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">رمز عبور</Label>
-                  <Input 
-                    id="password" 
-                    type="password" 
-                    value={password} 
-                    onChange={(e) => setPassword(e.target.value)} 
-                    className="text-right" 
-                    required 
-                    minLength={8} 
-                  />
+                  <Label htmlFor="password">رمز عبور *</Label>
+                  <div className="relative">
+                    <Input 
+                      id="password" 
+                      type={showPassword ? "text" : "password"}
+                      value={password} 
+                      onChange={(e) => setPassword(e.target.value)} 
+                      className="text-right pr-10" 
+                      placeholder="رمز عبور خود را وارد کنید"
+                      required 
+                      minLength={8} 
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute left-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>لطفاً کیبورد خود را روی حالت انگلیسی قرار دهید</span>
+                  </div>
                   {password && <PasswordStrength password={password} />}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">تکرار رمز عبور</Label>
-                  <Input 
-                    id="confirmPassword" 
-                    type="password" 
-                    value={confirm} 
-                    onChange={(e) => setConfirm(e.target.value)} 
-                    className="text-right" 
-                    required 
-                    minLength={8} 
-                  />
+                  <Label htmlFor="confirmPassword">تکرار رمز عبور *</Label>
+                  <div className="relative">
+                    <Input 
+                      id="confirmPassword" 
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirm} 
+                      onChange={(e) => setConfirm(e.target.value)} 
+                      className="text-right pr-10" 
+                      placeholder="رمز عبور را دوباره وارد کنید"
+                      required 
+                      minLength={8} 
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute left-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Turnstile Captcha - Temporarily disabled */}
@@ -249,6 +311,22 @@ const Register = () => {
                   error={error || captchaError} 
                   onRetry={() => window.location.reload()}
                 />
+                
+                {/* Custom error messages */}
+                {(error || captchaError) && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      {error?.message?.includes('username already exists') || 
+                       error?.message?.includes('نام کاربری قبلاً استفاده شده') ? 
+                       'این شماره همراه قبلاً ثبت شده است. لطفاً وارد شوید یا از شماره دیگری استفاده کنید.' :
+                       error?.message?.includes('email already exists') || 
+                       error?.message?.includes('ایمیل قبلاً استفاده شده') ? 
+                       'این ایمیل قبلاً ثبت شده است. لطفاً از ایمیل دیگری استفاده کنید.' :
+                       error?.message || 'خطایی رخ داده است. لطفاً دوباره تلاش کنید.'}
+                    </AlertDescription>
+                  </Alert>
+                )}
 
                 <Button 
                   className="w-full" 

@@ -94,6 +94,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   
   // Role checking (support both roles[] and role)
   const roleNames: string[] = (() => {
+    if (!authState.user) return [];
+    
     const listFromArray = (authState.user?.roles || [])
       .map((r: UserRoleItem) => (r?.role?.name && r.is_active !== false ? r.role.name : undefined))
       .filter(Boolean) as string[];
