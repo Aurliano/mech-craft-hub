@@ -10,7 +10,8 @@ from .views import (
     TicketCategoryViewSet, ContentFilterLogViewSet, ReviewViewSet,
     customer_register, contractor_register, login, refresh_token, logout, me, UserViewSet, UploadView,
     password_reset_request, password_reset_confirm, phone_verification_request,
-    phone_verification_confirm, change_password,
+    phone_verification_confirm, change_password, password_reset_request_sms, sms_credit,
+    verify_user_phone,
     # New order management endpoints
     create_order, get_user_orders, get_order_by_id, update_order_status,
     update_order_item_status, mark_project_delivered, confirm_project_completion,
@@ -67,10 +68,13 @@ urlpatterns = [
     path('v1/auth/logout/', logout, name='logout'),
     path('v1/auth/me/', me, name='me'),
     path('v1/auth/password-reset-request/', password_reset_request, name='password_reset_request'),
+    path('v1/auth/password-reset-request-sms/', password_reset_request_sms, name='password_reset_request_sms'),
     path('v1/auth/password-reset-confirm/', password_reset_confirm, name='password_reset_confirm'),
     path('v1/auth/phone-verification-request/', phone_verification_request, name='phone_verification_request'),
     path('v1/auth/phone-verification-confirm/', phone_verification_confirm, name='phone_verification_confirm'),
+    path('v1/auth/verify-user-phone/', verify_user_phone, name='verify_user_phone'),
     path('v1/auth/change-password/', change_password, name='change_password'),
+    path('v1/sms/credit/', sms_credit, name='sms_credit'),
     path('v1/upload/', UploadView.as_view(), name='upload'),
     
     # Order Management Endpoints

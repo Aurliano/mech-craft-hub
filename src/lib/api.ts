@@ -440,7 +440,7 @@ export async function phoneVerificationRequest(phone: string) {
     const errorText = await res.text();
     throw new Error(errorText || 'Phone verification request failed');
   }
-  return (await res.json()) as { detail: string; code?: string; expires_in: number };
+  return (await res.json()) as { detail: string; code?: string; expires_in: number; message_id?: string };
 }
 
 export async function phoneVerificationConfirm(phone: string, code: string) {
@@ -458,6 +458,59 @@ export async function phoneVerificationConfirm(phone: string, code: string) {
     throw new Error(errorText || 'Phone verification confirmation failed');
   }
   return (await res.json()) as { detail: string };
+}
+
+// SMS Password Reset Functions
+export async function passwordResetRequestSMS(email: string) {
+  const res = await fetch(getApiUrl('/v1/auth/password-reset-request-sms/'), {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCSRFToken() || '',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ email }),
+  });
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || 'SMS password reset request failed');
+  }
+  return (await res.json()) as { detail: string; code?: string; expires_in: number; message_id?: string };
+}
+
+// User Phone Verification (for authenticated users)
+export async function verifyUserPhone(phone: string) {
+  const res = await fetch(getApiUrl('/v1/auth/verify-user-phone/'), {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCSRFToken() || '',
+      'Authorization': `Bearer ${getAccessToken()}`,
+    },
+    credentials: 'include',
+    body: JSON.stringify({ phone }),
+  });
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || 'User phone verification request failed');
+  }
+  return (await res.json()) as { detail: string; code?: string; expires_in: number; message_id?: string };
+}
+
+// SMS Credit Check (admin only)
+export async function getSMSCredit() {
+  const res = await fetch(getApiUrl('/v1/sms/credit/'), {
+    method: 'GET',
+    headers: { 
+      'Authorization': `Bearer ${getAccessToken()}`,
+    },
+    credentials: 'include',
+  });
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || 'SMS credit check failed');
+  }
+  return (await res.json()) as { credit: number; message: string };
 }
 
 // Scopes and Services Functions

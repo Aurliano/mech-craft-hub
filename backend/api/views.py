@@ -553,6 +553,93 @@ def password_reset_request(request):
     })
 
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def sms_credit(request):
+    """Get SMS credit balance"""
+    from .services.sms_service import sms_service
+    
+    # Only admin users can check SMS credit
+    if not request.user.is_staff:
+        return Response({'detail': 'دسترسی غیرمجاز'}, status=status.HTTP_403_FORBIDDEN)
+    
+    credit_result = sms_service.get_credit()
+    
+    if credit_result['success']:
+        return Response({
+            'credit': credit_result['credit'],
+            'message': credit_result['message']
+        })
+    else:
+        return Response({
+            'error': credit_result['error']
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def password_reset_request_sms(request):
+    """Request password reset via SMS"""
+    from .services.sms_service import sms_service
+    from django.conf import settings
+    
+    serializer = PasswordResetRequestSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    
+    email = serializer.validated_data['email']
+    try:
+        user = User.objects.get(email=email)
+    except User.DoesNotExist:
+        return Response({'detail': 'کاربری با این ایمیل یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+    
+    # Check if user has phone number
+    if not user.phone:
+        return Response({'detail': 'شماره تلفن برای این کاربر ثبت نشده است'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Check rate limiting
+    if sms_service.rate_limit_check(user.phone, 'password_reset'):
+        return Response({
+            'detail': 'درخواست بازیابی رمز عبور بیش از حد مجاز است. لطفاً چند دقیقه صبر کنید.'
+        }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+    
+    # Generate 6-digit code
+    code = ''.join(random.choices(string.digits, k=6))
+    expires_at = timezone.now() + timezone.timedelta(minutes=10)  # 10 minutes
+    
+    # Create password reset token with SMS code
+    PasswordResetToken.objects.create(
+        user=user,
+        token=code,  # Use code as token for SMS reset
+        expires_at=expires_at
+    )
+    
+    # Send SMS using SMS.ir
+    template_id = getattr(settings, 'SMS_TEMPLATE_ID_PASSWORD_RESET', None)
+    sms_result = sms_service.send_password_reset_code(user.phone, code, template_id)
+    
+    if sms_result['success']:
+        logger.info(f"Password reset SMS sent successfully to {user.phone}")
+        return Response({
+            'detail': 'کد بازیابی رمز عبور ارسال شد',
+            'expires_in': 600,  # 10 minutes
+            'message_id': sms_result.get('message_id')
+        })
+    else:
+        logger.error(f"Failed to send password reset SMS to {user.phone}: {sms_result.get('error')}")
+        # In development, still return the code for testing
+        if settings.DEBUG:
+            return Response({
+                'detail': 'خطا در ارسال پیامک (حالت توسعه)',
+                'code': code,  # Only for development
+                'expires_in': 600,
+                'sms_error': sms_result.get('error')
+            })
+        else:
+            return Response({
+                'detail': 'خطا در ارسال پیامک. لطفاً دوباره تلاش کنید.'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def password_reset_confirm(request):
@@ -587,10 +674,19 @@ def password_reset_confirm(request):
 @permission_classes([AllowAny])
 def phone_verification_request(request):
     """Request phone verification code"""
+    from .services.sms_service import sms_service
+    from django.conf import settings
+    
     serializer = PhoneVerificationRequestSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
     
     phone = serializer.validated_data['phone']
+    
+    # Check rate limiting
+    if sms_service.rate_limit_check(phone, 'verification'):
+        return Response({
+            'detail': 'درخواست ارسال کد بیش از حد مجاز است. لطفاً چند دقیقه صبر کنید.'
+        }, status=status.HTTP_429_TOO_MANY_REQUESTS)
     
     # Generate 6-digit code
     code = ''.join(random.choices(string.digits, k=6))
@@ -604,13 +700,31 @@ def phone_verification_request(request):
         expires_at=expires_at
     )
     
-    # In production, send SMS here
-    # For development, return the code
-    return Response({
-        'detail': 'کد تأیید ارسال شد',
-        'code': code,  # Only for development
-        'expires_in': 120
-    })
+    # Send SMS using SMS.ir
+    template_id = getattr(settings, 'SMS_TEMPLATE_ID_VERIFICATION', None)
+    sms_result = sms_service.send_verification_code(phone, code, template_id)
+    
+    if sms_result['success']:
+        logger.info(f"Verification SMS sent successfully to {phone}")
+        return Response({
+            'detail': 'کد تأیید ارسال شد',
+            'expires_in': 120,
+            'message_id': sms_result.get('message_id')
+        })
+    else:
+        logger.error(f"Failed to send verification SMS to {phone}: {sms_result.get('error')}")
+        # In development, still return the code for testing
+        if settings.DEBUG:
+            return Response({
+                'detail': 'خطا در ارسال پیامک (حالت توسعه)',
+                'code': code,  # Only for development
+                'expires_in': 120,
+                'sms_error': sms_result.get('error')
+            })
+        else:
+            return Response({
+                'detail': 'خطا در ارسال پیامک. لطفاً دوباره تلاش کنید.'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(["POST"])
@@ -639,7 +753,78 @@ def phone_verification_confirm(request):
     verification_code.is_used = True
     verification_code.save()
     
+    # If user is provided, mark phone as verified
+    if verification_code.user:
+        verification_code.user.is_phone_verified = True
+        verification_code.user.save()
+    
     return Response({'detail': 'شماره تلفن تأیید شد'})
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def verify_user_phone(request):
+    """Verify authenticated user's phone number"""
+    from .services.sms_service import sms_service
+    from django.conf import settings
+    
+    serializer = PhoneVerificationRequestSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    
+    phone = serializer.validated_data['phone']
+    user = request.user
+    
+    # Check if phone matches user's phone
+    if user.phone != phone:
+        return Response({'detail': 'شماره تلفن با شماره ثبت شده مطابقت ندارد'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Check if already verified
+    if user.is_phone_verified:
+        return Response({'detail': 'شماره تلفن قبلاً تأیید شده است'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Check rate limiting
+    if sms_service.rate_limit_check(phone, 'verification'):
+        return Response({
+            'detail': 'درخواست ارسال کد بیش از حد مجاز است. لطفاً چند دقیقه صبر کنید.'
+        }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+    
+    # Generate 6-digit code
+    code = ''.join(random.choices(string.digits, k=6))
+    expires_at = timezone.now() + timezone.timedelta(minutes=2)  # 120 seconds
+    
+    # Create verification code linked to user
+    PhoneVerificationCode.objects.create(
+        user=user,
+        phone=phone,
+        code=code,
+        expires_at=expires_at
+    )
+    
+    # Send SMS using SMS.ir
+    template_id = getattr(settings, 'SMS_TEMPLATE_ID_VERIFICATION', None)
+    sms_result = sms_service.send_verification_code(phone, code, template_id)
+    
+    if sms_result['success']:
+        logger.info(f"User phone verification SMS sent successfully to {phone}")
+        return Response({
+            'detail': 'کد تأیید ارسال شد',
+            'expires_in': 120,
+            'message_id': sms_result.get('message_id')
+        })
+    else:
+        logger.error(f"Failed to send user phone verification SMS to {phone}: {sms_result.get('error')}")
+        # In development, still return the code for testing
+        if settings.DEBUG:
+            return Response({
+                'detail': 'خطا در ارسال پیامک (حالت توسعه)',
+                'code': code,  # Only for development
+                'expires_in': 120,
+                'sms_error': sms_result.get('error')
+            })
+        else:
+            return Response({
+                'detail': 'خطا در ارسال پیامک. لطفاً دوباره تلاش کنید.'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(["POST"])

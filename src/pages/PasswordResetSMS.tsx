@@ -1,32 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { phoneVerificationRequest, phoneVerificationConfirm, verifyUserPhone } from '../lib/api';
-import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { passwordResetRequestSMS, phoneVerificationConfirm } from '../lib/api';
 
-interface PhoneVerificationProps {
-  mode?: 'register' | 'reset' | 'verify';
-  phone?: string;
-}
-
-export default function PhoneVerification({ mode = 'verify', phone: initialPhone }: PhoneVerificationProps) {
-  const [phone, setPhone] = useState(initialPhone || '');
+export default function PasswordResetSMS() {
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [countdown, setCountdown] = useState(0);
-  const [step, setStep] = useState<'phone' | 'code'>('phone');
-  const [searchParams] = useSearchParams();
+  const [step, setStep] = useState<'email' | 'code' | 'success'>('email');
   const navigate = useNavigate();
-  const { user } = useAuth();
-
-  // Get phone from URL params if available
-  useEffect(() => {
-    const phoneParam = searchParams.get('phone');
-    if (phoneParam) {
-      setPhone(phoneParam);
-    }
-  }, [searchParams]);
 
   // Countdown timer
   useEffect(() => {
@@ -36,22 +21,10 @@ export default function PhoneVerification({ mode = 'verify', phone: initialPhone
     }
   }, [countdown]);
 
-  const formatPhoneNumber = (value: string) => {
-    // Remove all non-digit characters
-    const digits = value.replace(/\D/g, '');
-    
-    // Format as Iranian phone number
-    if (digits.length <= 4) return digits;
-    if (digits.length <= 7) return `${digits.slice(0, 4)}-${digits.slice(4)}`;
-    if (digits.length <= 11) return `${digits.slice(0, 4)}-${digits.slice(4, 7)}-${digits.slice(7)}`;
-    
-    return `${digits.slice(0, 4)}-${digits.slice(4, 7)}-${digits.slice(7, 11)}`;
-  };
-
-  const handlePhoneSubmit = async (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phone) {
-      setError('لطفاً شماره تلفن را وارد کنید');
+    if (!email) {
+      setError('لطفاً ایمیل خود را وارد کنید');
       return;
     }
 
@@ -60,26 +33,18 @@ export default function PhoneVerification({ mode = 'verify', phone: initialPhone
     setMessage('');
 
     try {
-      let response;
-      
-      if (mode === 'verify' && user) {
-        // For authenticated users verifying their phone
-        response = await verifyUserPhone(phone);
-      } else {
-        // For registration or password reset
-        response = await phoneVerificationRequest(phone);
-      }
-
+      const response = await passwordResetRequestSMS(email);
       setMessage(response.detail);
+      setPhone(response.phone || ''); // Store phone for verification
       setStep('code');
-      setCountdown(120); // 2 minutes
+      setCountdown(600); // 10 minutes
       
       // Show code in development mode
       if (response.code) {
-        console.log('Verification code (development):', response.code);
+        console.log('Password reset code (development):', response.code);
       }
     } catch (err: any) {
-      setError(err.message || 'خطا در ارسال کد تأیید');
+      setError(err.message || 'خطا در ارسال کد بازیابی');
     } finally {
       setIsLoading(false);
     }
@@ -98,17 +63,18 @@ export default function PhoneVerification({ mode = 'verify', phone: initialPhone
 
     try {
       await phoneVerificationConfirm(phone, code);
-      setMessage('شماره تلفن با موفقیت تأیید شد');
+      setMessage('کد تأیید شد. حالا می‌توانید رمز عبور جدید را تنظیم کنید');
+      setStep('success');
       
-      // Redirect based on mode
+      // Redirect to password reset form
       setTimeout(() => {
-        if (mode === 'register') {
-          navigate('/register');
-        } else if (mode === 'reset') {
-          navigate('/reset-password');
-        } else {
-          navigate('/dashboard');
-        }
+        navigate('/reset-password', { 
+          state: { 
+            email, 
+            phone, 
+            verified: true 
+          } 
+        });
       }, 2000);
     } catch (err: any) {
       setError(err.message || 'کد تأیید نامعتبر است');
@@ -125,20 +91,13 @@ export default function PhoneVerification({ mode = 'verify', phone: initialPhone
     setMessage('');
 
     try {
-      let response;
-      
-      if (mode === 'verify' && user) {
-        response = await verifyUserPhone(phone);
-      } else {
-        response = await phoneVerificationRequest(phone);
-      }
-
+      const response = await passwordResetRequestSMS(email);
       setMessage('کد جدید ارسال شد');
-      setCountdown(120);
+      setCountdown(600);
       
       // Show code in development mode
       if (response.code) {
-        console.log('Verification code (development):', response.code);
+        console.log('Password reset code (development):', response.code);
       }
     } catch (err: any) {
       setError(err.message || 'خطا در ارسال مجدد کد');
@@ -152,14 +111,14 @@ export default function PhoneVerification({ mode = 'verify', phone: initialPhone
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            {mode === 'register' && 'تأیید شماره تلفن برای ثبت نام'}
-            {mode === 'reset' && 'تأیید شماره تلفن برای بازیابی رمز عبور'}
-            {mode === 'verify' && 'تأیید شماره تلفن'}
+            بازیابی رمز عبور با پیامک
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            {step === 'phone' 
-              ? 'شماره تلفن خود را وارد کنید تا کد تأیید ارسال شود'
-              : 'کد تأیید ارسال شده به شماره تلفن خود را وارد کنید'
+            {step === 'email' 
+              ? 'ایمیل خود را وارد کنید تا کد بازیابی به شماره تلفن شما ارسال شود'
+              : step === 'code'
+              ? 'کد ارسال شده به شماره تلفن خود را وارد کنید'
+              : 'کد تأیید شد. در حال انتقال...'
             }
           </p>
         </div>
@@ -167,21 +126,21 @@ export default function PhoneVerification({ mode = 'verify', phone: initialPhone
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          {step === 'phone' ? (
-            <form className="space-y-6" onSubmit={handlePhoneSubmit}>
+          {step === 'email' && (
+            <form className="space-y-6" onSubmit={handleEmailSubmit}>
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                  شماره تلفن
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                  ایمیل
                 </label>
                 <div className="mt-1">
                   <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
+                    id="email"
+                    name="email"
+                    type="email"
                     required
-                    value={phone}
-                    onChange={(e) => setPhone(formatPhoneNumber(e.target.value))}
-                    placeholder="0912-345-6789"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="example@domain.com"
                     className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                   />
                 </div>
@@ -201,15 +160,27 @@ export default function PhoneVerification({ mode = 'verify', phone: initialPhone
                   disabled={isLoading}
                   className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
                 >
-                  {isLoading ? 'در حال ارسال...' : 'ارسال کد تأیید'}
+                  {isLoading ? 'در حال ارسال...' : 'ارسال کد بازیابی'}
+                </button>
+              </div>
+
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => navigate('/forgot-password')}
+                  className="text-sm text-indigo-600 hover:text-indigo-500"
+                >
+                  بازیابی با ایمیل
                 </button>
               </div>
             </form>
-          ) : (
+          )}
+
+          {step === 'code' && (
             <form className="space-y-6" onSubmit={handleCodeSubmit}>
               <div>
                 <label htmlFor="code" className="block text-sm font-medium text-gray-700">
-                  کد تأیید
+                  کد بازیابی
                 </label>
                 <div className="mt-1">
                   <input
@@ -224,7 +195,7 @@ export default function PhoneVerification({ mode = 'verify', phone: initialPhone
                   />
                 </div>
                 <p className="mt-2 text-sm text-gray-500">
-                  کد 6 رقمی ارسال شده به شماره {phone} را وارد کنید
+                  کد 6 رقمی ارسال شده به شماره تلفن شما را وارد کنید
                 </p>
               </div>
 
@@ -251,18 +222,29 @@ export default function PhoneVerification({ mode = 'verify', phone: initialPhone
                   disabled={countdown > 0 || isLoading}
                   className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
                 >
-                  {countdown > 0 ? `ارسال مجدد (${countdown} ثانیه)` : 'ارسال مجدد کد'}
+                  {countdown > 0 ? `ارسال مجدد (${Math.floor(countdown / 60)}:${(countdown % 60).toString().padStart(2, '0')})` : 'ارسال مجدد کد'}
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setStep('phone')}
+                  onClick={() => setStep('email')}
                   className="w-full flex justify-center py-2 px-4 text-sm font-medium text-gray-600 hover:text-gray-800"
                 >
-                  تغییر شماره تلفن
+                  تغییر ایمیل
                 </button>
               </div>
             </form>
+          )}
+
+          {step === 'success' && (
+            <div className="text-center">
+              <div className="text-green-600 text-lg font-medium mb-4">
+                ✓ کد تأیید شد
+              </div>
+              <p className="text-gray-600">
+                در حال انتقال به صفحه تنظیم رمز عبور جدید...
+              </p>
+            </div>
           )}
         </div>
       </div>
