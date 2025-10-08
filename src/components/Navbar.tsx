@@ -66,183 +66,187 @@ const Navbar = () => {
 
   return (
     <nav className="bg-background border-b border-border sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Left Section: Auth Buttons */}
-          <div className="hidden lg:flex items-center space-x-2 rtl:space-x-reverse flex-shrink-0" dir="rtl">
-            {isAuthenticated ? (
-              <>
-                {/* Shopping Cart */}
-                {isCustomer && (
-                  <Button variant="ghost" size="sm" className="relative" asChild title="سبد خرید">
-                    <Link to="/cart">
-                      <ShoppingCart className="h-5 w-5" />
-                      <span className="sr-only">سبد خرید</span>
-                      {cartItemsCount > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                          {cartItemsCount}
-                        </span>
-                      )}
-                    </Link>
-                  </Button>
-                )}
-
-                {/* User Account Dropdown */}
-                <UserDropdown 
-                  userName={userName}
-                  unreadNotificationsCount={unreadNotificationsCount}
-                  onLogout={logout}
-                />
-              </>
-            ) : (
-              <>
-                <Link to="/login">
-                  <Button variant="outline" size="sm" title="ورود" className="flex items-center gap-2">
-                    <LogIn className="h-4 w-4" />
-                    ورود
-                  </Button>
-                </Link>
-                <Link to="/register">
-                  <Button variant="outline" size="sm" title="ثبت نام" className="flex items-center gap-2">
-                    <UserPlus className="h-4 w-4" />
-                    ثبت نام
-                  </Button>
-                </Link>
-                <Link to="/contractor-register">
-                  <Button variant="default" size="sm" title="ثبت نام پیمانکاران و کارگاه ها" className="flex items-center gap-2">
-                    <Building2 className="h-4 w-4" />
-                    ثبت نام پیمانکاران و کارگاه ها
-                  </Button>
-                </Link>
-              </>
-            )}
-          </div>
-
-          {/* Right Section: Logo, Site Name, and Navigation (RTL) */}
-          <div className="hidden lg:flex items-center gap-6" dir="rtl">
-            {/* Navigation Menu Items */}
-            <NavigationMenu className="bg-transparent">
-              <NavigationMenuList className="gap-2">
-                {/* Home */}
-                <NavigationMenuItem>
-                  <NavigationMenuLink asChild>
-                    <Link to="/" className={navigationMenuTriggerStyle()} title="خانه">
-                      <Home className="h-4 w-4 ml-2" />
-                      خانه
-                    </Link>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-
-                {/* Services Dropdown */}
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger className="bg-transparent hover:bg-muted/50 data-[state=open]:bg-muted/50">
-                    <Wrench className="h-4 w-4 ml-2" />
-                    خدمات تخصصی
-                  </NavigationMenuTrigger>
-                  <NavigationMenuContent className="bg-card/95 backdrop-blur-sm border border-border/50 shadow-elegant">
-                    <div className="w-[400px] p-4">
-                      <div className="grid grid-cols-1 gap-4">
-                        {services.map((service) => (
-                          <div key={service.name} className="group">
-                            {service.subItems ? (
-                              <div>
-                                <h3 className="text-sm font-medium text-foreground mb-2 px-3 py-2 bg-muted/30 rounded-md">
-                                  {service.name}
-                                </h3>
-                                <div className="grid grid-cols-1 gap-1 mr-4">
-                                  {service.subItems.map((subItem) => (
-                                    <div key={subItem.name}>
-                                      {subItem.subItems ? (
-                                        <div className="mb-2">
-                                          <h4 className="text-xs font-medium text-muted-foreground mb-1 px-2 py-1">
-                                            {subItem.name}
-                                          </h4>
-                                          <div className="grid grid-cols-1 gap-1 mr-4">
-                                            {subItem.subItems.map((thirdLevel) => (
-                                              <NavigationMenuLink
-                                                key={thirdLevel.name}
-                                                href={thirdLevel.href}
-                                                className="block px-2 py-1 text-xs text-muted-foreground hover:text-primary hover:bg-muted/30 rounded transition-colors"
-                                              >
-                                                • {thirdLevel.name}
-                                              </NavigationMenuLink>
-                                            ))}
-                                          </div>
-                                        </div>
-                                      ) : (
-                                        <NavigationMenuLink
-                                          href={subItem.href}
-                                          className="block px-2 py-2 text-sm text-foreground hover:text-primary hover:bg-muted/50 rounded transition-colors"
-                                        >
-                                          {subItem.name}
-                                        </NavigationMenuLink>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            ) : (
-                              <NavigationMenuLink
-                                href={service.href}
-                                className="block px-3 py-2 text-sm font-medium text-foreground hover:text-primary hover:bg-muted/50 rounded transition-colors"
-                              >
-                                {service.name}
-                              </NavigationMenuLink>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
-
-                {/* Blog */}
-                <NavigationMenuItem>
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/blog">
-                    <BookOpen className="h-4 w-4 ml-2" />
-                    مقالات و منابع علمی
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-
-                {/* Portfolio */}
-                <NavigationMenuItem>
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/portfolio">
-                    <Briefcase className="h-4 w-4 ml-2" />
-                    نمونه کارها
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-
-                {/* Services Page */}
-                <NavigationMenuItem>
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/services">
-                    <BriefcaseIcon className="h-4 w-4 ml-2" />
-                    خدمات ما
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-
-                {/* Contact */}
-                <NavigationMenuItem>
-                  <button 
-                    onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-                    className={navigationMenuTriggerStyle()}
-                  >
-                    <Phone className="h-4 w-4 ml-2" />
-                    تماس با ما
-                  </button>
-                </NavigationMenuItem>
-              </NavigationMenuList>
-            </NavigationMenu>
-
-            {/* Logo and Site Name */}
-            <div className="flex items-center gap-2">
-              <img src={logo} alt="لوگو" className="h-12 w-auto flex-shrink-0" />
-              <span className="text-lg font-bold">پلتفرم مهندسی سایدا</span>
+      <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex flex-col">
+          {/* Top Section: Logo and Site Name */}
+          <div className="flex justify-end items-center py-2 border-b border-border/50">
+            <div className="flex items-center gap-3">
+              <img src={logo} alt="لوگو" className="h-10 w-auto flex-shrink-0" />
+              <span className="text-xl font-bold text-primary">پلتفرم مهندسی سایدا</span>
             </div>
+          </div>
+          
+          {/* Main Navigation */}
+          <div className="flex justify-end items-center h-16">
+            {/* Desktop Layout */}
+            <div className="hidden lg:flex justify-end items-center w-full gap-4" dir="rtl">
+              {/* Navigation Menu Items */}
+              <NavigationMenu className="bg-transparent">
+                <NavigationMenuList className="gap-2">
+                  {/* Home */}
+                  <NavigationMenuItem>
+                    <NavigationMenuLink asChild>
+                      <Link to="/" className={navigationMenuTriggerStyle()} title="خانه">
+                        <Home className="h-4 w-4 ml-2" />
+                        خانه
+                      </Link>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+
+                  {/* Services Dropdown */}
+                  <NavigationMenuItem>
+                    <NavigationMenuTrigger className="bg-transparent hover:bg-muted/50 data-[state=open]:bg-muted/50">
+                      <Wrench className="h-4 w-4 ml-2" />
+                      خدمات تخصصی
+                    </NavigationMenuTrigger>
+                    <NavigationMenuContent className="bg-card/95 backdrop-blur-sm border border-border/50 shadow-elegant">
+                      <div className="w-[400px] p-4">
+                        <div className="grid grid-cols-1 gap-4">
+                          {services.map((service) => (
+                            <div key={service.name} className="group">
+                              {service.subItems ? (
+                                <div>
+                                  <h3 className="text-sm font-medium text-foreground mb-2 px-3 py-2 bg-muted/30 rounded-md">
+                                    {service.name}
+                                  </h3>
+                                  <div className="grid grid-cols-1 gap-1 mr-4">
+                                    {service.subItems.map((subItem) => (
+                                      <div key={subItem.name}>
+                                        {subItem.subItems ? (
+                                          <div className="mb-2">
+                                            <h4 className="text-xs font-medium text-muted-foreground mb-1 px-2 py-1">
+                                              {subItem.name}
+                                            </h4>
+                                            <div className="grid grid-cols-1 gap-1 mr-4">
+                                              {subItem.subItems.map((thirdLevel) => (
+                                                <NavigationMenuLink
+                                                  key={thirdLevel.name}
+                                                  href={thirdLevel.href}
+                                                  className="block px-2 py-1 text-xs text-muted-foreground hover:text-primary hover:bg-muted/30 rounded transition-colors"
+                                                >
+                                                  • {thirdLevel.name}
+                                                </NavigationMenuLink>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <NavigationMenuLink
+                                            href={subItem.href}
+                                            className="block px-2 py-2 text-sm text-foreground hover:text-primary hover:bg-muted/50 rounded transition-colors"
+                                          >
+                                            {subItem.name}
+                                          </NavigationMenuLink>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : (
+                                <NavigationMenuLink
+                                  href={service.href}
+                                  className="block px-3 py-2 text-sm font-medium text-foreground hover:text-primary hover:bg-muted/50 rounded transition-colors"
+                                >
+                                  {service.name}
+                                </NavigationMenuLink>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </NavigationMenuContent>
+                  </NavigationMenuItem>
+
+                  {/* Blog */}
+                  <NavigationMenuItem>
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/blog">
+                      <BookOpen className="h-4 w-4 ml-2" />
+                      مقالات و منابع علمی
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+
+                  {/* Portfolio */}
+                  <NavigationMenuItem>
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/portfolio">
+                      <Briefcase className="h-4 w-4 ml-2" />
+                      نمونه کارها
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+
+                  {/* Services Page */}
+                  <NavigationMenuItem>
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/services">
+                      <BriefcaseIcon className="h-4 w-4 ml-2" />
+                      خدمات ما
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+
+                  {/* Contact */}
+                  <NavigationMenuItem>
+                    <button 
+                      onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+                      className={navigationMenuTriggerStyle()}
+                    >
+                      <Phone className="h-4 w-4 ml-2" />
+                      تماس با ما
+                    </button>
+                  </NavigationMenuItem>
+                </NavigationMenuList>
+              </NavigationMenu>
+
+              {/* Auth Buttons */}
+              {isAuthenticated ? (
+                <>
+                  {/* Shopping Cart */}
+                  {isCustomer && (
+                    <Button variant="ghost" size="sm" className="relative" asChild title="سبد خرید">
+                      <Link to="/cart">
+                        <ShoppingCart className="h-5 w-5" />
+                        <span className="sr-only">سبد خرید</span>
+                        {cartItemsCount > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                            {cartItemsCount}
+                          </span>
+                        )}
+                      </Link>
+                    </Button>
+                  )}
+
+                  {/* User Account Dropdown */}
+                  <UserDropdown 
+                    userName={userName}
+                    unreadNotificationsCount={unreadNotificationsCount}
+                    onLogout={logout}
+                  />
+                </>
+              ) : (
+                <>
+                  <Link to="/contractor-register">
+                    <Button variant="default" size="sm" title="ثبت نام پیمانکاران و کارگاه ها" className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4" />
+                      ثبت نام پیمانکاران و کارگاه ها
+                    </Button>
+                  </Link>
+                  <Link to="/login">
+                    <Button variant="outline" size="sm" title="ورود" className="flex items-center gap-2">
+                      <LogIn className="h-4 w-4" />
+                      ورود
+                    </Button>
+                  </Link>
+                  <Link to="/register">
+                    <Button variant="outline" size="sm" title="ثبت نام" className="flex items-center gap-2">
+                      <UserPlus className="h-4 w-4" />
+                      ثبت نام
+                    </Button>
+                  </Link>
+                </>
+              )}
+            </div>
+
           </div>
 
           {/* Mobile Layout */}
           <div className="lg:hidden flex items-center justify-between w-full">
-            {/* Mobile menu button - Left side */}
+            {/* Mobile menu button - Right side */}
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="text-foreground hover:text-primary transition-colors p-2"
@@ -253,15 +257,14 @@ const Navbar = () => {
               <span className="sr-only">{isOpen ? "بستن منو" : "باز کردن منو"}</span>
             </button>
             
-            {/* Mobile Site Name - Center */}
-            <div className="flex items-center">
-              <span className="text-base font-bold">پلتفرم مهندسی سایدا</span>
+            {/* Mobile Logo and Site Name - Center */}
+            <div className="flex items-center gap-2">
+              <img src={logo} alt="لوگو" className="h-8 w-auto flex-shrink-0" />
+              <span className="text-sm font-bold truncate">پلتفرم مهندسی سایدا</span>
             </div>
             
-            {/* Mobile Logo - Right side */}
-            <div className="flex items-center">
-              <img src={logo} alt="لوگو" className="h-8 w-auto flex-shrink-0" />
-            </div>
+            {/* Empty div for balance */}
+            <div className="w-10"></div>
           </div>
         </div>
 
