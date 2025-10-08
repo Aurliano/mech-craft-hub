@@ -50,6 +50,10 @@ ALLOWED_HOSTS = [
 # Frontend URL for password reset and other redirects
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://saydatech.ir')
 
+# SMS Configuration
+SMS_KEY = os.getenv('SMS_KEY', '')
+SMS_SENDER = os.getenv('SMS_SENDER', 'SaydaTech')
+
 # Application definition
 
 INSTALLED_APPS = [

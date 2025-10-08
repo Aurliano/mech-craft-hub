@@ -49,7 +49,7 @@ const Footer = () => {
                 <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
               </div>
               <div className="flex items-center justify-end">
-                <span>9899359430708+</span>
+                <span>09359430708</span>
                 <Phone className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
               </div>
               <div className="flex items-center justify-end">
@@ -61,7 +61,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-primary-foreground/20 mt-6 sm:mt-8 pt-6 sm:pt-8 text-center text-primary-foreground/60 text-sm sm:text-base">
-          <p>&copy; 1404 پلتفرم مکاترونیک سایدا. تمامی حقوق محفوظ است.</p>
+          <p>&copy; 1404 پلتفرم مهندسی سایدا. تمامی حقوق محفوظ است.</p>
         </div>
       </div>
     </footer>

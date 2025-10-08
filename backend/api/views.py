@@ -48,6 +48,9 @@ from .utils.turnstile import (
     get_fallback_captcha_data, verify_fallback_captcha, get_turnstile_stats
 )
 
+# Configure logger
+logger = logging.getLogger(__name__)
+
 
 # Custom Filters
 class ServiceFilter(filters_drf.FilterSet):

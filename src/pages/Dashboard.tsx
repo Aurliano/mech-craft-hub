@@ -10,13 +10,6 @@ import Navbar from '@/components/Navbar';
 const Dashboard = () => {
   const { user, orders, cartItems, notifications, stats, isLoadingDashboard } = useAuth();
 
-  console.log('Dashboard - User:', user);
-  console.log('Dashboard - Orders:', orders);
-  console.log('Dashboard - Cart Items:', cartItems);
-  console.log('Dashboard - Notifications:', notifications);
-  console.log('Dashboard - Stats:', stats);
-  console.log('Dashboard - Is Loading:', isLoadingDashboard);
-
   if (isLoadingDashboard) {
     return (
       <div className="min-h-screen" dir="rtl">
@@ -51,7 +44,9 @@ const Dashboard = () => {
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">داشبورد</h1>
-              <p className="text-gray-600 text-sm sm:text-base">خوش آمدید، {user?.username}</p>
+              <p className="text-gray-600 text-sm sm:text-base">
+                خوش آمدید، {user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : user?.username}
+              </p>
             </div>
             <div className="flex gap-2">
               <Button asChild className="w-full sm:w-auto">
@@ -63,23 +58,6 @@ const Dashboard = () => {
             </div>
           </div>
 
-          {/* Debug Info */}
-          <Card>
-            <CardHeader>
-              <CardTitle>اطلاعات Debug</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-sm">
-                <p><strong>User:</strong> {user ? JSON.stringify(user, null, 2) : 'null'}</p>
-                <p><strong>Orders Count:</strong> {Array.isArray(orders) ? orders.length : 'Not array'}</p>
-                <p><strong>Cart Items Count:</strong> {Array.isArray(cartItems) ? cartItems.length : 'Not array'}</p>
-                <p><strong>Notifications Count:</strong> {Array.isArray(notifications) ? notifications.length : 'Not array'}</p>
-                <p><strong>Stats:</strong> {stats ? JSON.stringify(stats, null, 2) : 'null'}</p>
-                <p><strong>Is Loading:</strong> {isLoadingDashboard ? 'true' : 'false'}</p>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Stats Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <Card>
@@ -87,7 +65,7 @@ const Dashboard = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs sm:text-sm font-medium text-gray-600">کل سفارشات</p>
-                    <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats?.totalOrders || 0}</p>
+                    <p className="text-lg sm:text-2xl font-bold text-gray-900">{(stats as { totalOrders?: number })?.totalOrders || 0}</p>
                   </div>
                   <Package className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
                 </div>
@@ -99,7 +77,7 @@ const Dashboard = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs sm:text-sm font-medium text-gray-600">در انتظار</p>
-                    <p className="text-lg sm:text-2xl font-bold text-yellow-600">{stats?.pendingOrders || 0}</p>
+                    <p className="text-lg sm:text-2xl font-bold text-yellow-600">{(stats as { pendingOrders?: number })?.pendingOrders || 0}</p>
                   </div>
                   <Clock className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-600" />
                 </div>
@@ -111,7 +89,7 @@ const Dashboard = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs sm:text-sm font-medium text-gray-600">تکمیل شده</p>
-                    <p className="text-lg sm:text-2xl font-bold text-green-600">{stats?.completedOrders || 0}</p>
+                    <p className="text-lg sm:text-2xl font-bold text-green-600">{(stats as { completedOrders?: number })?.completedOrders || 0}</p>
                   </div>
                   <CheckCircle className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
                 </div>
@@ -158,7 +136,7 @@ const Dashboard = () => {
                 <CardContent>
                   {recentOrders.length > 0 ? (
                     <div className="space-y-4">
-                      {recentOrders.map((order) => (
+                      {recentOrders.map((order: { id: string; order_number: string; created_at: string; status: string }) => (
                         <div key={order.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border rounded-lg gap-3 sm:gap-0">
                           <div className="flex-1">
                             <h4 className="font-medium text-gray-900 text-sm sm:text-base">{order.order_number}</h4>
@@ -212,7 +190,7 @@ const Dashboard = () => {
                 <CardContent>
                   {recentNotifications.length > 0 ? (
                     <div className="space-y-3">
-                      {recentNotifications.map((notification) => (
+                      {recentNotifications.map((notification: { id: string; title: string; message: string; createdAt: string; isRead?: boolean }) => (
                         <div key={notification.id} className={`p-2 sm:p-3 rounded-lg border-r-4 ${
                           notification.isRead ? 'bg-gray-50 border-gray-200' : 'bg-blue-50 border-blue-500'
                         }`}>
