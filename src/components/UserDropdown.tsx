@@ -11,7 +11,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { 
   User, ChevronDown, Bell, HelpCircle, BarChart3, Package, 
-  Briefcase, Settings, LogOut, Building2, ShoppingCart, MessageSquare, FileText 
+  Briefcase, Settings, LogOut, Building2, ShoppingCart, MessageSquare, FileText, 
+  FolderOpen, Shield
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -28,9 +29,12 @@ const UserDropdown: React.FC<UserDropdownProps> = ({
   unreadNotificationsCount, 
   onLogout 
 }) => {
-  const { isContractor, isCustomer } = useAuth();
+  const { isContractor, isCustomer, user } = useAuth();
   const isMobile = useIsMobile();
   const { data: manufacturingCheck } = useCheckContractorManufacturingService();
+  
+  // Check if user is admin
+  const isAdmin = user?.role === 'admin' || user?.is_staff || user?.is_superuser;
 
   return (
     <DropdownMenu>
@@ -46,7 +50,7 @@ const UserDropdown: React.FC<UserDropdownProps> = ({
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">{userName}</p>
             <p className="text-xs leading-none text-muted-foreground">
-              {isContractor ? 'پیمانکار' : isCustomer ? 'مشتری' : 'کاربر'}
+              {isAdmin ? 'مدیر سیستم' : isContractor ? 'پیمانکار' : isCustomer ? 'مشتری' : 'کاربر'}
             </p>
           </div>
         </DropdownMenuLabel>
@@ -136,6 +140,26 @@ const UserDropdown: React.FC<UserDropdownProps> = ({
                 </Link>
               </DropdownMenuItem>
             )}
+          </>
+        )}
+        
+        {/* Admin items */}
+        {isAdmin && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link to="/admin/file-manager">
+                <FolderOpen className="mr-2 h-4 w-4" />
+                <span>مدیریت فایل‌ها</span>
+              </Link>
+            </DropdownMenuItem>
+            
+            <DropdownMenuItem asChild>
+              <Link to="/admin/" target="_blank">
+                <Shield className="mr-2 h-4 w-4" />
+                <span>پنل ادمین Django</span>
+              </Link>
+            </DropdownMenuItem>
           </>
         )}
         
