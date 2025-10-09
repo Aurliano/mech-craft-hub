@@ -49,26 +49,37 @@ const Hero = () => {
             با استفاده از جدیدترین تکنولوژی‌ها و نرم‌افزارهای مهندسی، پروژه‌های شما را با بالاترین کیفیت انجام می‌دهیم
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-8 sm:mb-12 justify-center">
-            <Button variant="hero" size="lg" className="group" asChild>
-              <Link to="/contractor-register">
-                ثبت نام پیمانکاران و کارگاه ها
-                <ArrowLeft className="mr-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </Button>
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 mb-8 sm:mb-12 justify-center">
+            {/* Contractor Register Button (styled like right/secondary button, no arrow) */}
             <Button 
-              variant="outline" 
-              size="lg" 
-              className="bg-white/10 text-white border-white/30 hover:bg-white hover:text-primary"
+              variant="outline"
+              size="lg"
+              className="bg-white/10 text-white border-white/30 hover:bg-white hover:text-primary w-full sm:w-[18rem] font-bold tracking-wide transition-all duration-300 shadow-xl rounded-xl"
               asChild
             >
-              <Link to="/services">
-                مشاهده خدمات
+              <Link to="/contractor-register">
+                ثبت نام پیمانکاران و کارگاه ها
+              </Link>
+            </Button>
+            {/* User Register Button (primary/hero style, link to /register, new text) */}
+            <Button
+              variant="hero"
+              size="lg"
+              className="w-full sm:w-[18rem] font-bold tracking-wide transition-all duration-300 shadow-xl rounded-xl border-2 border-accent hover:border-accent/80"
+              asChild
+            >
+              <Link to="/register">
+                ثبت نام کاربران و ثبت سفارش
               </Link>
             </Button>
           </div>
         </div>
-
+        {/* Instructional glassy message */}
+        <div className="w-full max-w-4xl mx-auto mb-6 sm:mb-8">
+          <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-xl shadow-sm px-4 py-3 sm:px-6 sm:py-4 text-primary-foreground text-base sm:text-lg font-semibold text-center">
+            برای ثبت سفارش، با توجه به نیازمندی خود، از بین خدمات زیر انتخاب نمایید.
+          </div>
+        </div>
         {/* Services Cards - Moved outside the max-w-3xl div and adjusted grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-6 sm:mt-8"> {/* Improved responsive grid */}
           {/* Mechanical Engineering Card */}
