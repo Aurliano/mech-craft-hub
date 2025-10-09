@@ -18,6 +18,7 @@ import ErrorDisplay from "@/components/ErrorDisplay";
 import { validatePassword } from "@/lib/passwordValidation";
 import { useScopes, useServices } from "@/hooks/useAuth";
 import { refreshCSRFToken } from "@/lib/csrfProtection";
+import { navigateToPhoneVerification } from "@/lib/navigation";
 
 const ContractorRegister = () => {
   const navigate = useNavigate();
@@ -95,13 +96,8 @@ const ContractorRegister = () => {
     // Since Turnstile is disabled, always use regular registration
     await register(userData);
     
-    // After successful registration, redirect to phone verification
-    navigate("/phone-verification", { 
-      state: { 
-        phone, 
-        mode: 'register' 
-      } 
-    });
+    // After successful registration, redirect to phone verification with proper navigation
+    navigateToPhoneVerification(phone, 'register', navigate);
   };
 
   async function onSubmit(e: React.FormEvent) {
@@ -315,7 +311,7 @@ const ContractorRegister = () => {
                     <SelectContent>
                       {Array.isArray(scopes) && scopes.map((scope) => (
                         <SelectItem key={scope.id} value={scope.id}>
-                          {scope.display_name}
+                          {scope.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

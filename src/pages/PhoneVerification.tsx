@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { phoneVerificationRequest, phoneVerificationConfirm, verifyUserPhone } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
+import { navigateToLogin, navigateWithRefresh } from '../lib/navigation';
 
 interface PhoneVerificationProps {
   mode?: 'register' | 'reset' | 'verify';
@@ -78,8 +79,8 @@ export default function PhoneVerification({ mode = 'verify', phone: initialPhone
       if (response.code) {
         console.log('Verification code (development):', response.code);
       }
-    } catch (err: any) {
-      setError(err.message || 'خطا در ارسال کد تأیید');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'خطا در ارسال کد تأیید');
     } finally {
       setIsLoading(false);
     }
@@ -100,18 +101,18 @@ export default function PhoneVerification({ mode = 'verify', phone: initialPhone
       await phoneVerificationConfirm(phone, code);
       setMessage('شماره تلفن با موفقیت تأیید شد');
       
-      // Redirect based on mode
+      // Redirect based on mode with proper navigation
       setTimeout(() => {
         if (mode === 'register') {
-          navigate('/login'); // Redirect to login after phone verification
+          navigateToLogin(navigate);
         } else if (mode === 'reset') {
-          navigate('/reset-password');
+          navigateWithRefresh('/reset-password', navigate);
         } else {
-          navigate('/dashboard');
+          navigateWithRefresh('/dashboard', navigate);
         }
       }, 2000);
-    } catch (err: any) {
-      setError(err.message || 'کد تأیید نامعتبر است');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'کد تأیید نامعتبر است');
     } finally {
       setIsLoading(false);
     }
@@ -140,8 +141,8 @@ export default function PhoneVerification({ mode = 'verify', phone: initialPhone
       if (response.code) {
         console.log('Verification code (development):', response.code);
       }
-    } catch (err: any) {
-      setError(err.message || 'خطا در ارسال مجدد کد');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'خطا در ارسال مجدد کد');
     } finally {
       setIsLoading(false);
     }

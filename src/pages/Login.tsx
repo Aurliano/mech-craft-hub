@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import TurnstileCaptcha from "@/components/TurnstileCaptcha";
 import ErrorDisplay from "@/components/ErrorDisplay";
 import { refreshCSRFToken } from "@/lib/csrfProtection";
+import { navigateToDashboard } from "@/lib/navigation";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -28,18 +29,8 @@ const Login = () => {
   // Redirect if already authenticated (respect role)
   React.useEffect(() => {
     if (isAuthenticated && user) {
-      const roles = user?.roles?.map((r: { role?: { name?: string } }) => r.role?.name) || [];
-      const isContractor = roles.includes('contractor');
-      const isCustomer = roles.includes('customer');
-      
-      if (isContractor) {
-        navigate('/contractor-dashboard');
-      } else if (isCustomer) {
-        navigate('/dashboard');
-      } else {
-        // User has no recognized role, redirect to home
-        navigate('/');
-      }
+      // Use proper navigation utility
+      navigateToDashboard(user, navigate);
     }
   }, [isAuthenticated, user, navigate]);
 

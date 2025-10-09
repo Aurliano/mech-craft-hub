@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { 
   customerRegisterRequest, contractorRegisterRequest, meRequest, setTokens, clearTokens, getAccessToken,
   loginRequest, passwordResetRequest, passwordResetConfirm, changePassword,
-  phoneVerificationRequest, phoneVerificationConfirm,
+  phoneVerificationRequest, phoneVerificationConfirm, checkPhoneVerificationStatus,
   getUserOrders, getUserCart, getUserCartItems, getUserNotifications, getUserStats,
   createOrder, getOrderById, updateOrderStatus, createQuote, getQuotesByOrder, 
   acceptQuote, rejectQuote, addOrderToCart, removeFromCart, processPayment, downloadInvoice,
@@ -15,6 +15,7 @@ import {
   getFallbackCaptchaChallenge, verifyFallbackCaptcha,
   getServiceTabs, getTabFields, getScopes, getServices, getServiceFields, getAllServices
 } from '@/lib/api';
+import { navigateWithRefresh } from '@/lib/navigation';
 
 export function useMe() {
   const enabled = Boolean(getAccessToken());
@@ -33,7 +34,8 @@ export function useLogin() {
     onSuccess: (data) => {
       setTokens(data.access, data.refresh);
       qc.invalidateQueries({ queryKey: ['me'] });
-      // Don't redirect here, let the component handle it after user data is loaded
+      // Use navigation utility for proper redirect
+      navigateWithRefresh('/');
     },
   });
 }
@@ -42,8 +44,12 @@ export function useCustomerRegister() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: customerRegisterRequest,
-    onSuccess: () => {
+    onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['me'] });
+      // Check if phone verification is required
+      if (data.phone_verification_required) {
+        console.log('Phone verification required for:', data.phone);
+      }
       // Don't redirect here, let the component handle it after user data is loaded
     },
   });
@@ -53,8 +59,12 @@ export function useContractorRegister() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: contractorRegisterRequest,
-    onSuccess: () => {
+    onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ['me'] });
+      // Check if phone verification is required
+      if (data.phone_verification_required) {
+        console.log('Phone verification required for:', data.phone);
+      }
       // Don't redirect here, let the component handle it after user data is loaded
     },
   });
@@ -65,8 +75,8 @@ export function useLogout() {
   return () => {
     clearTokens();
     qc.clear();
-    // Redirect to home page and refresh
-    window.location.href = '/';
+    // Use navigation utility for proper redirect
+    navigateWithRefresh('/');
   };
 }
 
@@ -82,8 +92,8 @@ export function usePasswordResetConfirm() {
     mutationFn: ({ token, newPassword }: { token: string; newPassword: string }) =>
       passwordResetConfirm(token, newPassword),
     onSuccess: () => {
-      // Redirect to home page and refresh after password reset
-      window.location.href = '/';
+      // Use navigation utility for proper redirect
+      navigateWithRefresh('/');
     },
   });
 }
@@ -110,10 +120,29 @@ export function usePhoneVerificationConfirm() {
   return useMutation({
     mutationFn: ({ phone, code }: { phone: string; code: string }) =>
       phoneVerificationConfirm(phone, code),
-    onSuccess: () => {
-      // Redirect to home page and refresh after phone verification
-      window.location.href = '/';
+    onSuccess: (data) => {
+      // Use navigation utility for proper redirect
+      if (data.success) {
+        navigateWithRefresh('/');
+      }
     },
+  });
+}
+
+// Phone Verification Status Hook
+export function usePhoneVerificationStatus() {
+  const enabled = Boolean(getAccessToken());
+  return useQuery<{ 
+    phone: string; 
+    is_phone_verified: boolean; 
+    verification_required: boolean; 
+    message: string; 
+  }>({
+    queryKey: ['phoneVerificationStatus'],
+    queryFn: checkPhoneVerificationStatus,
+    enabled,
+    retry: false,
+    staleTime: 30 * 1000, // 30 seconds
   });
 }
 
@@ -488,8 +517,8 @@ export function useLoginWithCaptcha() {
     onSuccess: (data) => {
       setTokens(data.access, data.refresh);
       qc.invalidateQueries({ queryKey: ['me'] });
-      // Redirect to home page and refresh
-      window.location.href = '/';
+      // Use navigation utility for proper redirect
+      navigateWithRefresh('/');
     },
   });
 }
@@ -500,8 +529,8 @@ export function useRegisterWithCaptcha() {
     mutationFn: registerWithTurnstile,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['me'] });
-      // Redirect to home page and refresh
-      window.location.href = '/';
+      // Use navigation utility for proper redirect
+      navigateWithRefresh('/');
     },
   });
 }

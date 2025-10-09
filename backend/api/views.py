@@ -175,7 +175,15 @@ def customer_register(request):
     serializer = CustomerRegisterSerializer(data=request.data, context={'request': request})
     serializer.is_valid(raise_exception=True)
     user = serializer.save()
-    return Response(UserSerializer(user).data, status=201)
+    
+    # Return success response with user data and phone verification info
+    return Response({
+        'success': True,
+        'message': 'ثبت‌نام با موفقیت انجام شد. لطفاً شماره تلفن خود را تأیید کنید.',
+        'user': UserSerializer(user).data,
+        'phone_verification_required': True,
+        'phone': user.phone
+    }, status=status.HTTP_201_CREATED)
 
 
 @api_view(["POST"]) 
@@ -187,7 +195,15 @@ def contractor_register(request):
     serializer = ContractorRegisterSerializer(data=request.data, context={'request': request})
     serializer.is_valid(raise_exception=True)
     user = serializer.save()
-    return Response(UserSerializer(user).data, status=201)
+    
+    # Return success response with user data and phone verification info
+    return Response({
+        'success': True,
+        'message': 'ثبت‌نام پیمانکار با موفقیت انجام شد. لطفاً شماره تلفن خود را تأیید کنید.',
+        'user': UserSerializer(user).data,
+        'phone_verification_required': True,
+        'phone': user.phone
+    }, status=status.HTTP_201_CREATED)
 
 
 @api_view(["POST"])
@@ -205,12 +221,30 @@ def login(request):
     # Generate JWT tokens using JWTManager
     try:
         tokens = JWTManager.create_tokens_for_user(user)
+        
+        # Determine user role for proper redirect
+        user_roles = user.roles.all() if hasattr(user, 'roles') else []
+        role_names = [role.role.name for role in user_roles if role.role] if user_roles else []
+        
+        # Determine dashboard URL based on role
+        dashboard_url = '/'
+        if 'contractor' in role_names:
+            dashboard_url = '/contractor-dashboard'
+        elif 'customer' in role_names:
+            dashboard_url = '/dashboard'
+        elif 'admin' in role_names:
+            dashboard_url = '/admin-dashboard'
+        
         return Response({
+            'success': True,
             'access': tokens['access'],
             'refresh': tokens['refresh'],
             'access_expires': tokens['access_expires'],
             'refresh_expires': tokens['refresh_expires'],
-            'user': UserSerializer(user).data
+            'user': UserSerializer(user).data,
+            'roles': role_names,
+            'dashboard_url': dashboard_url,
+            'message': 'ورود با موفقیت انجام شد'
         })
     except Exception as e:
         return Response({
@@ -838,7 +872,36 @@ def phone_verification_confirm(request):
         verification_code.user.is_phone_verified = True
         verification_code.user.save()
     
-    return Response({'detail': 'شماره تلفن تأیید شد'})
+    # Return success response with additional info
+    response_data = {
+        'success': True,
+        'detail': 'شماره تلفن با موفقیت تأیید شد',
+        'phone': phone,
+        'verified': True
+    }
+    
+    # If user exists, include user info
+    if verification_code.user:
+        response_data['user'] = UserSerializer(verification_code.user).data
+        response_data['message'] = 'شماره تلفن تأیید شد. حالا می‌توانید وارد شوید.'
+    else:
+        response_data['message'] = 'شماره تلفن تأیید شد. لطفاً وارد شوید.'
+    
+    return Response(response_data)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def check_phone_verification_status(request):
+    """Check if user's phone is verified"""
+    user = request.user
+    
+    return Response({
+        'phone': user.phone,
+        'is_phone_verified': user.is_phone_verified,
+        'verification_required': not user.is_phone_verified,
+        'message': 'شماره تلفن تأیید شده است' if user.is_phone_verified else 'شماره تلفن نیاز به تأیید دارد'
+    })
 
 
 @api_view(["POST"])

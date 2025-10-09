@@ -426,6 +426,26 @@ export async function changePassword(oldPassword: string, newPassword: string) {
   return (await res.json()) as { detail: string };
 }
 
+// Phone Verification Status Check
+export async function checkPhoneVerificationStatus(): Promise<{ 
+  phone: string; 
+  is_phone_verified: boolean; 
+  verification_required: boolean; 
+  message: string; 
+}> {
+  try {
+    return await fetchJson<{ 
+      phone: string; 
+      is_phone_verified: boolean; 
+      verification_required: boolean; 
+      message: string; 
+    }>('/v1/auth/check-phone-verification/');
+  } catch (error) {
+    console.error('Error checking phone verification status:', error);
+    throw error;
+  }
+}
+
 // Phone Verification Functions
 export async function phoneVerificationRequest(phone: string) {
   const res = await fetch(getApiUrl('/v1/auth/phone-verification-request/'), {

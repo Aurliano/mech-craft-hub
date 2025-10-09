@@ -15,6 +15,7 @@ import PasswordStrength from "@/components/PasswordStrength";
 import ErrorDisplay from "@/components/ErrorDisplay";
 import { validatePassword } from "@/lib/passwordValidation";
 import { refreshCSRFToken } from "@/lib/csrfProtection";
+import { navigateToPhoneVerification } from "@/lib/navigation";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -75,13 +76,8 @@ const Register = () => {
     // Since Turnstile is disabled, always use regular registration
     await register(userData);
     
-    // After successful registration, redirect to phone verification
-    navigate("/phone-verification", { 
-      state: { 
-        phone, 
-        mode: 'register' 
-      } 
-    });
+    // After successful registration, redirect to phone verification with proper navigation
+    navigateToPhoneVerification(phone, 'register', navigate);
   };
 
   async function onSubmit(e: React.FormEvent) {
