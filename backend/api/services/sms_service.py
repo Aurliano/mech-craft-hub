@@ -168,10 +168,12 @@ class SMSService:
         # Get SMS sender line from settings
         line = getattr(settings, 'SMS_SENDER', '')
         
+        # According to SMS.ir docs
         payload = {
             "mobile": phone,
-            "text": message,
-            "lineNumber": line  # Add line number parameter
+            "message": message,
+            "lineNumber": line,  # SMS sender number
+            "sendDateTime": None  # Send immediately
         
         try:
             response = requests.post(
@@ -298,9 +300,15 @@ class SMSService:
         
         message = f"کد بازیابی رمز عبور: {code}\nاین کد تا 10 دقیقه معتبر است.\nمک کرفت هاب"
         
+        # Get SMS sender line from settings
+        line = getattr(settings, 'SMS_SENDER', '')
+        
+        # According to SMS.ir docs
         payload = {
             "mobile": phone,
-            "text": message
+            "message": message,
+            "lineNumber": line,
+            "sendDateTime": None  # Send immediately
         }
         
         try:
