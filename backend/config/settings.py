@@ -507,8 +507,23 @@ GEMINI_MODEL_NAME = os.getenv('GEMINI_MODEL_NAME', 'gemini-1.5-flash')
 
 # SMS Configuration
 SMS_KEY = os.getenv('SMS_KEY')
+if not SMS_KEY:
+    logger.error("SMS_KEY is not set in environment variables")
+else:
+    logger.info(f"SMS_KEY is configured: {SMS_KEY[:5]}...")  # Log first 5 chars for security
+
+# SMS.ir sender line number
+SMS_SENDER = os.getenv('SMS_SENDER')
+if not SMS_SENDER:
+    logger.warning("SMS_SENDER is not set in environment variables")
+
+# Template IDs for verification and password reset
 SMS_TEMPLATE_ID_VERIFICATION = os.getenv('SMS_TEMPLATE_ID_VERIFICATION', None)
 SMS_TEMPLATE_ID_PASSWORD_RESET = os.getenv('SMS_TEMPLATE_ID_PASSWORD_RESET', None)
+
+# SMS API Configuration
+SMS_API_TIMEOUT = int(os.getenv('SMS_API_TIMEOUT', '30'))  # 30 seconds default timeout
+SMS_API_BASE_URL = os.getenv('SMS_API_BASE_URL', 'https://api.sms.ir/v1')
 
 # Initialize Sentry
 if SENTRY_DSN:

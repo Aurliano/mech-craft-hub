@@ -19,11 +19,15 @@ class SMSService:
     
     def __init__(self):
         self.api_key = getattr(settings, 'SMS_KEY', None)
-        self.base_url = "https://api.sms.ir/v1"
-        self.timeout = 30
+        self.base_url = getattr(settings, 'SMS_API_BASE_URL', 'https://api.sms.ir/v1')
+        self.timeout = getattr(settings, 'SMS_API_TIMEOUT', 30)
+        self.sender = getattr(settings, 'SMS_SENDER', None)
         
         if not self.api_key:
-            logger.warning("SMS_KEY not configured in settings")
+            logger.error("SMS_KEY not configured in settings")
+        
+        if not self.sender:
+            logger.warning("SMS_SENDER not configured in settings")
     
     def _get_headers(self) -> Dict[str, str]:
         """Get headers for SMS.ir API requests"""
@@ -117,12 +121,33 @@ class SMSService:
                     'cost': response_data.get('data', {}).get('cost'),
                     'message': 'پیامک با موفقیت ارسال شد'
                 }
+            elif response.status_code == 400:
+                logger.error(f"SMS.ir API logical error: {response_data}")
+                return {
+                    'success': False,
+                    'error': response_data.get('message', 'خطای منطقی'),
+                    'message': 'خطای منطقی در ارسال پیامک'
+                }
+            elif response.status_code == 401:
+                logger.error(f"SMS.ir API authentication error: {response_data}")
+                return {
+                    'success': False,
+                    'error': response_data.get('message', 'خطای احراز هویت'),
+                    'message': 'خطای احراز هویت در ارسال پیامک'
+                }
+            elif response.status_code == 429:
+                logger.error(f"SMS.ir API rate limit exceeded: {response_data}")
+                return {
+                    'success': False,
+                    'error': response_data.get('message', 'تعداد درخواست غیر مجاز'),
+                    'message': 'تعداد درخواست‌های ارسال پیامک بیش از حد مجاز است'
+                }
             else:
                 logger.error(f"SMS.ir API error: {response_data}")
                 return {
                     'success': False,
-                    'error': response_data.get('message', 'Unknown error'),
-                    'message': 'خطا در ارسال پیامک'
+                    'error': response_data.get('message', 'خطای ناشناخته'),
+                    'message': 'خطای سیستمی در ارسال پیامک'
                 }
                 
         except requests.exceptions.RequestException as e:
@@ -140,10 +165,13 @@ class SMSService:
         # Create message text
         message = f"کد تأیید شما: {code}\nاین کد تا 2 دقیقه معتبر است.\nمک کرفت هاب"
         
+        # Get SMS sender line from settings
+        line = getattr(settings, 'SMS_SENDER', '')
+        
         payload = {
             "mobile": phone,
-            "text": message
-        }
+            "text": message,
+            "lineNumber": line  # Add line number parameter
         
         try:
             response = requests.post(
