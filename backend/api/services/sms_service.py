@@ -3,9 +3,32 @@ SMS Service for sending verification codes and notifications
 Using SMS.ir API for sending SMS messages
 """
 
+import os
 import requests
 import logging
-from typing import Dict, Any, Optional
+from typing import Dict, Any
+from django.conf import settings
+from django.core.cache import cache
+
+import requests
+import logging
+from typing impor    def _send_regular_sms(self, phone: str, code: str) -> Dict[str, Any]:
+        """Send SMS using regular send endpoint"""
+        url = f"{self.base_url}/send"
+        
+        # Create message text
+        message = f"کد تأیید شما: {code}\nاین کد تا 2 دقیقه معتبر است.\nمک کرفت هاب"
+        
+        # Get SMS sender line from settings
+        line = getattr(settings, 'SMS_SENDER', '')
+        
+        # According to SMS.ir docs
+        payload = {
+            "mobile": phone,
+            "message": message,
+            "lineNumber": line,
+            "sendDateTime": None
+        }onal
 from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
