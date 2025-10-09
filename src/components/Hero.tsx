@@ -74,13 +74,15 @@ const Hero = () => {
             </Button>
           </div>
         </div>
-        {/* Instructional glassy message */}
-        <div className="w-full max-w-4xl mx-auto mb-6 sm:mb-8">
-          <div className="bg-white/20 backdrop-blur-lg border border-white/30 rounded-xl shadow-sm px-4 py-3 sm:px-6 sm:py-4 text-primary-foreground text-base sm:text-lg font-semibold text-center">
-            برای ثبت سفارش، با توجه به نیازمندی خود، از بین خدمات زیر انتخاب نمایید.
+        {/* Instructional glassy message - now transparent and grid-aligned */}
+        <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-0 sm:mt-0 mb-6 sm:mb-8">
+          <div className="col-span-1 sm:col-span-2 lg:col-span-4 flex justify-center">
+            <div className="w-full bg-transparent backdrop-blur-md border border-white/20 rounded-xl px-4 py-3 sm:px-6 sm:py-4 text-primary-foreground text-base sm:text-lg font-semibold text-center shadow-none" style={{background:'transparent'}}>
+              برای ثبت سفارش، با توجه به نیازمندی خود، از بین خدمات زیر انتخاب نمایید.
+            </div>
           </div>
         </div>
-        {/* Services Cards - Moved outside the max-w-3xl div and adjusted grid */}
+        {/* Services Cards - grid below */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-6 sm:mt-8"> {/* Improved responsive grid */}
           {/* Mechanical Engineering Card */}
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 sm:p-6 border border-white/20">
