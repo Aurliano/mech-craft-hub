@@ -69,7 +69,7 @@ const Navbar = () => {
       <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col">
           {/* Top Section: Logo and Site Name */}
-          <div className="flex justify-end items-center py-2 border-b border-border/50">
+          <div className="flex justify-end items-center py-2 border-b border-border/50" dir="rtl">
             <div className="flex items-center gap-3">
               <img src={logo} alt="لوگو" className="h-10 w-auto flex-shrink-0" />
               <span className="text-xl font-bold text-primary">پلتفرم مهندسی سایدا</span>
@@ -77,11 +77,11 @@ const Navbar = () => {
           </div>
           
           {/* Main Navigation */}
-          <div className="flex justify-end items-center h-16">
+          <div className="flex justify-end items-center h-16" dir="rtl">
             {/* Desktop Layout */}
             <div className="hidden lg:flex justify-end items-center w-full gap-4" dir="rtl">
               {/* Navigation Menu Items */}
-              <NavigationMenu className="bg-transparent">
+              <NavigationMenu className="bg-transparent" dir="rtl">
                 <NavigationMenuList className="gap-2">
                   {/* Home */}
                   <NavigationMenuItem>
@@ -94,7 +94,7 @@ const Navbar = () => {
                   </NavigationMenuItem>
 
                   {/* Services Dropdown */}
-                  <NavigationMenuItem>
+                  <NavigationMenuItem dir="rtl">
                     <NavigationMenuTrigger className="bg-transparent hover:bg-muted/50 data-[state=open]:bg-muted/50">
                       <Wrench className="h-4 w-4 ml-2" />
                       خدمات تخصصی
@@ -157,7 +157,7 @@ const Navbar = () => {
                   </NavigationMenuItem>
 
                   {/* Blog */}
-                  <NavigationMenuItem>
+                  <NavigationMenuItem dir="rtl">
                     <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/blog">
                       <BookOpen className="h-4 w-4 ml-2" />
                       مقالات و منابع علمی
@@ -165,7 +165,7 @@ const Navbar = () => {
                   </NavigationMenuItem>
 
                   {/* Portfolio */}
-                  <NavigationMenuItem>
+                  <NavigationMenuItem dir="rtl">
                     <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/portfolio">
                       <Briefcase className="h-4 w-4 ml-2" />
                       نمونه کارها
@@ -173,7 +173,7 @@ const Navbar = () => {
                   </NavigationMenuItem>
 
                   {/* Services Page */}
-                  <NavigationMenuItem>
+                  <NavigationMenuItem dir="rtl">
                     <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/services">
                       <BriefcaseIcon className="h-4 w-4 ml-2" />
                       خدمات ما
@@ -181,7 +181,7 @@ const Navbar = () => {
                   </NavigationMenuItem>
 
                   {/* Contact */}
-                  <NavigationMenuItem>
+                  <NavigationMenuItem dir="rtl">
                     <button 
                       onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
                       className={navigationMenuTriggerStyle()}
