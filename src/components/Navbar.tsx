@@ -65,12 +65,12 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className="bg-background border-b border-border sticky top-0 z-50">
-      <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col">
+    <nav className="bg-background border-b border-border sticky top-0 z-50" dir="rtl">
+      <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8" dir="rtl">
+        <div className="flex flex-col" dir="rtl">
           {/* Top Section: Logo and Site Name */}
           <div className="flex justify-end items-center py-2 border-b border-border/50" dir="rtl">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3" dir="rtl">
               <img src={logo} alt="لوگو" className="h-10 w-auto flex-shrink-0" />
               <span className="text-xl font-bold text-primary">پلتفرم مهندسی سایدا</span>
             </div>
@@ -82,7 +82,7 @@ const Navbar = () => {
             <div className="hidden lg:flex justify-end items-center w-full gap-4" dir="rtl">
               {/* Navigation Menu Items */}
               <NavigationMenu className="bg-transparent" dir="rtl">
-                <NavigationMenuList className="gap-2">
+                <NavigationMenuList className="gap-2" dir="rtl">
                   {/* Home */}
                   <NavigationMenuItem>
                     <NavigationMenuLink asChild>
@@ -101,7 +101,7 @@ const Navbar = () => {
                     </NavigationMenuTrigger>
                     <NavigationMenuContent className="bg-card/95 backdrop-blur-sm border border-border/50 shadow-elegant">
                       <div className="w-[400px] p-4">
-                        <div className="grid grid-cols-1 gap-4">
+                        <div className="grid grid-cols-1 gap-4" dir="rtl">
                           {services.map((service) => (
                             <div key={service.name} className="group">
                               {service.subItems ? (
@@ -109,7 +109,7 @@ const Navbar = () => {
                                   <h3 className="text-sm font-medium text-foreground mb-2 px-3 py-2 bg-muted/30 rounded-md">
                                     {service.name}
                                   </h3>
-                                  <div className="grid grid-cols-1 gap-1 mr-4">
+                                  <div className="grid grid-cols-1 gap-1 mr-4" dir="rtl">
                                     {service.subItems.map((subItem) => (
                                       <div key={subItem.name}>
                                         {subItem.subItems ? (
