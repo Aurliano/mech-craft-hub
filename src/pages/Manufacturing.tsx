@@ -201,30 +201,37 @@ const Manufacturing = () => {
       </section>
 
       {/* Manufacturing Processes Section */}
-      <section className="py-16 bg-muted/30" dir="rtl">
+      <section className="py-4 bg-muted/20" dir="rtl">
         <div className="container mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">فرآیندهای ساخت</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              مجموعه کاملی از فرآیندهای ساخت برای پاسخگویی به نیازهای متنوع صنعتی
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" dir="rtl">
-            {processes.map((process) => (
-              <Card key={process.name} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-                <CardHeader className="text-center">
-                  <process.icon className="h-12 w-12 mx-auto mb-4 text-primary group-hover:scale-110 transition-transform duration-300" />
-                  <CardTitle className="text-lg">{process.name}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground text-center text-sm">
-                    {process.description}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <Collapsible>
+            <CollapsibleTrigger className="w-full flex items-center justify-center gap-2 text-primary hover:text-primary/80 py-3">
+              <span>نمایش فرآیندهای ساخت</span>
+              <ChevronDown className="h-5 w-5 transition-transform data-[state=open]:rotate-180" />
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="text-center mb-8 mt-4">
+                <h2 className="text-2xl font-bold mb-2">فرآیندهای ساخت</h2>
+                <p className="text-muted-foreground max-w-2xl mx-auto">
+                  مجموعه کاملی از فرآیندهای ساخت برای پاسخگویی به نیازهای متنوع صنعتی
+                </p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" dir="rtl">
+                {processes.map((process) => (
+                  <Card key={process.name} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                    <CardHeader className="text-center">
+                      <process.icon className="h-12 w-12 mx-auto mb-4 text-primary group-hover:scale-110 transition-transform duration-300" />
+                      <CardTitle className="text-lg">{process.name}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground text-center text-sm">
+                        {process.description}
+                      </p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         </div>
       </section>
 

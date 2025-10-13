@@ -269,6 +269,26 @@ const DrawingService = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/20" dir="rtl">
       <Navbar />
+      {/* Hero Section */}
+      <section className="relative bg-gradient-to-br from-primary/5 via-background to-secondary/5 py-16 overflow-hidden" dir="rtl">
+        <div className="absolute inset-0 pointer-events-none opacity-10 [mask-image:radial-gradient(circle_at_center,black,transparent_70%)]">
+          <div className="absolute -top-10 left-1/4 w-64 h-64 bg-primary/40 rounded-full blur-3xl" />
+          <div className="absolute -bottom-10 right-1/4 w-64 h-64 bg-secondary/40 rounded-full blur-3xl" />
+        </div>
+        <div className="container mx-auto px-6 relative z-10">
+          <div className="text-center max-w-4xl mx-auto">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-primary bg-clip-text text-transparent">خدمات نقشه‌کشی صنعتی</h1>
+            <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
+              نقشه‌های ساخت، مونتاژ، جوشکاری و مستندسازی حرفه‌ای با استفاده از نرم‌افزارهای روز دنیا.
+            </p>
+            <div className="flex items-center justify-center gap-6 opacity-90">
+              <img src={solidworksLogo} alt="SolidWorks" className="h-10 md:h-12 object-contain" />
+              <img src={inventorLogo} alt="Inventor" className="h-10 md:h-12 object-contain" />
+              <img src={autocadLogo} alt="AutoCAD" className="h-10 md:h-12 object-contain" />
+            </div>
+          </div>
+        </div>
+      </section>
       <div className="container mx-auto px-4 py-8">
         {/* Service Introduction */}
         <div className="text-center mb-12">
@@ -285,7 +305,15 @@ const DrawingService = () => {
               نرم افزارهای مورد استفاده
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Software logos */}
+              <div className="flex items-center justify-center p-4 bg-muted/40 rounded-lg">
+                <img src={solidworksLogo} alt="SolidWorks" className="h-12 object-contain" loading="lazy" />
+              </div>
+              <div className="flex items-center justify-center p-4 bg-muted/40 rounded-lg">
+                <img src={inventorLogo} alt="Inventor" className="h-12 object-contain" loading="lazy" />
+              </div>
+              <div className="flex items-center justify-center p-4 bg-muted/40 rounded-lg">
+                <img src={autocadLogo} alt="AutoCAD" className="h-12 object-contain" loading="lazy" />
+              </div>
             </div>
           </div>
         </div>
