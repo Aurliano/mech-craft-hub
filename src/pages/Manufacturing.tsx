@@ -200,12 +200,28 @@ const Manufacturing = () => {
           </div>
         </div>
       </section>
-
+      
+      {/* CTA Section */}
+      <section className="py-16 bg-gradient-to-r from-primary/5 to-secondary/5">
+        <div className="container mx-auto px-6 text-center">
+          <h2 className="text-3xl font-bold mb-4">آماده شروع پروژه خود هستید؟</h2>
+          <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
+            تیم متخصص ما آماده مشاوره و راهنمایی شما برای انتخاب بهترین کارگاه و فرآیند ساخت است.
+          </p>
+          <button 
+            onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+            className="bg-primary text-primary-foreground px-8 py-3 rounded-lg hover:bg-primary/90 transition-colors font-medium"
+          >
+            درخواست مشاوره رایگان
+          </button>
+        </div>
+      </section>      
+      
       {/* Workshops Section */}
       <section className="py-16" dir="rtl">
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">کارگاه های همکار</h2>
+            <h2 className="text-3xl font-bold mb-4">کارگاه های طرف قرارداد شرکت </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               شبکه ای از کارگاه های متخصص و مجهز برای ارائه بهترین خدمات ساخت
             </p>
@@ -405,21 +421,7 @@ const Manufacturing = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-primary/5 to-secondary/5">
-        <div className="container mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold mb-4">آماده شروع پروژه خود هستید؟</h2>
-          <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
-            تیم متخصص ما آماده مشاوره و راهنمایی شما برای انتخاب بهترین کارگاه و فرآیند ساخت است.
-          </p>
-          <button 
-            onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-            className="bg-primary text-primary-foreground px-8 py-3 rounded-lg hover:bg-primary/90 transition-colors font-medium"
-          >
-            درخواست مشاوره رایگان
-          </button>
-        </div>
-      </section>
+
       <Footer />
     </div>
   );
