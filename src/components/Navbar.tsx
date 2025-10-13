@@ -258,13 +258,12 @@ const Navbar = () => {
             </button>
             
             {/* Mobile Logo and Site Name - Center */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2" dir="rtl">
               <img src={logo} alt="لوگو" className="h-8 w-auto flex-shrink-0" />
               <span className="text-sm font-bold truncate">پلتفرم مهندسی سایدا</span>
             </div>
             
-            {/* Empty div for balance */}
-            <div className="w-10"></div>
+            
           </div>
         </div>
 
