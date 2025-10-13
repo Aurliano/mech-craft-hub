@@ -158,17 +158,44 @@ const Manufacturing = () => {
     <div className="min-h-screen bg-background" dir="rtl">
       <Navbar />
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-primary/5 via-background to-secondary/5 py-20" dir="rtl">
-        <div className="container mx-auto px-6">
+      <section className="relative bg-gradient-to-br from-primary/5 via-background to-secondary/5 py-20 overflow-hidden" dir="rtl">
+        {/* Decorative Process Icons as background */}
+        <div className="pointer-events-none absolute inset-0 flex flex-wrap items-center justify-center opacity-20 select-none z-0">
+          {processes.map((process, i) => {
+            const Icon = process.icon;
+            return (
+              <div
+                key={process.name}
+                className="m-4 flex flex-col items-center"
+                style={{
+                  transform: `scale(${0.95 + (Math.sin(i * 2) * 0.15)}) rotate(${(i % 2 ? 7 : -7) * i}deg)`
+                }}
+              >
+                <Icon className="h-20 w-20 md:h-28 md:w-28 text-primary/60 drop-shadow-xl transition-all duration-500" />
+                <div className="mt-2 text-xs md:text-sm text-primary/60 font-bold text-center whitespace-nowrap">
+                  {process.name}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="container mx-auto px-6 relative z-10">
           <div className="text-center max-w-4xl mx-auto">
-            <Factory className="h-14 w-14 mx-auto mb-6 text-primary" />
-            <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-primary bg-clip-text text-transparent">
-              خدمات ساخت و تولید
-            </h1>
-            <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-              با شبکه گسترده ای از کارگاه های مجهز و متخصص، انواع قطعات صنعتی را با بالاترین کیفیت و دقت تولید می کنیم.
-              از نمونه سازی تا تولید انبوه، همه نیازهای ساخت شما را پوشش می دهیم.
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-primary bg-clip-text text-transparent">خدمات ساخت و تولید</h1>
+            <p className="text-lg text-muted-foreground mb-2 leading-relaxed">
+              با شبکه گسترده‌ای از کارگاه‌های مجهز و متخصص، انواع قطعات صنعتی را با بالاترین کیفیت و دقت تولید می‌کنیم.<br />
+              از نمونه‌سازی تا تولید انبوه، همه نیازهای ساخت شما را پوشش می‌دهیم.
             </p>
+            {/* Guide sentence */}
+            <p className="mt-4 md:mt-6 text-base md:text-lg font-medium text-primary mb-8 animate-pulse">
+              انتخاب کنید چه فرآیندی نیاز دارید و با یک کلیک سفارش خود را شروع کنید.
+            </p>
+            <button
+              onClick={() => document.getElementById('order')?.scrollIntoView({ behavior: 'smooth' })}
+              className="bg-primary text-primary-foreground px-8 py-3 rounded-lg hover:bg-primary/90 shadow-lg transition-colors font-bold text-lg mt-2 md:mt-4"
+            >
+              شروع سفارش
+            </button>
           </div>
         </div>
       </section>
@@ -200,7 +227,7 @@ const Manufacturing = () => {
           </div>
         </div>
       </section>
-      
+
       {/* CTA Section */}
       <section className="py-16 bg-gradient-to-r from-primary/5 to-secondary/5">
         <div className="container mx-auto px-6 text-center">
