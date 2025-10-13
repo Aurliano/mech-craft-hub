@@ -56,6 +56,20 @@ const BlogPage: React.FC = () => {
     { value: 'video', label: 'ویدیو', icon: PlayCircle },
   ];
 
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch(getApiUrl('/api/v1/scientific-content/categories/'));
+      if (!response.ok) throw new Error('خطا در دریافت دسته‌بندی‌ها');
+      const data = await response.json();
+      let cats = data.categories;
+      if (!cats && Array.isArray(data)) cats = data;
+      setCategories(Array.isArray(cats) ? cats : []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+      setCategories([]); // prevent future errors
+    }
+  };
+
   const fetchContent = async () => {
     try {
       setIsLoading(true);
@@ -69,26 +83,19 @@ const BlogPage: React.FC = () => {
 
       const response = await fetch(getApiUrl(`/api/v1/scientific-content/?${params}`));
       if (!response.ok) throw new Error('خطا در دریافت مطالب علمی');
-      
       const data = await response.json();
-      setContent(data.results);
-      setTotalPages(data.num_pages);
+      let results = data.results || data;
+      if (!Array.isArray(results) && typeof results === 'object' && results !== null && Object.values(results).find(Array.isArray)) {
+        results = Object.values(results).find(Array.isArray) || [];
+      }
+      setContent(Array.isArray(results) ? results : []);
+      setTotalPages(data.num_pages || 1);
     } catch (error) {
       console.error('Error fetching content:', error);
+      setContent([]);
+      setTotalPages(1);
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch(getApiUrl('/api/v1/scientific-content/categories/'));
-      if (!response.ok) throw new Error('خطا در دریافت دسته‌بندی‌ها');
-      
-      const data = await response.json();
-      setCategories(data);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
     }
   };
 
@@ -278,7 +285,7 @@ const BlogPage: React.FC = () => {
                 >
                   <span className="text-sm">همه دسته‌بندی‌ها</span>
                 </button>
-                {categories.map((category) => (
+                {Array.isArray(categories) && categories.map((category) => (
                   <button
                     key={category.value}
                     onClick={() => handleCategoryChange(category.value)}
@@ -300,7 +307,7 @@ const BlogPage: React.FC = () => {
 
           {/* Main Content */}
           <div className="lg:col-span-3">
-            {content.length > 0 ? (
+            {Array.isArray(content) && content.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 {content.map((item) => {
                   const TypeIcon = getTypeIcon(item.content_type);

@@ -562,11 +562,11 @@ class ScientificContentViewSet(viewsets.ModelViewSet):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def get_scientific_content_categories(request):
-    """دریافت دسته‌بندی‌های محتوای علمی"""
+    """دریافت دسته‌بندی‌های محتوای علمی (آرایه مستقیم)"""
     categories = ScientificContent.CATEGORY_CHOICES
-    return Response({
-        'categories': [{'value': value, 'label': label} for value, label in categories]
-    })
+    return Response([
+        {'value': value, 'label': label} for value, label in categories
+    ])
 
 
 class UploadView(APIView):
