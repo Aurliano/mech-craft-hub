@@ -20,6 +20,22 @@ import { SelectedMachine } from '@/data/machines';
 const MyWorkshops = () => {
   const { user, isContractor } = useAuth();
   const { data: workshops, isLoading, refetch } = useContractorWorkshops();
+  type Workshop = {
+    id: string | number;
+    name: string;
+    is_active?: boolean;
+    address?: string;
+    description?: string;
+    province?: string;
+    city?: string;
+    postal_address?: string;
+    manager_name?: string;
+    manager_phone?: string;
+    capabilities?: string[];
+    machines?: { name: string; precision: string; quantity?: number }[];
+    created_at?: string;
+  };
+  const normalizedWorkshops: Workshop[] = Array.isArray(workshops) ? (workshops as unknown as Workshop[]) : [];
   const createWorkshopMutation = useCreateContractorWorkshop();
   const { data: manufacturingCheck, isLoading: isLoadingManufacturingCheck } = useCheckContractorManufacturingService();
   const { toast } = useToast();
@@ -342,9 +358,9 @@ const MyWorkshops = () => {
         </div>
 
         {/* Workshops List */}
-        {workshops && workshops.length > 0 ? (
+        {normalizedWorkshops.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {workshops.map((workshop) => (
+            {normalizedWorkshops.map((workshop) => (
               <Card key={workshop.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex justify-between items-start">

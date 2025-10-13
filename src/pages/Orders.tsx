@@ -10,6 +10,25 @@ import { useAddOrderToCart, useAcceptQuote, useDownloadInvoice } from '@/hooks/u
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 
+interface Order {
+  id: string;
+  order_number: string;
+  notes?: string;
+  status: string;
+  created_at: string;
+  total_amount?: number;
+  items?: unknown[];
+}
+
+function toOrderArray(input: unknown): Order[] {
+  if (!Array.isArray(input)) return [];
+  return input.filter((o): o is Order => {
+    if (!o || typeof o !== 'object') return false;
+    const obj = o as Record<string, unknown>;
+    return typeof obj.id === 'string' && typeof obj.order_number === 'string' && typeof obj.status === 'string';
+  });
+}
+
 const Orders = () => {
   const { orders, isLoadingDashboard } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
@@ -39,12 +58,12 @@ const Orders = () => {
     );
   }
 
-  const filteredOrders = Array.isArray(orders) ? orders.filter(order => {
+  const filteredOrders = toOrderArray(orders).filter((order) => {
     const matchesSearch = order.order_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         order.notes?.toLowerCase().includes(searchTerm.toLowerCase());
+                         (order.notes || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     return matchesSearch && matchesStatus;
-  }) : [];
+  });
 
   const getStatusBadge = (status: string) => {
     const statusMap = {

@@ -20,6 +20,11 @@ const Profile = () => {
     last_name: user?.last_name || '',
   });
 
+  // Fields that might not exist on BasicUser type
+  const createdAt = (user as unknown as Record<string, unknown>)?.created_at as string | undefined;
+  const isEmailVerified = (user as unknown as Record<string, unknown>)?.is_email_verified as boolean | undefined;
+  const isPhoneVerified = (user as unknown as Record<string, unknown>)?.is_phone_verified as boolean | undefined;
+
   if (isLoadingDashboard) {
     return (
       <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
@@ -120,7 +125,7 @@ const Profile = () => {
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold">{user?.username}</h3>
-                    <p className="text-gray-600">عضو از {new Date(user?.created_at || '').toLocaleDateString('fa-IR')}</p>
+                    <p className="text-gray-600">عضو از {new Date(createdAt || '').toLocaleDateString('fa-IR')}</p>
                   </div>
                 </div>
 
@@ -150,10 +155,10 @@ const Profile = () => {
                       />
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant={user?.is_email_verified ? 'default' : 'secondary'}>
-                        {user?.is_email_verified ? 'تایید شده' : 'تایید نشده'}
+                      <Badge variant={isEmailVerified ? 'default' : 'secondary'}>
+                        {isEmailVerified ? 'تایید شده' : 'تایید نشده'}
                       </Badge>
-                      {!user?.is_email_verified && (
+                      {!isEmailVerified && (
                         <Button variant="link" size="sm" className="p-0 h-auto">
                           ارسال لینک تایید
                         </Button>
@@ -174,10 +179,10 @@ const Profile = () => {
                       />
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant={user?.is_phone_verified ? 'default' : 'secondary'}>
-                        {user?.is_phone_verified ? 'تایید شده' : 'تایید نشده'}
+                      <Badge variant={isPhoneVerified ? 'default' : 'secondary'}>
+                        {isPhoneVerified ? 'تایید شده' : 'تایید نشده'}
                       </Badge>
-                      {!user?.is_phone_verified && (
+                      {!isPhoneVerified && (
                         <Button variant="link" size="sm" className="p-0 h-auto">
                           تایید شماره
                         </Button>
@@ -210,7 +215,7 @@ const Profile = () => {
                     <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-md">
                       <Calendar className="h-4 w-4 text-gray-400" />
                       <span className="text-sm text-gray-600">
-                        {new Date(user?.created_at || '').toLocaleDateString('fa-IR')}
+                        {new Date(createdAt || '').toLocaleDateString('fa-IR')}
                       </span>
                     </div>
                   </div>
@@ -259,12 +264,12 @@ const Profile = () => {
                       <div>
                         <h4 className="font-medium">تایید شماره تلفن</h4>
                         <p className="text-sm text-gray-600">
-                          {user?.is_phone_verified ? 'تایید شده' : 'تایید نشده'}
+                          {isPhoneVerified ? 'تایید شده' : 'تایید نشده'}
                         </p>
                       </div>
                     </div>
                     <Button variant="outline">
-                      {user?.is_phone_verified ? 'تایید شده' : 'تایید شماره'}
+                      {isPhoneVerified ? 'تایید شده' : 'تایید شماره'}
                     </Button>
                   </div>
                 </div>

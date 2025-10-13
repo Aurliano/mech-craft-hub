@@ -15,7 +15,7 @@ import {
   getFallbackCaptchaChallenge, verifyFallbackCaptcha,
   getServiceTabs, getTabFields, getScopes, getServices, getServiceFields, getAllServices
 } from '@/lib/api';
-import { navigateWithRefresh } from '@/lib/navigation';
+import { navigateAfterLogin, navigateAfterPhoneVerification, navigateAfterRegister } from '@/lib/navigation';
 
 export function useMe() {
   const enabled = Boolean(getAccessToken());
@@ -31,11 +31,12 @@ export function useLogin() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (params: { username: string; password: string }) => loginRequest(params),
-    onSuccess: (data) => {
-      setTokens(data.access, data.refresh);
-      qc.invalidateQueries({ queryKey: ['me'] });
-      // Use navigation utility for proper redirect
-      navigateWithRefresh('/');
+    onSuccess: async () => {
+      // Tokens set by api.loginRequest typically; ensure set if needed
+      // Fetch user and route to role-based dashboard
+      await qc.invalidateQueries({ queryKey: ['me'] });
+      const me = await meRequest();
+      navigateAfterLogin(me);
     },
   });
 }
@@ -44,13 +45,9 @@ export function useCustomerRegister() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: customerRegisterRequest,
-    onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: ['me'] });
-      // Check if phone verification is required
-      if (data.phone_verification_required) {
-        console.log('Phone verification required for:', data.phone);
-      }
-      // Don't redirect here, let the component handle it after user data is loaded
+    onSuccess: async (data: { phone?: string }) => {
+      await qc.invalidateQueries({ queryKey: ['me'] });
+      navigateAfterRegister(data.phone || '');
     },
   });
 }
@@ -59,13 +56,9 @@ export function useContractorRegister() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: contractorRegisterRequest,
-    onSuccess: (data) => {
-      qc.invalidateQueries({ queryKey: ['me'] });
-      // Check if phone verification is required
-      if (data.phone_verification_required) {
-        console.log('Phone verification required for:', data.phone);
-      }
-      // Don't redirect here, let the component handle it after user data is loaded
+    onSuccess: async (data: { phone?: string }) => {
+      await qc.invalidateQueries({ queryKey: ['me'] });
+      navigateAfterRegister(data.phone || '');
     },
   });
 }
@@ -75,8 +68,8 @@ export function useLogout() {
   return () => {
     clearTokens();
     qc.clear();
-    // Use navigation utility for proper redirect
-    navigateWithRefresh('/');
+    // پس از خروج، به صفحه ورود برویم
+    navigateAfterPhoneVerification();
   };
 }
 
@@ -92,8 +85,8 @@ export function usePasswordResetConfirm() {
     mutationFn: ({ token, newPassword }: { token: string; newPassword: string }) =>
       passwordResetConfirm(token, newPassword),
     onSuccess: () => {
-      // Use navigation utility for proper redirect
-      navigateWithRefresh('/');
+      // پس از تنظیم رمز، به صفحه ورود برو
+      navigateAfterPhoneVerification();
     },
   });
 }
@@ -120,11 +113,9 @@ export function usePhoneVerificationConfirm() {
   return useMutation({
     mutationFn: ({ phone, code }: { phone: string; code: string }) =>
       phoneVerificationConfirm(phone, code),
-    onSuccess: (data) => {
-      // Use navigation utility for proper redirect
-      if (data.success) {
-        navigateWithRefresh('/');
-      }
+    onSuccess: (_data: { detail: string }) => {
+      // پس از تایید، به صفحه ورود برو
+      navigateAfterPhoneVerification();
     },
   });
 }
@@ -272,7 +263,7 @@ export function useCreateOrder() {
 
 export function useGetOrderById(orderId: string | undefined) {
   const enabled = Boolean(getAccessToken() && orderId);
-  return useQuery<any>({
+  return useQuery<unknown>({
     queryKey: ['order', orderId],
     queryFn: () => getOrderById(orderId!),
     enabled,
@@ -309,7 +300,7 @@ export function useCreateQuote() {
 
 export function useGetQuotesByOrder(orderId: string | undefined) {
   const enabled = Boolean(getAccessToken() && orderId);
-  return useQuery<any[]>({
+  return useQuery<unknown[]>({
     queryKey: ['quotes', orderId],
     queryFn: () => getQuotesByOrder(orderId!),
     enabled,
@@ -375,7 +366,7 @@ export function useRemoveFromCart() {
 export function useProcessPayment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ orderId, paymentData }: { orderId: string; paymentData: any }) =>
+    mutationFn: ({ orderId, paymentData }: { orderId: string; paymentData: { amount: number; method: string; gateway_response?: unknown } }) =>
       processPayment(orderId, paymentData),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['userOrders'] });
@@ -393,7 +384,7 @@ export function useDownloadInvoice() {
 
 // Notification Hooks
 export function useNotifications() {
-  return useQuery<any[]>({
+  return useQuery<unknown[]>({
     queryKey: ['notifications'],
     queryFn: getUserNotifications,
     enabled: Boolean(getAccessToken()),
@@ -424,7 +415,7 @@ export function useMarkAllNotificationsRead() {
 export function useContractorOrders() {
   const { user } = useAuth();
   const enabled = Boolean(getAccessToken()) && user?.role?.name === 'contractor';
-  return useQuery<any[]>({
+  return useQuery<unknown[]>({
     queryKey: ['contractorOrders'],
     queryFn: getContractorOrders,
     enabled,
@@ -435,7 +426,7 @@ export function useContractorOrders() {
 export function useContractorProposals() {
   const { user } = useAuth();
   const enabled = Boolean(getAccessToken()) && user?.role?.name === 'contractor';
-  return useQuery<any[]>({
+  return useQuery<unknown[]>({
     queryKey: ['contractorProposals'],
     queryFn: getContractorProposals,
     enabled,
@@ -446,7 +437,7 @@ export function useContractorProposals() {
 export function useContractorActiveProjects() {
   const { user } = useAuth();
   const enabled = Boolean(getAccessToken()) && user?.role?.name === 'contractor';
-  return useQuery<any[]>({
+  return useQuery<unknown[]>({
     queryKey: ['contractorActiveProjects'],
     queryFn: getContractorActiveProjects,
     enabled,
@@ -457,7 +448,7 @@ export function useContractorActiveProjects() {
 export function useContractorStats() {
   const { user } = useAuth();
   const enabled = Boolean(getAccessToken()) && user?.role?.name === 'contractor';
-  return useQuery<any>({
+  return useQuery<unknown>({
     queryKey: ['contractorStats'],
     queryFn: getContractorStats,
     enabled,
@@ -480,9 +471,29 @@ export function useCreateContractorProposal() {
 export function useContractorWorkshops() {
   const { user } = useAuth();
   const enabled = Boolean(getAccessToken()) && user?.role?.name === 'contractor';
-  return useQuery<any[]>({
+  type ContractorWorkshop = {
+    id: string | number;
+    name: string;
+    description?: string;
+    is_active?: boolean;
+    address?: string;
+    postal_address?: string;
+    manager_name?: string;
+    manager_phone?: string;
+    province?: string;
+    city?: string;
+    capabilities?: string[];
+    machines?: { name: string; precision: string }[];
+    rating?: number;
+    completedProjects?: number;
+    created_at?: string;
+  };
+  return useQuery<ContractorWorkshop[]>({
     queryKey: ['contractorWorkshops'],
-    queryFn: getContractorWorkshops,
+    queryFn: async () => {
+      const data = await getContractorWorkshops();
+      return Array.isArray(data) ? (data as unknown as ContractorWorkshop[]) : [];
+    },
     enabled,
     retry: false,
   });
@@ -514,11 +525,10 @@ export function useLoginWithCaptcha() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: loginWithTurnstile,
-    onSuccess: (data) => {
-      setTokens(data.access, data.refresh);
-      qc.invalidateQueries({ queryKey: ['me'] });
-      // Use navigation utility for proper redirect
-      navigateWithRefresh('/');
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ['me'] });
+      const me = await meRequest();
+      navigateAfterLogin(me);
     },
   });
 }
@@ -527,10 +537,9 @@ export function useRegisterWithCaptcha() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: registerWithTurnstile,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['me'] });
-      // Use navigation utility for proper redirect
-      navigateWithRefresh('/');
+    onSuccess: async (data: { phone?: string }) => {
+      await qc.invalidateQueries({ queryKey: ['me'] });
+      navigateAfterRegister(data.phone || '');
     },
   });
 }

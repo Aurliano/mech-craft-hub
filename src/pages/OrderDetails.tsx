@@ -21,7 +21,7 @@ interface OrderItem {
     name: string;
     description: string;
   };
-  field_values: Record<string, any>;
+  field_values: Record<string, unknown>;
   needs_documentation: boolean;
   status: string;
   price?: number;
@@ -81,13 +81,13 @@ const OrderDetails = () => {
 
   useEffect(() => {
     if (orderData) {
-      setOrder(orderData);
+      setOrder(orderData as unknown as Order);
     }
   }, [orderData]);
 
   useEffect(() => {
     if (quotesData) {
-      setQuotes(quotesData);
+      setQuotes(quotesData as unknown as Quote[]);
     }
   }, [quotesData]);
 
@@ -138,14 +138,14 @@ const OrderDetails = () => {
     );
   };
 
-  const formatFieldValue = (value: any): string => {
+  const formatFieldValue = (value: unknown): string => {
     if (value === null || value === undefined) return 'تعریف نشده';
     if (typeof value === 'boolean') return value ? 'بله' : 'خیر';
     if (typeof value === 'object') return JSON.stringify(value);
     return String(value);
   };
 
-  const renderFieldValues = (fieldValues: Record<string, any>) => {
+  const renderFieldValues = (fieldValues: Record<string, unknown>) => {
     return Object.entries(fieldValues).map(([key, value]) => (
       <div key={key} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
         <span className="font-medium text-gray-700">{key}:</span>

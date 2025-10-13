@@ -86,7 +86,8 @@ for file_name in files:
         status='published',
         author=ADMIN_USER,
         file_name=file_name,
-        download_url=f'{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/{file_name}'
+        file_path=file_name,
+        download_url=(f'{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/{file_name}')[:200]
     )
     print(f'Added: {file_name}')
     count_new += 1

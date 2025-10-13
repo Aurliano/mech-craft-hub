@@ -153,9 +153,10 @@ const TicketChat: React.FC<TicketChatProps> = ({
       }
     } catch (error: unknown) {
       console.error('Error sending message:', error);
+      const err = error as { response?: { data?: { error?: string } } };
       toast({
         title: 'خطا',
-        description: error.response?.data?.error || 'خطا در ارسال پیام',
+        description: err.response?.data?.error || 'خطا در ارسال پیام',
         variant: 'destructive'
       });
     } finally {

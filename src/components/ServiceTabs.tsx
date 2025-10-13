@@ -55,6 +55,35 @@ const ServiceTabs: React.FC<ServiceTabsProps> = ({
   const { data: tabs = [], isLoading: tabsLoading, error: tabsError } = useServiceTabs(serviceId);
   const { data: fields = [], isLoading: fieldsLoading } = useServiceFields(serviceId, activeTab);
 
+  // Normalize API fields (which may have string type) into strict union-typed fields
+  const normalizedFields: ServiceField[] = Array.isArray(fields)
+    ? (fields as unknown as Array<{
+        id: string;
+        name: string;
+        field_key: string;
+        type: string;
+        options?: Array<{ value?: unknown; label?: unknown } | unknown>;
+        is_required: boolean;
+        order: number;
+        help_text?: string;
+        validation_rules?: Record<string, unknown>;
+      }>).map((f) => {
+        const allowedTypes: ServiceField['type'][] = ['text', 'number', 'file', 'select', 'multiselect', 'checkbox', 'date', 'textarea'];
+        const safeType = (allowedTypes.includes(f.type as ServiceField['type']) ? f.type : 'text') as ServiceField['type'];
+        const options = Array.isArray(f.options)
+          ? f.options.map((opt) => {
+              if (opt && typeof opt === 'object' && 'value' in opt) {
+                const o = opt as { value?: unknown; label?: unknown };
+                return { value: String(o.value ?? ''), label: String(o.label ?? o.value ?? '') };
+              }
+              return { value: String(opt), label: String(opt) };
+            })
+          : undefined;
+        const { id, name, field_key, is_required, order, help_text, validation_rules } = f;
+        return { id, name, field_key, type: safeType, options, is_required, order, help_text, validation_rules } as ServiceField;
+      })
+    : [];
+
   // Set first tab as active when tabs are loaded
   React.useEffect(() => {
     if (tabs && tabs.length > 0 && !activeTab) {
@@ -105,7 +134,7 @@ const ServiceTabs: React.FC<ServiceTabsProps> = ({
             <CardContent>
               <TabFields 
                 tabId={tab.id}
-                fields={fields}
+                fields={normalizedFields}
                 fieldsLoading={fieldsLoading}
                 onFieldChange={onFieldChange}
                 fieldValues={fieldValues[tab.id] || {}}
@@ -236,7 +265,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onChange })
     case 'text':
       return (
         <Input
-          value={value || ''}
+          value={String(value ?? '')}
           onChange={(e) => onChange(e.target.value)}
           placeholder={field.help_text}
           className="text-right"
@@ -247,7 +276,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onChange })
       return (
         <Input
           type="number"
-          value={value || ''}
+          value={String(value ?? '')}
           onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
           placeholder={field.help_text}
           className="text-right"
@@ -257,7 +286,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onChange })
     case 'textarea':
       return (
         <Textarea
-          value={value || ''}
+          value={String(value ?? '')}
           onChange={(e) => onChange(e.target.value)}
           placeholder={field.help_text}
           className="text-right"
@@ -268,21 +297,21 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onChange })
     case 'checkbox':
       return (
         <Checkbox
-          checked={value || false}
-          onCheckedChange={onChange}
+          checked={value === true}
+          onCheckedChange={(checked) => onChange(checked === true)}
         />
       );
       
     case 'select':
       return (
-        <Select value={value || ''} onValueChange={onChange}>
+        <Select value={String(value ?? '')} onValueChange={(val) => onChange(val)}>
           <SelectTrigger>
             <SelectValue placeholder="انتخاب کنید" />
           </SelectTrigger>
           <SelectContent>
-            {field.options?.map((option: { value?: string; label?: string } | string, index: number) => {
-              const optionValue = typeof option === 'string' ? option : option.value || option.label || String(option);
-              const optionLabel = typeof option === 'string' ? option : option.label || option.value || String(option);
+            {field.options?.map((option, index) => {
+              const optionValue = option.value;
+              const optionLabel = option.label;
               return (
                 <SelectItem key={optionValue || index} value={optionValue}>
                   {optionLabel}
@@ -296,20 +325,20 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onChange })
     case 'multiselect':
       return (
         <div className="space-y-2">
-          {field.options?.map((option: { value?: string; label?: string } | string, index: number) => {
-            const optionValue = typeof option === 'string' ? option : option.value || option.label || String(option);
-            const optionLabel = typeof option === 'string' ? option : option.label || option.value || String(option);
+          {field.options?.map((option, index) => {
+            const optionValue = option.value;
+            const optionLabel = option.label;
+            const currentValues = Array.isArray(value) ? (value as string[]) : [];
             return (
               <div key={optionValue || index} className="flex items-center space-x-2 space-x-reverse">
                 <Checkbox
                   id={`${field.field_key}-${optionValue}`}
-                  checked={value?.includes(optionValue) || false}
+                  checked={currentValues.includes(optionValue)}
                   onCheckedChange={(checked) => {
-                    const currentValues = value || [];
-                    if (checked) {
+                    if (checked === true) {
                       onChange([...currentValues, optionValue]);
                     } else {
-                      onChange(currentValues.filter((v: any) => v !== optionValue));
+                      onChange(currentValues.filter((v) => v !== optionValue));
                     }
                   }}
                 />
@@ -338,7 +367,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onChange })
       return (
         <Input
           type="date"
-          value={value || ''}
+          value={String(value ?? '')}
           onChange={(e) => onChange(e.target.value)}
           className="text-right"
         />
@@ -347,7 +376,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onChange })
     default:
       return (
         <Input
-          value={value || ''}
+          value={String(value ?? '')}
           onChange={(e) => onChange(e.target.value)}
           placeholder={field.help_text}
           className="text-right"

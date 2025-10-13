@@ -25,6 +25,28 @@ interface Ticket {
   messages_count?: number;
 }
 
+interface TicketAttachment {
+  id: string;
+  filename: string;
+  original_filename: string;
+  file_url: string;
+  file_size_mb: number;
+  mime_type: string;
+  attachment_type: string;
+  is_processed: boolean;
+  ocr_text?: string;
+}
+
+// Helper: normalize API response to typed array
+function asArray<T>(resp: unknown): T[] {
+  if (Array.isArray(resp)) return resp as T[];
+  if (resp && typeof resp === 'object' && 'results' in (resp as Record<string, unknown>)) {
+    const results = (resp as { results?: unknown }).results;
+    if (Array.isArray(results)) return results as T[];
+  }
+  return [] as T[];
+}
+
 interface TicketMessage {
   id: string;
   sender: string;
@@ -32,7 +54,7 @@ interface TicketMessage {
   content: string;
   is_internal: boolean;
   created_at: string;
-  attachments: any[];
+  attachments: TicketAttachment[];
 }
 
 const Support = () => {
@@ -51,7 +73,7 @@ const Support = () => {
     try {
       setLoading(true);
       const response = await api.getTickets();
-      setTickets(Array.isArray(response) ? response : response.results || []);
+      setTickets(asArray<Ticket>(response));
     } catch (error) {
       console.error('Error fetching tickets:', error);
       toast({
@@ -67,7 +89,7 @@ const Support = () => {
   const fetchTicketMessages = async (ticketId: string) => {
     try {
       const response = await api.getTicketMessages(ticketId);
-      setTicketMessages(Array.isArray(response) ? response : response.results || []);
+      setTicketMessages(asArray<TicketMessage>(response));
     } catch (error) {
       console.error('Error fetching ticket messages:', error);
       toast({

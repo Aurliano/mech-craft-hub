@@ -33,7 +33,7 @@ interface Order {
   id: string;
   order_number: string;
   status: string;
-  total_amount: number;
+  total_amount?: number;
   created_at: string;
 }
 
@@ -210,16 +210,16 @@ const CreateTicketModal: React.FC<CreateTicketModalProps> = ({
       }
     } catch (error: unknown) {
       console.error('Error creating ticket:', error);
-      
-      if (error.response?.data?.violations) {
+      const err = error as { response?: { data?: { violations?: { subject?: string; content?: string }; error?: string } } };
+      if (err.response?.data?.violations) {
         setErrors({
-          subject: error.response.data.violations.subject || '',
-          content: error.response.data.violations.content || ''
+          subject: err.response.data.violations.subject || '',
+          content: err.response.data.violations.content || ''
         });
       } else {
         toast({
           title: 'خطا',
-          description: error.response?.data?.error || 'خطا در ایجاد تیکت',
+          description: err.response?.data?.error || 'خطا در ایجاد تیکت',
           variant: 'destructive'
         });
       }
@@ -294,7 +294,7 @@ const CreateTicketModal: React.FC<CreateTicketModalProps> = ({
                 <SelectContent>
                   {orders.map((order) => (
                     <SelectItem key={order.id} value={order.id}>
-                      {order.order_number} - {order.total_amount.toLocaleString()} تومان
+                      {order.order_number} - {(order.total_amount ?? 0).toLocaleString()} تومان
                     </SelectItem>
                   ))}
                 </SelectContent>

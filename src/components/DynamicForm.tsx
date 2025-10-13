@@ -122,7 +122,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ service, onSubmit, loading = 
   };
 
   const renderField = (field: ServiceField) => {
-    const value = fieldValues[field.field_key] || '';
+    const value = fieldValues[field.field_key] ?? '';
     const isRequired = field.is_required;
 
     switch (field.type) {
@@ -134,7 +134,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ service, onSubmit, loading = 
             </Label>
             <Input
               id={field.field_key}
-              value={value}
+              value={String(value)}
               onChange={(e) => handleFieldChange(field.field_key, e.target.value)}
               placeholder={field.help_text}
               required={isRequired}
@@ -150,7 +150,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ service, onSubmit, loading = 
             </Label>
             <Textarea
               id={field.field_key}
-              value={value}
+              value={String(value)}
               onChange={(e) => handleFieldChange(field.field_key, e.target.value)}
               placeholder={field.help_text}
               required={isRequired}
@@ -167,7 +167,7 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ service, onSubmit, loading = 
             <Input
               id={field.field_key}
               type="number"
-              value={value}
+              value={String(value)}
               onChange={(e) => handleFieldChange(field.field_key, e.target.value)}
               placeholder={field.help_text}
               required={isRequired}
@@ -181,14 +181,14 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ service, onSubmit, loading = 
             <Label htmlFor={field.field_key}>
               {field.name} {isRequired && <span className="text-red-500">*</span>}
             </Label>
-            <Select value={value} onValueChange={(val) => handleFieldChange(field.field_key, val)}>
+            <Select value={String(value)} onValueChange={(val) => handleFieldChange(field.field_key, val)}>
               <SelectTrigger>
                 <SelectValue placeholder={field.help_text} />
               </SelectTrigger>
               <SelectContent>
                 {field.options?.map((option, index) => (
-                  <SelectItem key={index} value={option.value || option}>
-                    {option.label || option}
+                  <SelectItem key={index} value={option.value}>
+                    {option.label}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -201,8 +201,8 @@ const DynamicForm: React.FC<DynamicFormProps> = ({ service, onSubmit, loading = 
           <div key={field.id} className="flex items-center space-x-2">
             <Checkbox
               id={field.field_key}
-              checked={value}
-              onCheckedChange={(checked) => handleFieldChange(field.field_key, checked)}
+              checked={value === true}
+              onCheckedChange={(checked) => handleFieldChange(field.field_key, checked === true)}
               required={isRequired}
             />
             <Label htmlFor={field.field_key}>

@@ -24,6 +24,28 @@ interface UploadedFile {
   error?: string;
 }
 
+type FieldType = 'text' | 'number' | 'file' | 'select' | 'multiselect' | 'checkbox' | 'date' | 'textarea';
+
+interface ValidationRules {
+  min?: number;
+  max?: number;
+  minLength?: number;
+  maxLength?: number;
+  pattern?: string;
+}
+
+interface ServiceFieldModel {
+  id: string;
+  name: string;
+  field_key: string;
+  type: FieldType | string; // API may return plain string; we normalize at usage time
+  options?: { value: string; label: string }[];
+  is_required: boolean;
+  order: number;
+  help_text?: string;
+  validation_rules?: ValidationRules;
+}
+
 interface DynamicServiceFormProps {
   serviceId: string;
   formData: Record<string, unknown>;
@@ -57,45 +79,47 @@ export function DynamicServiceForm({
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
 
+  // Coerce API fields to typed ServiceField[] for internal use
+  const normalizedFields: ServiceFieldModel[] = Array.isArray(fields)
+    ? (fields as unknown as ServiceFieldModel[])
+    : [];
+
   // Validation functions
-  const validateField = (field: ServiceField, value: unknown): string | null => {
+  const validateField = (field: ServiceFieldModel, value: unknown): string | null => {
     if (field.is_required && (!value || (Array.isArray(value) && value.length === 0))) {
       return `${field.name} الزامی است`;
     }
 
-    if (field.type === 'number' && value) {
-      const numValue = Number(value);
-      if (isNaN(numValue)) {
-        return `${field.name} باید عدد معتبر باشد`;
-      }
-      
-      if (field.validation_rules) {
-        const rules = field.validation_rules;
+    if ((field.type === 'number' || field.type === 'text') && value && field.validation_rules) {
+      const rules = field.validation_rules;
+      if (field.type === 'number') {
+        const numValue = Number(value);
+        if (isNaN(numValue)) {
+          return `${field.name} باید عدد معتبر باشد`;
+        }
         if (rules.min !== undefined && numValue < rules.min) {
           return `${field.name} باید حداقل ${rules.min} باشد`;
         }
         if (rules.max !== undefined && numValue > rules.max) {
           return `${field.name} باید حداکثر ${rules.max} باشد`;
         }
-      }
-    }
-
-    if (field.type === 'text' && value && field.validation_rules) {
-      const rules = field.validation_rules;
-      if (rules.minLength && value.length < rules.minLength) {
-        return `${field.name} باید حداقل ${rules.minLength} کاراکتر باشد`;
-      }
-      if (rules.maxLength && value.length > rules.maxLength) {
-        return `${field.name} باید حداکثر ${rules.maxLength} کاراکتر باشد`;
-      }
-      if (rules.pattern && !new RegExp(rules.pattern).test(value)) {
-        return `${field.name} فرمت صحیح ندارد`;
+      } else if (field.type === 'text') {
+        const str = String(value);
+        if (rules.minLength !== undefined && str.length < rules.minLength) {
+          return `${field.name} باید حداقل ${rules.minLength} کاراکتر باشد`;
+        }
+        if (rules.maxLength !== undefined && str.length > rules.maxLength) {
+          return `${field.name} باید حداکثر ${rules.maxLength} کاراکتر باشد`;
+        }
+        if (rules.pattern && !new RegExp(rules.pattern).test(str)) {
+          return `${field.name} فرمت صحیح ندارد`;
+        }
       }
     }
 
     if (field.type === 'file' && field.is_required) {
-      const files = uploadedFiles[field.field_key] || [];
-      const completedFiles = files.filter(f => f.status === 'completed');
+      const filesForField = uploadedFiles[field.field_key] || [];
+      const completedFiles = filesForField.filter(f => f.status === 'completed');
       if (completedFiles.length === 0) {
         return `${field.name} الزامی است`;
       }
@@ -108,11 +132,11 @@ export function DynamicServiceForm({
     const errors: Record<string, string> = {};
     let isValid = true;
 
-    fields.forEach(field => {
+    normalizedFields.forEach(field => {
       const value = formData[field.field_key];
-      const error = validateField(field, value);
-      if (error) {
-        errors[field.field_key] = error;
+      const err = validateField(field, value);
+      if (err) {
+        errors[field.field_key] = err;
         isValid = false;
       }
     });
@@ -121,13 +145,9 @@ export function DynamicServiceForm({
     return isValid;
   };
 
-  const handleFieldChange = (fieldKey: string, value: any) => {
+  const handleFieldChange = (fieldKey: string, value: unknown) => {
     onFieldChange(fieldKey, value);
-    
-    // Mark field as touched
     setTouchedFields(prev => new Set([...prev, fieldKey]));
-    
-    // Clear validation error for this field
     if (validationErrors[fieldKey]) {
       setValidationErrors(prev => {
         const newErrors = { ...prev };
@@ -142,8 +162,7 @@ export function DynamicServiceForm({
       ...prev,
       [fieldKey]: files
     }));
-    
-    // Update form data with file URLs
+
     const fileUrls = files
       .filter(file => file.status === 'completed')
       .map(file => file.url);
@@ -183,7 +202,7 @@ export function DynamicServiceForm({
     );
   }
 
-  if (error || !fields) {
+  if (error || !normalizedFields) {
     return (
       <Card>
         <CardContent className="p-6">
@@ -197,7 +216,7 @@ export function DynamicServiceForm({
     return (
       <OrderPreview
         serviceName="سرویس نقشه‌کشی"
-        fields={fields}
+        fields={(normalizedFields as unknown as Array<{ id: string; name: string; field_key: string; type: 'text' | 'number' | 'file' | 'select' | 'multiselect' | 'checkbox' | 'date' | 'textarea'; options?: { value: string; label: string }[]; is_required: boolean; order: number; help_text?: string; }>)}
         fieldValues={formData}
         uploadedFiles={uploadedFiles}
         needsDocumentation={needsDocumentation}
@@ -209,10 +228,12 @@ export function DynamicServiceForm({
     );
   }
 
-  const renderField = (field: any) => {
-    const value = formData[field.field_key] || '';
+  const renderField = (field: ServiceFieldModel) => {
+    const raw = formData[field.field_key];
+    const value = raw ?? '';
+    const stringValue = String(value);
     const hasError = validationErrors[field.field_key] && touchedFields.has(field.field_key);
-    const isValid = !hasError && touchedFields.has(field.field_key) && value;
+    const isValid = !hasError && touchedFields.has(field.field_key) && Boolean(value);
 
     switch (field.type) {
       case 'text':
@@ -220,7 +241,7 @@ export function DynamicServiceForm({
           <div className="space-y-1">
             <Input
               id={field.field_key}
-              value={value}
+              value={stringValue}
               onChange={(e) => handleFieldChange(field.field_key, e.target.value)}
               placeholder={field.help_text}
               className={hasError ? 'border-destructive' : isValid ? 'border-green-500' : ''}
@@ -246,7 +267,7 @@ export function DynamicServiceForm({
             <Input
               id={field.field_key}
               type="number"
-              value={value}
+              value={stringValue}
               onChange={(e) => handleFieldChange(field.field_key, e.target.value)}
               placeholder={field.help_text}
               className={hasError ? 'border-destructive' : isValid ? 'border-green-500' : ''}
@@ -271,7 +292,7 @@ export function DynamicServiceForm({
           <div className="space-y-1">
             <Textarea
               id={field.field_key}
-              value={value}
+              value={stringValue}
               onChange={(e) => handleFieldChange(field.field_key, e.target.value)}
               placeholder={field.help_text}
               rows={3}
@@ -295,20 +316,16 @@ export function DynamicServiceForm({
       case 'select':
         return (
           <div className="space-y-1">
-            <Select value={value} onValueChange={(val) => handleFieldChange(field.field_key, val)}>
+            <Select value={stringValue} onValueChange={(val) => handleFieldChange(field.field_key, val)}>
               <SelectTrigger id={field.field_key} className={hasError ? 'border-destructive' : isValid ? 'border-green-500' : ''}>
                 <SelectValue placeholder={field.help_text} />
               </SelectTrigger>
               <SelectContent>
-                {field.options?.map((option: { value?: string; label?: string } | string, index: number) => {
-                  const optionValue = typeof option === 'string' ? option : option.value || option.label || String(option);
-                  const optionLabel = typeof option === 'string' ? option : option.label || option.value || String(option);
-                  return (
-                    <SelectItem key={optionValue || index} value={optionValue}>
-                      {optionLabel}
-                    </SelectItem>
-                  );
-                })}
+                {field.options?.map((option, index) => (
+                  <SelectItem key={index} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             {hasError && (
@@ -327,30 +344,26 @@ export function DynamicServiceForm({
         );
 
       case 'multiselect': {
-        const selectedValues = Array.isArray(value) ? value : [];
+        const selectedValues = Array.isArray(value) ? (value as string[]) : [];
         return (
           <div className="space-y-2">
             <div className="space-y-2">
-              {field.options?.map((option: { value?: string; label?: string } | string, index: number) => {
-                const optionValue = typeof option === 'string' ? option : option.value || option.label || String(option);
-                const optionLabel = typeof option === 'string' ? option : option.label || option.value || String(option);
-                return (
-                  <div key={optionValue || index} className="flex items-center space-x-2 space-x-reverse">
-                    <Checkbox
-                      id={`${field.field_key}-${optionValue}`}
-                      checked={selectedValues.includes(optionValue)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          handleFieldChange(field.field_key, [...selectedValues, optionValue]);
-                        } else {
-                          handleFieldChange(field.field_key, selectedValues.filter((v: string) => v !== optionValue));
-                        }
-                      }}
-                    />
-                    <Label htmlFor={`${field.field_key}-${optionValue}`}>{optionLabel}</Label>
-                  </div>
-                );
-              })}
+              {field.options?.map((option, index) => (
+                <div key={index} className="flex items-center space-x-2 space-x-reverse">
+                  <Checkbox
+                    id={`${field.field_key}-${option.value}`}
+                    checked={selectedValues.includes(option.value)}
+                    onCheckedChange={(checked) => {
+                      if (checked === true) {
+                        handleFieldChange(field.field_key, [...selectedValues, option.value]);
+                      } else {
+                        handleFieldChange(field.field_key, selectedValues.filter((v) => v !== option.value));
+                      }
+                    }}
+                  />
+                  <Label htmlFor={`${field.field_key}-${option.value}`}>{option.label}</Label>
+                </div>
+              ))}
             </div>
             {hasError && (
               <div className="flex items-center gap-1 text-sm text-destructive">
@@ -374,8 +387,8 @@ export function DynamicServiceForm({
             <div className="flex items-center space-x-2 space-x-reverse">
               <Checkbox
                 id={field.field_key}
-                checked={!!value}
-                onCheckedChange={(checked) => handleFieldChange(field.field_key, checked)}
+                checked={value === true}
+                onCheckedChange={(checked) => handleFieldChange(field.field_key, checked === true)}
               />
               <Label htmlFor={field.field_key}>{field.name}</Label>
             </div>
@@ -424,7 +437,7 @@ export function DynamicServiceForm({
             <Input
               id={field.field_key}
               type="date"
-              value={value}
+              value={stringValue}
               onChange={(e) => handleFieldChange(field.field_key, e.target.value)}
               className={hasError ? 'border-destructive' : isValid ? 'border-green-500' : ''}
             />
@@ -448,7 +461,7 @@ export function DynamicServiceForm({
           <div className="space-y-1">
             <Input
               id={field.field_key}
-              value={value}
+              value={stringValue}
               onChange={(e) => handleFieldChange(field.field_key, e.target.value)}
               placeholder={field.help_text}
               className={hasError ? 'border-destructive' : isValid ? 'border-green-500' : ''}
@@ -494,7 +507,7 @@ export function DynamicServiceForm({
           </Alert>
         )}
 
-        {fields.map((field) => (
+        {normalizedFields.map((field) => (
           <div key={field.id} className="space-y-2">
             <Label htmlFor={field.field_key} className="text-sm font-medium">
               {field.name}

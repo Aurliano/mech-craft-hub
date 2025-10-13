@@ -1,8 +1,8 @@
-interface QueuedRequest {
+interface QueuedRequest<T = unknown> {
   id: string;
-  fn: () => Promise<any>;
-  resolve: (value: any) => void;
-  reject: (error: any) => void;
+  fn: () => Promise<T>;
+  resolve: (value: T) => void;
+  reject: (error: unknown) => void;
   retries: number;
   lastAttempt: number;
 }
@@ -15,8 +15,8 @@ class RequestQueue {
   private lastRequestTime = 0;
 
   async add<T>(fn: () => Promise<T>, retries = 3): Promise<T> {
-    return new Promise((resolve, reject) => {
-      const request: QueuedRequest = {
+    return new Promise<T>((resolve, reject) => {
+      const request: QueuedRequest<T> = {
         id: Math.random().toString(36).substr(2, 9),
         fn,
         resolve,
@@ -25,7 +25,7 @@ class RequestQueue {
         lastAttempt: 0
       };
 
-      this.queue.push(request);
+      this.queue.push(request as unknown as QueuedRequest);
       this.processQueue();
     });
   }
@@ -37,12 +37,7 @@ class RequestQueue {
 
     while (this.queue.length > 0) {
       const batch = this.queue.splice(0, this.maxConcurrent);
-      
-      await Promise.allSettled(
-        batch.map(request => this.processRequest(request))
-      );
-
-      // تاخیر بین batch ها
+      await Promise.allSettled(batch.map(request => this.processRequest(request)));
       if (this.queue.length > 0) {
         await this.delay(this.minDelay);
       }
@@ -51,10 +46,9 @@ class RequestQueue {
     this.isProcessing = false;
   }
 
-  private async processRequest(request: QueuedRequest) {
+  private async processRequest<T>(request: QueuedRequest<T>) {
     const now = Date.now();
     const timeSinceLastRequest = now - this.lastRequestTime;
-    
     if (timeSinceLastRequest < this.minDelay) {
       await this.delay(this.minDelay - timeSinceLastRequest);
     }
@@ -63,27 +57,24 @@ class RequestQueue {
       const result = await request.fn();
       request.resolve(result);
       this.lastRequestTime = Date.now();
-    } catch (error) {
+    } catch (error: unknown) {
       if (request.retries > 0 && this.isRetryableError(error)) {
         request.retries--;
         request.lastAttempt = Date.now();
-        
-        // Exponential backoff
         const delay = Math.pow(2, 3 - request.retries) * 1000;
         await this.delay(delay);
-        
-        // اضافه کردن به انتهای صف برای retry
-        this.queue.push(request);
+        this.queue.push(request as unknown as QueuedRequest);
       } else {
         request.reject(error);
       }
     }
   }
 
-  private isRetryableError(error: any): boolean {
-    if (error?.message?.includes('Rate limited')) return true;
-    if (error?.message?.includes('429')) return true;
-    if (error?.message?.includes('Too Many Requests')) return true;
+  private isRetryableError(error: unknown): boolean {
+    const msg = error instanceof Error ? error.message : String(error ?? '');
+    if (msg.includes('Rate limited')) return true;
+    if (msg.includes('429')) return true;
+    if (msg.includes('Too Many Requests')) return true;
     return false;
   }
 

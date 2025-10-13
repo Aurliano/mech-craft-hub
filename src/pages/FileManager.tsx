@@ -218,7 +218,10 @@ const FileManager = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  if (!user || user.role !== 'admin') {
+  // Access control: support both string role and object role with name
+  const isAdmin = !!user && (((user as unknown as Record<string, unknown>)?.role === 'admin') || ((user as unknown as { role?: { name?: string } }).role?.name === 'admin'));
+
+  if (!isAdmin) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="w-full max-w-md">

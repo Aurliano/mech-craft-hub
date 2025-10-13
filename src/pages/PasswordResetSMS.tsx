@@ -43,8 +43,9 @@ export default function PasswordResetSMS() {
       if (response.code) {
         console.log('Password reset code (development):', response.code);
       }
-    } catch (err: any) {
-      setError(err.message || 'خطا در ارسال کد بازیابی');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'خطا در ارسال کد بازیابی';
+      setError(msg);
     } finally {
       setIsLoading(false);
     }
@@ -78,8 +79,9 @@ export default function PasswordResetSMS() {
           } 
         });
       }, 2000);
-    } catch (err: any) {
-      setError(err.message || 'کد تأیید نامعتبر است');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'کد تأیید نامعتبر است';
+      setError(msg);
     } finally {
       setIsLoading(false);
     }
@@ -101,8 +103,9 @@ export default function PasswordResetSMS() {
       if (response.code) {
         console.log('Password reset code (development):', response.code);
       }
-    } catch (err: any) {
-      setError(err.message || 'خطا در ارسال مجدد کد');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'خطا در ارسال مجدد کد';
+      setError(msg);
     } finally {
       setIsLoading(false);
     }

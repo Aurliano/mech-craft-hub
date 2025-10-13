@@ -22,6 +22,33 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 
+// Types
+interface ServiceTab {
+  id: string;
+  name: string;
+  display_name: string;
+  description?: string;
+  order?: number;
+  is_active?: boolean;
+}
+
+interface ServiceField {
+  id?: string;
+  tab?: { name: string } | null;
+  name: string;
+  field_key: string;
+  type: string; // e.g., 'file', 'text', ...
+  is_required?: boolean;
+}
+
+interface Service {
+  id: string;
+  name: string;
+  type: string;
+  tabs?: ServiceTab[];
+  fields?: ServiceField[];
+}
+
 const DrawingService = () => {
   // Use real authentication state
   const { isAuthenticated } = useAuth();
@@ -43,7 +70,7 @@ const DrawingService = () => {
   } = useServiceOrder('550e8400-e29b-41d4-a716-446655440004');
   
   // State for dynamic form
-  const [service, setService] = useState<any>(null);
+  const [service, setService] = useState<Service | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [files, setFiles] = useState<File[]>([]);
@@ -66,13 +93,13 @@ const DrawingService = () => {
       try {
         const response = await getServices();
   
-        let services: any[] = [];
+        let services: Service[] = [];
         if (response) {
-          services = Array.isArray(response) ? response : (response as any).results || [];
+          services = Array.isArray(response) ? (response as Service[]) : ((response as { results?: Service[] }).results || []);
         }
   
         if (Array.isArray(services)) {
-          const drawing = services.find((s: any) => s.type === 'drawing') || services.find((s: any) => /draw|نقشه/i.test(s.name));
+          const drawing = services.find((s: Service) => s.type === 'drawing') || services.find((s: Service) => /draw|نقشه/i.test(s.name));
           if (drawing) {
             setService(drawing);
             if (drawing.tabs && drawing.tabs.length > 0) {
@@ -83,7 +110,7 @@ const DrawingService = () => {
             }
           } else {
             // Mock data برای تست
-            const mockService = {
+            const mockService: Service = {
               id: '550e8400-e29b-41d4-a716-446655440004',
               name: 'نقشه‌کشی صنعتی',
               type: 'drawing',
@@ -95,7 +122,6 @@ const DrawingService = () => {
                   description: 'نقشه‌های ساخت (قطعات)',
                   order: 1,
                   is_active: true,
-                  fields: []
                 },
                 {
                   id: '2',
@@ -104,7 +130,6 @@ const DrawingService = () => {
                   description: 'نقشه‌های مونتاژ و انفجاری',
                   order: 2,
                   is_active: true,
-                  fields: []
                 },
                 {
                   id: '3',
@@ -113,7 +138,6 @@ const DrawingService = () => {
                   description: 'نقشه‌های جوشکاری',
                   order: 3,
                   is_active: true,
-                  fields: []
                 }
               ],
               fields: []
@@ -139,6 +163,7 @@ const DrawingService = () => {
 
   const handleFileUpload = async (fieldKey: string, file: File) => {
     try {
+      if (!service) return;
       const uploaded = await uploadFile(file, { context: 'service', context_id: service.id });
       setUploadedFiles(prev => ({ ...prev, [fieldKey]: uploaded.url }));
       setFiles(prev => [...prev, file]);
@@ -158,17 +183,17 @@ const DrawingService = () => {
       return;
     }
 
-    const fieldsForCurrentTab = service.fields?.filter((field: any) => field.tab?.name === activeTab);
-    const requiredFields = fieldsForCurrentTab?.filter((field: any) => field.is_required) || [];
-    const missingFields = requiredFields.filter((field: any) => {
+    const fieldsForCurrentTab = service.fields?.filter((field: ServiceField) => field.tab?.name === activeTab);
+    const requiredFields = fieldsForCurrentTab?.filter((field: ServiceField) => field.is_required) || [];
+    const missingFields = requiredFields.filter((field: ServiceField) => {
       if (field.type === 'file') {
         return !uploadedFiles[field.field_key];
       }
-      return !formData[field.field_key];
+      return !(formData as Record<string, unknown>)[field.field_key];
     });
 
     if (missingFields.length > 0) {
-      alert(`لطفاً فیلدهای زیر را پر کنید: ${missingFields.map((f: any) => f.name).join(', ')}`);
+      alert(`لطفاً فیلدهای زیر را پر کنید: ${missingFields.map((f: ServiceField) => f.name).join(', ')}`);
       return;
     }
 
@@ -180,7 +205,7 @@ const DrawingService = () => {
   };
 
 
-  const renderField = (field: any) => {
+  const renderField = (field: ServiceField) => {
     // ... (renderField logic)
   };
 
@@ -333,14 +358,14 @@ const DrawingService = () => {
               {service.tabs && service.tabs.length > 0 ? (
                 <Tabs value={activeTab} onValueChange={setActiveTab} defaultValue={service.tabs[0]?.name} className="w-full">
                   <TabsList className="grid w-full grid-cols-3">
-                    {service.tabs.map((tab: any) => (
+                    {service.tabs.map((tab: ServiceTab) => (
                       <TabsTrigger key={tab.id} value={tab.name}>
                         {tab.display_name}
                       </TabsTrigger>
                     ))}
                   </TabsList>
 
-                  {service.tabs.map((tab: any) => (
+                  {service.tabs.map((tab: ServiceTab) => (
                     <TabsContent key={tab.id} value={tab.name} className="space-y-6">
                       <DynamicServiceForm
                         serviceId="550e8400-e29b-41d4-a716-446655440004"

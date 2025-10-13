@@ -21,11 +21,11 @@ interface ServiceField {
   name: string;
   field_key: string;
   type: 'text' | 'number' | 'file' | 'select' | 'multiselect' | 'checkbox' | 'date' | 'textarea';
-  options?: any[];
+  options?: { value: string; label: string }[]; // aligned with OrderPreview
   is_required: boolean;
   order: number;
   help_text?: string;
-  validation_rules?: any;
+  validation_rules?: Record<string, unknown>;
 }
 
 const OrderPreviewDemo = () => {
@@ -47,7 +47,12 @@ const OrderPreviewDemo = () => {
       name: 'نوع نقشه',
       field_key: 'drawing_type',
       type: 'select',
-      options: ['نقشه جوش', 'نقشه انفجاری', 'نقشه مونتاژ', 'نقشه جزئیات'],
+      options: [
+        { value: 'weld', label: 'نقشه جوش' },
+        { value: 'exploded', label: 'نقشه انفجاری' },
+        { value: 'assembly', label: 'نقشه مونتاژ' },
+        { value: 'detail', label: 'نقشه جزئیات' }
+      ],
       is_required: true,
       order: 2
     },
@@ -81,7 +86,12 @@ const OrderPreviewDemo = () => {
       name: 'نرم‌افزار مورد استفاده',
       field_key: 'software_used',
       type: 'multiselect',
-      options: ['SolidWorks', 'AutoCAD', 'Inventor', 'CATIA'],
+      options: [
+        { value: 'SolidWorks', label: 'SolidWorks' },
+        { value: 'AutoCAD', label: 'AutoCAD' },
+        { value: 'Inventor', label: 'Inventor' },
+        { value: 'CATIA', label: 'CATIA' }
+      ],
       is_required: false,
       order: 6
     },

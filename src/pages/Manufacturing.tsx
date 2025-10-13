@@ -123,7 +123,20 @@ const Manufacturing = () => {
   };
 
   // Use API workshops if available, otherwise fallback to mock data
-  const displayWorkshops = apiWorkshops && apiWorkshops.length > 0 ? apiWorkshops : workshops;
+  // Normalize query data defensively in case of unexpected shapes
+  type Workshop = {
+    id: string | number;
+    name: string;
+    description?: string;
+    capabilities?: string[];
+    machines?: { name: string; precision: string }[];
+    rating?: number;
+    completedProjects?: number;
+  };
+  const normalizedApiWorkshops: Workshop[] = Array.isArray(apiWorkshops)
+    ? (apiWorkshops as unknown as Workshop[])
+    : [];
+  const displayWorkshops = normalizedApiWorkshops.length > 0 ? normalizedApiWorkshops : workshops;
 
   const handleOrderClick = (id: number | string) => {
     setSelectedWorkshopId(String(id));
