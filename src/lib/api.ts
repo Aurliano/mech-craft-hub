@@ -215,7 +215,12 @@ export async function loginRequest(params: {
     const errorText = await res.text();
     throw new Error(errorText || 'Invalid credentials');
   }
-  return (await res.json()) as { access: string; refresh: string };
+  const data = (await res.json()) as { access: string; refresh: string } & Record<string, unknown>;
+  // Persist tokens for subsequent authenticated requests
+  if (data?.access && data?.refresh) {
+    setTokens(data.access, data.refresh);
+  }
+  return data;
 }
 
 export async function customerRegisterRequest(params: { 
