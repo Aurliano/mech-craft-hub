@@ -31,10 +31,12 @@ class SMSService:
     
     def _get_headers(self) -> Dict[str, str]:
         """Get headers for SMS.ir API requests"""
+        if not self.api_key:
+            logger.error("SMS_KEY is empty or None when creating headers!")
         return {
-            'Accept': 'application/json',
             'X-API-KEY': self.api_key,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
         }
     
     def _format_phone_number(self, phone: str) -> str:
@@ -92,6 +94,17 @@ class SMSService:
         """Send SMS using verify endpoint with template"""
         url = f"{self.base_url}/send/verify"
         
+        # Convert template_id to int
+        try:
+            template_id = int(template_id)
+        except (ValueError, TypeError):
+            logger.error(f"Invalid template_id: {template_id}")
+            return {
+                'success': False,
+                'error': 'Invalid template ID',
+                'message': 'شناسه قالب نامعتبر است'
+            }
+        
         payload = {
             "mobile": phone,
             "templateId": template_id,
@@ -103,6 +116,11 @@ class SMSService:
             ]
         }
         
+        # Log request details
+        logger.info(f"Sending SMS to {phone}, template={template_id}, url={url}")
+        logger.debug(f"SMS payload: {json.dumps(payload, ensure_ascii=False)}")
+        logger.debug(f"SMS headers: {self._get_headers()}")
+        
         try:
             response = requests.post(
                 url,
@@ -111,7 +129,19 @@ class SMSService:
                 timeout=self.timeout
             )
             
-            response_data = response.json()
+            # Log response for debugging
+            logger.debug(f"SMS.ir verify response: status={response.status_code}, url={url}, body={response.text[:200]}")
+            
+            # Try to parse JSON response
+            try:
+                response_data = response.json()
+            except ValueError as e:
+                logger.error(f"SMS.ir verify response not JSON: status={response.status_code}, text={response.text[:500]}, error={str(e)}")
+                return {
+                    'success': False,
+                    'error': f'Invalid response from SMS service (status {response.status_code})',
+                    'message': 'خطا در دریافت پاسخ از سرویس پیامک'
+                }
             
             if response.status_code == 200 and response_data.get('status') == 1:
                 logger.info(f"Verification SMS sent successfully to {phone}")
@@ -184,7 +214,19 @@ class SMSService:
                 timeout=self.timeout
             )
             
-            response_data = response.json()
+            # Log response for debugging
+            logger.debug(f"SMS.ir send response: status={response.status_code}, url={url}, body={response.text[:200]}")
+            
+            # Try to parse JSON response
+            try:
+                response_data = response.json()
+            except ValueError as e:
+                logger.error(f"SMS.ir send response not JSON: status={response.status_code}, text={response.text[:500]}, error={str(e)}")
+                return {
+                    'success': False,
+                    'error': f'Invalid response from SMS service (status {response.status_code})',
+                    'message': 'خطا در دریافت پاسخ از سرویس پیامک'
+                }
             
             if response.status_code == 200 and response_data.get('status') == 1:
                 logger.info(f"Regular SMS sent successfully to {phone}")
