@@ -4,6 +4,7 @@ Using SMS.ir API for sending SMS messages
 """
 
 import os
+import json
 import requests
 import logging
 from typing import Dict, Any
@@ -105,7 +106,7 @@ class SMSService:
         try:
             response = requests.post(
                 url,
-                json=payload,
+                data=json.dumps(payload),
                 headers=self._get_headers(),
                 timeout=self.timeout
             )
@@ -178,7 +179,7 @@ class SMSService:
         try:
             response = requests.post(
                 url,
-                json=payload,
+                data=json.dumps(payload),
                 headers=self._get_headers(),
                 timeout=self.timeout
             )
@@ -263,7 +264,7 @@ class SMSService:
         try:
             response = requests.post(
                 url,
-                json=payload,
+                data=json.dumps(payload),
                 headers=self._get_headers(),
                 timeout=self.timeout
             )
@@ -314,7 +315,7 @@ class SMSService:
         try:
             response = requests.post(
                 url,
-                json=payload,
+                data=json.dumps(payload),
                 headers=self._get_headers(),
                 timeout=self.timeout
             )
