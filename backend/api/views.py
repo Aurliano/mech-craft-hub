@@ -351,6 +351,15 @@ class ServiceTabViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = ServiceTab.objects.filter(is_active=True).select_related('service').order_by('service', 'order')
     serializer_class = ServiceTabSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        service_id = self.request.query_params.get('service')
+        
+        if service_id:
+            queryset = queryset.filter(service_id=service_id)
+        
+        return queryset
 
 
 
@@ -366,24 +375,12 @@ class ServiceFieldViewSet(viewsets.ReadOnlyModelViewSet):
         tab_id = self.request.query_params.get('tab')
         
         if service_id:
-            # اگر service_id داده شده، فیلدهای مربوط به آن سرویس را برگردان
-            # اگر tab_id هم داده شده، فقط فیلدهای آن تب را برگردان
             if tab_id:
+                # فیلدهای مخصوص یک تب
                 queryset = queryset.filter(service_id=service_id, tab_id=tab_id)
             else:
-                # اگر سرویس تب دارد، فقط فیلدهای بدون tab (فیلدهای عمومی) را برگردان
-                # اگر سرویس تب ندارد، همه فیلدهای آن سرویس را برگردان
-                try:
-                    service = Service.objects.get(id=service_id)
-                    if service.has_tabs:
-                        # سرویس تب دارد، فقط فیلدهای عمومی (بدون tab) را برگردان
-                        queryset = queryset.filter(service_id=service_id, tab__isnull=True)
-                    else:
-                        # سرویس تب ندارد، همه فیلدهای آن سرویس را برگردان
-                        queryset = queryset.filter(service_id=service_id)
-                except Service.DoesNotExist:
-                    # اگر سرویس پیدا نشد، کوئری خالی برگردان تا 500 نشود
-                    return queryset.none()
+                # همه فیلدهای سرویس (چه با تب چه بدون تب)
+                queryset = queryset.filter(service_id=service_id)
         
         return queryset.order_by('tab', 'order', 'name')
 
