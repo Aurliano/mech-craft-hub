@@ -31,8 +31,9 @@ ENV PYTHONUNBUFFERED=1
 ENV DJANGO_SETTINGS_MODULE=config.settings_ultra_simple
 ENV SECRET_KEY=docker-build-secret
 
-# Set up Django directories and collect static files
+# Set up Django directories, make start.sh executable, and collect static files
 RUN mkdir -p /app/logs /app/media /app/staticfiles && \
+    chmod +x /app/start.sh && \
     chown -R appuser:appuser /app && \
     cd /app/backend && \
     python manage.py collectstatic --noinput
@@ -51,9 +52,6 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 # Expose port
 EXPOSE 80
-
-# Make startup script executable
-RUN chmod +x /app/start.sh
 
 # Start command
 CMD ["/app/start.sh"]
