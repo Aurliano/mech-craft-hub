@@ -8,6 +8,46 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+class JWTAuthenticationMiddleware(MiddlewareMixin):
+    """
+    Custom JWT Authentication Middleware
+    """
+    
+    def process_request(self, request):
+        # Skip for non-API requests
+        if not request.path.startswith('/api/'):
+            return None
+            
+        # Skip for auth endpoints (login, register, etc.)
+        if request.path.startswith('/api/v1/auth/'):
+            return None
+            
+        # Get Authorization header
+        auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+        if not auth_header.startswith('Bearer '):
+            return None
+            
+        # Extract token
+        token = auth_header.split(' ')[1] if len(auth_header.split(' ')) > 1 else None
+        if not token:
+            return None
+            
+        # Validate token and set user
+        try:
+            from .utils.jwt_utils import JWTManager
+            result = JWTManager.get_user_from_token(token)
+            
+            if result['success']:
+                request.user = result['user']
+                logger.debug(f"JWT authentication successful for user {result['user'].id}")
+            else:
+                logger.warning(f"JWT authentication failed: {result.get('message', 'Unknown error')}")
+                
+        except Exception as e:
+            logger.error(f"JWT middleware error: {str(e)}")
+            
+        return None
+
 class SecurityHeadersMiddleware(MiddlewareMixin):
     """
     Middleware to add security headers to all responses

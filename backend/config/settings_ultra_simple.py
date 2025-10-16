@@ -50,6 +50,7 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'api.middleware.CSRFProtectionMiddleware',  # Custom CSRF middleware
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'api.middleware.JWTAuthenticationMiddleware',  # Custom JWT middleware
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
