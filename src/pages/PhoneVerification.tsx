@@ -101,6 +101,12 @@ export default function PhoneVerification({ mode = 'verify', phone: initialPhone
       await phoneVerificationConfirm(phone, code);
       setMessage('شماره تلفن با موفقیت تأیید شد');
       
+      // Clear any old tokens before redirecting
+      if (mode === 'register' || mode === 'reset') {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+      }
+      
       // Redirect based on mode with proper navigation
       setTimeout(() => {
         if (mode === 'register') {
