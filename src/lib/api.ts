@@ -115,6 +115,22 @@ async function simpleFetch<T>(path: string, options: RequestInit = {}): Promise<
     headers,
     credentials: 'include',
   });
+  
+  // Check for "User not found" even in first request
+  if (res.status === 401 && token) {
+    const clonedRes = res.clone();
+    try {
+      const errorData = await clonedRes.json();
+      if (errorData.detail?.includes('User not found') || errorData.code === 'user_not_found') {
+        console.warn('User not found - clearing stale tokens');
+        clearTokens();
+        window.location.href = '/login';
+        throw new Error('User not found. Please log in again.');
+      }
+    } catch (e) {
+      // If JSON parse fails, continue with normal flow
+    }
+  }
 
   // If token expired, try to refresh
   if (res.status === 401 && token) {
@@ -136,6 +152,14 @@ async function simpleFetch<T>(path: string, options: RequestInit = {}): Promise<
       if (!retryRes.ok) {
         const text = await retryRes.text();
         console.error('Retry request failed:', text);
+        
+        // If user not found after token refresh, clear tokens and redirect
+        if (text.includes('User not found') || text.includes('user_not_found')) {
+          console.log('User not found, clearing tokens and redirecting to login');
+          clearTokens();
+          window.location.href = '/login';
+        }
+        
         throw new Error(text || retryRes.statusText);
       }
       if (retryRes.status === 204) return undefined as unknown as T;
