@@ -142,18 +142,6 @@ const Login = () => {
               {/* Turnstile Captcha - Temporarily disabled */}
               {/* <TurnstileCaptcha onVerify={handleCaptchaVerify} /> */}
 
-              {/* Honeypot field - hidden from users */}
-              <div style={{ display: 'none' }}>
-                <Label htmlFor="website">Website</Label>
-                <Input 
-                  id="website"
-                  name="website" 
-                  type="text" 
-                  tabIndex={-1}
-                  autoComplete="off"
-                />
-              </div>
-
               <ErrorDisplay 
                 error={currentError} 
                 onRetry={() => window.location.reload()}
