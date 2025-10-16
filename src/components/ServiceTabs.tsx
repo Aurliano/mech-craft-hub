@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useServiceTabs, useServiceFields } from '@/hooks/useAuth';
 import { Skeleton } from '@/components/ui/skeleton';
 import DocumentationSection from './DocumentationSection';
+import UnitValueField from './UnitValueField';
 
 interface ServiceField {
   id: string;
@@ -260,6 +261,20 @@ interface FieldRendererProps {
 }
 
 const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onChange }) => {
+  // Check if this is a unit-value field based on field_key
+  const isUnitValueField = field.field_key.includes('thickness') || 
+                          field.field_key.includes('tolerance') || 
+                          field.field_key.includes('coating_thickness');
+
+  if (isUnitValueField) {
+    return (
+      <UnitValueField
+        value={typeof value === 'object' && value !== null ? value as { unit: string; value: string } : { unit: '', value: '' }}
+        onChange={(unitValue) => onChange(unitValue)}
+        placeholder={field.help_text}
+      />
+    );
+  }
 
   switch (field.type) {
     case 'text':
@@ -359,6 +374,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onChange })
             const file = e.target.files?.[0];
             onChange(file);
           }}
+          accept=".sldprt,.sldasm,.ipt,.iam,.stp,.step"
           className="text-right"
         />
       );
