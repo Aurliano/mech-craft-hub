@@ -19,7 +19,8 @@ class SMSService:
     
     def __init__(self):
         self.api_key = getattr(settings, 'SMS_KEY', None)
-        self.base_url = getattr(settings, 'SMS_API_BASE_URL', 'https://api.sms.ir/v1')
+        # Remove trailing slash from base_url if present
+        self.base_url = getattr(settings, 'SMS_API_BASE_URL', 'https://api.sms.ir/v1').rstrip('/')
         self.timeout = getattr(settings, 'SMS_API_TIMEOUT', 30)
         self.sender = getattr(settings, 'SMS_SENDER', None)
         
