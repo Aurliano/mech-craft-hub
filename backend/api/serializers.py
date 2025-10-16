@@ -426,7 +426,6 @@ class ContractorRegisterSerializer(serializers.ModelSerializer):
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField()
-    website = serializers.CharField(required=False, allow_blank=True)  # Honeypot field
     # Support both field names for compatibility
     turnstile_token = serializers.CharField(required=False, allow_blank=True)
     cf_turnstile_response = serializers.CharField(required=False, allow_blank=True)
@@ -439,11 +438,6 @@ class LoginSerializer(serializers.Serializer):
     def validate_cf_turnstile_response(self, value):
         """Validate Turnstile token - Temporarily disabled"""
         # Temporarily disabled Turnstile validation
-        return value
-
-    def validate_website(self, value):
-        """Validate honeypot field - should be empty - Temporarily disabled"""
-        # Temporarily disabled honeypot validation
         return value
 
     def validate(self, data):
