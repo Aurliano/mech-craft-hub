@@ -240,6 +240,14 @@ TURNSTILE_SECRET_KEY = os.environ.get("TURNSTILE_SECRET_KEY")
 TURNSTILE_VERIFY_URL = os.environ.get("TURNSTILE_VERIFY_URL", "https://challenges.cloudflare.com/turnstile/v0/siteverify")
 TURNSTILE_FALLBACK_LOCAL = os.environ.get("TURNSTILE_FALLBACK_LOCAL", "False").lower() == "true"
 
+# SMS Configuration (SMS.ir)
+SMS_KEY = os.getenv('SMS_KEY')
+SMS_SENDER = os.getenv('SMS_SENDER')
+SMS_TEMPLATE_ID_VERIFICATION = os.getenv('SMS_TEMPLATE_ID_VERIFICATION')
+SMS_TEMPLATE_ID_PASSWORD_RESET = os.getenv('SMS_TEMPLATE_ID_PASSWORD_RESET')
+SMS_API_BASE_URL = os.getenv('SMS_API_BASE_URL', 'https://api.sms.ir/v1')
+SMS_API_TIMEOUT = int(os.getenv('SMS_API_TIMEOUT', '30'))
+
 # Logging
 LOGGING = {
     'version': 1,
@@ -252,5 +260,12 @@ LOGGING = {
     'root': {
         'handlers': ['console'],
         'level': 'INFO',
+    },
+    'loggers': {
+        'api.services.sms_service': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
     },
 }

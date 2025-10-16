@@ -14,15 +14,7 @@
     }
   ],
   "env": {
-    "DEBUG": "False",
-    "SECRET_KEY": "django-insecure-liara-production-key-2024-sayda-engineering",
-    "ALLOWED_HOSTS": "*.liara.run,*.liara.ir,saydatech.ir,www.saydatech.ir",
     "DJANGO_SETTINGS_MODULE": "config.settings_ultra_simple",
-    "PYTHONPATH": "/app/backend",
-    "POSTGRES_DB": "postgres",
-    "POSTGRES_USER": "root",
-    "POSTGRES_PASSWORD": "honm5klCHxMeLN9Rd8vkBegF",
-    "POSTGRES_HOST": "sayda-db",
-    "POSTGRES_PORT": "5432"
+    "PYTHONPATH": "/app/backend"
   }
 }
