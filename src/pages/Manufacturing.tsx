@@ -94,7 +94,7 @@ const processes = [
 const Manufacturing = () => {
   const { isAuthenticated } = useAuth();
   const orderRef = useRef<HTMLDivElement>(null);
-  const [selectedWorkshopId, setSelectedWorkshopId] = useState<string>("");
+  const [selectedWorkshopClass, setSelectedWorkshopClass] = useState<string>("");
   const [files, setFiles] = useState<File[]>([]);
   const [acceptTerms, setAcceptTerms] = useState(false);
   
@@ -141,7 +141,7 @@ const Manufacturing = () => {
   const displayWorkshops = normalizedApiWorkshops.length > 0 ? normalizedApiWorkshops : workshops;
 
   const handleOrderClick = (id: number | string) => {
-    setSelectedWorkshopId(String(id));
+    // No longer selecting a specific workshop for submission; keep scroll only
     setTimeout(() => {
       orderRef.current?.scrollIntoView({ behavior: "smooth" });
     }, 0);
@@ -149,19 +149,14 @@ const Manufacturing = () => {
 
 
   const handleFormSubmit = async () => {
-    if (!selectedWorkshopId) {
-      alert("لطفاً کارگاه مورد نظر را انتخاب کنید.");
-      return;
-    }
-
     if (!acceptTerms) {
       alert("لطفا قوانین و شرایط را بپذیرید");
       return;
     }
     
     try {
-      // Add workshop selection to form data
-      updateField('selected_workshop_id', selectedWorkshopId);
+      // Add workshop class selection to form data (required)
+      updateField('workshop_class', selectedWorkshopClass || '');
       
       await handleSubmit();
     } catch (error) {
@@ -400,19 +395,21 @@ const Manufacturing = () => {
           {isAuthenticated ? (
             <div className="max-w-3xl mx-auto space-y-6">
             <div>
-              <label className="block text-sm font-medium mb-2">کارگاه انتخابی</label>
-              <Select value={selectedWorkshopId} onValueChange={setSelectedWorkshopId}>
+              <label className="block text-sm font-medium mb-2">کلاس کارگاه هدف</label>
+              <Select value={selectedWorkshopClass} onValueChange={setSelectedWorkshopClass}>
                 <SelectTrigger>
-                  <SelectValue placeholder="یک کارگاه انتخاب کنید" />
+                  <SelectValue placeholder="یک کلاس انتخاب کنید (A, B, C یا همه)" />
                 </SelectTrigger>
                 <SelectContent className="z-50 bg-background">
-                  {displayWorkshops.map((w) => (
-                    <SelectItem key={w.id} value={String(w.id)}>
-                      {w.name}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="class_a">کلاس A</SelectItem>
+                  <SelectItem value="class_b">کلاس B</SelectItem>
+                  <SelectItem value="class_c">کلاس C</SelectItem>
+                  <SelectItem value="all">همه کارگاه‌ها</SelectItem>
                 </SelectContent>
               </Select>
+              <p className="text-xs text-muted-foreground mt-2">
+                می‌توانید یک کلاس را انتخاب کنید تا سفارش برای همان دسته کارگاه‌ها ارسال شود.
+              </p>
             </div>
 
             <div>
@@ -422,9 +419,10 @@ const Manufacturing = () => {
                 type="file"
                 multiple
                 onChange={(e) => setFiles(Array.from(e.target.files || []))}
+                accept=".pdf,.dwg,.dxf,.step,.stp,.iges,.sldprt,.sldasm,.ipt,.iam,.jpg,.jpeg,.png"
               />
               <p className="text-xs text-muted-foreground mt-2">
-                فرمت‌های مجاز: PDF, DWG, DXF, STEP, تصاویر و ...
+                فرمت‌های مجاز: PDF, DWG, DXF, STEP/STP, IGES, SLDPRT/SLDASM, IPT/IAM, تصاویر
               </p>
             </div>
 

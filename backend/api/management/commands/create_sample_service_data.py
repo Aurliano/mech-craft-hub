@@ -62,7 +62,7 @@ class Command(BaseCommand):
                 'base_price': 1000000,
                 'estimated_delivery_days': 14,
                 'supports_documentation': True,
-                'has_tabs': True,
+                'has_tabs': False,
                 'is_active': True
             }
         )
@@ -243,22 +243,72 @@ class Command(BaseCommand):
                 created_drawing_tabs.append(tab)
                 self.stdout.write(self.style.SUCCESS(f'Created drawing tab: {tab.display_name}'))
         
-        # Create tabs for Manufacturing Service
-        created_manufacturing_tabs = []
-        for tab_data in manufacturing_tabs_data:
-            tab, created = ServiceTab.objects.get_or_create(
+        # Manufacturing service is a single form (no tabs). Create flat fields.
+        manufacturing_flat_fields = [
+            {
+                'name': 'کلاس کارگاه هدف',
+                'field_key': 'workshop_class',
+                'type': 'select',
+                'options': [
+                    {'value': 'class_a', 'label': 'کلاس A'},
+                    {'value': 'class_b', 'label': 'کلاس B'},
+                    {'value': 'class_c', 'label': 'کلاس C'},
+                    {'value': 'all', 'label': 'همه کارگاه‌ها'},
+                ],
+                'is_required': True,
+                'order': 1,
+                'help_text': 'سفارش به کدام دسته کارگاه‌ها ارسال شود؟'
+            },
+            {
+                'name': 'فرآیندهای ساخت',
+                'field_key': 'manufacturing_processes',
+                'type': 'multiselect',
+                'options': [
+                    {'value': 'machining', 'label': 'تراشکاری'},
+                    {'value': 'milling', 'label': 'فرزکاری'},
+                    {'value': 'welding', 'label': 'جوشکاری'},
+                    {'value': 'coating', 'label': 'پوشش دهی'},
+                    {'value': 'grinding', 'label': 'سنگ زنی'},
+                    {'value': 'prototyping', 'label': 'نمونه سازی'},
+                    {'value': 'metallurgy', 'label': 'فرآیندهای متالوژی'},
+                ],
+                'is_required': True,
+                'order': 2,
+                'help_text': 'فرآیندهای ساخت مورد نیاز خود را انتخاب کنید'
+            },
+            {
+                'name': 'فایل‌های نقشه/مدل',
+                'field_key': 'drawing_files',
+                'type': 'file',
+                'is_required': True,
+                'order': 3,
+                'help_text': 'امکان آپلود چند فایل - فرمت‌های مجاز: PDF, DWG, DXF, STEP, STP, IGES, SLDPRT, SLDASM, IPT, IAM, JPG, JPEG, PNG'
+            },
+            {
+                'name': 'توضیحات تکمیلی',
+                'field_key': 'additional_notes',
+                'type': 'textarea',
+                'is_required': False,
+                'order': 4,
+                'help_text': 'هر توضیح اضافی که لازم است'
+            },
+        ]
+        for field_data in manufacturing_flat_fields:
+            field, created = ServiceField.objects.get_or_create(
                 service=manufacturing_service,
-                name=tab_data['name'],
+                tab=None,
+                field_key=field_data['field_key'],
                 defaults={
-                    'display_name': tab_data['display_name'],
-                    'description': tab_data['description'],
-                    'order': tab_data['order'],
-                    'is_active': True
+                    'name': field_data['name'],
+                    'type': field_data['type'],
+                    'options': field_data.get('options'),
+                    'is_required': field_data['is_required'],
+                    'order': field_data['order'],
+                    'help_text': field_data.get('help_text', ''),
                 }
             )
             if created:
-                created_manufacturing_tabs.append(tab)
-                self.stdout.write(self.style.SUCCESS(f'Created manufacturing tab: {tab.display_name}'))
+                self.stdout.write(self.style.SUCCESS(f"Created manufacturing field: {field.name}"))
         
         # Create tabs for Analysis & Simulation Service
         created_analysis_tabs = []
@@ -518,25 +568,7 @@ class Command(BaseCommand):
                 if created:
                     self.stdout.write(self.style.SUCCESS(f'Created drawing field: {field.name}'))
         
-        # Create fields for Manufacturing Service tabs
-        for tab in created_manufacturing_tabs:
-            tab_fields = manufacturing_fields_data.get(tab.name, [])
-            for field_data in tab_fields:
-                field, created = ServiceField.objects.get_or_create(
-                    service=manufacturing_service,
-                    tab=tab,
-                    field_key=field_data['field_key'],
-                    defaults={
-                        'name': field_data['name'],
-                        'type': field_data['type'],
-                        'options': field_data.get('options'),
-                        'is_required': field_data['is_required'],
-                        'order': field_data['order'],
-                        'help_text': field_data.get('help_text', '')
-                    }
-                )
-                if created:
-                    self.stdout.write(self.style.SUCCESS(f'Created manufacturing field: {field.name}'))
+        # (no manufacturing tabs fields; handled above as flat fields)
         
         # Create fields for Analysis & Simulation Service tabs
         for tab in created_analysis_tabs:
