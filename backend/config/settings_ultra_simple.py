@@ -224,6 +224,7 @@ REST_FRAMEWORK = {
 BITPAY_API_KEY = os.getenv('BITPAY_API_KEY', '')
 BITPAY_BASE_URL = os.getenv('BITPAY_BASE_URL', 'https://api.bitpay.ir')
 BITPAY_CALLBACK_URL = os.getenv('BITPAY_CALLBACK_URL', '')
+BITPAY_WEBHOOK_SECRET = os.getenv('BITPAY_WEBHOOK_SECRET', '')
 
 # Simple JWT
 from datetime import timedelta

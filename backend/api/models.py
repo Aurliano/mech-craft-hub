@@ -324,6 +324,7 @@ class Payment(models.Model):
     gateway_response = models.JSONField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     paid_at = models.DateTimeField(null=True, blank=True)
+    webhook_nonce = models.CharField(max_length=100, blank=True)
     
     class Meta:
         db_table = 'payments'
@@ -333,6 +334,8 @@ class Payment(models.Model):
             models.Index(fields=['payment_type'], name='idx_payment_type'),
             models.Index(fields=['status'], name='idx_payment_status'),
             models.Index(fields=['created_at'], name='idx_payment_created'),
+            models.Index(fields=['gateway_transaction_id'], name='idx_payment_gtid'),
+            models.Index(fields=['webhook_nonce'], name='idx_payment_nonce'),
         ]
     
     def __str__(self):

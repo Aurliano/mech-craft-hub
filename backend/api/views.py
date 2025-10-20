@@ -31,11 +31,14 @@ def initiate_payment_project_advance(request, order_id):
         order = Order.objects.get(id=order_id)
         if order.customer != request.user and not request.user.is_staff:
             return Response({'detail': 'دسترسی غیرمجاز'}, status=status.HTTP_403_FORBIDDEN)
-        # For simplicity: use total_amount * 0.5 if set; otherwise require amount from client
-        if order.total_amount and float(order.total_amount) > 0:
+        # Use accepted proposal price if available; fallback to total_amount
+        accepted_proposal = order.proposals.filter(status='accepted').order_by('-created_at').first()
+        if accepted_proposal:
+            advance = int(float(accepted_proposal.price) * 0.5)
+        elif order.total_amount and float(order.total_amount) > 0:
             advance = int(float(order.total_amount) * 0.5)
         else:
-            return Response({'detail': 'مبلغ کل سفارش مشخص نیست'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'مبلغ پیشنهاد یا کل سفارش مشخص نیست'}, status=status.HTTP_400_BAD_REQUEST)
         data = {
             'order': str(order.id),
             'amount': advance,
@@ -55,10 +58,13 @@ def initiate_payment_project_final(request, order_id):
         order = Order.objects.get(id=order_id)
         if order.customer != request.user and not request.user.is_staff:
             return Response({'detail': 'دسترسی غیرمجاز'}, status=status.HTTP_403_FORBIDDEN)
-        if order.total_amount and float(order.total_amount) > 0:
+        accepted_proposal = order.proposals.filter(status='accepted').order_by('-created_at').first()
+        if accepted_proposal:
+            final_amount = int(float(accepted_proposal.price) * 0.5)
+        elif order.total_amount and float(order.total_amount) > 0:
             final_amount = int(float(order.total_amount) * 0.5)
         else:
-            return Response({'detail': 'مبلغ کل سفارش مشخص نیست'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'detail': 'مبلغ پیشنهاد یا کل سفارش مشخص نیست'}, status=status.HTTP_400_BAD_REQUEST)
         data = {
             'order': str(order.id),
             'amount': final_amount,
@@ -117,6 +123,8 @@ from django.utils.crypto import get_random_string
 from uuid import uuid4
 import logging
 import requests
+import hmac
+import hashlib
 from .utils.turnstile import (
     check_fallback_available,
     get_fallback_captcha_data, verify_fallback_captcha, get_turnstile_stats
@@ -191,12 +199,14 @@ def initiate_payment(request):
 
         # Prepare BitPay payload
         rial_amount = toman_to_rial(data['amount'])
+        nonce = get_random_string(24)
         payload = {
             'api': settings.BITPAY_API_KEY,
             'amount': rial_amount,
             'callback': settings.BITPAY_CALLBACK_URL,
             'order_id': str(order.id),
             'payer_desc': data.get('description', ''),
+            'nonce': nonce,
         }
 
         resp = requests.post(f"{settings.BITPAY_BASE_URL}/api/create", json=payload, timeout=20)
@@ -222,9 +232,21 @@ def bitpay_webhook(request):
     """Handle BitPay callback/webhook to confirm payment and update order status."""
     try:
         payload = request.data if hasattr(request, 'data') else {}
+        # Optional HMAC verification if BitPay provides signature in headers (example: X-BitPay-Signature)
+        signature = request.META.get('HTTP_X_BITPAY_SIGNATURE') or request.headers.get('X-BitPay-Signature') if hasattr(request, 'headers') else None
+        if signature and settings.BITPAY_WEBHOOK_SECRET:
+            try:
+                raw_body = request.body
+                expected = hmac.new(settings.BITPAY_WEBHOOK_SECRET.encode('utf-8'), raw_body, hashlib.sha256).hexdigest()
+                if not hmac.compare_digest(expected, signature):
+                    logger.warning('BitPay webhook signature mismatch')
+                    return Response({'detail': 'امضای وبهوک نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
+            except Exception as e:
+                logger.warning('BitPay webhook signature check error: %s', str(e))
         order_id = payload.get('order_id')
         amount_rial = int(str(payload.get('amount', 0)) or 0)
         trans_id = str(payload.get('trans_id') or payload.get('transaction_id') or '')
+        nonce = str(payload.get('nonce') or '')
 
         if not order_id:
             return Response({'detail': 'شناسه سفارش نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
@@ -232,6 +254,10 @@ def bitpay_webhook(request):
         order = Order.objects.get(id=order_id)
         # Find latest pending payment matching amount (convert rial to toman for compare tolerance)
         amount_toman = rial_to_toman(amount_rial)
+        # Idempotency: if we already processed this transaction id or nonce, ignore
+        if trans_id and order.payments.filter(gateway_transaction_id=trans_id, status='paid').exists():
+            return Response({'detail': 'قبلا پردازش شده است'})
+
         payment = order.payments.filter(status='pending').order_by('-created_at').first()
         if not payment:
             return Response({'detail': 'پرداخت معلق یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
@@ -252,6 +278,8 @@ def bitpay_webhook(request):
             payment.gateway_transaction_id = str(payload.get('trans_id') or payload.get('transaction_id') or '')
             payment.gateway_response = payload
             payment.paid_at = timezone.now()
+            if nonce:
+                payment.webhook_nonce = nonce
             payment.save()
 
             # Apply business rules by type
