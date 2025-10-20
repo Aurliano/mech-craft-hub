@@ -3,7 +3,8 @@ from .models import (
     User, Role, UserRole, Scope, Service, ServiceField, ServiceTab,
     Cart, CartItem, Order, OrderItem, Quote, Workshop,
     Ticket, TicketMessage, TicketAttachment, TicketFileType, TicketCategory, TicketParticipant,
-    ContentFilterLog, Review, Notification, SupportFeedback, BlogPost, BlogComment, ScientificContent
+    ContentFilterLog, Review, Notification, SupportFeedback, BlogPost, BlogComment, ScientificContent,
+    OrderProposal, MaterialEstimate, OrderStatus, Payment
 )
 
 
@@ -493,6 +494,7 @@ class ChangePasswordSerializer(serializers.Serializer):
 class CreateOrderSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=Order.ORDER_STATUS, default='submitted')
     notes = serializers.CharField(required=False, allow_blank=True)
+    documentation_options = serializers.JSONField(required=False, default=dict)
     items = serializers.ListField(
         child=serializers.DictField(),
         min_length=1
@@ -501,6 +503,64 @@ class CreateOrderSerializer(serializers.Serializer):
 
 class OrderStatusUpdateSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=Order.ORDER_STATUS)
+
+
+# New Order Flow Serializers
+class OrderProposalSerializer(serializers.ModelSerializer):
+    contractor_name = serializers.CharField(source='contractor.username', read_only=True)
+    contractor_rating = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = OrderProposal
+        fields = ['id', 'order', 'contractor', 'contractor_name', 'contractor_rating', 'price', 'delivery_days', 'description', 'status', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at']
+    
+    def get_contractor_rating(self, obj):
+        # Calculate contractor rating (simplified)
+        return 4.5  # Placeholder
+
+
+class CreateOrderProposalSerializer(serializers.Serializer):
+    order = serializers.UUIDField()
+    price = serializers.DecimalField(max_digits=12, decimal_places=0, help_text="قیمت به تومان")
+    delivery_days = serializers.IntegerField(min_value=1)
+    description = serializers.CharField()
+
+
+class MaterialEstimateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MaterialEstimate
+        fields = ['id', 'order', 'estimated_cost', 'description', 'is_paid', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+
+class CreateMaterialEstimateSerializer(serializers.Serializer):
+    order = serializers.UUIDField()
+    estimated_cost = serializers.DecimalField(max_digits=12, decimal_places=0, help_text="هزینه برآورد شده متریال به تومان")
+    description = serializers.CharField()
+
+
+class OrderStatusSerializer(serializers.ModelSerializer):
+    created_by_name = serializers.CharField(source='created_by.username', read_only=True)
+    
+    class Meta:
+        model = OrderStatus
+        fields = ['id', 'order', 'status', 'description', 'created_at', 'created_by', 'created_by_name']
+        read_only_fields = ['id', 'created_at']
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = ['id', 'order', 'amount', 'payment_type', 'status', 'gateway_transaction_id', 'created_at', 'paid_at']
+        read_only_fields = ['id', 'created_at', 'paid_at']
+
+
+class ProcessPaymentSerializer(serializers.Serializer):
+    order = serializers.UUIDField()
+    amount = serializers.DecimalField(max_digits=12, decimal_places=0, help_text="مبلغ به تومان")
+    payment_type = serializers.ChoiceField(choices=Payment.PAYMENT_TYPE_CHOICES)
+    gateway_response = serializers.JSONField(required=False)
 
 
 # Quote Management Serializers

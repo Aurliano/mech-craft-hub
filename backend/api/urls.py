@@ -18,6 +18,9 @@ from .views import (
     create_quote, get_quotes_by_order, accept_quote, reject_quote,
     add_order_to_cart, remove_from_cart,
     process_payment, download_invoice, get_service_fields,
+    # Order flow endpoints
+    create_order_proposal, get_order_proposals, accept_order_proposal,
+    create_material_estimate, get_material_estimate,
     # Notification endpoints
     get_user_notifications, mark_notification_read, mark_all_notifications_read,
     # Contractor endpoints
@@ -99,6 +102,13 @@ urlpatterns = [
     
     # Service Fields Endpoint
     path('v1/services/<uuid:service_id>/fields/', get_service_fields, name='get_service_fields'),
+    
+    # Order Flow Endpoints
+    path('v1/orders/<uuid:order_id>/proposals/', get_order_proposals, name='get_order_proposals'),
+    path('v1/proposals/', create_order_proposal, name='create_order_proposal'),
+    path('v1/proposals/<uuid:proposal_id>/accept/', accept_order_proposal, name='accept_order_proposal'),
+    path('v1/material-estimates/', create_material_estimate, name='create_material_estimate'),
+    path('v1/orders/<uuid:order_id>/material-estimate/', get_material_estimate, name='get_material_estimate'),
     
     # Quote Management Endpoints
     path('v1/quotes/', create_quote, name='create_quote'),

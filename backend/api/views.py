@@ -15,7 +15,7 @@ from .models import (
     Ticket, TicketMessage, TicketAttachment, TicketFileType, TicketCategory, TicketParticipant,
     ContentFilterLog, Review, MediaFile,
     PasswordResetToken, PhoneVerificationCode, Payment, Notification, OrderStatusLog,
-    ScientificContent
+    ScientificContent, OrderProposal, MaterialEstimate, OrderStatus
 )
 from .pagination import StandardResultsSetPagination
 from .throttling import (
@@ -34,7 +34,9 @@ from .serializers import (
     PasswordResetRequestSerializer, PasswordResetConfirmSerializer, PhoneVerificationRequestSerializer,
     PhoneVerificationConfirmSerializer, ChangePasswordSerializer,
     CreateOrderSerializer, OrderStatusUpdateSerializer, CreateQuoteSerializer,
-    NotificationSerializer, ScientificContentSerializer, ScientificContentListSerializer, ScientificContentCreateSerializer
+    NotificationSerializer, ScientificContentSerializer, ScientificContentListSerializer, ScientificContentCreateSerializer,
+    OrderProposalSerializer, CreateOrderProposalSerializer, MaterialEstimateSerializer, CreateMaterialEstimateSerializer,
+    OrderStatusSerializer, PaymentSerializer, ProcessPaymentSerializer
 )
 import os
 import random
@@ -1005,6 +1007,7 @@ def create_order(request):
             customer=customer,
             status=data.get('status', 'submitted'),
             notes=data.get('notes', ''),
+            documentation_options=data.get('documentation_options', {}),
             total_amount=0  # Will be calculated later
         )
         
@@ -1075,6 +1078,155 @@ def get_service_fields(request, service_id):
         return Response(ServiceFieldSerializer(fields, many=True).data)
     except Service.DoesNotExist:
         raise NotFoundException('سرویس یافت نشد', 'سرویس مورد نظر وجود ندارد')
+
+
+# Order Proposal Management
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def create_order_proposal(request):
+    """Create a proposal for an order"""
+    serializer = CreateOrderProposalSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    
+    try:
+        data = serializer.validated_data
+        contractor = request.user
+        
+        # Check if contractor has access to this order
+        order = Order.objects.get(id=data['order'])
+        
+        # Create proposal
+        proposal = OrderProposal.objects.create(
+            order=order,
+            contractor=contractor,
+            price=data['price'],
+            delivery_days=data['delivery_days'],
+            description=data['description']
+        )
+        
+        return Response(OrderProposalSerializer(proposal).data, status=status.HTTP_201_CREATED)
+    except Order.DoesNotExist:
+        return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_order_proposals(request, order_id):
+    """Get proposals for a specific order"""
+    try:
+        order = Order.objects.get(id=order_id)
+        
+        # Check permissions
+        if request.user != order.customer and not request.user.is_staff:
+            return Response({'detail': 'شما دسترسی به این سفارش ندارید'}, status=status.HTTP_403_FORBIDDEN)
+        
+        proposals = OrderProposal.objects.filter(order=order).order_by('-created_at')
+        return Response(OrderProposalSerializer(proposals, many=True).data)
+    except Order.DoesNotExist:
+        return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def accept_order_proposal(request, proposal_id):
+    """Accept a proposal"""
+    try:
+        proposal = OrderProposal.objects.get(id=proposal_id)
+        
+        # Check permissions
+        if request.user != proposal.order.customer:
+            return Response({'detail': 'شما دسترسی به این سفارش ندارید'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Business rule: For manufacturing orders, material must be paid before accepting contractor proposal
+        order = proposal.order
+        has_manufacturing = order.items.filter(service__type='manufacturing').exists()
+        if has_manufacturing:
+            material_estimate = getattr(order, 'material_estimate', None)
+            if not material_estimate or not material_estimate.is_paid:
+                return Response(
+                    {
+                        'detail': 'ابتدا باید هزینه برآورد متریال پرداخت شود تا بتوانید پیشنهاد پیمانکار را بپذیرید.'
+                    },
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
+        # Update proposal status
+        proposal.status = 'accepted'
+        proposal.save()
+        
+        # Update order status
+        proposal.order.status = 'proposal_accepted'
+        proposal.order.save()
+        
+        # Create status history
+        OrderStatus.objects.create(
+            order=proposal.order,
+            status='proposal_accepted',
+            description=f'پیشنهاد {proposal.contractor.username} پذیرفته شد',
+            created_by=request.user
+        )
+        
+        return Response({'detail': 'پیشنهاد با موفقیت پذیرفته شد'})
+    except OrderProposal.DoesNotExist:
+        return Response({'detail': 'پیشنهاد یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+
+
+# Material Estimate Management
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def create_material_estimate(request):
+    """Create material estimate for manufacturing order"""
+    serializer = CreateMaterialEstimateSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    
+    try:
+        data = serializer.validated_data
+        order = Order.objects.get(id=data['order'])
+        
+        # Check if order is manufacturing type
+        manufacturing_items = order.items.filter(service__type='manufacturing')
+        if not manufacturing_items.exists():
+            return Response({'detail': 'این سفارش مربوط به ساخت و تولید نیست'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Create or update material estimate
+        material_estimate, created = MaterialEstimate.objects.get_or_create(
+            order=order,
+            defaults={
+                'estimated_cost': data['estimated_cost'],
+                'description': data['description']
+            }
+        )
+        
+        if not created:
+            material_estimate.estimated_cost = data['estimated_cost']
+            material_estimate.description = data['description']
+            material_estimate.save()
+        
+        return Response(MaterialEstimateSerializer(material_estimate).data, status=status.HTTP_201_CREATED)
+    except Order.DoesNotExist:
+        return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_material_estimate(request, order_id):
+    """Get material estimate for an order"""
+    try:
+        order = Order.objects.get(id=order_id)
+        
+        # Check permissions
+        if request.user != order.customer and not request.user.is_staff:
+            return Response({'detail': 'شما دسترسی به این سفارش ندارید'}, status=status.HTTP_403_FORBIDDEN)
+        
+        try:
+            material_estimate = MaterialEstimate.objects.get(order=order)
+            return Response(MaterialEstimateSerializer(material_estimate).data)
+        except MaterialEstimate.DoesNotExist:
+            return Response({'detail': 'برآورد متریال برای این سفارش وجود ندارد'}, status=status.HTTP_404_NOT_FOUND)
+    except Order.DoesNotExist:
+        return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
 
 
 @api_view(["PATCH"])

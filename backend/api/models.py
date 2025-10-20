@@ -227,6 +227,10 @@ class OrderProposal(models.Model):
         db_table = 'order_proposals'
         unique_together = ('order', 'contractor')
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['order'], name='idx_proposal_order'),
+            models.Index(fields=['status'], name='idx_proposal_status'),
+        ]
     
     def __str__(self):
         return f"پیشنهاد {self.contractor.username} برای سفارش {self.order.order_number}"
@@ -246,6 +250,10 @@ class MaterialEstimate(models.Model):
     class Meta:
         db_table = 'material_estimates'
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['order'], name='idx_material_order'),
+            models.Index(fields=['is_paid'], name='idx_material_is_paid'),
+        ]
     
     def __str__(self):
         return f"برآورد متریال سفارش {self.order.order_number}"
@@ -280,6 +288,11 @@ class OrderStatus(models.Model):
     class Meta:
         db_table = 'order_status_history'
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['order'], name='idx_orderstatus_order'),
+            models.Index(fields=['status'], name='idx_orderstatus_status'),
+            models.Index(fields=['created_at'], name='idx_orderstatus_created'),
+        ]
     
     def __str__(self):
         return f"{self.order.order_number} - {self.get_status_display()}"
@@ -305,7 +318,7 @@ class Payment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     order = models.ForeignKey('Order', on_delete=models.CASCADE, related_name='payments')
     amount = models.DecimalField(max_digits=12, decimal_places=0, help_text="مبلغ به تومان")
-    payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPE_CHOICES)
+    payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPE_CHOICES, default='project_advance')
     status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
     gateway_transaction_id = models.CharField(max_length=100, blank=True)
     gateway_response = models.JSONField(blank=True, null=True)
@@ -315,6 +328,12 @@ class Payment(models.Model):
     class Meta:
         db_table = 'payments'
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['order'], name='idx_payment_order'),
+            models.Index(fields=['payment_type'], name='idx_payment_type'),
+            models.Index(fields=['status'], name='idx_payment_status'),
+            models.Index(fields=['created_at'], name='idx_payment_created'),
+        ]
     
     def __str__(self):
         return f"پرداخت {self.get_payment_type_display()} سفارش {self.order.order_number}"
@@ -417,22 +436,25 @@ class Order(models.Model):
     """Customer orders"""
     
     ORDER_STATUS = [
-        ('draft', 'پیش‌نویس'),
-        ('submitted', 'ارسال شده'),
-        ('in_review', 'در حال بررسی'),
-        ('quoted', 'قیمت‌گذاری شده'),
-        ('accepted', 'تایید شده'),
+        ('submitted', 'ثبت شده'),
+        ('admin_approved', 'تایید ادمین'),
+        ('proposals_received', 'دریافت پیشنهادات'),
+        ('proposal_accepted', 'پیشنهاد پذیرفته شده'),
+        ('material_paid', 'متریال پرداخت شده'),
+        ('project_paid', 'پروژه پرداخت شده'),
         ('in_progress', 'در حال انجام'),
+        ('documentation_submitted', 'مستندات ارسال شده'),
+        ('final_payment_pending', 'در انتظار تسویه حساب'),
+        ('shipping', 'در حال ارسال'),
+        ('delivered', 'تحویل به مشتری'),
         ('completed', 'تکمیل شده'),
-        ('delivered', 'تحویل داده شده'),
         ('cancelled', 'لغو شده'),
-        ('refunded', 'بازگشت وجه'),
     ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='orders')
     order_number = models.CharField(max_length=50, unique=True)
-    status = models.CharField(max_length=50, choices=ORDER_STATUS, default='draft')
+    status = models.CharField(max_length=50, choices=ORDER_STATUS, default='submitted')
     total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     notes = models.TextField(blank=True)
     documentation_options = models.JSONField(default=dict, blank=True)
@@ -536,35 +558,6 @@ class OrderStatusLog(models.Model):
     
     def __str__(self):
         return f"{self.order.order_number}: {self.previous_status} → {self.new_status}"
-
-
-class Payment(models.Model):
-    """Payment records"""
-    
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='payments')
-    payment_id = models.CharField(max_length=100, unique=True)  # From payment gateway
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
-    method = models.CharField(max_length=20, choices=[
-        ('online', 'آنلاین'),
-        ('transfer', 'انتقال بانکی'),
-        ('cash', 'نقدی'),
-    ])
-    status = models.CharField(max_length=20, choices=[
-        ('pending', 'در انتظار'),
-        ('completed', 'تکمیل شده'),
-        ('failed', 'ناموفق'),
-        ('refunded', 'بازگشت وجه'),
-    ], default='pending')
-    gateway_response = models.JSONField(default=dict)
-    created_at = models.DateTimeField(auto_now_add=True)
-    paid_at = models.DateTimeField(null=True, blank=True)
-    
-    class Meta:
-        db_table = 'payments'
-    
-    def __str__(self):
-        return f"Payment {self.payment_id} - {self.order.order_number}"
 
 
 class TicketCategory(models.Model):

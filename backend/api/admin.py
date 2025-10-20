@@ -157,9 +157,9 @@ class OrderStatusLogAdmin(admin.ModelAdmin):
 
 @admin.register(Payment)
 class PaymentAdmin(admin.ModelAdmin):
-    list_display = ('payment_id', 'order', 'amount', 'method', 'status', 'created_at')
-    list_filter = ('status', 'method', 'created_at')
-    search_fields = ('payment_id', 'order__order_number')
+    list_display = ('id', 'order', 'amount', 'payment_type', 'status', 'created_at')
+    list_filter = ('status', 'payment_type', 'created_at')
+    search_fields = ('id', 'order__order_number')
     raw_id_fields = ('order',)
     readonly_fields = ('created_at', 'paid_at')
 
