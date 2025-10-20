@@ -366,18 +366,31 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onChange })
         </div>
       );
       
-    case 'file':
-      return (
-        <Input
-          type="file"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            onChange(file);
-          }}
-          accept=".sldprt,.sldasm,.ipt,.iam,.stp,.step"
-          className="text-right"
-        />
-      );
+        case 'file':
+          // Determine accept attribute based on field_key
+          let acceptTypes = ".sldprt,.sldasm,.ipt,.iam,.stp,.step,.dwg,.iges";
+          if (field.field_key === 'project_files') {
+            // For analysis services, check if it's coding solution
+            if (field.help_text?.includes('PDF') || field.help_text?.includes('DOCX')) {
+              acceptTypes = ".pdf,.docx,.jpg,.jpeg,.png";
+            } else {
+              acceptTypes = ".dwg,.step,.stp,.iges,.sldprt,.sldasm,.ipt,.iam";
+            }
+          } else if (field.field_key === 'drawing_files') {
+            acceptTypes = ".pdf,.dwg,.dxf,.step,.stp,.jpg,.jpeg,.png";
+          }
+          
+          return (
+            <Input
+              type="file"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                onChange(file);
+              }}
+              accept={acceptTypes}
+              className="text-right"
+            />
+          );
       
     case 'date':
       return (

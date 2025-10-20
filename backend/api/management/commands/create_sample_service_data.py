@@ -70,6 +70,24 @@ class Command(BaseCommand):
         if created:
             self.stdout.write(self.style.SUCCESS('Created service: ساخت و تولید'))
         
+        # Create Analysis & Simulation Service (with tabs)
+        analysis_service, created = Service.objects.get_or_create(
+            name='تحلیل و شبیه‌سازی',
+            defaults={
+                'scope': scope,
+                'type': 'analysis',
+                'description': 'خدمات تحلیل استاتیکی، دینامیکی و حل مسئله با کدنویسی',
+                'base_price': 1200000,
+                'estimated_delivery_days': 10,
+                'supports_documentation': True,
+                'has_tabs': True,
+                'is_active': True
+            }
+        )
+        
+        if created:
+            self.stdout.write(self.style.SUCCESS('Created service: تحلیل و شبیه‌سازی'))
+        
         # Create fields for Design Service (no tabs)
         design_fields = [
             {
@@ -186,6 +204,28 @@ class Command(BaseCommand):
             }
         ]
         
+        # Create tabs for Analysis & Simulation Service
+        analysis_tabs_data = [
+            {
+                'name': 'static_analysis',
+                'display_name': 'تحلیل استاتیکی',
+                'description': 'تحلیل استاتیکی با نرم‌افزارهای تخصصی',
+                'order': 1
+            },
+            {
+                'name': 'dynamic_analysis',
+                'display_name': 'تحلیل دینامیکی',
+                'description': 'تحلیل دینامیکی و شبیه‌سازی',
+                'order': 2
+            },
+            {
+                'name': 'coding_solution',
+                'display_name': 'حل مسئله با کدنویسی',
+                'description': 'حل مسائل با MATLAB و SIMULINK',
+                'order': 3
+            }
+        ]
+        
         # Create tabs for Drawing Service
         created_drawing_tabs = []
         for tab_data in drawing_tabs_data:
@@ -220,58 +260,102 @@ class Command(BaseCommand):
                 created_manufacturing_tabs.append(tab)
                 self.stdout.write(self.style.SUCCESS(f'Created manufacturing tab: {tab.display_name}'))
         
-        # Create fields for Manufacturing Service tabs
-        manufacturing_fields_data = {
-            'process_selection': [
+        # Create tabs for Analysis & Simulation Service
+        created_analysis_tabs = []
+        for tab_data in analysis_tabs_data:
+            tab, created = ServiceTab.objects.get_or_create(
+                service=analysis_service,
+                name=tab_data['name'],
+                defaults={
+                    'display_name': tab_data['display_name'],
+                    'description': tab_data['description'],
+                    'order': tab_data['order'],
+                    'is_active': True
+                }
+            )
+            if created:
+                created_analysis_tabs.append(tab)
+                self.stdout.write(self.style.SUCCESS(f'Created analysis tab: {tab.display_name}'))
+        
+        # Create fields for Analysis & Simulation Service tabs
+        analysis_fields_data = {
+            'static_analysis': [
                 {
-                    'name': 'فرآیندهای ساخت',
-                    'field_key': 'manufacturing_processes',
-                    'type': 'multiselect',
+                    'name': 'انتخاب نرم‌افزار',
+                    'field_key': 'software_selection',
+                    'type': 'select',
                     'options': [
-                        {'value': 'machining', 'label': 'تراشکاری'},
-                        {'value': 'milling', 'label': 'فرزکاری'},
-                        {'value': 'welding', 'label': 'جوشکاری'},
-                        {'value': 'coating', 'label': 'پوشش دهی'},
-                        {'value': 'grinding', 'label': 'سنگ زنی'},
-                        {'value': 'prototyping', 'label': 'نمونه سازی'},
-                        {'value': 'metallurgy', 'label': 'فرآیندهای متالوژی'}
+                        {'value': 'comsol', 'label': 'COMSOL'},
+                        {'value': 'abaqus', 'label': 'ABAQUS'},
+                        {'value': 'adams', 'label': 'ADAMS'}
                     ],
                     'is_required': True,
                     'order': 1,
-                    'help_text': 'فرآیندهای ساخت مورد نیاز خود را انتخاب کنید'
-                }
-            ],
-            'workshop_selection': [
+                    'help_text': 'نرم‌افزار مورد نظر برای تحلیل استاتیکی را انتخاب کنید'
+                },
                 {
-                    'name': 'کلاس کارگاه',
-                    'field_key': 'workshop_class',
-                    'type': 'multiselect',
-                    'options': [
-                        {'value': 'class_a', 'label': 'کلاس A - دقت بالا'},
-                        {'value': 'class_b', 'label': 'کلاس B - جوشکاری تخصصی'},
-                        {'value': 'class_c', 'label': 'کلاس C - تولید انبوه'}
-                    ],
-                    'is_required': True,
-                    'order': 1,
-                    'help_text': 'می‌توانید چند کلاس انتخاب کنید و قیمت‌ها را مقایسه کنید'
-                }
-            ],
-            'order_details': [
-                {
-                    'name': 'بارگذاری نقشه',
-                    'field_key': 'drawing_files',
+                    'name': 'بارگذاری فایل‌های پروژه',
+                    'field_key': 'project_files',
                     'type': 'file',
                     'is_required': True,
-                    'order': 1,
-                    'help_text': 'امکان آپلود چند فایل - فرمت‌های مجاز: PDF, DWG, DXF, STEP, تصاویر'
+                    'order': 2,
+                    'help_text': 'فایل مدل خود را آپلود کنید (فرمت‌های مجاز: DWG, STEP, STP, IGES, SLDPRT, SLDASM, IPT, IAM)'
                 },
                 {
                     'name': 'توضیحات تکمیلی',
                     'field_key': 'additional_notes',
                     'type': 'textarea',
+                    'is_required': True,
+                    'order': 3,
+                    'help_text': 'توضیحات کاملی از پروژه خود ارائه دهید'
+                }
+            ],
+            'dynamic_analysis': [
+                {
+                    'name': 'بارگذاری فایل‌های پروژه',
+                    'field_key': 'project_files',
+                    'type': 'file',
+                    'is_required': True,
+                    'order': 1,
+                    'help_text': 'فایل مدل خود را آپلود کنید (فرمت‌های مجاز: DWG, STEP, STP, IGES, SLDPRT, SLDASM, IPT, IAM)'
+                },
+                {
+                    'name': 'توضیحات تکمیلی',
+                    'field_key': 'additional_notes',
+                    'type': 'textarea',
+                    'is_required': True,
+                    'order': 2,
+                    'help_text': 'توضیحات کاملی از پروژه خود ارائه دهید'
+                }
+            ],
+            'coding_solution': [
+                {
+                    'name': 'انتخاب نرم‌افزار مورد نظر',
+                    'field_key': 'software_selection',
+                    'type': 'select',
+                    'options': [
+                        {'value': 'matlab', 'label': 'MATLAB'},
+                        {'value': 'simulink', 'label': 'SIMULINK'}
+                    ],
+                    'is_required': True,
+                    'order': 1,
+                    'help_text': 'نرم‌افزار مورد نظر برای حل مسئله را انتخاب کنید'
+                },
+                {
+                    'name': 'بارگذاری فایل‌های پروژه',
+                    'field_key': 'project_files',
+                    'type': 'file',
                     'is_required': False,
                     'order': 2,
-                    'help_text': 'هر توضیح اضافی که لازم است'
+                    'help_text': 'فایل‌های پروژه (فرمت‌های مجاز: PDF, DOCX, JPG, JPEG, PNG) - اختیاری'
+                },
+                {
+                    'name': 'توضیحات تکمیلی',
+                    'field_key': 'additional_notes',
+                    'type': 'textarea',
+                    'is_required': True,
+                    'order': 3,
+                    'help_text': 'توضیحات کاملی از پروژه خود ارائه دهید'
                 }
             ]
         }
@@ -454,8 +538,28 @@ class Command(BaseCommand):
                 if created:
                     self.stdout.write(self.style.SUCCESS(f'Created manufacturing field: {field.name}'))
         
+        # Create fields for Analysis & Simulation Service tabs
+        for tab in created_analysis_tabs:
+            tab_fields = analysis_fields_data.get(tab.name, [])
+            for field_data in tab_fields:
+                field, created = ServiceField.objects.get_or_create(
+                    service=analysis_service,
+                    tab=tab,
+                    field_key=field_data['field_key'],
+                    defaults={
+                        'name': field_data['name'],
+                        'type': field_data['type'],
+                        'options': field_data.get('options'),
+                        'is_required': field_data['is_required'],
+                        'order': field_data['order'],
+                        'help_text': field_data.get('help_text', '')
+                    }
+                )
+                if created:
+                    self.stdout.write(self.style.SUCCESS(f'Created analysis field: {field.name}'))
+        
         self.stdout.write(
             self.style.SUCCESS(
-                f'Successfully created services: {design_service.name}, {drawing_service.name}, and {manufacturing_service.name}'
+                f'Successfully created services: {design_service.name}, {drawing_service.name}, {manufacturing_service.name}, and {analysis_service.name}'
             )
         )
