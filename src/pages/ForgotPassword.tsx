@@ -26,6 +26,11 @@ const ForgotPassword = () => {
     navigate('/password-reset-sms');
   };
 
+  // Default to SMS flow by redirecting immediately
+  React.useEffect(() => {
+    navigate('/password-reset-sms');
+  }, [navigate]);
+
   return (
     <div className="min-h-screen" dir="rtl">
       <Navbar />
@@ -34,66 +39,15 @@ const ForgotPassword = () => {
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">فراموشی رمز عبور</CardTitle>
             <CardDescription>
-              ایمیل خود را وارد کنید تا لینک بازنشانی رمز عبور برایتان ارسال شود
+              در حال انتقال به صفحه بازیابی با پیامک...
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {isSuccess ? (
-              <Alert>
-                <AlertDescription>
-                  لینک بازنشانی رمز عبور به ایمیل شما ارسال شد. لطفاً صندوق ورودی خود را بررسی کنید.
-                </AlertDescription>
-              </Alert>
-            ) : (
-              <form className="space-y-4" onSubmit={onSubmit}>
-                <div className="space-y-2">
-                  <Label htmlFor="email">ایمیل</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="text-right"
-                    required
-                  />
-                </div>
-                {error ? (
-                  <div className="text-red-600 text-sm">
-                    {error.message || "خطا در ارسال درخواست"}
-                  </div>
-                ) : null}
-                <Button className="w-full" variant="hero" type="submit" disabled={isPending}>
-                  {isPending ? "در حال ارسال..." : "ارسال لینک بازنشانی"}
-                </Button>
-                
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">یا</span>
-                  </div>
-                </div>
-                
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  className="w-full" 
-                  onClick={handleSMSReset}
-                >
-                  بازیابی با پیامک
-                </Button>
-                
-                <div className="text-center">
-                  <span className="text-sm text-muted-foreground">
-                    رمز عبور خود را به یاد آوردید؟{" "}
-                    <Link to="/login" className="text-primary hover:underline">
-                      وارد شوید
-                    </Link>
-                  </span>
-                </div>
-              </form>
-            )}
+            <Alert>
+              <AlertDescription>
+                لطفاً منتظر بمانید...
+              </AlertDescription>
+            </Alert>
           </CardContent>
         </Card>
       </div>

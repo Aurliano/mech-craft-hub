@@ -120,7 +120,7 @@ export default function PasswordResetSMS() {
           </h2>
           <p className="mt-2 text-sm text-gray-600">
             {step === 'email' 
-              ? 'ایمیل خود را وارد کنید تا کد بازیابی به شماره تلفن شما ارسال شود'
+              ? 'برای یافتن حساب، ایمیل خود را وارد کنید تا کد بازیابی به شماره ثبت‌شده شما پیامک شود'
               : step === 'code'
               ? 'کد ارسال شده به شماره تلفن خود را وارد کنید'
               : 'کد تأیید شد. در حال انتقال...'
@@ -135,7 +135,7 @@ export default function PasswordResetSMS() {
             <form className="space-y-6" onSubmit={handleEmailSubmit}>
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  ایمیل
+                  ایمیل حساب کاربری
                 </label>
                 <div className="mt-1">
                   <input

@@ -41,17 +41,21 @@ class SMSService:
         }
     
     def _format_phone_number(self, phone: str) -> str:
-        """Format phone number for SMS.ir API"""
-        # Remove any non-digit characters
-        phone = ''.join(filter(str.isdigit, phone))
-        
-        # Add country code if not present
-        if phone.startswith('0'):
-            phone = '98' + phone[1:]
-        elif not phone.startswith('98'):
-            phone = '98' + phone
-            
-        return phone
+        """Format phone number for SMS.ir API as local format 09XXXXXXXXX (per docs)."""
+        # Keep only digits
+        digits = ''.join(filter(str.isdigit, phone or ''))
+        if not digits:
+            return ''
+        # Normalize common variants to local 09xxxxxxxxxx
+        if digits.startswith('0098'):
+            digits = '0' + digits[4:]
+        elif digits.startswith('98'):
+            digits = '0' + digits[2:]
+        elif not digits.startswith('0'):
+            # If starts with 9XXXXXXXXX, prefix 0
+            if len(digits) in (9, 10) and digits[0] == '9':
+                digits = '0' + digits
+        return digits
     
     def send_verification_code(self, phone: str, code: str, template_id: int = None) -> Dict[str, Any]:
         """
