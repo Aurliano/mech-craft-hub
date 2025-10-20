@@ -42,6 +42,7 @@ import Blog from "./pages/Blog";
 import BlogPage from "./pages/BlogPage";
 import BlogPostPage from "./pages/BlogPostPage";
 import FileManager from "./pages/FileManager";
+import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -149,6 +150,11 @@ const App = () => (
               <Route path="/blog/:slug" element={<BlogPostPage />} />
               
               {/* Admin Routes */}
+              <Route path="/admin/dashboard" element={
+                <RoleBasedRoute allowedRoles={['admin']}>
+                  <AdminDashboard />
+                </RoleBasedRoute>
+              } />
               <Route path="/admin/file-manager" element={
                 <RoleBasedRoute allowedRoles={['admin']}>
                   <FileManager />

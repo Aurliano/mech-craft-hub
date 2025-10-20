@@ -196,6 +196,12 @@ const Navbar = () => {
               {/* Auth Buttons */}
               {isAuthenticated ? (
                 <>
+                  {/* Admin Shortcut */}
+                  {((user as unknown as Record<string, unknown>)?.role === 'admin') || ((user as unknown as { role?: { name?: string } }).role?.name === 'admin') ? (
+                    <Button variant="outline" size="sm" asChild title="داشبورد مدیر">
+                      <Link to="/admin/dashboard">داشبورد مدیر</Link>
+                    </Button>
+                  ) : null}
                   {/* Shopping Cart */}
                   {isCustomer && (
                     <Button variant="ghost" size="sm" className="relative" asChild title="سبد خرید">
