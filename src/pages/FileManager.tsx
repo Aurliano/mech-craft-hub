@@ -219,7 +219,7 @@ const FileManager = () => {
   };
 
   // Access control: support both string role and object role with name
-  const isAdmin = !!user && (((user as unknown as Record<string, unknown>)?.role === 'admin') || ((user as unknown as { role?: { name?: string } }).role?.name === 'admin'));
+  const isAdmin = !!user && ((((user as unknown as Record<string, unknown>)?.role) === 'admin') || ((user as unknown as { role?: { name?: string } }).role?.name === 'admin'));
 
   if (!isAdmin) {
     return (
