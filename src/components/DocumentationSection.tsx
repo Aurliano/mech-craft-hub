@@ -19,6 +19,7 @@ interface DocumentationSectionProps {
   onDocumentationOptionChange: (option: string, checked: boolean) => void;
   documentationNotes: string;
   onDocumentationNotesChange: (notes: string) => void;
+  serviceSupportsDocumentation?: boolean;
 }
 
 const documentationOptions: DocumentationOption[] = [
@@ -99,7 +100,7 @@ const documentationOptions: DocumentationOption[] = [
 const DocumentationSection: React.FC<DocumentationSectionProps> = ({
   needsDocumentation,
   onNeedsDocumentationChange,
-  documentationOptions,
+  documentationOptions: selectedOptions,
   onDocumentationOptionChange,
   documentationNotes,
   onDocumentationNotesChange
@@ -151,7 +152,7 @@ const DocumentationSection: React.FC<DocumentationSectionProps> = ({
                   <div key={option.id} className="flex items-start space-x-3 space-x-reverse">
                     <Checkbox
                       id={option.id}
-                      checked={documentationOptions[option.id] || false}
+                      checked={selectedOptions[option.id] || false}
                       onCheckedChange={(checked) => onDocumentationOptionChange(option.id, checked === true)}
                       className="mt-1"
                     />

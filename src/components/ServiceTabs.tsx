@@ -116,14 +116,14 @@ const ServiceTabs: React.FC<ServiceTabsProps> = ({
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
       <TabsList className="grid w-full grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-        {tabs.map((tab) => (
+        {Array.isArray(tabs) && tabs.map((tab) => (
           <TabsTrigger key={tab.id} value={tab.id}>
             {tab.display_name || tab.name}
           </TabsTrigger>
         ))}
       </TabsList>
       
-      {tabs.map((tab) => (
+      {Array.isArray(tabs) && tabs.map((tab) => (
         <TabsContent key={tab.id} value={tab.id} className="mt-6">
           <Card>
             <CardHeader>
@@ -324,7 +324,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onChange })
             <SelectValue placeholder="انتخاب کنید" />
           </SelectTrigger>
           <SelectContent>
-            {field.options?.map((option, index) => {
+            {Array.isArray(field.options) && field.options.map((option, index) => {
               const optionValue = option.value;
               const optionLabel = option.label;
               return (
@@ -340,7 +340,7 @@ const FieldRenderer: React.FC<FieldRendererProps> = ({ field, value, onChange })
     case 'multiselect':
       return (
         <div className="space-y-2">
-          {field.options?.map((option, index) => {
+          {Array.isArray(field.options) && field.options.map((option, index) => {
             const optionValue = option.value;
             const optionLabel = option.label;
             const currentValues = Array.isArray(value) ? (value as string[]) : [];

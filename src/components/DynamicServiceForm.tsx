@@ -321,7 +321,7 @@ export function DynamicServiceForm({
                 <SelectValue placeholder={field.help_text} />
               </SelectTrigger>
               <SelectContent>
-                {field.options?.map((option, index) => (
+                {Array.isArray(field.options) && field.options.map((option, index) => (
                   <SelectItem key={index} value={option.value}>
                     {option.label}
                   </SelectItem>
@@ -348,7 +348,7 @@ export function DynamicServiceForm({
         return (
           <div className="space-y-2">
             <div className="space-y-2">
-              {field.options?.map((option, index) => (
+              {Array.isArray(field.options) && field.options.map((option, index) => (
                 <div key={index} className="flex items-center space-x-2 space-x-reverse">
                   <Checkbox
                     id={`${field.field_key}-${option.value}`}
