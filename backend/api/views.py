@@ -1,3 +1,73 @@
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def initiate_payment_material(request, order_id):
+    """Initiate payment specifically for material estimate of a manufacturing order."""
+    try:
+        order = Order.objects.get(id=order_id)
+        if order.customer != request.user and not request.user.is_staff:
+            return Response({'detail': 'دسترسی غیرمجاز'}, status=status.HTTP_403_FORBIDDEN)
+        material_estimate = getattr(order, 'material_estimate', None)
+        if not material_estimate:
+            return Response({'detail': 'برآورد متریال یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+        if material_estimate.is_paid:
+            return Response({'detail': 'متریال قبلا پرداخت شده است'}, status=status.HTTP_400_BAD_REQUEST)
+
+        data = {
+            'order': str(order.id),
+            'amount': int(material_estimate.estimated_cost),
+            'payment_type': 'material',
+            'description': 'پرداخت متریال سفارش'
+        }
+        return initiate_payment(request._request.__class__())  # Delegate to common handler
+    except Order.DoesNotExist:
+        return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def initiate_payment_project_advance(request, order_id):
+    """Initiate payment for project advance (50%)."""
+    try:
+        order = Order.objects.get(id=order_id)
+        if order.customer != request.user and not request.user.is_staff:
+            return Response({'detail': 'دسترسی غیرمجاز'}, status=status.HTTP_403_FORBIDDEN)
+        # For simplicity: use total_amount * 0.5 if set; otherwise require amount from client
+        if order.total_amount and float(order.total_amount) > 0:
+            advance = int(float(order.total_amount) * 0.5)
+        else:
+            return Response({'detail': 'مبلغ کل سفارش مشخص نیست'}, status=status.HTTP_400_BAD_REQUEST)
+        data = {
+            'order': str(order.id),
+            'amount': advance,
+            'payment_type': 'project_advance',
+            'description': 'پیش‌پرداخت پروژه (۵۰٪)'
+        }
+        return initiate_payment(request._request.__class__())
+    except Order.DoesNotExist:
+        return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def initiate_payment_project_final(request, order_id):
+    """Initiate payment for project final (remaining 50%)."""
+    try:
+        order = Order.objects.get(id=order_id)
+        if order.customer != request.user and not request.user.is_staff:
+            return Response({'detail': 'دسترسی غیرمجاز'}, status=status.HTTP_403_FORBIDDEN)
+        if order.total_amount and float(order.total_amount) > 0:
+            final_amount = int(float(order.total_amount) * 0.5)
+        else:
+            return Response({'detail': 'مبلغ کل سفارش مشخص نیست'}, status=status.HTTP_400_BAD_REQUEST)
+        data = {
+            'order': str(order.id),
+            'amount': final_amount,
+            'payment_type': 'project_final',
+            'description': 'تسویه نهایی پروژه (۵۰٪)'
+        }
+        return initiate_payment(request._request.__class__())
+    except Order.DoesNotExist:
+        return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
 from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.response import Response
 from rest_framework import viewsets, permissions, status, filters
@@ -46,6 +116,7 @@ from django.utils import timezone
 from django.utils.crypto import get_random_string
 from uuid import uuid4
 import logging
+import requests
 from .utils.turnstile import (
     check_fallback_available,
     get_fallback_captcha_data, verify_fallback_captcha, get_turnstile_stats
@@ -79,6 +150,143 @@ class OrderFilter(filters_drf.FilterSet):
     class Meta:
         model = Order
         fields = ['status', 'customer', 'min_amount', 'max_amount', 'created_after', 'created_before']
+
+
+# Utilities for payment amounts
+def toman_to_rial(amount_toman: int) -> int:
+    try:
+        return int(amount_toman) * 10
+    except Exception:
+        return 0
+
+
+def rial_to_toman(amount_rial: int) -> int:
+    try:
+        return int(amount_rial) // 10
+    except Exception:
+        return 0
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def initiate_payment(request):
+    """Initiate a BitPay payment and create a Payment record (amount in Toman)."""
+    serializer = ProcessPaymentSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+    data = serializer.validated_data
+    
+    try:
+        order = Order.objects.get(id=data['order'])
+        # Only owner may initiate payment
+        if order.customer != request.user and not request.user.is_staff:
+            return Response({'detail': 'دسترسی غیرمجاز'}, status=status.HTTP_403_FORBIDDEN)
+
+        # Create pending payment
+        payment = Payment.objects.create(
+            order=order,
+            amount=data['amount'],
+            payment_type=data['payment_type'],
+            status='pending'
+        )
+
+        # Prepare BitPay payload
+        rial_amount = toman_to_rial(data['amount'])
+        payload = {
+            'api': settings.BITPAY_API_KEY,
+            'amount': rial_amount,
+            'callback': settings.BITPAY_CALLBACK_URL,
+            'order_id': str(order.id),
+            'payer_desc': data.get('description', ''),
+        }
+
+        resp = requests.post(f"{settings.BITPAY_BASE_URL}/api/create", json=payload, timeout=20)
+        if resp.status_code != 200:
+            return Response({'detail': 'خطا در اتصال به درگاه پرداخت'}, status=status.HTTP_502_BAD_GATEWAY)
+        body = resp.json()
+        if not body.get('success'):
+            return Response({'detail': body.get('message', 'خطای درگاه پرداخت')}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Return payment URL to client
+        return Response({
+            'payment_id': str(payment.id),
+            'gateway': 'bitpay',
+            'redirect_url': body.get('link')
+        })
+    except Order.DoesNotExist:
+        return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["POST"])
+@permission_classes([AllowAny])
+def bitpay_webhook(request):
+    """Handle BitPay callback/webhook to confirm payment and update order status."""
+    try:
+        payload = request.data if hasattr(request, 'data') else {}
+        order_id = payload.get('order_id')
+        amount_rial = int(str(payload.get('amount', 0)) or 0)
+        trans_id = str(payload.get('trans_id') or payload.get('transaction_id') or '')
+
+        if not order_id:
+            return Response({'detail': 'شناسه سفارش نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
+
+        order = Order.objects.get(id=order_id)
+        # Find latest pending payment matching amount (convert rial to toman for compare tolerance)
+        amount_toman = rial_to_toman(amount_rial)
+        payment = order.payments.filter(status='pending').order_by('-created_at').first()
+        if not payment:
+            return Response({'detail': 'پرداخت معلق یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Verify with BitPay verify endpoint for security (recommended by their docs)
+        verify_ok = False
+        try:
+            verify_payload = { 'api': settings.BITPAY_API_KEY, 'trans_id': trans_id }
+            vresp = requests.post(f"{settings.BITPAY_BASE_URL}/api/verify", json=verify_payload, timeout=20)
+            if vresp.status_code == 200:
+                vbody = vresp.json()
+                verify_ok = bool(vbody.get('success'))
+        except Exception:
+            verify_ok = False
+
+        if verify_ok:
+            payment.status = 'paid'
+            payment.gateway_transaction_id = str(payload.get('trans_id') or payload.get('transaction_id') or '')
+            payment.gateway_response = payload
+            payment.paid_at = timezone.now()
+            payment.save()
+
+            # Apply business rules by type
+            if payment.payment_type == 'material':
+                # Mark material estimate as paid
+                try:
+                    material_estimate = order.material_estimate
+                    material_estimate.is_paid = True
+                    material_estimate.save()
+                except MaterialEstimate.DoesNotExist:
+                    pass
+                order.status = 'material_paid'
+                order.save()
+                OrderStatus.objects.create(order=order, status='material_paid', description='پرداخت متریال تایید شد')
+            elif payment.payment_type == 'project_advance':
+                order.status = 'project_paid'
+                order.save()
+                OrderStatus.objects.create(order=order, status='project_paid', description='پیش‌پرداخت پروژه تایید شد')
+            elif payment.payment_type == 'project_final':
+                order.status = 'shipping'
+                order.save()
+                OrderStatus.objects.create(order=order, status='shipping', description='تسویه نهایی تایید شد - ارسال در حال انجام')
+
+            return Response({'detail': 'پرداخت تایید شد'})
+        else:
+            payment.status = 'failed'
+            payment.gateway_response = payload
+            payment.save()
+            return Response({'detail': 'پرداخت ناموفق بود'}, status=status.HTTP_400_BAD_REQUEST)
+    except Order.DoesNotExist:
+        return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        logger.exception('BitPay webhook error: %s', str(e))
+        return Response({'detail': 'خطای داخلی سرور'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 
 class QuoteFilter(filters_drf.FilterSet):
@@ -1237,21 +1445,34 @@ def update_order_status(request, order_id):
     serializer.is_valid(raise_exception=True)
     
     try:
-        order = Order.objects.get(id=order_id, customer=request.user)
+        # Only owner or staff can change
+        if request.user.is_staff:
+            order = Order.objects.get(id=order_id)
+        else:
+            order = Order.objects.get(id=order_id, customer=request.user)
         old_status = order.status
-        order.status = serializer.validated_data['status']
+        new_status = serializer.validated_data['status']
+
+        # Prevent skipping material payment for manufacturing orders
+        if new_status in ['proposal_accepted', 'project_paid', 'in_progress']:
+            has_manufacturing = order.items.filter(service__type='manufacturing').exists()
+            if has_manufacturing:
+                material_estimate = getattr(order, 'material_estimate', None)
+                if not material_estimate or not material_estimate.is_paid:
+                    return Response({'detail': 'ابتدا هزینه متریال باید پرداخت شود.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        order.status = new_status
         order.save()
         
-        # Log status change
-        OrderStatusLog.objects.create(
+        # Log status change (new model)
+        OrderStatus.objects.create(
             order=order,
-            previous_status=old_status,
-            new_status=order.status,
-            changed_by=request.user,
-            reason=serializer.validated_data.get('reason', '')
+            status=new_status,
+            description=f'تغییر وضعیت از {old_status} به {new_status}',
+            created_by=request.user if request.user.is_authenticated else None
         )
         
-        return Response(OrderSerializer(order).data)
+        return Response({'detail': 'وضعیت سفارش با موفقیت تغییر یافت'})
     except Order.DoesNotExist:
         return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
 

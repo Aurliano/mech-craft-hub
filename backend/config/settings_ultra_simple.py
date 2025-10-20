@@ -220,6 +220,11 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
+# Payments (BitPay)
+BITPAY_API_KEY = os.getenv('BITPAY_API_KEY', '')
+BITPAY_BASE_URL = os.getenv('BITPAY_BASE_URL', 'https://api.bitpay.ir')
+BITPAY_CALLBACK_URL = os.getenv('BITPAY_CALLBACK_URL', '')
+
 # Simple JWT
 from datetime import timedelta
 SIMPLE_JWT = {

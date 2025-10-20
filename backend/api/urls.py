@@ -21,6 +21,8 @@ from .views import (
     # Order flow endpoints
     create_order_proposal, get_order_proposals, accept_order_proposal,
     create_material_estimate, get_material_estimate,
+    initiate_payment, bitpay_webhook,
+    initiate_payment_material, initiate_payment_project_advance, initiate_payment_project_final,
     # Notification endpoints
     get_user_notifications, mark_notification_read, mark_all_notifications_read,
     # Contractor endpoints
@@ -109,6 +111,13 @@ urlpatterns = [
     path('v1/proposals/<uuid:proposal_id>/accept/', accept_order_proposal, name='accept_order_proposal'),
     path('v1/material-estimates/', create_material_estimate, name='create_material_estimate'),
     path('v1/orders/<uuid:order_id>/material-estimate/', get_material_estimate, name='get_material_estimate'),
+    
+    # Payment endpoints (BitPay)
+    path('v1/payments/initiate/', initiate_payment, name='initiate_payment'),
+    path('v1/payments/bitpay/webhook/', bitpay_webhook, name='bitpay_webhook'),
+    path('v1/orders/<uuid:order_id>/payments/material/', initiate_payment_material, name='initiate_payment_material'),
+    path('v1/orders/<uuid:order_id>/payments/advance/', initiate_payment_project_advance, name='initiate_payment_project_advance'),
+    path('v1/orders/<uuid:order_id>/payments/final/', initiate_payment_project_final, name='initiate_payment_project_final'),
     
     # Quote Management Endpoints
     path('v1/quotes/', create_quote, name='create_quote'),

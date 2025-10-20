@@ -560,7 +560,7 @@ class ProcessPaymentSerializer(serializers.Serializer):
     order = serializers.UUIDField()
     amount = serializers.DecimalField(max_digits=12, decimal_places=0, help_text="مبلغ به تومان")
     payment_type = serializers.ChoiceField(choices=Payment.PAYMENT_TYPE_CHOICES)
-    gateway_response = serializers.JSONField(required=False)
+    description = serializers.CharField(required=False, allow_blank=True)
 
 
 # Quote Management Serializers
