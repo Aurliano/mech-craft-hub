@@ -107,10 +107,12 @@ const Manufacturing = () => {
     needsDocumentation,
     notes,
     documentationOptions,
+    documentationNotes,
     updateField,
     setNeedsDocumentation,
     setNotes,
     setDocumentationOptions,
+    setDocumentationNotes,
     handleSubmit,
     isSubmitting,
     error
@@ -440,6 +442,18 @@ const Manufacturing = () => {
               onNotesChange={setNotes}
               onSubmit={handleFormSubmit}
               isSubmitting={isSubmitting}
+            />
+
+            {/* Documentation Section */}
+            <DocumentationSection
+              needsDocumentation={needsDocumentation}
+              onNeedsDocumentationChange={setNeedsDocumentation}
+              documentationOptions={documentationOptions}
+              onDocumentationOptionChange={(option, checked) => 
+                setDocumentationOptions(prev => ({ ...prev, [option]: checked }))
+              }
+              documentationNotes={documentationNotes}
+              onDocumentationNotesChange={setDocumentationNotes}
             />
 
 

@@ -7,6 +7,7 @@ export function useServiceOrder(serviceId: string) {
   const [needsDocumentation, setNeedsDocumentation] = useState(false);
   const [notes, setNotes] = useState('');
   const [documentationOptions, setDocumentationOptions] = useState<Record<string, boolean>>({});
+  const [documentationNotes, setDocumentationNotes] = useState('');
   
   const { submitOrder, isSubmitting, error, clearError } = useOrderSubmission();
 
@@ -39,7 +40,8 @@ export function useServiceOrder(serviceId: string) {
       // Merge formData and tabFieldValues
       const allFieldValues = { 
         ...formData, 
-        documentationOptions 
+        documentationOptions,
+        documentationNotes
       };
       Object.values(tabFieldValues).forEach(tabFields => {
         Object.assign(allFieldValues, tabFields);
@@ -63,6 +65,7 @@ export function useServiceOrder(serviceId: string) {
     setNeedsDocumentation(false);
     setNotes('');
     setDocumentationOptions({});
+    setDocumentationNotes('');
     clearError();
   };
 
@@ -72,12 +75,14 @@ export function useServiceOrder(serviceId: string) {
     needsDocumentation,
     notes,
     documentationOptions,
+    documentationNotes,
     updateField,
     updateTabField,
     updateDocumentationOption,
     setNeedsDocumentation,
     setNotes,
     setDocumentationOptions,
+    setDocumentationNotes,
     handleSubmit,
     resetForm,
     isSubmitting,

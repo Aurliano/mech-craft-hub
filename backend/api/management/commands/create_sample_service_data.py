@@ -52,6 +52,24 @@ class Command(BaseCommand):
         if created:
             self.stdout.write(self.style.SUCCESS('Created service: نقشه‌کشی صنعتی'))
         
+        # Create Manufacturing Service (with tabs)
+        manufacturing_service, created = Service.objects.get_or_create(
+            name='ساخت و تولید',
+            defaults={
+                'scope': scope,
+                'type': 'manufacturing',
+                'description': 'خدمات ساخت و تولید قطعات صنعتی با شبکه گسترده کارگاه‌ها',
+                'base_price': 1000000,
+                'estimated_delivery_days': 14,
+                'supports_documentation': True,
+                'has_tabs': True,
+                'is_active': True
+            }
+        )
+        
+        if created:
+            self.stdout.write(self.style.SUCCESS('Created service: ساخت و تولید'))
+        
         # Create fields for Design Service (no tabs)
         design_fields = [
             {
@@ -125,7 +143,7 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS(f'Created design field: {field.name}'))
         
         # Create tabs for Drawing Service
-        tabs_data = [
+        drawing_tabs_data = [
             {
                 'name': 'welding_drawing',
                 'display_name': 'نقشه جوشکاری',
@@ -146,8 +164,31 @@ class Command(BaseCommand):
             }
         ]
         
-        created_tabs = []
-        for tab_data in tabs_data:
+        # Create tabs for Manufacturing Service
+        manufacturing_tabs_data = [
+            {
+                'name': 'process_selection',
+                'display_name': 'انتخاب فرآیند',
+                'description': 'انتخاب فرآیندهای ساخت مورد نیاز',
+                'order': 1
+            },
+            {
+                'name': 'workshop_selection',
+                'display_name': 'انتخاب کارگاه',
+                'description': 'انتخاب کلاس کارگاه و مشخصات',
+                'order': 2
+            },
+            {
+                'name': 'order_details',
+                'display_name': 'جزئیات سفارش',
+                'description': 'بارگذاری نقشه و توضیحات',
+                'order': 3
+            }
+        ]
+        
+        # Create tabs for Drawing Service
+        created_drawing_tabs = []
+        for tab_data in drawing_tabs_data:
             tab, created = ServiceTab.objects.get_or_create(
                 service=drawing_service,
                 name=tab_data['name'],
@@ -159,11 +200,84 @@ class Command(BaseCommand):
                 }
             )
             if created:
-                created_tabs.append(tab)
-                self.stdout.write(self.style.SUCCESS(f'Created tab: {tab.display_name}'))
+                created_drawing_tabs.append(tab)
+                self.stdout.write(self.style.SUCCESS(f'Created drawing tab: {tab.display_name}'))
         
-        # Create fields for each tab
-        fields_data = {
+        # Create tabs for Manufacturing Service
+        created_manufacturing_tabs = []
+        for tab_data in manufacturing_tabs_data:
+            tab, created = ServiceTab.objects.get_or_create(
+                service=manufacturing_service,
+                name=tab_data['name'],
+                defaults={
+                    'display_name': tab_data['display_name'],
+                    'description': tab_data['description'],
+                    'order': tab_data['order'],
+                    'is_active': True
+                }
+            )
+            if created:
+                created_manufacturing_tabs.append(tab)
+                self.stdout.write(self.style.SUCCESS(f'Created manufacturing tab: {tab.display_name}'))
+        
+        # Create fields for Manufacturing Service tabs
+        manufacturing_fields_data = {
+            'process_selection': [
+                {
+                    'name': 'فرآیندهای ساخت',
+                    'field_key': 'manufacturing_processes',
+                    'type': 'multiselect',
+                    'options': [
+                        {'value': 'machining', 'label': 'تراشکاری'},
+                        {'value': 'milling', 'label': 'فرزکاری'},
+                        {'value': 'welding', 'label': 'جوشکاری'},
+                        {'value': 'coating', 'label': 'پوشش دهی'},
+                        {'value': 'grinding', 'label': 'سنگ زنی'},
+                        {'value': 'prototyping', 'label': 'نمونه سازی'},
+                        {'value': 'metallurgy', 'label': 'فرآیندهای متالوژی'}
+                    ],
+                    'is_required': True,
+                    'order': 1,
+                    'help_text': 'فرآیندهای ساخت مورد نیاز خود را انتخاب کنید'
+                }
+            ],
+            'workshop_selection': [
+                {
+                    'name': 'کلاس کارگاه',
+                    'field_key': 'workshop_class',
+                    'type': 'multiselect',
+                    'options': [
+                        {'value': 'class_a', 'label': 'کلاس A - دقت بالا'},
+                        {'value': 'class_b', 'label': 'کلاس B - جوشکاری تخصصی'},
+                        {'value': 'class_c', 'label': 'کلاس C - تولید انبوه'}
+                    ],
+                    'is_required': True,
+                    'order': 1,
+                    'help_text': 'می‌توانید چند کلاس انتخاب کنید و قیمت‌ها را مقایسه کنید'
+                }
+            ],
+            'order_details': [
+                {
+                    'name': 'بارگذاری نقشه',
+                    'field_key': 'drawing_files',
+                    'type': 'file',
+                    'is_required': True,
+                    'order': 1,
+                    'help_text': 'امکان آپلود چند فایل - فرمت‌های مجاز: PDF, DWG, DXF, STEP, تصاویر'
+                },
+                {
+                    'name': 'توضیحات تکمیلی',
+                    'field_key': 'additional_notes',
+                    'type': 'textarea',
+                    'is_required': False,
+                    'order': 2,
+                    'help_text': 'هر توضیح اضافی که لازم است'
+                }
+            ]
+        }
+        
+        # Create fields for Drawing Service tabs
+        drawing_fields_data = {
             'welding_drawing': [
                 {
                     'name': 'فایل مرجع',
@@ -300,8 +414,9 @@ class Command(BaseCommand):
             ]
         }
         
-        for tab in created_tabs:
-            tab_fields = fields_data.get(tab.name, [])
+        # Create fields for Drawing Service tabs
+        for tab in created_drawing_tabs:
+            tab_fields = drawing_fields_data.get(tab.name, [])
             for field_data in tab_fields:
                 field, created = ServiceField.objects.get_or_create(
                     service=drawing_service,
@@ -317,10 +432,30 @@ class Command(BaseCommand):
                     }
                 )
                 if created:
-                    self.stdout.write(self.style.SUCCESS(f'Created field: {field.name}'))
+                    self.stdout.write(self.style.SUCCESS(f'Created drawing field: {field.name}'))
+        
+        # Create fields for Manufacturing Service tabs
+        for tab in created_manufacturing_tabs:
+            tab_fields = manufacturing_fields_data.get(tab.name, [])
+            for field_data in tab_fields:
+                field, created = ServiceField.objects.get_or_create(
+                    service=manufacturing_service,
+                    tab=tab,
+                    field_key=field_data['field_key'],
+                    defaults={
+                        'name': field_data['name'],
+                        'type': field_data['type'],
+                        'options': field_data.get('options'),
+                        'is_required': field_data['is_required'],
+                        'order': field_data['order'],
+                        'help_text': field_data.get('help_text', '')
+                    }
+                )
+                if created:
+                    self.stdout.write(self.style.SUCCESS(f'Created manufacturing field: {field.name}'))
         
         self.stdout.write(
             self.style.SUCCESS(
-                f'Successfully created services: {design_service.name} and {drawing_service.name}'
+                f'Successfully created services: {design_service.name}, {drawing_service.name}, and {manufacturing_service.name}'
             )
         )
