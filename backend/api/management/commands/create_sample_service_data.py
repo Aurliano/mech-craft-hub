@@ -285,11 +285,19 @@ class Command(BaseCommand):
                 'help_text': 'امکان آپلود چند فایل - فرمت‌های مجاز: PDF, DWG, DXF, STEP, STP, IGES, SLDPRT, SLDASM, IPT, IAM, JPG, JPEG, PNG'
             },
             {
+                'name': 'جنس (متریال) قطعات',
+                'field_key': 'material_specification',
+                'type': 'textarea',
+                'is_required': True,
+                'order': 4,
+                'help_text': 'مشخصات متریال مورد نیاز برای ساخت قطعات'
+            },
+            {
                 'name': 'توضیحات تکمیلی',
                 'field_key': 'additional_notes',
                 'type': 'textarea',
                 'is_required': False,
-                'order': 4,
+                'order': 5,
                 'help_text': 'هر توضیح اضافی که لازم است'
             },
         ]

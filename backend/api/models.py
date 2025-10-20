@@ -203,6 +203,123 @@ class ServiceField(models.Model):
         return f"{self.service.name} - {tab_name} - {self.name}"
 
 
+class OrderProposal(models.Model):
+    """Proposals from contractors for orders"""
+    
+    PROPOSAL_STATUS_CHOICES = [
+        ('pending', 'در انتظار بررسی'),
+        ('accepted', 'پذیرفته شده'),
+        ('rejected', 'رد شده'),
+        ('expired', 'منقضی شده'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    order = models.ForeignKey('Order', on_delete=models.CASCADE, related_name='proposals')
+    contractor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='proposals')
+    price = models.DecimalField(max_digits=12, decimal_places=0, help_text="قیمت به تومان")
+    delivery_days = models.PositiveIntegerField(help_text="تعداد روز تحویل")
+    description = models.TextField(help_text="توضیحات انجام پروژه")
+    status = models.CharField(max_length=20, choices=PROPOSAL_STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'order_proposals'
+        unique_together = ('order', 'contractor')
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"پیشنهاد {self.contractor.username} برای سفارش {self.order.order_number}"
+
+
+class MaterialEstimate(models.Model):
+    """Material cost estimates for manufacturing orders"""
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    order = models.OneToOneField('Order', on_delete=models.CASCADE, related_name='material_estimate')
+    estimated_cost = models.DecimalField(max_digits=12, decimal_places=0, help_text="هزینه برآورد شده متریال به تومان")
+    description = models.TextField(help_text="توضیحات متریال و هزینه")
+    is_paid = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'material_estimates'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"برآورد متریال سفارش {self.order.order_number}"
+
+
+class OrderStatus(models.Model):
+    """Order status tracking"""
+    
+    STATUS_CHOICES = [
+        ('submitted', 'ثبت شده'),
+        ('admin_approved', 'تایید ادمین'),
+        ('proposals_received', 'دریافت پیشنهادات'),
+        ('proposal_accepted', 'پیشنهاد پذیرفته شده'),
+        ('material_paid', 'متریال پرداخت شده'),
+        ('project_paid', 'پروژه پرداخت شده'),
+        ('in_progress', 'در حال انجام'),
+        ('documentation_submitted', 'مستندات ارسال شده'),
+        ('final_payment_pending', 'در انتظار تسویه حساب'),
+        ('shipping', 'در حال ارسال'),
+        ('delivered', 'تحویل به مشتری'),
+        ('completed', 'تکمیل شده'),
+        ('cancelled', 'لغو شده'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    order = models.ForeignKey('Order', on_delete=models.CASCADE, related_name='status_history')
+    status = models.CharField(max_length=30, choices=STATUS_CHOICES)
+    description = models.TextField(blank=True, help_text="توضیحات تغییر وضعیت")
+    created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    
+    class Meta:
+        db_table = 'order_status_history'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.order.order_number} - {self.get_status_display()}"
+
+
+class Payment(models.Model):
+    """Payment tracking for orders"""
+    
+    PAYMENT_TYPE_CHOICES = [
+        ('material', 'پرداخت متریال'),
+        ('project_advance', 'پیش پرداخت پروژه'),
+        ('project_final', 'تسویه حساب پروژه'),
+        ('shipping', 'هزینه ارسال'),
+    ]
+    
+    PAYMENT_STATUS_CHOICES = [
+        ('pending', 'در انتظار پرداخت'),
+        ('paid', 'پرداخت شده'),
+        ('failed', 'پرداخت ناموفق'),
+        ('refunded', 'بازگردانده شده'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    order = models.ForeignKey('Order', on_delete=models.CASCADE, related_name='payments')
+    amount = models.DecimalField(max_digits=12, decimal_places=0, help_text="مبلغ به تومان")
+    payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPE_CHOICES)
+    status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
+    gateway_transaction_id = models.CharField(max_length=100, blank=True)
+    gateway_response = models.JSONField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    paid_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        db_table = 'payments'
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"پرداخت {self.get_payment_type_display()} سفارش {self.order.order_number}"
+
+
 
 class ContractorService(models.Model):
     """Many-to-many relationship between contractors and services"""

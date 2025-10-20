@@ -454,6 +454,32 @@ const Manufacturing = () => {
               onDocumentationNotesChange={setDocumentationNotes}
             />
 
+            {/* Material Cost Notice */}
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle className="text-lg text-orange-600">⚠️ هزینه متریال</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  هزینه خرید متریال مورد سفارش با مشتری می‌باشد.
+                </p>
+                <Collapsible>
+                  <CollapsibleTrigger className="flex items-center gap-2 text-sm text-primary hover:text-primary/80">
+                    <span>جزئیات بیشتر</span>
+                    <ChevronDown className="h-4 w-4 transition-transform data-[state=open]:rotate-180" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-2">
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+                      <p className="text-sm text-blue-800">
+                        با توجه به اینکه شرکت باید تعهدات فنی و مهندسی ارائه دهد؛ تأمین متریال سفارش به عهده شرکت است. 
+                        بنابراین، شروع کار بعد از برآورد هزینه متریال توسط شرکت و پرداخت آن توسط مشتری می‌باشد.
+                      </p>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              </CardContent>
+            </Card>
+
 
             {/* Terms and Conditions */}
             <div className="mt-6">
