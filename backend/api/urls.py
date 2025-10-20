@@ -23,6 +23,7 @@ from .views import (
     create_material_estimate, get_material_estimate,
     initiate_payment, bitpay_webhook,
     initiate_payment_material, initiate_payment_project_advance, initiate_payment_project_final,
+    get_order_payment_summary,
     # Notification endpoints
     get_user_notifications, mark_notification_read, mark_all_notifications_read,
     # Contractor endpoints
@@ -118,6 +119,7 @@ urlpatterns = [
     path('v1/orders/<uuid:order_id>/payments/material/', initiate_payment_material, name='initiate_payment_material'),
     path('v1/orders/<uuid:order_id>/payments/advance/', initiate_payment_project_advance, name='initiate_payment_project_advance'),
     path('v1/orders/<uuid:order_id>/payments/final/', initiate_payment_project_final, name='initiate_payment_project_final'),
+    path('v1/orders/<uuid:order_id>/payments/summary/', get_order_payment_summary, name='get_order_payment_summary'),
     
     # Quote Management Endpoints
     path('v1/quotes/', create_quote, name='create_quote'),

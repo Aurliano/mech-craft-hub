@@ -175,6 +175,67 @@ def rial_to_toman(amount_rial: int) -> int:
         return 0
 
 
+def compute_order_payment_summary(order: Order) -> dict:
+    """Compute material/project amounts (in Toman) and recommended payables."""
+    # Material
+    material_total = 0
+    material_paid = False
+    try:
+        if hasattr(order, 'material_estimate') and order.material_estimate:
+            material_total = int(order.material_estimate.estimated_cost or 0)
+            material_paid = bool(order.material_estimate.is_paid)
+    except Exception:
+        material_total = 0
+
+    # Project proposal
+    proposal_price = None
+    try:
+        accepted = order.proposals.filter(status='accepted').order_by('-created_at').first()
+        if accepted:
+            proposal_price = int(accepted.price)
+    except Exception:
+        proposal_price = None
+
+    project_total = int(float(order.total_amount)) if (order.total_amount and float(order.total_amount) > 0) else (proposal_price or 0)
+    advance_50 = int(project_total * 0.5) if project_total else 0
+    final_50 = project_total - advance_50 if project_total else 0
+
+    # Suggested payable: require material before advance for manufacturing orders
+    has_manufacturing = order.items.filter(service__type='manufacturing').exists()
+    suggested_next = 'material' if (has_manufacturing and not material_paid and material_total > 0) else ('project_advance' if project_total > 0 else None)
+
+    return {
+        'order_id': str(order.id),
+        'order_number': order.order_number,
+        'has_manufacturing': has_manufacturing,
+        'material': {
+            'total': material_total,
+            'is_paid': material_paid,
+        },
+        'project': {
+            'total': project_total,
+            'advance_50': advance_50,
+            'final_50': final_50,
+        },
+        'suggested_next_payment': suggested_next,
+        'currency': 'TOMAN',
+    }
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_order_payment_summary(request, order_id: str):
+    """Return a breakdown of material/project amounts for checkout UI."""
+    try:
+        if request.user.is_staff:
+            order = Order.objects.get(id=order_id)
+        else:
+            order = Order.objects.get(id=order_id, customer=request.user)
+        return Response(compute_order_payment_summary(order))
+    except Order.DoesNotExist:
+        return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def initiate_payment(request):
