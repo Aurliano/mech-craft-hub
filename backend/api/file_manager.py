@@ -38,22 +38,33 @@ class FileManager:
                 aws_access_key_id = getattr(settings, 'AWS_ACCESS_KEY_ID', None)
                 aws_secret_access_key = getattr(settings, 'AWS_SECRET_ACCESS_KEY', None)
             
-            self.s3_client = boto3.client(
-                's3',
-                endpoint_url=getattr(settings, 'S3_ENDPOINT_URL', None),
-                aws_access_key_id=aws_access_key_id,
-                aws_secret_access_key=aws_secret_access_key,
-                region_name=self.region
-            )
-            
-            # Test connection
-            try:
-                self.s3_client.head_bucket(Bucket=self.bucket_name)
-                logger.info(f"Successfully connected to {self.storage_type} bucket: {self.bucket_name}")
-            except ClientError as e:
-                logger.error(f"Failed to connect to {self.storage_type} bucket: {str(e)}")
-                self.s3_client = None
+            # Check if credentials are available
+            if not aws_access_key_id or not aws_secret_access_key:
+                logger.warning(f"No credentials available for {self.storage_type}, falling back to local storage")
                 self.storage_type = 'local'
+                self.s3_client = None
+            else:
+                self.s3_client = boto3.client(
+                    's3',
+                    endpoint_url=getattr(settings, 'S3_ENDPOINT_URL', None),
+                    aws_access_key_id=aws_access_key_id,
+                    aws_secret_access_key=aws_secret_access_key,
+                    region_name=self.region
+                )
+            
+                # Test connection
+                try:
+                    self.s3_client.head_bucket(Bucket=self.bucket_name)
+                    logger.info(f"Successfully connected to {self.storage_type} bucket: {self.bucket_name}")
+                except ClientError as e:
+                    logger.error(f"Failed to connect to {self.storage_type} bucket: {str(e)}")
+                    self.s3_client = None
+                    # Don't change storage_type to local automatically
+                    logger.warning(f"S3/Liara connection failed, but keeping storage_type as {self.storage_type}")
+                except Exception as e:
+                    logger.error(f"Unexpected error connecting to {self.storage_type} bucket: {str(e)}")
+                    self.s3_client = None
+                    logger.warning(f"S3/Liara connection failed, but keeping storage_type as {self.storage_type}")
         else:
             self.s3_client = None
             if self.storage_type in ['s3', 'liara'] and not BOTO3_AVAILABLE:
@@ -112,7 +123,14 @@ class FileManager:
                         'error': f'Permission denied: {str(e)}'
                     }
             
-            elif self.storage_type in ['s3', 'liara'] and self.s3_client:
+            elif self.storage_type in ['s3', 'liara']:
+                if not self.s3_client:
+                    logger.error(f"S3/Liara client not available for storage_type: {self.storage_type}")
+                    return {
+                        'success': False,
+                        'error': f'S3/Liara client not available. Please check credentials and connection.'
+                    }
+                
                 # آپلود به S3/Liara
                 file_obj.seek(0)
                 self.s3_client.upload_fileobj(
