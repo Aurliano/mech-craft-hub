@@ -501,6 +501,7 @@ FILE_BUCKET_NAME = os.getenv('FILE_BUCKET_NAME', 'resources')  # Liara bucket na
 FILE_REGION = os.getenv('FILE_REGION', 'iran')
 S3_ENDPOINT_URL = os.getenv('S3_ENDPOINT_URL', 'https://storage.c2.liara.space')
 FILE_PUBLIC_ACCESS = os.getenv('FILE_PUBLIC_ACCESS', 'True').lower() == 'true'
+FILE_FALLBACK_TO_LOCAL = os.getenv('FILE_FALLBACK_TO_LOCAL', 'False').lower() == 'true'
 
 # Liara Storage Credentials (for scientific content)
 LIARA_ACCESS_KEY_ID = os.getenv('LIARA_ACCESS_KEY_ID', 'n5emtge4ckg3bspk')

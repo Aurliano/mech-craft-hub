@@ -23,9 +23,11 @@ class FileManager:
     """مدیریت فایل‌ها برای مقالات و کتاب‌ها"""
     
     def __init__(self):
-        self.storage_type = getattr(settings, 'FILE_STORAGE_TYPE', 'local')  # local, s3, liara
-        self.bucket_name = getattr(settings, 'FILE_BUCKET_NAME', 'mechcraft-files')
+        self.storage_type = getattr(settings, 'FILE_STORAGE_TYPE', 'liara')  # Default to liara instead of local
+        self.bucket_name = getattr(settings, 'FILE_BUCKET_NAME', 'resources')
         self.region = getattr(settings, 'FILE_REGION', 'iran')
+        
+        logger.info(f"FileManager initialized with storage_type: {self.storage_type}, bucket: {self.bucket_name}")
         
         if self.storage_type in ['s3', 'liara'] and BOTO3_AVAILABLE:
             # Use Liara credentials for scientific content storage
@@ -84,7 +86,9 @@ class FileManager:
     def upload_file(self, file_obj, file_name, content_type):
         """آپلود فایل"""
         try:
+            logger.info(f"Starting file upload: {file_name}, storage_type: {self.storage_type}, s3_client: {self.s3_client is not None}")
             file_path = self.generate_file_path(file_name, content_type)
+            logger.info(f"Generated file path: {file_path}")
             
             if self.storage_type == 'local':
                 # آپلود محلی - ایجاد پوشه‌ها در صورت عدم وجود
@@ -145,16 +149,24 @@ class FileManager:
                     'file_size': file_obj.size
                 }
             else:
-                # Fallback to local storage if S3/Liara not available
-                logger.warning("S3/Liara not available, using local storage")
-                full_path = default_storage.save(file_path, ContentFile(file_obj.read()))
-                file_obj.seek(0)
-                return {
-                    'success': True,
-                    'file_path': full_path,
-                    'file_url': default_storage.url(full_path),
-                    'file_size': file_obj.size
-                }
+                # Check if fallback to local storage is enabled
+                fallback_enabled = getattr(settings, 'FILE_FALLBACK_TO_LOCAL', False)
+                if fallback_enabled:
+                    logger.warning("S3/Liara not available, using local storage fallback")
+                    full_path = default_storage.save(file_path, ContentFile(file_obj.read()))
+                    file_obj.seek(0)
+                    return {
+                        'success': True,
+                        'file_path': full_path,
+                        'file_url': default_storage.url(full_path),
+                        'file_size': file_obj.size
+                    }
+                else:
+                    logger.error("S3/Liara not available and fallback disabled")
+                    return {
+                        'success': False,
+                        'error': 'S3/Liara storage not available. Please contact administrator.'
+                    }
             
         except Exception as e:
             logger.error(f"Error uploading file: {str(e)}")
