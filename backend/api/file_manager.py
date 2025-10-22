@@ -52,19 +52,9 @@ class FileManager:
                     region_name=self.region
                 )
             
-                # Test connection
-                try:
-                    self.s3_client.head_bucket(Bucket=self.bucket_name)
-                    logger.info(f"Successfully connected to {self.storage_type} bucket: {self.bucket_name}")
-                except ClientError as e:
-                    logger.error(f"Failed to connect to {self.storage_type} bucket: {str(e)}")
-                    self.s3_client = None
-                    # Don't change storage_type to local automatically
-                    logger.warning(f"S3/Liara connection failed, but keeping storage_type as {self.storage_type}")
-                except Exception as e:
-                    logger.error(f"Unexpected error connecting to {self.storage_type} bucket: {str(e)}")
-                    self.s3_client = None
-                    logger.warning(f"S3/Liara connection failed, but keeping storage_type as {self.storage_type}")
+                # Skip connection test to avoid startup crashes
+                logger.info(f"S3/Liara client created for {self.storage_type} bucket: {self.bucket_name}")
+                logger.warning("Connection test skipped to prevent startup crashes")
         else:
             self.s3_client = None
             if self.storage_type in ['s3', 'liara'] and not BOTO3_AVAILABLE:
