@@ -356,7 +356,7 @@ def create_analysis_fields(analysis_service, analysis_tabs):
         static_fields = [
             {
                 'name': 'انتخاب نرم‌افزار',
-                'field_key': 'software_selection',
+                'field_key': 'static_software_selection',
                 'type': 'select',
                 'options': [
                     {'value': 'comsol', 'label': 'COMSOL'},
@@ -369,7 +369,7 @@ def create_analysis_fields(analysis_service, analysis_tabs):
             },
             {
                 'name': 'بارگذاری فایل‌های پروژه',
-                'field_key': 'project_files',
+                'field_key': 'static_project_files',
                 'type': 'file',
                 'is_required': True,
                 'order': 2,
@@ -377,7 +377,7 @@ def create_analysis_fields(analysis_service, analysis_tabs):
             },
             {
                 'name': 'توضیحات تکمیلی',
-                'field_key': 'additional_notes',
+                'field_key': 'static_additional_notes',
                 'type': 'textarea',
                 'is_required': True,
                 'order': 3,
@@ -410,7 +410,7 @@ def create_analysis_fields(analysis_service, analysis_tabs):
         dynamic_fields = [
             {
                 'name': 'بارگذاری فایل‌های پروژه',
-                'field_key': 'project_files',
+                'field_key': 'dynamic_project_files',
                 'type': 'file',
                 'is_required': True,
                 'order': 1,
@@ -418,7 +418,7 @@ def create_analysis_fields(analysis_service, analysis_tabs):
             },
             {
                 'name': 'توضیحات تکمیلی',
-                'field_key': 'additional_notes',
+                'field_key': 'dynamic_additional_notes',
                 'type': 'textarea',
                 'is_required': True,
                 'order': 2,
@@ -451,7 +451,7 @@ def create_analysis_fields(analysis_service, analysis_tabs):
         coding_fields = [
             {
                 'name': 'انتخاب نرم‌افزار مورد نظر',
-                'field_key': 'software_selection',
+                'field_key': 'coding_software_selection',
                 'type': 'select',
                 'options': [
                     {'value': 'matlab', 'label': 'MATLAB'},
@@ -463,7 +463,7 @@ def create_analysis_fields(analysis_service, analysis_tabs):
             },
             {
                 'name': 'بارگذاری فایل‌های پروژه',
-                'field_key': 'project_files',
+                'field_key': 'coding_project_files',
                 'type': 'file',
                 'is_required': False,
                 'order': 2,
@@ -471,7 +471,7 @@ def create_analysis_fields(analysis_service, analysis_tabs):
             },
             {
                 'name': 'توضیحات تکمیلی',
-                'field_key': 'additional_notes',
+                'field_key': 'coding_additional_notes',
                 'type': 'textarea',
                 'is_required': True,
                 'order': 3,
@@ -533,7 +533,7 @@ def create_drawing_fields(drawing_service, drawing_tabs):
             },
             {
                 'name': 'تلرانس‌های عددی',
-                'field_key': 'dimensional_tolerance',
+                'field_key': 'welding_dimensional_tolerance',
                 'type': 'text',
                 'is_required': False,
                 'order': 4,
@@ -541,7 +541,7 @@ def create_drawing_fields(drawing_service, drawing_tabs):
             },
             {
                 'name': 'تلرانس‌های هندسی',
-                'field_key': 'geometric_tolerance',
+                'field_key': 'welding_geometric_tolerance',
                 'type': 'text',
                 'is_required': False,
                 'order': 5,
@@ -549,7 +549,7 @@ def create_drawing_fields(drawing_service, drawing_tabs):
             },
             {
                 'name': 'توضیحات تکمیلی',
-                'field_key': 'additional_notes',
+                'field_key': 'welding_additional_notes',
                 'type': 'textarea',
                 'is_required': False,
                 'order': 6,
@@ -582,7 +582,7 @@ def create_drawing_fields(drawing_service, drawing_tabs):
         exploded_fields = [
             {
                 'name': 'آپلود فایل مدل',
-                'field_key': 'model_file',
+                'field_key': 'exploded_model_file',
                 'type': 'file',
                 'is_required': True,
                 'order': 1,
@@ -590,7 +590,7 @@ def create_drawing_fields(drawing_service, drawing_tabs):
             },
             {
                 'name': 'توضیحات تکمیلی',
-                'field_key': 'additional_notes',
+                'field_key': 'exploded_additional_notes',
                 'type': 'textarea',
                 'is_required': False,
                 'order': 2,
@@ -623,7 +623,7 @@ def create_drawing_fields(drawing_service, drawing_tabs):
         manufacturing_fields = [
             {
                 'name': 'آپلود فایل مدل',
-                'field_key': 'model_file',
+                'field_key': 'manufacturing_model_file',
                 'type': 'file',
                 'is_required': True,
                 'order': 1,
@@ -671,7 +671,7 @@ def create_drawing_fields(drawing_service, drawing_tabs):
             },
             {
                 'name': 'تلرانس‌های عددی',
-                'field_key': 'dimensional_tolerance',
+                'field_key': 'manufacturing_dimensional_tolerance',
                 'type': 'text',
                 'is_required': False,
                 'order': 7,
@@ -679,7 +679,7 @@ def create_drawing_fields(drawing_service, drawing_tabs):
             },
             {
                 'name': 'تلرانس‌های هندسی',
-                'field_key': 'geometric_tolerance',
+                'field_key': 'manufacturing_geometric_tolerance',
                 'type': 'text',
                 'is_required': False,
                 'order': 8,

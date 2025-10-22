@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { passwordResetRequestSMS, phoneVerificationConfirm } from '../lib/api';
+import { passwordResetRequestSMS, verifyPasswordResetSMS } from '../lib/api';
 
 export default function PasswordResetSMS() {
   const [email, setEmail] = useState('');
@@ -63,8 +63,8 @@ export default function PasswordResetSMS() {
     setMessage('');
 
     try {
-      // Just verify the code, don't reset password yet
-      await phoneVerificationConfirm(phone, code);
+      // Use verifyPasswordResetSMS to just verify the code
+      await verifyPasswordResetSMS(code);
       setMessage('کد تأیید شد. حالا می‌توانید رمز عبور جدید را تنظیم کنید');
       setStep('success');
       

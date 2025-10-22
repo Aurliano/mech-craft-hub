@@ -545,6 +545,24 @@ export async function passwordResetConfirmSMS(code: string, newPassword: string)
   return (await res.json()) as { detail: string };
 }
 
+// Verify SMS code for password reset (without changing password)
+export async function verifyPasswordResetSMS(code: string) {
+  const res = await fetch(getApiUrl('/v1/auth/password-reset-confirm-sms/'), {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCSRFToken() || '',
+    },
+    credentials: 'include',
+    body: JSON.stringify({ token: code, verify_only: true }),
+  });
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(errorText || 'SMS code verification failed');
+  }
+  return (await res.json()) as { detail: string };
+}
+
 // User Phone Verification (for authenticated users)
 export async function verifyUserPhone(phone: string) {
   const res = await fetch(getApiUrl('/v1/auth/verify-user-phone/'), {
@@ -1375,6 +1393,8 @@ export const api = {
   changePassword: changePasswordRequest,
   passwordResetRequest: passwordResetRequest,
   passwordResetConfirm: passwordResetConfirm,
+  passwordResetConfirmSMS: passwordResetConfirmSMS,
+  verifyPasswordResetSMS: verifyPasswordResetSMS,
   phoneVerificationRequest: phoneVerificationRequest,
   phoneVerificationConfirm: phoneVerificationConfirm,
   

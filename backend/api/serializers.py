@@ -473,7 +473,8 @@ class PasswordResetRequestSerializer(serializers.Serializer):
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
     token = serializers.CharField()
-    new_password = serializers.CharField(min_length=8)
+    new_password = serializers.CharField(min_length=8, required=False)
+    verify_only = serializers.BooleanField(default=False)
 
 
 class PhoneVerificationRequestSerializer(serializers.Serializer):

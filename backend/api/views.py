@@ -989,6 +989,9 @@ def password_reset_request_sms(request):
     code = ''.join(random.choices(string.digits, k=6))
     expires_at = timezone.now() + timezone.timedelta(minutes=10)  # 10 minutes
     
+    # Clean up old unused tokens for this user
+    PasswordResetToken.objects.filter(user=user, is_used=False).delete()
+    
     # Create password reset token with SMS code
     PasswordResetToken.objects.create(
         user=user,
@@ -1032,7 +1035,8 @@ def password_reset_confirm_sms(request):
     serializer.is_valid(raise_exception=True)
     
     token = serializer.validated_data['token']  # This is the SMS code
-    new_password = serializer.validated_data['new_password']
+    new_password = serializer.validated_data.get('new_password')
+    verify_only = serializer.validated_data.get('verify_only', False)
     
     try:
         # Find password reset token with SMS code
@@ -1043,7 +1047,14 @@ def password_reset_confirm_sms(request):
     if reset_token.is_expired():
         return Response({'detail': 'کد تأیید منقضی شده'}, status=status.HTTP_400_BAD_REQUEST)
     
+    if verify_only:
+        # Just verify the code without changing password
+        return Response({'detail': 'کد تأیید معتبر است'})
+    
     # Update password
+    if not new_password:
+        return Response({'detail': 'رمز عبور جدید الزامی است'}, status=status.HTTP_400_BAD_REQUEST)
+    
     user = reset_token.user
     user.set_password(new_password)
     user.save()
