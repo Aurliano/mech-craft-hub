@@ -28,13 +28,30 @@ class FileManager:
         self.region = getattr(settings, 'FILE_REGION', 'iran')
         
         if self.storage_type in ['s3', 'liara'] and BOTO3_AVAILABLE:
+            # Use Liara credentials for scientific content storage
+            if self.storage_type == 'liara':
+                aws_access_key_id = getattr(settings, 'LIARA_ACCESS_KEY_ID', None)
+                aws_secret_access_key = getattr(settings, 'LIARA_SECRET_ACCESS_KEY', None)
+            else:
+                aws_access_key_id = getattr(settings, 'AWS_ACCESS_KEY_ID', None)
+                aws_secret_access_key = getattr(settings, 'AWS_SECRET_ACCESS_KEY', None)
+            
             self.s3_client = boto3.client(
                 's3',
                 endpoint_url=getattr(settings, 'S3_ENDPOINT_URL', None),
-                aws_access_key_id=getattr(settings, 'AWS_ACCESS_KEY_ID', None),
-                aws_secret_access_key=getattr(settings, 'AWS_SECRET_ACCESS_KEY', None),
+                aws_access_key_id=aws_access_key_id,
+                aws_secret_access_key=aws_secret_access_key,
                 region_name=self.region
             )
+            
+            # Test connection
+            try:
+                self.s3_client.head_bucket(Bucket=self.bucket_name)
+                logger.info(f"Successfully connected to {self.storage_type} bucket: {self.bucket_name}")
+            except ClientError as e:
+                logger.error(f"Failed to connect to {self.storage_type} bucket: {str(e)}")
+                self.s3_client = None
+                self.storage_type = 'local'
         else:
             self.s3_client = None
             if self.storage_type in ['s3', 'liara'] and not BOTO3_AVAILABLE:

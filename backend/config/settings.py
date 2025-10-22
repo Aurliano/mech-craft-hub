@@ -495,6 +495,17 @@ AWS_SECRET_ACCESS_KEY = os.getenv('AWS_SECRET_ACCESS_KEY')
 AWS_S3_REGION_NAME = os.getenv('AWS_S3_REGION_NAME', 'us-east-1')
 S3_BACKUP_BUCKET = os.getenv('S3_BACKUP_BUCKET')
 
+# File Storage Configuration for Scientific Content
+FILE_STORAGE_TYPE = os.getenv('FILE_STORAGE_TYPE', 'liara')  # local, s3, liara
+FILE_BUCKET_NAME = os.getenv('FILE_BUCKET_NAME', 'resources')  # Liara bucket name
+FILE_REGION = os.getenv('FILE_REGION', 'iran')
+S3_ENDPOINT_URL = os.getenv('S3_ENDPOINT_URL', 'https://storage.c2.liara.space')
+FILE_PUBLIC_ACCESS = os.getenv('FILE_PUBLIC_ACCESS', 'True').lower() == 'true'
+
+# Liara Storage Credentials (for scientific content)
+LIARA_ACCESS_KEY_ID = os.getenv('LIARA_ACCESS_KEY_ID', 'n5emtge4ckg3bspk')
+LIARA_SECRET_ACCESS_KEY = os.getenv('LIARA_SECRET_ACCESS_KEY', '9c599091-f43f-4db6-b1c5-483afaea0532')
+
 # ClamAV Configuration
 CLAMAV_SOCKET = os.getenv('CLAMAV_SOCKET', '/var/run/clamav/clamd.ctl')
 CLAMAV_ENABLED = os.getenv('CLAMAV_ENABLED', 'True').lower() == 'true'
