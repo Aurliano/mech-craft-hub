@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Edit, Trash2, MapPin, Calendar, Building2, Settings, X } from 'lucide-react';
+import { Plus, Edit, Trash2, MapPin, Calendar, Building2, Settings, X, Upload, FileText } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useContractorWorkshops, useCreateContractorWorkshop, useCheckContractorManufacturingService } from '@/hooks/useAuth';
 import Navbar from '@/components/Navbar';
@@ -16,6 +16,18 @@ import Footer from '@/components/Footer';
 import { useToast } from '@/hooks/use-toast';
 import MachineSelector from '@/components/MachineSelector';
 import { SelectedMachine } from '@/data/machines';
+import MultiFileUpload from '@/components/MultiFileUpload';
+
+interface UploadedFile {
+  id: string;
+  file: File;
+  url: string;
+  originalName: string;
+  size: number;
+  status: 'uploading' | 'completed' | 'error';
+  progress: number;
+  error?: string;
+}
 
 const MyWorkshops = () => {
   const { user, isContractor } = useAuth();
@@ -53,6 +65,9 @@ const MyWorkshops = () => {
     capabilities: [] as string[],
     machines: [] as SelectedMachine[]
   });
+  
+  // State for uploaded documents
+  const [uploadedDocuments, setUploadedDocuments] = useState<Record<string, UploadedFile[]>>({});
 
   // Manufacturing processes list
   const manufacturingProcesses = [
@@ -124,9 +139,18 @@ const MyWorkshops = () => {
         quantity: machine.quantity
       }));
 
+      // Collect uploaded documents
+      const documentsData: Record<string, string[]> = {};
+      Object.entries(uploadedDocuments).forEach(([fieldKey, files]) => {
+        documentsData[fieldKey] = files
+          .filter(file => file.status === 'completed')
+          .map(file => file.url);
+      });
+
       const workshopData = {
         ...newWorkshop,
-        machines: machinesForBackend
+        machines: machinesForBackend,
+        documents: documentsData
       };
 
       await createWorkshopMutation.mutateAsync(workshopData);
@@ -139,6 +163,7 @@ const MyWorkshops = () => {
         postal_address: '', manager_name: '', manager_phone: '', 
         capabilities: [], machines: [] 
       });
+      setUploadedDocuments({});
       setIsCreateDialogOpen(false);
       refetch();
     } catch (error) {
@@ -168,6 +193,13 @@ const MyWorkshops = () => {
     setNewWorkshop(prev => ({
       ...prev,
       machines
+    }));
+  };
+
+  const handleDocumentsChange = (fieldKey: string, files: UploadedFile[]) => {
+    setUploadedDocuments(prev => ({
+      ...prev,
+      [fieldKey]: files
     }));
   };
 
@@ -336,6 +368,83 @@ const MyWorkshops = () => {
                     placeholder="توضیحات اضافی درباره کارگاه"
                     rows={3}
                   />
+                </div>
+
+                {/* Document Upload Section */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    بارگذاری مدارک مربوطه
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    مجوزها، گواهی‌ها و مدارک مربوط به کارگاه و دستگاه‌ها را آپلود کنید
+                  </p>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Workshop License */}
+                    <div>
+                      <MultiFileUpload
+                        fieldKey="workshop_license"
+                        label="مجوز کارگاه"
+                        isRequired={false}
+                        helpText="مجوز فعالیت کارگاه از سازمان‌های مربوطه"
+                        maxFiles={3}
+                        maxSizePerFile={10}
+                        acceptedTypes={['.pdf', '.jpg', '.jpeg', '.png']}
+                        onFilesChange={(files) => handleDocumentsChange('workshop_license', files)}
+                        uploadedFiles={uploadedDocuments['workshop_license'] || []}
+                        contextId="workshop"
+                      />
+                    </div>
+
+                    {/* Machine Certificates */}
+                    <div>
+                      <MultiFileUpload
+                        fieldKey="machine_certificates"
+                        label="گواهی‌های دستگاه‌ها"
+                        isRequired={false}
+                        helpText="گواهی‌های کالیبراسیون و استاندارد دستگاه‌ها"
+                        maxFiles={5}
+                        maxSizePerFile={10}
+                        acceptedTypes={['.pdf', '.jpg', '.jpeg', '.png']}
+                        onFilesChange={(files) => handleDocumentsChange('machine_certificates', files)}
+                        uploadedFiles={uploadedDocuments['machine_certificates'] || []}
+                        contextId="workshop"
+                      />
+                    </div>
+
+                    {/* Quality Certificates */}
+                    <div>
+                      <MultiFileUpload
+                        fieldKey="quality_certificates"
+                        label="گواهی‌های کیفیت"
+                        isRequired={false}
+                        helpText="گواهی‌های ISO، استانداردهای کیفیت و مدیریت"
+                        maxFiles={3}
+                        maxSizePerFile={10}
+                        acceptedTypes={['.pdf', '.jpg', '.jpeg', '.png']}
+                        onFilesChange={(files) => handleDocumentsChange('quality_certificates', files)}
+                        uploadedFiles={uploadedDocuments['quality_certificates'] || []}
+                        contextId="workshop"
+                      />
+                    </div>
+
+                    {/* Insurance Documents */}
+                    <div>
+                      <MultiFileUpload
+                        fieldKey="insurance_documents"
+                        label="مدارک بیمه"
+                        isRequired={false}
+                        helpText="بیمه مسئولیت مدنی و بیمه کارگاه"
+                        maxFiles={2}
+                        maxSizePerFile={10}
+                        acceptedTypes={['.pdf', '.jpg', '.jpeg', '.png']}
+                        onFilesChange={(files) => handleDocumentsChange('insurance_documents', files)}
+                        uploadedFiles={uploadedDocuments['insurance_documents'] || []}
+                        contextId="workshop"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div className="flex gap-2 justify-end">
