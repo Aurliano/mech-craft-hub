@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Action, Description } from "@radix-ui/react-toast";
-import { Phone, MessageCircle, MapPin, Send, InstagramIcon } from "lucide-react";
+import { Phone, MessageCircle, MapPin, Send, InstagramIcon, Mail } from "lucide-react";
 import { title } from "process";
 
 const Contact = () => {
@@ -32,6 +32,13 @@ const Contact = () => {
       description: "صفحه رسمی ما در اینستاگرام را دنبال کنید",
       info: "saydatech",
       action: "https://www.instagram.com/saydatech/"
+    },
+    {
+      icon: Mail,
+      title: "ایمیل",
+      description: "ارسال ایمیل برای درخواست‌های رسمی و تجاری",
+      info: "info@saydatech.ir",
+      action: "mailto:info@saydatech.ir"
     }
   ];
 

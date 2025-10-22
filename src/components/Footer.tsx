@@ -64,6 +64,24 @@ const Footer = () => {
           <p>&copy; 1404 پلتفرم مهندسی سایدا. تمامی حقوق محفوظ است.</p>
         </div>
       </div>
+      
+      {/* Trust Badges Section */}
+      <div className="bg-background py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h3 className="text-lg font-semibold text-foreground mb-6">نمادها و مجوزها</h3>
+            <div className="flex justify-center items-center">
+              <a href="https://bitpay.ir/certificate-646830-saydatech.ir" target="_blank" rel="noopener noreferrer">
+                <img 
+                  src="https://bitpay.ir/theme/public/images/trusted-logo.svg" 
+                  alt="نماد اعتماد بیت پی" 
+                  className="h-16 w-auto hover:opacity-80 transition-opacity"
+                />
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
     </footer>
   );
 };
