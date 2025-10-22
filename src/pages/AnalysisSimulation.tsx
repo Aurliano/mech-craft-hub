@@ -39,7 +39,17 @@ const AnalysisSimulation = () => {
         const analysis = Array.isArray(services)
           ? services.find((s: { type?: string; name?: string; id?: string }) => s.type === 'analysis')
           : undefined;
-        if (analysis?.id) setAnalysisServiceId(analysis.id);
+        
+        if (analysis?.id) {
+          setAnalysisServiceId(analysis.id);
+        } else {
+          // Fallback: use the first available service
+          const firstService = Array.isArray(services) ? services[0] : undefined;
+          if (firstService?.id) {
+            console.warn('Analysis service not found, using first available service:', firstService);
+            setAnalysisServiceId(firstService.id);
+          }
+        }
       } catch {
         setAnalysisServiceId(null);
       }

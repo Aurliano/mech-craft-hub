@@ -36,7 +36,7 @@ const Design = () => {
     handleSubmit,
     isSubmitting,
     error
-  } = useServiceOrder('550e8400-e29b-41d4-a716-446655440002');
+  } = useServiceOrder('550e8400-e29b-41d4-a716-446655440002'); // Design service
 
   // Check if any documentation option is selected
   const hasAnyDocumentationSelected = () => {

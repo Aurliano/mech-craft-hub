@@ -67,7 +67,7 @@ const DrawingService = () => {
     handleSubmit,
     isSubmitting,
     error: serviceOrderError
-  } = useServiceOrder('550e8400-e29b-41d4-a716-446655440004');
+  } = useServiceOrder('550e8400-e29b-41d4-a716-446655440004'); // Drawing service
   
   // State for dynamic form
   const [service, setService] = useState<Service | null>(null);
