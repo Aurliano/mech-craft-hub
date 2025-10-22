@@ -34,8 +34,6 @@ import ContractorRatings from "./pages/ContractorRatings";
 import CustomerQuotes from "./pages/CustomerQuotes";
 import MyWorkshops from "./pages/MyWorkshops";
 import OrderDetails from "./pages/OrderDetails";
-import FileUploadDemo from "./pages/FileUploadDemo";
-import OrderPreviewDemo from "./pages/OrderPreviewDemo";
 import ServicesPage from "./pages/ServicesPage";
 import PortfolioPage from "./pages/PortfolioPage";
 import Blog from "./pages/Blog";
@@ -177,8 +175,6 @@ const App = () => (
                   <Support />
                 </ProtectedRoute>
               } />
-              <Route path="/file-upload-demo" element={<FileUploadDemo />} />
-              <Route path="/order-preview-demo" element={<OrderPreviewDemo />} />
               
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
