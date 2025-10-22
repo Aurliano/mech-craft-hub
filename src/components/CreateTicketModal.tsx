@@ -40,11 +40,15 @@ interface Order {
 interface CreateTicketModalProps {
   children?: React.ReactNode;
   onTicketCreated?: (ticketId: string) => void;
+  openSignal?: number; // increments to trigger opening from parent
+  onOpenChangeExternal?: (open: boolean) => void;
 }
 
 const CreateTicketModal: React.FC<CreateTicketModalProps> = ({ 
   children, 
-  onTicketCreated 
+  onTicketCreated,
+  openSignal,
+  onOpenChangeExternal
 }) => {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
@@ -64,6 +68,12 @@ const CreateTicketModal: React.FC<CreateTicketModalProps> = ({
   });
 
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  useEffect(() => {
+    if (typeof openSignal === 'number') {
+      setOpen(true);
+    }
+  }, [openSignal]);
 
   useEffect(() => {
     if (open) {
@@ -231,7 +241,7 @@ const CreateTicketModal: React.FC<CreateTicketModalProps> = ({
   const selectedCategory = categories?.find(cat => cat.id === formData.category_id);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(o) => { setOpen(o); onOpenChangeExternal?.(o); }}>
       <DialogTrigger asChild>
         {children || (
           <Button>

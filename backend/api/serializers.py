@@ -4,7 +4,7 @@ from .models import (
     Cart, CartItem, Order, OrderItem, Quote, Workshop,
     Ticket, TicketMessage, TicketAttachment, TicketFileType, TicketCategory, TicketParticipant,
     ContentFilterLog, Review, Notification, SupportFeedback, BlogPost, BlogComment, ScientificContent,
-    OrderProposal, MaterialEstimate, OrderStatus, Payment
+    OrderProposal, MaterialEstimate, OrderStatus, Payment, MaterialEstimation, OrderStatusLog
 )
 
 
@@ -550,6 +550,20 @@ class OrderStatusSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at']
 
 
+class OrderStatusLogSerializer(serializers.ModelSerializer):
+    """Serializer for Order Status Log with user details"""
+    changed_by_name = serializers.CharField(source='changed_by.username', read_only=True)
+    order_number = serializers.CharField(source='order.order_number', read_only=True)
+    
+    class Meta:
+        model = OrderStatusLog
+        fields = [
+            'id', 'order', 'order_number', 'previous_status', 'new_status', 
+            'changed_by', 'changed_by_name', 'reason', 'changed_at'
+        ]
+        read_only_fields = ['id', 'changed_at']
+
+
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
@@ -659,6 +673,42 @@ class SupportStatsSerializer(serializers.Serializer):
 
 
 # Blog System Serializers
+class MaterialEstimationSerializer(serializers.ModelSerializer):
+    """Serializer for Material Estimation"""
+    estimator_name = serializers.CharField(source='estimator.username', read_only=True)
+    order_number = serializers.CharField(source='order_item.order.order_number', read_only=True)
+    service_name = serializers.CharField(source='order_item.service.name', read_only=True)
+    customer_name = serializers.CharField(source='order_item.order.customer.username', read_only=True)
+    
+    class Meta:
+        model = MaterialEstimation
+        fields = [
+            'id', 'order_item', 'estimator', 'estimator_name', 'order_number', 
+            'service_name', 'customer_name', 'material_name', 'material_type',
+            'quantity', 'unit', 'unit_price', 'total_price', 'supplier_name',
+            'supplier_contact', 'specifications', 'delivery_time', 'notes',
+            'status', 'approved_by', 'approved_at', 'rejection_reason',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'total_price', 'created_at', 'updated_at']
+
+
+class MaterialEstimationCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating Material Estimation"""
+    
+    class Meta:
+        model = MaterialEstimation
+        fields = [
+            'order_item', 'material_name', 'material_type', 'quantity', 'unit',
+            'unit_price', 'supplier_name', 'supplier_contact', 'specifications',
+            'delivery_time', 'notes'
+        ]
+    
+    def create(self, validated_data):
+        validated_data['estimator'] = self.context['request'].user
+        return super().create(validated_data)
+
+
 class ScientificContentSerializer(serializers.ModelSerializer):
     """Serializer for scientific content"""
     author_name = serializers.CharField(source='author.username', read_only=True)

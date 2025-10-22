@@ -22,6 +22,10 @@ class JWTAuthenticationMiddleware(MiddlewareMixin):
         if request.path.startswith('/api/v1/auth/'):
             return None
             
+        # Skip if user is already authenticated
+        if hasattr(request, 'user') and request.user.is_authenticated:
+            return None
+            
         # Get Authorization header
         auth_header = request.META.get('HTTP_AUTHORIZATION', '')
         if not auth_header.startswith('Bearer '):
@@ -44,7 +48,7 @@ class JWTAuthenticationMiddleware(MiddlewareMixin):
                 logger.warning(f"JWT authentication failed: {result.get('message', 'Unknown error')}")
                 
         except Exception as e:
-            logger.error(f"JWT middleware error: {str(e)}")
+            logger.error(f"Unexpected error getting user from token: {str(e)}")
             
         return None
 

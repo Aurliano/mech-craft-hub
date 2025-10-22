@@ -1084,6 +1084,61 @@ class SupportFeedback(models.Model):
         }
 
 
+class MaterialEstimation(models.Model):
+    """برآورد متریال توسط مدیر برای سفارشات ساخت"""
+    
+    ESTIMATION_STATUS_CHOICES = [
+        ('pending', 'در انتظار تایید'),
+        ('approved', 'تایید شده'),
+        ('rejected', 'رد شده'),
+        ('revised', 'بازنگری شده'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE, related_name='material_estimations')
+    estimator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='material_estimations')
+    
+    # Material details
+    material_name = models.CharField(max_length=200, help_text="نام متریال")
+    material_type = models.CharField(max_length=100, help_text="نوع متریال")
+    quantity = models.DecimalField(max_digits=10, decimal_places=2, help_text="مقدار")
+    unit = models.CharField(max_length=50, help_text="واحد اندازه‌گیری")
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2, help_text="قیمت واحد")
+    total_price = models.DecimalField(max_digits=12, decimal_places=2, help_text="قیمت کل")
+    
+    # Supplier information
+    supplier_name = models.CharField(max_length=200, blank=True, help_text="نام تامین کننده")
+    supplier_contact = models.CharField(max_length=200, blank=True, help_text="اطلاعات تماس تامین کننده")
+    
+    # Additional details
+    specifications = models.TextField(blank=True, help_text="مشخصات فنی")
+    delivery_time = models.PositiveIntegerField(help_text="زمان تحویل (روز)")
+    notes = models.TextField(blank=True, help_text="یادداشت‌ها")
+    
+    # Status and approval
+    status = models.CharField(max_length=20, choices=ESTIMATION_STATUS_CHOICES, default='pending')
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_material_estimations')
+    approved_at = models.DateTimeField(null=True, blank=True)
+    rejection_reason = models.TextField(blank=True, help_text="دلیل رد")
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'برآورد متریال'
+        verbose_name_plural = 'برآوردهای متریال'
+    
+    def __str__(self):
+        return f"{self.material_name} - {self.order_item.order.order_number}"
+    
+    def save(self, *args, **kwargs):
+        # Calculate total price
+        self.total_price = self.quantity * self.unit_price
+        super().save(*args, **kwargs)
+
+
 class ScientificContent(models.Model):
     """Model for scientific content including articles, books, software, and videos"""
     

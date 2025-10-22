@@ -70,15 +70,26 @@ class FileManager:
             file_path = self.generate_file_path(file_name, content_type)
             
             if self.storage_type == 'local':
-                # آپلود محلی
-                full_path = default_storage.save(file_path, ContentFile(file_obj.read()))
-                file_obj.seek(0)  # Reset file pointer
-                return {
-                    'success': True,
-                    'file_path': full_path,
-                    'file_url': default_storage.url(full_path),
-                    'file_size': file_obj.size
-                }
+                # آپلود محلی - ایجاد پوشه‌ها در صورت عدم وجود
+                try:
+                    # اطمینان از وجود پوشه‌های مورد نیاز
+                    os.makedirs(os.path.join(settings.MEDIA_ROOT, 'scientific-content'), exist_ok=True)
+                    os.makedirs(os.path.join(settings.MEDIA_ROOT, os.path.dirname(file_path)), exist_ok=True)
+                    
+                    full_path = default_storage.save(file_path, ContentFile(file_obj.read()))
+                    file_obj.seek(0)  # Reset file pointer
+                    return {
+                        'success': True,
+                        'file_path': full_path,
+                        'file_url': default_storage.url(full_path),
+                        'file_size': file_obj.size
+                    }
+                except PermissionError as e:
+                    logger.error(f"Permission denied creating directory: {str(e)}")
+                    return {
+                        'success': False,
+                        'error': f'Permission denied: {str(e)}'
+                    }
             
             elif self.storage_type in ['s3', 'liara'] and self.s3_client:
                 # آپلود به S3/Liara

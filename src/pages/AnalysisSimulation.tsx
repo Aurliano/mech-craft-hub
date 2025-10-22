@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,23 +21,42 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useServiceOrder } from "@/hooks/useServiceOrder";
 import { useAuth } from "@/contexts/AuthContext";
-import { DynamicServiceForm } from "@/components/DynamicServiceForm";
+import { ServiceTabs } from "@/components/ServiceTabs";
 import LoginPrompt from "@/components/LoginPrompt";
 import TermsAndConditions from "@/components/TermsAndConditions";
 import DocumentationSection from "@/components/DocumentationSection";
+import { getAllServices } from "@/lib/api";
 
 const AnalysisSimulation = () => {
   // Use real authentication state
   const { isAuthenticated } = useAuth();
   
+  // Resolve service id dynamically (type: analysis)
+  const [analysisServiceId, setAnalysisServiceId] = useState<string | null>(null);
+  useEffect(() => {
+    (async () => {
+      try {
+        const services = await getAllServices();
+        const analysis = Array.isArray(services)
+          ? services.find((s: { type?: string; name?: string; id?: string }) => s.type === 'analysis')
+          : undefined;
+        if (analysis?.id) setAnalysisServiceId(analysis.id);
+      } catch {
+        setAnalysisServiceId(null);
+      }
+    })();
+  }, []);
+  
   // Use service order hook
   const {
     formData,
+    tabFieldValues,
     needsDocumentation,
     notes,
     documentationOptions,
     documentationNotes,
     updateField,
+    updateTabField,
     setNeedsDocumentation,
     setNotes,
     setDocumentationOptions,
@@ -45,7 +64,7 @@ const AnalysisSimulation = () => {
     handleSubmit,
     isSubmitting,
     error
-  } = useServiceOrder('550e8400-e29b-41d4-a716-446655440004');
+  } = useServiceOrder(analysisServiceId || "");
 
   const [acceptTerms, setAcceptTerms] = useState(false);
 
@@ -119,25 +138,27 @@ const AnalysisSimulation = () => {
   const AnalysisForm = () => (
     <div className="space-y-6">
       <div className="text-center mb-8">
-        <h3 className="text-2xl font-semibold mb-2">فرم ثبت سفارش تحلیل و شبیه‌سازی</h3>
+        <h3 className="text-۲xl font-semibold mb-2">فرم ثبت سفارش تحلیل و شبیه‌سازی</h3>
         <p className="text-muted-foreground">نوع تحلیل مورد نظر خود را انتخاب کنید</p>
       </div>
 
-      <DynamicServiceForm
-        serviceId="550e8400-e29b-41d4-a716-446655440004"
-        formData={formData}
-        onFieldChange={updateField}
-        needsDocumentation={needsDocumentation}
-        onNeedsDocumentationChange={setNeedsDocumentation}
-        documentationOptions={documentationOptions}
-        onDocumentationOptionChange={(option, checked) => 
-          setDocumentationOptions(prev => ({ ...prev, [option]: checked }))
-        }
-        notes={notes}
-        onNotesChange={setNotes}
-        onSubmit={handleFormSubmit}
-        isSubmitting={isSubmitting}
-      />
+      {analysisServiceId && (
+        <ServiceTabs
+          serviceId={analysisServiceId}
+          onFieldChange={(tabId, fieldKey, value) => updateTabField(tabId, fieldKey, value)}
+          fieldValues={tabFieldValues}
+          needsDocumentation={needsDocumentation}
+          onNeedsDocumentationChange={setNeedsDocumentation}
+          documentationOptions={documentationOptions}
+          onDocumentationOptionChange={(option, checked) => 
+            setDocumentationOptions(prev => ({ ...prev, [option]: checked }))
+          }
+          notes={notes}
+          onNotesChange={setNotes}
+          onSubmit={handleFormSubmit}
+          isSubmitting={isSubmitting}
+        />
+      )}
 
       {/* Documentation Section */}
       <DocumentationSection

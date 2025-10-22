@@ -9,6 +9,30 @@ interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
 
+// Type definitions for API responses
+export interface Ticket {
+  id: string;
+  subject: string;
+  category_name: string;
+  status: string;
+  priority: string;
+  creator_name: string;
+  order_number?: string;
+  created_at: string;
+  last_activity_at: string;
+  messages_count?: number;
+}
+
+export interface TicketMessage {
+  id: string;
+  sender: string;
+  sender_name: string;
+  content: string;
+  is_internal: boolean;
+  created_at: string;
+  attachments: unknown[];
+}
+
 // API_BASE_URL is only used in development
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
 
@@ -1337,6 +1361,40 @@ export async function updateTicketStatus(ticketId: string, status: string) {
   }
 }
 
+export async function respondToTicket(ticketId: string, content: string) {
+  try {
+    return await fetchJson<TicketMessage>(`/v1/tickets/${ticketId}/respond/`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+  } catch (error) {
+    console.error('Error responding to ticket:', error);
+    throw error;
+  }
+}
+
+export async function closeTicket(ticketId: string) {
+  try {
+    return await fetchJson<Ticket>(`/v1/tickets/${ticketId}/close/`, {
+      method: 'POST',
+    });
+  } catch (error) {
+    console.error('Error closing ticket:', error);
+    throw error;
+  }
+}
+
+export async function deleteTicket(ticketId: string) {
+  try {
+    return await fetchJson<boolean>(`/v1/tickets/${ticketId}/`, {
+      method: 'DELETE',
+    });
+  } catch (error) {
+    console.error('Error deleting ticket:', error);
+    throw error;
+  }
+}
+
 export async function getContentFilterLogs(params?: { 
   violation_type?: string; 
   action_taken?: string; 
@@ -1464,6 +1522,9 @@ export const api = {
   getSupportFeedbacks,
   askAISupport,
   updateTicketStatus,
+  respondToTicket,
+  closeTicket,
+  deleteTicket,
   getContentFilterLogs,
   reviewContentViolation,
   

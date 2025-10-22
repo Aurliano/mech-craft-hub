@@ -84,10 +84,24 @@ const FileManager = () => {
       const response = await fetch('/api/v1/scientific-content/categories/');
       if (response.ok) {
         const data = await response.json();
-        setCategories(data.categories || []);
+        // API returns array directly, not wrapped in categories object
+        setCategories(Array.isArray(data) ? data : []);
       }
     } catch (error) {
       console.error('Error fetching categories:', error);
+      // Fallback categories if API fails
+      setCategories([
+        { value: 'mechatronics', label: 'مکاترونیک' },
+        { value: 'mechanical', label: 'مهندسی مکانیک' },
+        { value: 'electronics', label: 'مهندسی الکترونیک' },
+        { value: 'computer', label: 'مهندسی کامپیوتر' },
+        { value: 'metaverse', label: 'متاورس' },
+        { value: 'ai', label: 'هوش مصنوعی' },
+        { value: 'simulation', label: 'شبیه‌سازی' },
+        { value: 'design', label: 'طراحی' },
+        { value: 'manufacturing', label: 'ساخت و تولید' },
+        { value: 'general', label: 'عمومی' }
+      ]);
     }
   };
 

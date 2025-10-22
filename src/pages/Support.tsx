@@ -64,6 +64,7 @@ const Support = () => {
   const [ticketMessages, setTicketMessages] = useState<TicketMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('tickets');
+  const [createTicketOpenSignal, setCreateTicketOpenSignal] = useState(0);
 
   useEffect(() => {
     fetchTickets();
@@ -113,6 +114,10 @@ const Support = () => {
     if (newTicket) {
       handleSelectTicket(newTicket);
     }
+  };
+
+  const handleOpenCreateTicket = () => {
+    setCreateTicketOpenSignal(prev => prev + 1);
   };
 
   const handleNewMessage = (message: TicketMessage) => {
@@ -247,8 +252,19 @@ const Support = () => {
         </Tabs>
 
         {/* Create Ticket Modal */}
-        <CreateTicketModal onTicketCreated={handleTicketCreated}>
-          <Button className="fixed bottom-6 right-6 rounded-full w-14 h-14 shadow-lg bg-blue-600 hover:bg-blue-700 text-white">
+        <CreateTicketModal 
+          onTicketCreated={handleTicketCreated}
+          openSignal={createTicketOpenSignal}
+          onOpenChangeExternal={(open) => {
+            if (!open) {
+              setCreateTicketOpenSignal(0);
+            }
+          }}
+        >
+          <Button 
+            onClick={handleOpenCreateTicket}
+            className="fixed bottom-6 right-6 rounded-full w-14 h-14 shadow-lg bg-blue-600 hover:bg-blue-700 text-white"
+          >
             <Plus className="w-6 h-6" />
           </Button>
         </CreateTicketModal>

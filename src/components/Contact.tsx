@@ -17,7 +17,7 @@ const Contact = () => {
       title: "تلگرام",
       description: "ارتباط سریع و آسان از طریق کانال رسمی ما در تلگرام",
       info: "@saydatech",
-      action: "https://t.me/saydatech_ir"
+      action: "https://t.me/saydatech"
     },
     {
       icon: MessageCircle,
@@ -25,13 +25,6 @@ const Contact = () => {
       description: "پیام‌رسان داخلی برای ارتباط مستقیم با پشتیبان",
       info: "saydatech_ir@",
       action: "https://eitaa.com/saydatech_ir"
-    },
-    {
-      icon: MapPin,
-      title: "آدرس",
-      description: "مراجعه حضوری به دفتر مرکزی",
-      info: "ایران ،اصفهان",
-      action: "https://maps.google.com"
     },
     {
       icon: InstagramIcon,

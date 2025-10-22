@@ -1,4 +1,4 @@
-from rest_framework.decorators import api_view, permission_classes, throttle_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes, action
 from rest_framework.response import Response
 from rest_framework import viewsets, permissions, status, filters
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
@@ -79,7 +79,7 @@ def initiate_payment_project_final(request, order_id):
         return initiate_payment(request._request.__class__())
     except Order.DoesNotExist:
         return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
-from rest_framework.decorators import api_view, permission_classes, throttle_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes, action
 from rest_framework.response import Response
 from rest_framework import viewsets, permissions, status, filters
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
@@ -96,7 +96,7 @@ from .models import (
     Ticket, TicketMessage, TicketAttachment, TicketFileType, TicketCategory, TicketParticipant,
     ContentFilterLog, Review, MediaFile,
     PasswordResetToken, PhoneVerificationCode, Payment, Notification, OrderStatusLog,
-    ScientificContent, OrderProposal, MaterialEstimate, OrderStatus
+    ScientificContent, OrderProposal, MaterialEstimate, OrderStatus, MaterialEstimation
 )
 from .pagination import StandardResultsSetPagination
 from .throttling import (
@@ -117,7 +117,8 @@ from .serializers import (
     CreateOrderSerializer, OrderStatusUpdateSerializer, CreateQuoteSerializer,
     NotificationSerializer, ScientificContentSerializer, ScientificContentListSerializer, ScientificContentCreateSerializer,
     OrderProposalSerializer, CreateOrderProposalSerializer, MaterialEstimateSerializer, CreateMaterialEstimateSerializer,
-    OrderStatusSerializer, PaymentSerializer, ProcessPaymentSerializer
+    OrderStatusSerializer, OrderStatusLogSerializer, PaymentSerializer, ProcessPaymentSerializer,
+    MaterialEstimationSerializer, MaterialEstimationCreateSerializer
 )
 import os
 import random
@@ -765,6 +766,59 @@ class TicketViewSet(viewsets.ModelViewSet):
             models.Q(creator=self.request.user) | 
             models.Q(participants__user=self.request.user)
         ).select_related('category', 'creator', 'order').distinct()
+    
+    def get_permissions(self):
+        """
+        Instantiates and returns the list of permissions that this view requires.
+        """
+        if self.action == 'destroy':
+            # Only admins can delete tickets
+            permission_classes = [permissions.IsAdminUser]
+        else:
+            permission_classes = [permissions.IsAuthenticated]
+        return [permission() for permission in permission_classes]
+    
+    @action(detail=True, methods=['post'])
+    def respond(self, request, pk=None):
+        """Admin response to ticket"""
+        if not request.user.is_staff:
+            return Response({'detail': 'فقط مدیران می‌توانند پاسخ دهند'}, status=status.HTTP_403_FORBIDDEN)
+        
+        ticket = self.get_object()
+        content = request.data.get('content', '')
+        
+        if not content:
+            return Response({'detail': 'محتوای پاسخ الزامی است'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Create admin response message
+        message = TicketMessage.objects.create(
+            ticket=ticket,
+            sender=request.user,
+            content=content,
+            is_internal=False  # Admin responses are visible to customer
+        )
+        
+        # Update ticket status
+        ticket.status = 'waiting_response'
+        ticket.last_activity_at = timezone.now()
+        ticket.save()
+        
+        serializer = TicketMessageSerializer(message)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=True, methods=['post'])
+    def close(self, request, pk=None):
+        """Close ticket (admin only)"""
+        if not request.user.is_staff:
+            return Response({'detail': 'فقط مدیران می‌توانند تیکت را ببندند'}, status=status.HTTP_403_FORBIDDEN)
+        
+        ticket = self.get_object()
+        ticket.status = 'closed'
+        ticket.last_activity_at = timezone.now()
+        ticket.save()
+        
+        serializer = self.get_serializer(ticket)
+        return Response(serializer.data)
 
 
 class TicketMessageViewSet(viewsets.ModelViewSet):
@@ -820,10 +874,106 @@ class ContentFilterLogViewSet(viewsets.ReadOnlyModelViewSet):
     ordering = ['-created_at']
 
 
+class MaterialEstimationViewSet(viewsets.ModelViewSet):
+    """ViewSet for Material Estimation management"""
+    queryset = MaterialEstimation.objects.all().select_related(
+        'order_item__order__customer', 'order_item__service', 'estimator'
+    ).order_by('-created_at')
+    serializer_class = MaterialEstimationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['status', 'order_item__order__customer', 'estimator']
+    search_fields = ['material_name', 'material_type', 'supplier_name']
+    ordering_fields = ['created_at', 'total_price', 'delivery_time']
+    ordering = ['-created_at']
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return MaterialEstimationCreateSerializer
+        return MaterialEstimationSerializer
+    
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        
+        # Filter by order item if provided
+        order_item_id = self.request.query_params.get('order_item')
+        if order_item_id:
+            queryset = queryset.filter(order_item_id=order_item_id)
+        
+        # Filter by order if provided
+        order_id = self.request.query_params.get('order')
+        if order_id:
+            queryset = queryset.filter(order_item__order_id=order_id)
+        
+        return queryset
+    
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        """Approve material estimation"""
+        estimation = self.get_object()
+        estimation.status = 'approved'
+        estimation.approved_by = request.user
+        estimation.approved_at = timezone.now()
+        estimation.save()
+        
+        serializer = self.get_serializer(estimation)
+        return Response(serializer.data)
+    
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        """Reject material estimation"""
+        estimation = self.get_object()
+        rejection_reason = request.data.get('rejection_reason', '')
+        
+        estimation.status = 'rejected'
+        estimation.rejection_reason = rejection_reason
+        estimation.save()
+        
+        serializer = self.get_serializer(estimation)
+        return Response(serializer.data)
+
+
+class OrderStatusLogViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet for Order Status Log - Admin only"""
+    queryset = OrderStatusLog.objects.all().select_related(
+        'order__customer', 'changed_by'
+    ).order_by('-changed_at')
+    serializer_class = OrderStatusLogSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filterset_fields = ['order', 'changed_by', 'new_status']
+    search_fields = ['order__order_number', 'changed_by__username', 'reason']
+    ordering_fields = ['changed_at', 'order__order_number']
+    ordering = ['-changed_at']
+    
+    def get_queryset(self):
+        # Only admins can see status logs
+        if self.request.user.is_staff:
+            return OrderStatusLog.objects.all().select_related(
+                'order__customer', 'changed_by'
+            ).order_by('-changed_at')
+        return OrderStatusLog.objects.none()
+    
+    @action(detail=False, methods=['get'])
+    def by_order(self, request):
+        """Get status logs for a specific order"""
+        order_id = request.query_params.get('order_id')
+        if not order_id:
+            return Response({'detail': 'order_id parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        logs = self.get_queryset().filter(order_id=order_id)
+        serializer = self.get_serializer(logs, many=True)
+        return Response(serializer.data)
+
+
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.select_related('order_item', 'customer', 'contractor', 'approved_by').all()
     serializer_class = ReviewSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+
 
 
 class ScientificContentViewSet(viewsets.ModelViewSet):
@@ -1575,6 +1725,15 @@ def update_order_status(request, order_id):
             status=new_status,
             description=f'تغییر وضعیت از {old_status} به {new_status}',
             created_by=request.user if request.user.is_authenticated else None
+        )
+        
+        # Also log in OrderStatusLog for detailed tracking
+        OrderStatusLog.objects.create(
+            order=order,
+            previous_status=old_status,
+            new_status=new_status,
+            changed_by=request.user,
+            reason=f'تغییر وضعیت توسط {request.user.username}'
         )
         
         return Response({'detail': 'وضعیت سفارش با موفقیت تغییر یافت'})
