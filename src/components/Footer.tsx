@@ -45,7 +45,7 @@ const Footer = () => {
             <h3 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">اطلاعات تماس</h3>
             <div className="space-y-2 sm:space-y-3 text-primary-foreground/80 text-sm sm:text-base">
               <div className="flex items-center justify-end">
-                <span>اصفهان - خمینی شهر - منظریه - بلوار دانشجو - دانشگاه آزاداسلامی </span>
+                <span>اصفهان، خمینی شهر، منظریه، بلوار دانشجو، دانشگاه آزاداسلامی </span>
                 <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
               </div>
               <div className="flex items-center justify-end">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import { Link, useSearchParams, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,23 +7,37 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Navbar from "@/components/Navbar";
 import { usePasswordResetConfirm } from "@/hooks/useAuth";
+import { passwordResetConfirmSMS } from "@/lib/api";
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { mutateAsync: confirmReset, isPending, error, isSuccess } = usePasswordResetConfirm();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [token, setToken] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [smsCode, setSmsCode] = useState("");
 
   useEffect(() => {
+    // Check for token from URL parameters (email reset)
     const tokenParam = searchParams.get("token");
     if (tokenParam) {
       setToken(tokenParam);
-    } else {
+    } 
+    // Check for SMS reset data from location state
+    else if (location.state?.verified && location.state?.smsCode) {
+      setToken(location.state.smsCode);
+      setEmail(location.state.email || "");
+      setPhone(location.state.phone || "");
+      setSmsCode(location.state.smsCode);
+    } 
+    else {
       navigate("/forgot-password");
     }
-  }, [searchParams, navigate]);
+  }, [searchParams, location.state, navigate]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -31,7 +45,12 @@ const ResetPassword = () => {
       return;
     }
     try {
-      await confirmReset({ token, newPassword });
+      // Use SMS reset if we have SMS code, otherwise use email reset
+      if (smsCode) {
+        await passwordResetConfirmSMS(smsCode, newPassword);
+      } else {
+        await confirmReset({ token, newPassword });
+      }
     } catch (err) {
       // Error is handled by the hook
     }

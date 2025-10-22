@@ -228,13 +228,11 @@ const ContractorDashboard = () => {
 
           {/* Main Content Tabs */}
           <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-            <TabsList className={`grid w-full ${(manufacturingCheck as { has_manufacturing_service?: boolean })?.has_manufacturing_service ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-5' : 'grid-cols-2 sm:grid-cols-2 lg:grid-cols-4'} gap-1`}>
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1">
               <TabsTrigger value="orders" className="text-xs sm:text-sm">سفارشات</TabsTrigger>
               <TabsTrigger value="proposals" className="text-xs sm:text-sm">پیشنهادات من</TabsTrigger>
               <TabsTrigger value="projects" className="text-xs sm:text-sm">پروژه‌های فعال</TabsTrigger>
-              {(manufacturingCheck as { has_manufacturing_service?: boolean })?.has_manufacturing_service && (
-                <TabsTrigger value="workshops" className="text-xs sm:text-sm">کارگاه‌های من</TabsTrigger>
-              )}
+              <TabsTrigger value="workshops" className="text-xs sm:text-sm">کارگاه‌های من</TabsTrigger>
               <TabsTrigger value="notifications" className="text-xs sm:text-sm">اعلان‌ها</TabsTrigger>
             </TabsList>
 
@@ -413,8 +411,7 @@ const ContractorDashboard = () => {
             </TabsContent>
 
             {/* Workshops Tab */}
-            {(manufacturingCheck as { has_manufacturing_service?: boolean })?.has_manufacturing_service && (
-              <TabsContent value="workshops" className="space-y-6">
+            <TabsContent value="workshops" className="space-y-6">
               <Card>
                 <CardHeader>
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-0">
@@ -464,8 +461,7 @@ const ContractorDashboard = () => {
                   </div>
                 </CardContent>
               </Card>
-              </TabsContent>
-            )}
+            </TabsContent>
 
             {/* Notifications Tab */}
             <TabsContent value="notifications" className="space-y-6">

@@ -388,8 +388,8 @@ const MyWorkshops = () => {
                         label="مجوز کارگاه"
                         isRequired={false}
                         helpText="مجوز فعالیت کارگاه از سازمان‌های مربوطه"
-                        maxFiles={3}
-                        maxSizePerFile={10}
+                        maxFiles={0}
+                        maxSizePerFile={50}
                         acceptedTypes={['.pdf', '.jpg', '.jpeg', '.png']}
                         onFilesChange={(files) => handleDocumentsChange('workshop_license', files)}
                         uploadedFiles={uploadedDocuments['workshop_license'] || []}
@@ -404,8 +404,8 @@ const MyWorkshops = () => {
                         label="گواهی‌های دستگاه‌ها"
                         isRequired={false}
                         helpText="گواهی‌های کالیبراسیون و استاندارد دستگاه‌ها"
-                        maxFiles={5}
-                        maxSizePerFile={10}
+                        maxFiles={0}
+                        maxSizePerFile={50}
                         acceptedTypes={['.pdf', '.jpg', '.jpeg', '.png']}
                         onFilesChange={(files) => handleDocumentsChange('machine_certificates', files)}
                         uploadedFiles={uploadedDocuments['machine_certificates'] || []}
@@ -420,8 +420,8 @@ const MyWorkshops = () => {
                         label="گواهی‌های کیفیت"
                         isRequired={false}
                         helpText="گواهی‌های ISO، استانداردهای کیفیت و مدیریت"
-                        maxFiles={3}
-                        maxSizePerFile={10}
+                        maxFiles={0}
+                        maxSizePerFile={50}
                         acceptedTypes={['.pdf', '.jpg', '.jpeg', '.png']}
                         onFilesChange={(files) => handleDocumentsChange('quality_certificates', files)}
                         uploadedFiles={uploadedDocuments['quality_certificates'] || []}
@@ -436,8 +436,8 @@ const MyWorkshops = () => {
                         label="مدارک بیمه"
                         isRequired={false}
                         helpText="بیمه مسئولیت مدنی و بیمه کارگاه"
-                        maxFiles={2}
-                        maxSizePerFile={10}
+                        maxFiles={0}
+                        maxSizePerFile={50}
                         acceptedTypes={['.pdf', '.jpg', '.jpeg', '.png']}
                         onFilesChange={(files) => handleDocumentsChange('insurance_documents', files)}
                         uploadedFiles={uploadedDocuments['insurance_documents'] || []}
