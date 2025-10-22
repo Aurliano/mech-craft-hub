@@ -15,7 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { DynamicServiceForm } from "@/components/DynamicServiceForm";
 import LoginPrompt from "@/components/LoginPrompt";
 import TermsAndConditions from "@/components/TermsAndConditions";
-import DocumentationSection from "@/components/DocumentationSection";
+// import DocumentationSection from "@/components/DocumentationSection";
 
 const Design = () => {
   // Use real authentication state
@@ -45,7 +45,7 @@ const Design = () => {
   };
 
   // Create setFormData function for compatibility
-  const setFormData = (updater: any) => {
+  const setFormData = (updater: ((prev: Record<string, unknown>) => Record<string, unknown>) | Record<string, unknown>) => {
     if (typeof updater === 'function') {
       const newData = updater(formData);
       Object.keys(newData).forEach(key => {
@@ -159,19 +159,6 @@ const Design = () => {
               isSubmitting={isSubmitting}
             />
 
-            {/* Documentation Section */}
-            <DocumentationSection
-              needsDocumentation={needsDocumentation}
-              onNeedsDocumentationChange={setNeedsDocumentation}
-              documentationOptions={documentationOptions}
-              onDocumentationOptionChange={(option, checked) => 
-                setDocumentationOptions(prev => ({ ...prev, [option]: checked }))
-              }
-              documentationNotes={documentationNotes}
-              onDocumentationNotesChange={setDocumentationNotes}
-            />
-
-
       {/* Terms and Conditions */}
       <div className="mt-6">
         <TermsAndConditions
@@ -196,7 +183,6 @@ const Design = () => {
       <Navbar />
       
       <ServiceIntro />
-
 
       <section className="py-16">
         <div className="max-w-6xl mx-auto px-4">

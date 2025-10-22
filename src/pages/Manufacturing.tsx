@@ -36,7 +36,7 @@ import LoginPrompt from "@/components/LoginPrompt";
 import { DynamicServiceForm } from "@/components/DynamicServiceForm";
 import { useContractorWorkshops } from "@/hooks/useAuth";
 import TermsAndConditions from "@/components/TermsAndConditions";
-import DocumentationSection from "@/components/DocumentationSection";
+// import DocumentationSection from "@/components/DocumentationSection";
 
 // Mock data for workshops
 const workshops = [
@@ -440,18 +440,6 @@ const Manufacturing = () => {
               onNotesChange={setNotes}
               onSubmit={handleFormSubmit}
               isSubmitting={isSubmitting}
-            />
-
-            {/* Documentation Section */}
-            <DocumentationSection
-              needsDocumentation={needsDocumentation}
-              onNeedsDocumentationChange={setNeedsDocumentation}
-              documentationOptions={documentationOptions}
-              onDocumentationOptionChange={(option, checked) => 
-                setDocumentationOptions(prev => ({ ...prev, [option]: checked }))
-              }
-              documentationNotes={documentationNotes}
-              onDocumentationNotesChange={setDocumentationNotes}
             />
 
             {/* Material Cost Notice */}

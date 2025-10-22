@@ -21,10 +21,9 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useServiceOrder } from "@/hooks/useServiceOrder";
 import { useAuth } from "@/contexts/AuthContext";
-import { ServiceTabs } from "@/components/ServiceTabs";
+import ServiceTabs from "@/components/ServiceTabs";
 import LoginPrompt from "@/components/LoginPrompt";
 import TermsAndConditions from "@/components/TermsAndConditions";
-import DocumentationSection from "@/components/DocumentationSection";
 import { getAllServices } from "@/lib/api";
 
 const AnalysisSimulation = () => {
@@ -159,18 +158,6 @@ const AnalysisSimulation = () => {
           isSubmitting={isSubmitting}
         />
       )}
-
-      {/* Documentation Section */}
-      <DocumentationSection
-        needsDocumentation={needsDocumentation}
-        onNeedsDocumentationChange={setNeedsDocumentation}
-        documentationOptions={documentationOptions}
-        onDocumentationOptionChange={(option, checked) => 
-          setDocumentationOptions(prev => ({ ...prev, [option]: checked }))
-        }
-        documentationNotes={documentationNotes}
-        onDocumentationNotesChange={setDocumentationNotes}
-      />
 
       {/* Terms and Conditions */}
       <div className="mt-6">
