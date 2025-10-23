@@ -1,0 +1,41 @@
+
+<svg width="152" height="152" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#007bff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0056b3;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background Circle -->
+  <circle cx="76" cy="76" r="72" fill="url(#bg)" stroke="#ffffff" stroke-width="2"/>
+  
+  <!-- Gear Icon -->
+  <g transform="translate(76, 76)">
+    <!-- Main gear body -->
+    <circle cx="0" cy="0" r="22.8" fill="#ffffff" opacity="0.9"/>
+    
+    <!-- Gear teeth -->
+    <g fill="#ffffff" opacity="0.8">
+      <!-- Top teeth -->
+      <rect x="-3.04" y="-38" width="6.08" height="12.16" rx="1.52"/>
+      <rect x="-3.04" y="25.840000000000003" width="6.08" height="12.16" rx="1.52"/>
+      
+      <!-- Side teeth -->
+      <rect x="-38" y="-3.04" width="12.16" height="6.08" rx="1.52"/>
+      <rect x="25.840000000000003" y="-3.04" width="12.16" height="6.08" rx="1.52"/>
+      
+      <!-- Diagonal teeth -->
+      <rect x="-27.36" y="-27.36" width="9.12" height="4.56" rx="1.52" transform="rotate(-45)"/>
+      <rect x="18.24" y="18.24" width="9.12" height="4.56" rx="1.52" transform="rotate(-45)"/>
+      <rect x="27.36" y="-27.36" width="9.12" height="4.56" rx="1.52" transform="rotate(45)"/>
+      <rect x="-18.24" y="18.24" width="9.12" height="4.56" rx="1.52" transform="rotate(45)"/>
+    </g>
+    
+    <!-- Center hole -->
+    <circle cx="0" cy="0" r="9.12" fill="#007bff"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="76" y="129.2" font-family="Arial, sans-serif" font-size="18.24" font-weight="bold" text-anchor="middle" fill="#ffffff">سایدا</text>
+</svg>

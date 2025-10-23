@@ -66,13 +66,15 @@
       "src": "/screenshots/desktop-screenshot.png",
       "sizes": "1280x720",
       "type": "image/png",
-      "form_factor": "wide"
+      "form_factor": "wide",
+      "label": "صفحه اصلی پلتفرم مهندسی سایدا"
     },
     {
       "src": "/screenshots/mobile-screenshot.png",
       "sizes": "375x667",
       "type": "image/png",
-      "form_factor": "narrow"
+      "form_factor": "narrow",
+      "label": "نسخه موبایل پلتفرم مهندسی سایدا"
     }
   ],
   "shortcuts": [
@@ -84,7 +86,8 @@
       "icons": [
         {
           "src": "/icons/shortcut-services.png",
-          "sizes": "96x96"
+          "sizes": "96x96",
+          "type": "image/png"
         }
       ]
     },
@@ -96,7 +99,8 @@
       "icons": [
         {
           "src": "/icons/shortcut-blog.png",
-          "sizes": "96x96"
+          "sizes": "96x96",
+          "type": "image/png"
         }
       ]
     },
@@ -108,7 +112,8 @@
       "icons": [
         {
           "src": "/icons/shortcut-contact.png",
-          "sizes": "96x96"
+          "sizes": "96x96",
+          "type": "image/png"
         }
       ]
     }

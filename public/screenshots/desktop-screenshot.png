@@ -1,0 +1,49 @@
+
+    <svg width="1280" height="720" viewBox="0 0 1280 720" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="bg-screenshot" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#f8f9fa;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#e9ecef;stop-opacity:1" />
+        </linearGradient>
+        <linearGradient id="header-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#007bff;stop-opacity:1" />
+          <stop offset="100%" style="stop-color:#0056b3;stop-opacity:1" />
+        </linearGradient>
+      </defs>
+      
+      <!-- Background -->
+      <rect width="1280" height="720" fill="url(#bg-screenshot)" rx="12"/>
+      
+      <!-- Header -->
+      <rect x="0" y="0" width="1280" height="86.39999999999999" fill="url(#header-gradient)" rx="12"/>
+      
+      <!-- Logo in header -->
+      <circle cx="50" cy="43.199999999999996" r="20" fill="#ffffff" opacity="0.9"/>
+      <circle cx="50" cy="43.199999999999996" r="12" fill="#007bff"/>
+      
+      <!-- Title -->
+      <text x="80" y="49.199999999999996" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#ffffff">
+        پلتفرم مهندسی سایدا
+      </text>
+      
+      <!-- Content area -->
+      <rect x="20" y="96.39999999999999" width="1240" height="613.6" fill="#ffffff" rx="8" opacity="0.9"/>
+      
+      <!-- Content elements -->
+      
+        <!-- Desktop content -->
+        <rect x="40" y="116.39999999999999" width="200" height="120" fill="#007bff" opacity="0.1" rx="8"/>
+        <text x="140" y="186.39999999999998" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="#007bff">خدمات تخصصی مهندسی</text>
+        
+        <rect x="260" y="116.39999999999999" width="200" height="120" fill="#28a745" opacity="0.1" rx="8"/>
+        <text x="360" y="186.39999999999998" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="#28a745">مقالات و منابع علمی</text>
+        
+        <rect x="480" y="116.39999999999999" width="200" height="120" fill="#dc3545" opacity="0.1" rx="8"/>
+        <text x="580" y="186.39999999999998" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="#dc3545">تماس با ما</text>
+      
+      
+      <!-- Footer -->
+      <rect x="20" y="690" width="1240" height="20" fill="#6c757d" opacity="0.1" rx="8"/>
+      <text x="640" y="705" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#6c757d">saydatech.ir</text>
+    </svg>
+  
