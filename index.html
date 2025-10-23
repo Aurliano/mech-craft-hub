@@ -40,13 +40,18 @@
     <a referrerpolicy='origin' target='_blank' href='https://trustseal.enamad.ir/?id=655020&Code=y58ivNNQdkWEpCN9q6GsBZKUAUGg7EhO' style='position: fixed; bottom: 20px; left: 20px; z-index: 1000;'><img referrerpolicy='origin' src='https://trustseal.enamad.ir/logo.aspx?id=655020&Code=y58ivNNQdkWEpCN9q6GsBZKUAUGg7EhO' alt='' style='cursor:pointer' code='y58ivNNQdkWEpCN9q6GsBZKUAUGg7EhO'></a>
     <script type="module" src="/src/main.tsx"></script>
     
-    <!-- PWA Debug Script (فقط در development) -->
-    <script>
-      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        const script = document.createElement('script');
-        script.src = '/pwa-debug.js';
-        document.head.appendChild(script);
-      }
-    </script>
+            <!-- PWA Debug Script (فقط در development) -->
+            <script>
+              if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+                const script = document.createElement('script');
+                script.src = '/pwa-debug.js';
+                document.head.appendChild(script);
+                
+                // Also load test script
+                const testScript = document.createElement('script');
+                testScript.src = '/pwa-test.js';
+                document.head.appendChild(testScript);
+              }
+            </script>
   </body>
 </html>

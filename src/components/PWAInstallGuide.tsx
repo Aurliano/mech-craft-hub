@@ -22,11 +22,11 @@ const PWAInstallGuide = () => {
 
     // بررسی اینکه آیا می‌توان راهنما را نمایش داد
     if (canShowInstallPrompt()) {
-      // برای تست، راهنما را بعد از 2 ثانیه نمایش بده
+      // برای تست، راهنما را بعد از 1 ثانیه نمایش بده
       const timer = setTimeout(() => {
         console.log('Showing PWA install guide');
         setShowGuide(true);
-      }, 2000);
+      }, 1000);
 
       return () => clearTimeout(timer);
     }

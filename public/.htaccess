@@ -5,6 +5,7 @@
 AddType application/manifest+json .webmanifest
 AddType application/manifest+json .json
 AddType application/javascript .js
+AddType text/javascript .js
 
 # تنظیم headers برای PWA
 <Files "manifest.json">

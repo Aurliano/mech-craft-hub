@@ -89,8 +89,8 @@ const Navbar = () => {
                 {/* Logo and Site Name - Right side */}
                 <div className="flex items-center gap-3" dir="rtl">
                   <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
-                    <img src={logo} alt="لوگو" className="h-10 w-auto flex-shrink-0" />
-                    <span className="text-xl font-bold text-primary">پلتفرم مهندسی سایدا</span>
+                    <img src={logo} alt="لوگو" className="h-12 w-auto flex-shrink-0" />
+                    <span className="text-2xl font-bold text-primary">پلتفرم مهندسی سایدا</span>
                   </Link>
                 </div>
             
@@ -275,8 +275,8 @@ const Navbar = () => {
                 {/* Mobile Logo and Site Name - Right side */}
                 <div className="flex items-center gap-2" dir="rtl">
                   <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                    <img src={logo} alt="لوگو" className="h-8 w-auto flex-shrink-0" />
-                    <span className="text-sm font-bold truncate">پلتفرم مهندسی سایدا</span>
+                    <img src={logo} alt="لوگو" className="h-10 w-auto flex-shrink-0" />
+                    <span className="text-xl font-bold truncate">پلتفرم مهندسی سایدا</span>
                   </Link>
                 </div>
           
