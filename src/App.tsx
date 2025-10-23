@@ -9,6 +9,7 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import RoleBasedRoute from "@/components/RoleBasedRoute";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import SupportWidget from "@/components/SupportWidget";
+import PWAInstallGuide from "@/components/PWAInstallGuide";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -181,6 +182,7 @@ const App = () => (
             </Routes>
               </BrowserRouter>
               <SupportWidget />
+              <PWAInstallGuide />
               <Toaster />
             </TooltipProvider>
           </SecurityHeaders>

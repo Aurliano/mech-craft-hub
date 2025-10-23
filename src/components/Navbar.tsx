@@ -15,6 +15,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import UserDropdown from "@/components/UserDropdown";
+import InstallButton from "@/components/InstallButton";
 import { useCheckContractorManufacturingService } from "@/hooks/useAuth";
 
 interface SubItem {
@@ -248,6 +249,9 @@ const Navbar = () => {
                   </NavigationMenuItem>
                 </NavigationMenuList>
               </NavigationMenu>
+              
+              {/* Install Button */}
+              <InstallButton variant="outline" size="sm" />
             </div>
 
           </div>
@@ -474,6 +478,11 @@ const Navbar = () => {
                     <Phone className="h-5 w-5 text-gray-600" />
                     <span className="font-medium">تماس با ما</span>
                   </button>
+
+                  {/* Install Button for Mobile */}
+                  <div className="px-3 py-2">
+                    <InstallButton variant="outline" size="sm" className="w-full" />
+                  </div>
                 </div>
 
                 {/* Auth Section */}
