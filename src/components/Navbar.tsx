@@ -68,8 +68,14 @@ const Navbar = () => {
     <nav className="bg-background border-b border-border sticky top-0 z-50" dir="rtl">
       <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8" dir="rtl">
         <div className="flex flex-col" dir="rtl">
-          {/* Top Section: Auth buttons (left) and Logo/Site Name (right) */}
+          {/* Top Section: Logo/Site Name (right) and Auth buttons (left) */}
           <div className="flex justify-between items-center py-2 border-b border-border/50" dir="rtl">
+            {/* Logo and Site Name - Right side */}
+            <div className="flex items-center gap-3" dir="rtl">
+              <img src={logo} alt="لوگو" className="h-10 w-auto flex-shrink-0" />
+              <span className="text-xl font-bold text-primary">پلتفرم مهندسی سایدا</span>
+            </div>
+            
             {/* Auth Buttons - Left side */}
             <div className="flex items-center gap-2">
               {!isAuthenticated ? (
@@ -123,12 +129,6 @@ const Navbar = () => {
                   />
                 </>
               )}
-            </div>
-            
-            {/* Logo and Site Name - Right side */}
-            <div className="flex items-center gap-3" dir="rtl">
-              <img src={logo} alt="لوگو" className="h-10 w-auto flex-shrink-0" />
-              <span className="text-xl font-bold text-primary">پلتفرم مهندسی سایدا</span>
             </div>
           </div>
           
@@ -254,7 +254,13 @@ const Navbar = () => {
 
           {/* Mobile Layout */}
           <div className="lg:hidden flex items-center justify-between w-full">
-            {/* Mobile menu button - Right side */}
+            {/* Mobile Logo and Site Name - Right side */}
+            <div className="flex items-center gap-2" dir="rtl">
+              <img src={logo} alt="لوگو" className="h-8 w-auto flex-shrink-0" />
+              <span className="text-sm font-bold truncate">پلتفرم مهندسی سایدا</span>
+            </div>
+            
+            {/* Mobile menu button - Left side */}
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="text-foreground hover:text-primary transition-colors p-2"
@@ -264,23 +270,22 @@ const Navbar = () => {
               {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               <span className="sr-only">{isOpen ? "بستن منو" : "باز کردن منو"}</span>
             </button>
-            
-            {/* Mobile Logo and Site Name - Center */}
-            <div className="flex items-center gap-2" dir="rtl">
-              <img src={logo} alt="لوگو" className="h-8 w-auto flex-shrink-0" />
-              <span className="text-sm font-bold truncate">پلتفرم مهندسی سایدا</span>
-            </div>
-            
-            
           </div>
         </div>
 
-        {/* Mobile Menu - Right aligned */}
+        {/* Mobile Menu - Fixed overlay with proper scrolling */}
         {isOpen && (
-          <div className="lg:hidden fixed inset-0 z-50 bg-black/50 backdrop-blur-sm" onClick={() => setIsOpen(false)}>
-            <div className="absolute left-0 top-0 h-full w-4/5 max-w-sm bg-white shadow-2xl" dir="rtl" onClick={(e) => e.stopPropagation()}>
-              {/* Header with close button */}
-              <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <div className="lg:hidden fixed inset-0 z-50">
+            {/* Backdrop */}
+            <div 
+              className="absolute inset-0 bg-black/50 backdrop-blur-sm" 
+              onClick={() => setIsOpen(false)}
+            />
+            
+            {/* Menu Panel */}
+            <div className="absolute right-0 top-0 h-full w-4/5 max-w-sm bg-white shadow-2xl overflow-hidden" dir="rtl">
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white sticky top-0 z-10">
                 <div className="flex items-center gap-2">
                   <img src={logo} alt="لوگو" className="h-8 w-auto" />
                   <span className="font-bold text-sm">پلتفرم مهندسی سایدا</span>
@@ -294,38 +299,39 @@ const Navbar = () => {
                 </button>
               </div>
 
-              {/* User Profile Section */}
-              {isAuthenticated ? (
-                <div className="bg-gray-50 p-4 border-b border-gray-200">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-                      <User className="h-5 w-5 text-white" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="font-medium text-sm">{userName}</span>
-                      <span className="text-xs text-gray-500">
-                        {isContractor ? 'پیمانکار' : isCustomer ? 'مشتری' : 'کاربر'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4 text-white">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                      <User className="h-5 w-5" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="font-medium text-sm">به پلتفرم مهندسی سایدا خوش آمدید</span>
-                      <span className="text-xs opacity-90">برای شروع وارد شوید</span>
+              {/* Scrollable Content */}
+              <div className="h-full overflow-y-auto pb-20">
+                {/* User Profile Section */}
+                {isAuthenticated ? (
+                  <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4 text-white">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                        <User className="h-6 w-6" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-medium text-base">{userName}</span>
+                        <span className="text-sm opacity-90">
+                          {isContractor ? 'پیمانکار' : isCustomer ? 'مشتری' : 'کاربر'}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
+                ) : (
+                  <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4 text-white">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                        <User className="h-6 w-6" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-medium text-base">به پلتفرم مهندسی سایدا خوش آمدید</span>
+                        <span className="text-sm opacity-90">برای شروع وارد شوید</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-              {/* Navigation Menu */}
-              <div className="flex-1 overflow-y-auto py-4">
-                <div className="px-4 space-y-2">
+                {/* Navigation Menu */}
+                <div className="px-4 py-4 space-y-1">
                   {/* Home Link */}
                   <Link 
                     to="/" 
