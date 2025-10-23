@@ -37,6 +37,13 @@ RUN mkdir -p /app/logs /app/media /app/staticfiles && \
     cd /app/backend && \
     python manage.py collectstatic --noinput
 
+# Ensure PWA files are accessible
+RUN chmod 644 /app/dist/service-worker.js && \
+    chmod 644 /app/dist/manifest.json && \
+    chmod 644 /app/dist/web.config && \
+    chmod -R 644 /app/dist/icons/ && \
+    chmod -R 644 /app/dist/screenshots/
+
 # Switch to app user
 USER appuser
 

@@ -76,16 +76,36 @@ fi
 
 # Build frontend if needed
 if [ -d "src" ]; then
-    print_status "Building frontend..."
+    print_status "Building frontend with PWA support..."
     if command -v npm &> /dev/null; then
         npm ci
         npm run build
         print_success "Frontend built successfully"
+        
+        # Verify PWA files exist
+        pwa_files=("dist/service-worker.js" "dist/manifest.json" "dist/web.config")
+        for file in "${pwa_files[@]}"; do
+            if [ ! -f "$file" ]; then
+                print_error "PWA file $file not found after build!"
+                exit 1
+            fi
+        done
+        print_success "All PWA files verified"
     else
         print_warning "npm not found, skipping frontend build"
     fi
 else
     print_status "Frontend already built in dist/ directory"
+    
+    # Verify PWA files exist
+    pwa_files=("dist/service-worker.js" "dist/manifest.json" "dist/web.config")
+    for file in "${pwa_files[@]}"; do
+        if [ ! -f "$file" ]; then
+            print_error "PWA file $file not found!"
+            exit 1
+        fi
+    done
+    print_success "All PWA files verified"
 fi
 
 # Deploy to Liara
