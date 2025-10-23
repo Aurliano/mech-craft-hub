@@ -1,4 +1,4 @@
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from rest_framework import viewsets, permissions, status, filters
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
@@ -79,7 +79,7 @@ def initiate_payment_project_final(request, order_id):
         return initiate_payment(request._request.__class__())
     except Order.DoesNotExist:
         return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from rest_framework import viewsets, permissions, status, filters
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
