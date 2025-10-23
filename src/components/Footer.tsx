@@ -70,11 +70,18 @@ const Footer = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h3 className="text-lg font-semibold text-foreground mb-6">نمادها و مجوزها</h3>
-            <div className="flex justify-center items-center">
+            <div className="flex justify-center items-center gap-8">
               <a href="https://bitpay.ir/certificate-646830-saydatech.ir" target="_blank" rel="noopener noreferrer">
                 <img 
                   src="https://bitpay.ir/theme/public/images/trusted-logo.svg" 
                   alt="نماد اعتماد بیت پی" 
+                  className="h-16 w-auto hover:opacity-80 transition-opacity"
+                />
+              </a>
+              <a href="https://trustseal.enamad.ir/?id=646830&code=your_code" target="_blank" rel="noopener noreferrer">
+                <img 
+                  src="https://trustseal.enamad.ir/logo.aspx?id=646830&code=your_code" 
+                  alt="نماد اعتماد اینماد" 
                   className="h-16 w-auto hover:opacity-80 transition-opacity"
                 />
               </a>

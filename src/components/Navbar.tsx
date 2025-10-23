@@ -68,18 +68,74 @@ const Navbar = () => {
     <nav className="bg-background border-b border-border sticky top-0 z-50" dir="rtl">
       <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8" dir="rtl">
         <div className="flex flex-col" dir="rtl">
-          {/* Top Section: Logo and Site Name */}
-          <div className="flex justify-end items-center py-2 border-b border-border/50" dir="rtl">
+          {/* Top Section: Auth buttons (left) and Logo/Site Name (right) */}
+          <div className="flex justify-between items-center py-2 border-b border-border/50" dir="rtl">
+            {/* Auth Buttons - Left side */}
+            <div className="flex items-center gap-2">
+              {!isAuthenticated ? (
+                <>
+                  <Link to="/contractor-register">
+                    <Button variant="default" size="sm" title="ثبت نام پیمانکاران و کارگاه ها" className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4" />
+                      ثبت نام پیمانکاران و کارگاه ها
+                    </Button>
+                  </Link>
+                  <Link to="/login">
+                    <Button variant="outline" size="sm" title="ورود" className="flex items-center gap-2">
+                      <LogIn className="h-4 w-4" />
+                      ورود
+                    </Button>
+                  </Link>
+                  <Link to="/register">
+                    <Button variant="outline" size="sm" title="ثبت نام" className="flex items-center gap-2">
+                      <UserPlus className="h-4 w-4" />
+                      ثبت نام
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  {/* Admin Shortcut */}
+                  {user && ((((user as unknown as Record<string, unknown>)?.role) === 'admin') || ((user as unknown as { role?: { name?: string } }).role?.name === 'admin')) ? (
+                    <Button variant="outline" size="sm" asChild title="داشبورد مدیر">
+                      <Link to="/admin/dashboard">داشبورد مدیر</Link>
+                    </Button>
+                  ) : null}
+                  {/* Shopping Cart */}
+                  {isCustomer && (
+                    <Button variant="ghost" size="sm" className="relative" asChild title="سبد خرید">
+                      <Link to="/cart">
+                        <ShoppingCart className="h-5 w-5" />
+                        <span className="sr-only">سبد خرید</span>
+                        {cartItemsCount > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                            {cartItemsCount}
+                          </span>
+                        )}
+                      </Link>
+                    </Button>
+                  )}
+                  {/* User Account Dropdown */}
+                  <UserDropdown 
+                    userName={userName}
+                    unreadNotificationsCount={unreadNotificationsCount}
+                    onLogout={logout}
+                  />
+                </>
+              )}
+            </div>
+            
+            {/* Logo and Site Name - Right side */}
             <div className="flex items-center gap-3" dir="rtl">
               <img src={logo} alt="لوگو" className="h-10 w-auto flex-shrink-0" />
               <span className="text-xl font-bold text-primary">پلتفرم مهندسی سایدا</span>
             </div>
           </div>
           
-          {/* Main Navigation */}
-          <div className="flex justify-end items-center h-16" dir="rtl">
+          {/* Main Navigation - Centered */}
+          <div className="flex justify-center items-center h-16" dir="rtl">
             {/* Desktop Layout */}
-            <div className="hidden lg:flex justify-end items-center w-full gap-4" dir="rtl">
+            <div className="hidden lg:flex justify-center items-center w-full" dir="rtl">
               {/* Navigation Menu Items */}
               <NavigationMenu className="bg-transparent" dir="rtl">
                 <NavigationMenuList className="gap-2" dir="rtl">
@@ -192,60 +248,6 @@ const Navbar = () => {
                   </NavigationMenuItem>
                 </NavigationMenuList>
               </NavigationMenu>
-
-              {/* Auth Buttons */}
-              {isAuthenticated ? (
-                <>
-                  {/* Admin Shortcut */}
-                  {user && ((((user as unknown as Record<string, unknown>)?.role) === 'admin') || ((user as unknown as { role?: { name?: string } }).role?.name === 'admin')) ? (
-                    <Button variant="outline" size="sm" asChild title="داشبورد مدیر">
-                      <Link to="/admin/dashboard">داشبورد مدیر</Link>
-                    </Button>
-                  ) : null}
-                  {/* Shopping Cart */}
-                  {isCustomer && (
-                    <Button variant="ghost" size="sm" className="relative" asChild title="سبد خرید">
-                      <Link to="/cart">
-                        <ShoppingCart className="h-5 w-5" />
-                        <span className="sr-only">سبد خرید</span>
-                        {cartItemsCount > 0 && (
-                          <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                            {cartItemsCount}
-                          </span>
-                        )}
-                      </Link>
-                    </Button>
-                  )}
-
-                  {/* User Account Dropdown */}
-                  <UserDropdown 
-                    userName={userName}
-                    unreadNotificationsCount={unreadNotificationsCount}
-                    onLogout={logout}
-                  />
-                </>
-              ) : (
-                <>
-                  <Link to="/contractor-register">
-                    <Button variant="default" size="sm" title="ثبت نام پیمانکاران و کارگاه ها" className="flex items-center gap-2">
-                      <Building2 className="h-4 w-4" />
-                      ثبت نام پیمانکاران و کارگاه ها
-                    </Button>
-                  </Link>
-                  <Link to="/login">
-                    <Button variant="outline" size="sm" title="ورود" className="flex items-center gap-2">
-                      <LogIn className="h-4 w-4" />
-                      ورود
-                    </Button>
-                  </Link>
-                  <Link to="/register">
-                    <Button variant="outline" size="sm" title="ثبت نام" className="flex items-center gap-2">
-                      <UserPlus className="h-4 w-4" />
-                      ثبت نام
-                    </Button>
-                  </Link>
-                </>
-              )}
             </div>
 
           </div>
