@@ -99,9 +99,6 @@ from .models import (
     ScientificContent, OrderProposal, MaterialEstimate, OrderStatus, MaterialEstimation
 )
 from .pagination import StandardResultsSetPagination
-from .throttling import (
-    UploadRateThrottle, RegisterThrottle, LoginThrottle
-)
 from .exceptions import (
     NotFoundException
 )
@@ -473,7 +470,6 @@ def api_status(request):
 
 @api_view(["POST"]) 
 @permission_classes([AllowAny])
-@throttle_classes([RegisterThrottle])
 def customer_register(request):
     """Customer registration with Turnstile validation"""
     from .serializers import CustomerRegisterSerializer
@@ -493,7 +489,6 @@ def customer_register(request):
 
 @api_view(["POST"]) 
 @permission_classes([AllowAny])
-@throttle_classes([RegisterThrottle])
 def contractor_register(request):
     """Contractor registration with Turnstile validation"""
     from .serializers import ContractorRegisterSerializer
@@ -513,7 +508,6 @@ def contractor_register(request):
 
 @api_view(["POST"])
 @permission_classes([AllowAny])
-@throttle_classes([LoginThrottle])
 def login(request):
     """Login with Turnstile validation"""
     from .utils.jwt_utils import JWTManager
@@ -1023,7 +1017,6 @@ def get_scientific_content_categories(request):
 class UploadView(APIView):
     parser_classes = [MultiPartParser, FormParser]
     permission_classes = [permissions.IsAuthenticated]
-    throttle_classes = [UploadRateThrottle]
 
     def post(self, request):
         file_obj = request.FILES.get('file')
