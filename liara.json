@@ -16,5 +16,8 @@
   "env": {
     "DJANGO_SETTINGS_MODULE": "config.settings_ultra_simple",
     "PYTHONPATH": "/app/backend"
+  },
+  "nginx": {
+    "config": "liara_nginx.conf"
   }
 }
