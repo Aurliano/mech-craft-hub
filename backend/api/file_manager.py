@@ -32,8 +32,9 @@ class FileManager:
         if self.storage_type in ['s3', 'liara'] and BOTO3_AVAILABLE:
             # Use Liara credentials for scientific content storage
             if self.storage_type == 'liara':
-                aws_access_key_id = getattr(settings, 'LIARA_ACCESS_KEY_ID', None)
-                aws_secret_access_key = getattr(settings, 'LIARA_SECRET_ACCESS_KEY', None)
+                # Try both naming conventions for backward compatibility
+                aws_access_key_id = getattr(settings, 'LIARA_ACCESS_KEY_ID', None) or getattr(settings, 'LIARA_ACCESS_KEY', None)
+                aws_secret_access_key = getattr(settings, 'LIARA_SECRET_ACCESS_KEY', None) or getattr(settings, 'LIARA_SECRET_KEY', None)
             else:
                 aws_access_key_id = getattr(settings, 'AWS_ACCESS_KEY_ID', None)
                 aws_secret_access_key = getattr(settings, 'AWS_SECRET_ACCESS_KEY', None)
