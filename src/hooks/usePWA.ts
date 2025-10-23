@@ -120,6 +120,12 @@ export const usePWA = () => {
 
   const canShowInstallPrompt = (): boolean => {
     const hasSeenGuide = localStorage.getItem('saydatech-pwa-guide-seen') === 'true';
+    
+    // برای تست، همیشه true برگردان (موقت)
+    if (process.env.NODE_ENV === 'development') {
+      return !hasSeenGuide && !pwaState.isInstalled;
+    }
+    
     return pwaState.isInstallable && !hasSeenGuide && !pwaState.isInstalled;
   };
 

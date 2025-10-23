@@ -22,13 +22,13 @@ const PWAInstallGuide = () => {
 
     // بررسی اینکه آیا می‌توان راهنما را نمایش داد
     if (canShowInstallPrompt()) {
-      // برای iOS Safari، راهنما را بعد از چند ثانیه نمایش بده
-      if (browserInfo?.isIOS && browserInfo?.isSafari) {
-        setTimeout(() => setShowGuide(true), 3000);
-      } else {
-        // برای سایر مرورگرها، راهنما را بعد از 2 ثانیه نمایش بده
-        setTimeout(() => setShowGuide(true), 2000);
-      }
+      // برای تست، راهنما را بعد از 3 ثانیه نمایش بده
+      const timer = setTimeout(() => {
+        console.log('Showing PWA install guide');
+        setShowGuide(true);
+      }, 3000);
+
+      return () => clearTimeout(timer);
     }
   }, [isInstalled, canShowInstallPrompt, browserInfo]);
 
