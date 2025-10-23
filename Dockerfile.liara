@@ -35,14 +35,18 @@ ENV SECRET_KEY=docker-build-secret
 RUN mkdir -p /app/logs /app/media /app/staticfiles && \
     chown -R appuser:appuser /app && \
     cd /app/backend && \
-    python manage.py collectstatic --noinput
+    python manage.py collectstatic --noinput --clear
 
-# Ensure PWA files are accessible
+# Remove any conflicting PWA files from staticfiles to avoid conflicts
+RUN rm -rf /app/backend/staticfiles/icons /app/backend/staticfiles/screenshots /app/backend/staticfiles/service-worker.js /app/backend/staticfiles/manifest.json /app/backend/staticfiles/web.config /app/backend/staticfiles/pwa-debug.js /app/backend/staticfiles/pwa-test.js /app/backend/staticfiles/mime-test.js || true
+
+# Ensure PWA files are accessible and fix permissions
 RUN chmod 644 /app/dist/service-worker.js && \
     chmod 644 /app/dist/manifest.json && \
     chmod 644 /app/dist/web.config && \
     chmod -R 644 /app/dist/icons/ && \
-    chmod -R 644 /app/dist/screenshots/
+    chmod -R 644 /app/dist/screenshots/ && \
+    chown -R appuser:appuser /app/dist/
 
 # Switch to app user
 USER appuser
@@ -63,4 +67,4 @@ EXPOSE 80
 WORKDIR /app/backend
 
 # Start command - Run migrations and start gunicorn
-CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py collectstatic --noinput && exec gunicorn config.wsgi:application --bind 0.0.0.0:80 --workers 3 --timeout 120 --max-requests 1000 --max-requests-jitter 100 --preload"]
+CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py collectstatic --noinput --clear && rm -rf /app/backend/staticfiles/icons /app/backend/staticfiles/screenshots /app/backend/staticfiles/service-worker.js /app/backend/staticfiles/manifest.json /app/backend/staticfiles/web.config /app/backend/staticfiles/pwa-debug.js /app/backend/staticfiles/pwa-test.js /app/backend/staticfiles/mime-test.js || true && exec gunicorn config.wsgi:application --bind 0.0.0.0:80 --workers 3 --timeout 120 --max-requests 1000 --max-requests-jitter 100 --preload"]

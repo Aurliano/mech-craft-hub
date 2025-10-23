@@ -171,8 +171,20 @@ STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
-    # Add frontend build directory for Liara
+    # Add frontend build directory for Liara (excluding PWA files)
     os.path.join(BASE_DIR, '..', 'dist'),
+]
+
+# Exclude PWA files from staticfiles collection
+STATICFILES_IGNORE_PATTERNS = [
+    'icons/',
+    'screenshots/',
+    'service-worker.js',
+    'manifest.json',
+    'web.config',
+    'pwa-debug.js',
+    'pwa-test.js',
+    'mime-test.js',
 ]
 
 # WhiteNoise configuration for serving static files
