@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
 import { Menu, X, ChevronDown, ChevronUp, User, ShoppingCart, Package, HelpCircle, LogOut, Home, LogIn, UserPlus, Bell, BarChart3, Wrench, Settings, Briefcase, MessageSquare, Building2, BookOpen, Briefcase as BriefcaseIcon, Phone } from "lucide-react";
@@ -33,6 +33,20 @@ interface Service {
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [expandedServices, setExpandedServices] = useState<string[]>([]);
+
+  // کنترل اسکرول body هنگام باز/بسته شدن منو موبایل
+  useEffect(() => {
+    if (isOpen) {
+      document.body.classList.add('mobile-menu-open');
+    } else {
+      document.body.classList.remove('mobile-menu-open');
+    }
+    
+    // تمیز کردن هنگام unmount
+    return () => {
+      document.body.classList.remove('mobile-menu-open');
+    };
+  }, [isOpen]);
   
   // Use real authentication state
   const { isAuthenticated, user, logout, cartItems, notifications, stats, isContractor, isCustomer } = useAuth();
@@ -72,11 +86,13 @@ const Navbar = () => {
         <div className="hidden lg:flex flex-col" dir="rtl">
           {/* Top Section: Logo/Site Name (right) and Auth buttons (left) */}
           <div className="flex justify-between items-center py-2 border-b border-border/50" dir="rtl">
-            {/* Logo and Site Name - Right side */}
-            <div className="flex items-center gap-3" dir="rtl">
-              <img src={logo} alt="لوگو" className="h-10 w-auto flex-shrink-0" />
-              <span className="text-xl font-bold text-primary">پلتفرم مهندسی سایدا</span>
-            </div>
+                {/* Logo and Site Name - Right side */}
+                <div className="flex items-center gap-3" dir="rtl">
+                  <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+                    <img src={logo} alt="لوگو" className="h-10 w-auto flex-shrink-0" />
+                    <span className="text-xl font-bold text-primary">پلتفرم مهندسی سایدا</span>
+                  </Link>
+                </div>
             
             {/* Auth Buttons - Left side */}
             <div className="flex items-center gap-2">
@@ -256,11 +272,13 @@ const Navbar = () => {
 
         {/* Mobile Layout - Simple single row */}
         <div className="lg:hidden flex items-center justify-between py-3" dir="rtl">
-          {/* Mobile Logo and Site Name - Right side */}
-          <div className="flex items-center gap-2" dir="rtl">
-            <img src={logo} alt="لوگو" className="h-8 w-auto flex-shrink-0" />
-            <span className="text-sm font-bold truncate">پلتفرم مهندسی سایدا</span>
-          </div>
+                {/* Mobile Logo and Site Name - Right side */}
+                <div className="flex items-center gap-2" dir="rtl">
+                  <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+                    <img src={logo} alt="لوگو" className="h-8 w-auto flex-shrink-0" />
+                    <span className="text-sm font-bold truncate">پلتفرم مهندسی سایدا</span>
+                  </Link>
+                </div>
           
           {/* Mobile menu button - Left side */}
           <button
@@ -274,34 +292,34 @@ const Navbar = () => {
           </button>
         </div>
 
-        {/* Mobile Menu - Fixed overlay with proper scrolling */}
-        {isOpen && (
-          <div className="lg:hidden fixed inset-0 z-50">
-            {/* Backdrop */}
-            <div 
-              className="absolute inset-0 bg-black/50 backdrop-blur-sm" 
-              onClick={() => setIsOpen(false)}
-            />
-            
-            {/* Menu Panel */}
-            <div className="absolute right-0 top-0 h-full w-4/5 max-w-sm bg-white shadow-2xl" dir="rtl">
-              {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
-                <div className="flex items-center gap-2">
-                  <img src={logo} alt="لوگو" className="h-8 w-auto" />
-                  <span className="font-bold text-sm">پلتفرم مهندسی سایدا</span>
-                </div>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-                  title="بستن منو"
-                >
-                  <X className="h-5 w-5 text-gray-600" />
-                </button>
-              </div>
+              {/* Mobile Menu - Fixed overlay with proper scrolling */}
+              {isOpen && (
+                <div className="lg:hidden fixed inset-0 z-50">
+                  {/* Backdrop */}
+                  <div 
+                    className="absolute inset-0 bg-black/50 backdrop-blur-sm" 
+                    onClick={() => setIsOpen(false)}
+                  />
+                  
+                  {/* Menu Panel */}
+                  <div className="absolute right-0 top-0 h-full w-4/5 max-w-sm bg-white shadow-2xl overflow-hidden" dir="rtl">
+                    {/* Header */}
+                    <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white sticky top-0 z-10">
+                      <div className="flex items-center gap-2">
+                        <img src={logo} alt="لوگو" className="h-8 w-auto" />
+                        <span className="font-bold text-sm">پلتفرم مهندسی سایدا</span>
+                      </div>
+                      <button
+                        onClick={() => setIsOpen(false)}
+                        className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                        title="بستن منو"
+                      >
+                        <X className="h-5 w-5 text-gray-600" />
+                      </button>
+                    </div>
 
-              {/* Scrollable Content */}
-              <div className="h-full overflow-y-auto" style={{ height: 'calc(100vh - 80px)' }}>
+                    {/* Scrollable Content */}
+                    <div className="h-full overflow-y-auto overscroll-contain" style={{ height: 'calc(100vh - 80px)' }}>
                 {/* User Profile Section */}
                 {isAuthenticated ? (
                   <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4 text-white">

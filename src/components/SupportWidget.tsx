@@ -120,9 +120,9 @@ export default function SupportWidget({ className = '' }: SupportWidgetProps) {
         <Button
           onClick={toggleWidget}
           size="lg"
-          className="h-16 w-16 rounded-full bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl transition-all duration-300"
+          className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl transition-all duration-300"
         >
-          <MessageCircle className="h-7 w-7" />
+          <MessageCircle className="h-6 w-6 sm:h-7 sm:w-7" />
         </Button>
       </div>
     );
@@ -130,7 +130,7 @@ export default function SupportWidget({ className = '' }: SupportWidgetProps) {
 
   return (
     <div className={`fixed bottom-6 right-6 z-50 ${className}`}>
-      <Card className="w-96 max-h-[calc(100vh-3rem)] shadow-2xl border-0 bg-white">
+      <Card className="w-80 sm:w-96 max-h-[calc(100vh-3rem)] shadow-2xl border-0 bg-white">
         <CardHeader className="pb-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">

@@ -78,13 +78,6 @@ const Footer = () => {
                   className="h-16 w-auto hover:opacity-80 transition-opacity"
                 />
               </a>
-              <a href="https://trustseal.enamad.ir/?id=646830&code=your_code" target="_blank" rel="noopener noreferrer">
-                <img 
-                  src="https://trustseal.enamad.ir/logo.aspx?id=646830&code=your_code" 
-                  alt="نماد اعتماد اینماد" 
-                  className="h-16 w-auto hover:opacity-80 transition-opacity"
-                />
-              </a>
             </div>
           </div>
         </div>

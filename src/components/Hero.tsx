@@ -37,10 +37,10 @@ const Hero = () => {
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-2 py-8 sm:py-16"> {/* Added responsive py-8 sm:py-16 */}
         <div className="max-w-3xl mx-auto"> {/* This div now only contains the text and buttons */}
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-bold text-primary-foreground mb-4 sm:mb-6 leading-tight space-y-2 sm:space-y-4 font-yekan">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground mb-4 sm:mb-6 leading-tight space-y-2 sm:space-y-4 font-yekan">
             پلتفرم جامع مهندسی مکاترونیک 
             <br />
-            <span className="text-lg sm:text-xl md:text-2xl lg:text-3xl text-accent bg-gradient-to-r from-accent via-yellow-700 to-accent bg-clip-text text-transparent font-yekan block">
+            <span className="text-xl sm:text-2xl md:text-3xl lg:text-4xl text-accent bg-gradient-to-r from-accent via-yellow-700 to-accent bg-clip-text text-transparent font-yekan block">
               طراحی، تحلیل و ساخت پروژه‌های مهندسی
             </span>
           </h1>

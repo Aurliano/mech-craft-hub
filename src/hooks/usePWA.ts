@@ -126,6 +126,7 @@ export const usePWA = () => {
       return !hasSeenGuide && !pwaState.isInstalled;
     }
     
+    // در production، فقط اگر installable باشد
     return pwaState.isInstallable && !hasSeenGuide && !pwaState.isInstalled;
   };
 
