@@ -68,7 +68,8 @@ const Navbar = () => {
   return (
     <nav className="bg-background border-b border-border sticky top-0 z-50" dir="rtl">
       <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8" dir="rtl">
-        <div className="flex flex-col" dir="rtl">
+        {/* Desktop Layout */}
+        <div className="hidden lg:flex flex-col" dir="rtl">
           {/* Top Section: Logo/Site Name (right) and Auth buttons (left) */}
           <div className="flex justify-between items-center py-2 border-b border-border/50" dir="rtl">
             {/* Logo and Site Name - Right side */}
@@ -135,146 +136,142 @@ const Navbar = () => {
           
           {/* Main Navigation - Centered */}
           <div className="flex justify-center items-center h-16" dir="rtl">
-            {/* Desktop Layout */}
-            <div className="hidden lg:flex justify-center items-center w-full" dir="rtl">
-              {/* Navigation Menu Items */}
-              <NavigationMenu className="bg-transparent" dir="rtl">
-                <NavigationMenuList className="gap-2" dir="rtl">
-                  {/* Home */}
-                  <NavigationMenuItem>
-                    <NavigationMenuLink asChild>
-                      <Link to="/" className={navigationMenuTriggerStyle()} title="خانه">
-                        <Home className="h-4 w-4 ml-2" />
-                        خانه
-                      </Link>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
+            {/* Navigation Menu Items */}
+            <NavigationMenu className="bg-transparent" dir="rtl">
+              <NavigationMenuList className="gap-2" dir="rtl">
+                {/* Home */}
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <Link to="/" className={navigationMenuTriggerStyle()} title="خانه">
+                      <Home className="h-4 w-4 ml-2" />
+                      خانه
+                    </Link>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
 
-                  {/* Services Dropdown */}
-                  <NavigationMenuItem dir="rtl">
-                    <NavigationMenuTrigger className="bg-transparent hover:bg-muted/50 data-[state=open]:bg-muted/50">
-                      <Wrench className="h-4 w-4 ml-2" />
-                      خدمات تخصصی
-                    </NavigationMenuTrigger>
-                    <NavigationMenuContent className="bg-card/95 backdrop-blur-sm border border-border/50 shadow-elegant">
-                      <div className="w-[400px] p-4">
-                        <div className="grid grid-cols-1 gap-4" dir="rtl">
-                          {services.map((service) => (
-                            <div key={service.name} className="group">
-                              {service.subItems ? (
-                                <div>
-                                  <h3 className="text-sm font-medium text-foreground mb-2 px-3 py-2 bg-muted/30 rounded-md">
-                                    {service.name}
-                                  </h3>
-                                  <div className="grid grid-cols-1 gap-1 mr-4" dir="rtl">
-                                    {service.subItems.map((subItem) => (
-                                      <div key={subItem.name}>
-                                        {subItem.subItems ? (
-                                          <div className="mb-2">
-                                            <h4 className="text-xs font-medium text-muted-foreground mb-1 px-2 py-1">
-                                              {subItem.name}
-                                            </h4>
-                                            <div className="grid grid-cols-1 gap-1 mr-4">
-                                              {subItem.subItems.map((thirdLevel) => (
-                                                <NavigationMenuLink
-                                                  key={thirdLevel.name}
-                                                  href={thirdLevel.href}
-                                                  className="block px-2 py-1 text-xs text-muted-foreground hover:text-primary hover:bg-muted/30 rounded transition-colors"
-                                                >
-                                                  • {thirdLevel.name}
-                                                </NavigationMenuLink>
-                                              ))}
-                                            </div>
-                                          </div>
-                                        ) : (
-                                          <NavigationMenuLink
-                                            href={subItem.href}
-                                            className="block px-2 py-2 text-sm text-foreground hover:text-primary hover:bg-muted/50 rounded transition-colors"
-                                          >
-                                            {subItem.name}
-                                          </NavigationMenuLink>
-                                        )}
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              ) : (
-                                <NavigationMenuLink
-                                  href={service.href}
-                                  className="block px-3 py-2 text-sm font-medium text-foreground hover:text-primary hover:bg-muted/50 rounded transition-colors"
-                                >
+                {/* Services Dropdown */}
+                <NavigationMenuItem dir="rtl">
+                  <NavigationMenuTrigger className="bg-transparent hover:bg-muted/50 data-[state=open]:bg-muted/50">
+                    <Wrench className="h-4 w-4 ml-2" />
+                    خدمات تخصصی
+                  </NavigationMenuTrigger>
+                  <NavigationMenuContent className="bg-card/95 backdrop-blur-sm border border-border/50 shadow-elegant">
+                    <div className="w-[400px] p-4">
+                      <div className="grid grid-cols-1 gap-4" dir="rtl">
+                        {services.map((service) => (
+                          <div key={service.name} className="group">
+                            {service.subItems ? (
+                              <div>
+                                <h3 className="text-sm font-medium text-foreground mb-2 px-3 py-2 bg-muted/30 rounded-md">
                                   {service.name}
-                                </NavigationMenuLink>
-                              )}
-                            </div>
-                          ))}
-                        </div>
+                                </h3>
+                                <div className="grid grid-cols-1 gap-1 mr-4" dir="rtl">
+                                  {service.subItems.map((subItem) => (
+                                    <div key={subItem.name}>
+                                      {subItem.subItems ? (
+                                        <div className="mb-2">
+                                          <h4 className="text-xs font-medium text-muted-foreground mb-1 px-2 py-1">
+                                            {subItem.name}
+                                          </h4>
+                                          <div className="grid grid-cols-1 gap-1 mr-4">
+                                            {subItem.subItems.map((thirdLevel) => (
+                                              <NavigationMenuLink
+                                                key={thirdLevel.name}
+                                                href={thirdLevel.href}
+                                                className="block px-2 py-1 text-xs text-muted-foreground hover:text-primary hover:bg-muted/30 rounded transition-colors"
+                                              >
+                                                • {thirdLevel.name}
+                                              </NavigationMenuLink>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      ) : (
+                                        <NavigationMenuLink
+                                          href={subItem.href}
+                                          className="block px-2 py-2 text-sm text-foreground hover:text-primary hover:bg-muted/50 rounded transition-colors"
+                                        >
+                                          {subItem.name}
+                                        </NavigationMenuLink>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ) : (
+                              <NavigationMenuLink
+                                href={service.href}
+                                className="block px-3 py-2 text-sm font-medium text-foreground hover:text-primary hover:bg-muted/50 rounded transition-colors"
+                              >
+                                {service.name}
+                              </NavigationMenuLink>
+                            )}
+                          </div>
+                        ))}
                       </div>
-                    </NavigationMenuContent>
-                  </NavigationMenuItem>
+                    </div>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
 
-                  {/* Blog */}
-                  <NavigationMenuItem dir="rtl">
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/blog">
-                      <BookOpen className="h-4 w-4 ml-2" />
-                      مقالات و منابع علمی
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
+                {/* Blog */}
+                <NavigationMenuItem dir="rtl">
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/blog">
+                    <BookOpen className="h-4 w-4 ml-2" />
+                    مقالات و منابع علمی
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
 
-                  {/* Portfolio */}
-                  <NavigationMenuItem dir="rtl">
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/portfolio">
-                      <Briefcase className="h-4 w-4 ml-2" />
-                      نمونه کارها
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
+                {/* Portfolio */}
+                <NavigationMenuItem dir="rtl">
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/portfolio">
+                    <Briefcase className="h-4 w-4 ml-2" />
+                    نمونه کارها
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
 
-                  {/* Services Page */}
-                  <NavigationMenuItem dir="rtl">
-                    <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/services">
-                      <BriefcaseIcon className="h-4 w-4 ml-2" />
-                      خدمات ما
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
+                {/* Services Page */}
+                <NavigationMenuItem dir="rtl">
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/services">
+                    <BriefcaseIcon className="h-4 w-4 ml-2" />
+                    خدمات ما
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
 
-                  {/* Contact */}
-                  <NavigationMenuItem dir="rtl">
-                    <button 
-                      onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
-                      className={navigationMenuTriggerStyle()}
-                    >
-                      <Phone className="h-4 w-4 ml-2" />
-                      تماس با ما
-                    </button>
-                  </NavigationMenuItem>
-                </NavigationMenuList>
-              </NavigationMenu>
-              
-              {/* Install Button */}
-              <InstallButton variant="outline" size="sm" />
-            </div>
-
-          </div>
-
-          {/* Mobile Layout */}
-          <div className="lg:hidden flex items-center justify-between w-full">
-            {/* Mobile Logo and Site Name - Right side */}
-            <div className="flex items-center gap-2" dir="rtl">
-              <img src={logo} alt="لوگو" className="h-8 w-auto flex-shrink-0" />
-              <span className="text-sm font-bold truncate">پلتفرم مهندسی سایدا</span>
-            </div>
+                {/* Contact */}
+                <NavigationMenuItem dir="rtl">
+                  <button 
+                    onClick={() => document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })}
+                    className={navigationMenuTriggerStyle()}
+                  >
+                    <Phone className="h-4 w-4 ml-2" />
+                    تماس با ما
+                  </button>
+                </NavigationMenuItem>
+              </NavigationMenuList>
+            </NavigationMenu>
             
-            {/* Mobile menu button - Left side */}
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="text-foreground hover:text-primary transition-colors p-2"
-              title={isOpen ? "بستن منو" : "باز کردن منو"}
-              aria-label={isOpen ? "بستن منو" : "باز کردن منو"}
-            >
-              {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-              <span className="sr-only">{isOpen ? "بستن منو" : "باز کردن منو"}</span>
-            </button>
+            {/* Install Button */}
+            <InstallButton variant="outline" size="sm" />
           </div>
+        </div>
+
+        {/* Mobile Layout - Simple single row */}
+        <div className="lg:hidden flex items-center justify-between py-3" dir="rtl">
+          {/* Mobile Logo and Site Name - Right side */}
+          <div className="flex items-center gap-2" dir="rtl">
+            <img src={logo} alt="لوگو" className="h-8 w-auto flex-shrink-0" />
+            <span className="text-sm font-bold truncate">پلتفرم مهندسی سایدا</span>
+          </div>
+          
+          {/* Mobile menu button - Left side */}
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="text-foreground hover:text-primary transition-colors p-2"
+            title={isOpen ? "بستن منو" : "باز کردن منو"}
+            aria-label={isOpen ? "بستن منو" : "باز کردن منو"}
+          >
+            {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            <span className="sr-only">{isOpen ? "بستن منو" : "باز کردن منو"}</span>
+          </button>
         </div>
 
         {/* Mobile Menu - Fixed overlay with proper scrolling */}
@@ -287,9 +284,9 @@ const Navbar = () => {
             />
             
             {/* Menu Panel */}
-            <div className="absolute right-0 top-0 h-full w-4/5 max-w-sm bg-white shadow-2xl overflow-hidden" dir="rtl">
+            <div className="absolute right-0 top-0 h-full w-4/5 max-w-sm bg-white shadow-2xl" dir="rtl">
               {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white sticky top-0 z-10">
+              <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
                 <div className="flex items-center gap-2">
                   <img src={logo} alt="لوگو" className="h-8 w-auto" />
                   <span className="font-bold text-sm">پلتفرم مهندسی سایدا</span>
@@ -304,7 +301,7 @@ const Navbar = () => {
               </div>
 
               {/* Scrollable Content */}
-              <div className="h-full overflow-y-auto pb-20">
+              <div className="h-full overflow-y-auto" style={{ height: 'calc(100vh - 80px)' }}>
                 {/* User Profile Section */}
                 {isAuthenticated ? (
                   <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4 text-white">
@@ -486,7 +483,7 @@ const Navbar = () => {
                 </div>
 
                 {/* Auth Section */}
-                <div className="px-4 pt-4 border-t border-gray-200 mt-4">
+                <div className="px-4 pt-4 border-t border-gray-200 mt-4 pb-8">
                   {isAuthenticated ? (
                     <div className="space-y-2">
                       {/* Shopping Cart - Only for customers */}
