@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sitemaps',  # For SEO sitemap generation
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
@@ -274,8 +275,13 @@ S3_ENDPOINT_URL = os.getenv('S3_ENDPOINT_URL', 'https://storage.c2.liara.space')
 # User Files Settings (Local Storage)
 USER_FILES_STORAGE = 'local'
 USER_FILES_MAX_SIZE = int(os.getenv('USER_FILES_MAX_SIZE', str(100 * 1024 * 1024)))  # 100MB default
-ALLOWED_FILE_TYPES = os.getenv('ALLOWED_FILE_TYPES', 'pdf,image,document,cad,stl,stp,step,iges,dwg,dxf').split(',')
-MAX_FILE_SIZE = int(os.getenv('MAX_FILE_SIZE', str(52428800)))  # 50MB
+
+# File upload limits (used by both managers)
+MAX_FILE_SIZE = int(os.getenv('MAX_FILE_SIZE', str(100 * 1024 * 1024)))  # 100MB default
+ALLOWED_FILE_TYPES = os.getenv('ALLOWED_FILE_TYPES', 'pdf,image,document,cad,stl,stp,step,iges,dwg,dxf')
+# Convert to list if it's a comma-separated string
+if isinstance(ALLOWED_FILE_TYPES, str):
+    ALLOWED_FILE_TYPES = [t.strip() for t in ALLOWED_FILE_TYPES.split(',') if t.strip()]
 
 # Logging
 LOGGING = {

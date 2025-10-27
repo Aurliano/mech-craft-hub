@@ -15,12 +15,15 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
+from django.contrib.sitemaps.views import sitemap
 from django.urls import path, include, re_path
 from django.http import JsonResponse, HttpResponse
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.conf import settings
 from django.conf.urls.static import static
+from config.sitemaps import sitemaps
+from config.seo_views import robots_txt
 import os
 
 def home_view(request, path=None):
@@ -75,6 +78,11 @@ urlpatterns = [
     path('', home_view, name='home'),
     path('favicon.ico', favicon_view, name='favicon'),
     path('assets/<path:path>', asset_view, name='assets'),
+    
+    # SEO endpoints
+    path('robots.txt', robots_txt, name='robots_txt'),
+    path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
+    
     path('admin/', admin.site.urls),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
@@ -82,8 +90,8 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/', include('api.urls')),
     
-    # SPA fallback (exclude api/admin/static/media/assets)
-    re_path(r'^(?!api/|admin/|static/|media/|assets/).*$', home_view, name='spa_fallback'),
+    # SPA fallback (exclude api/admin/static/media/assets/robots/sitemap)
+    re_path(r'^(?!api/|admin/|static/|media/|assets/|robots\.txt|sitemap\.xml).*$', home_view, name='spa_fallback'),
 ]
 
 # Serve media files
