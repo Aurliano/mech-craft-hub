@@ -4,7 +4,7 @@ import Footer from '@/components/Footer';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Grid, FileText, FolderPlus, Wallet, Eye, Ticket, TrendingUp, Layers, NotebookPen } from 'lucide-react';
+import { Grid, FileText, FolderPlus, Wallet, Eye, Ticket, TrendingUp, Layers, NotebookPen, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const AdminDashboard: React.FC = () => {
@@ -28,6 +28,7 @@ const AdminDashboard: React.FC = () => {
 
   const actions = [
     { title: 'مدیریت فایل‌های علمی', desc: 'آپلود/حذف و دسته‌بندی منابع علمی', icon: FileText, to: '/admin/file-manager' },
+    { title: 'مدیریت نیروی کار', desc: 'مدیریت نیروهای متخصص و تطابق‌ها', icon: Users, to: '/admin/workforce-management' },
     { title: 'برآورد متریال', desc: 'ثبت/ویرایش برآورد هزینه متریال سفارشات ساخت', icon: Layers, to: '/orders' },
     { title: 'گزارش‌های مالی', desc: 'بررسی پرداخت‌ها و تسویه‌ها', icon: Wallet, to: '/orders' },
     { title: 'وضعیت سفارشات', desc: 'پیگیری وضعیت سفارش‌ها و اقلام پروژه', icon: Eye, to: '/orders' },

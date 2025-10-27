@@ -97,7 +97,7 @@ from .models import (
     ContentFilterLog, Review, MediaFile,
     PasswordResetToken, PhoneVerificationCode, Payment, Notification, OrderStatusLog,
     ScientificContent, OrderProposal, MaterialEstimate, OrderStatus, MaterialEstimation,
-    DeliveryFile
+    DeliveryFile, JobSeeker, WorkRequest, JobMatch, WorkContract
 )
 from .pagination import StandardResultsSetPagination
 from .exceptions import (
@@ -116,7 +116,9 @@ from .serializers import (
     NotificationSerializer, ScientificContentSerializer, ScientificContentListSerializer, ScientificContentCreateSerializer,
     OrderProposalSerializer, CreateOrderProposalSerializer, MaterialEstimateSerializer, CreateMaterialEstimateSerializer,
     OrderStatusSerializer, OrderStatusLogSerializer, PaymentSerializer, ProcessPaymentSerializer,
-    MaterialEstimationSerializer, MaterialEstimationCreateSerializer
+    MaterialEstimationSerializer, MaterialEstimationCreateSerializer,
+    JobSeekerSerializer, JobSeekerCreateSerializer, WorkRequestSerializer, WorkRequestCreateSerializer,
+    JobMatchSerializer, JobMatchCreateSerializer, WorkContractSerializer, WorkContractCreateSerializer
 )
 import os
 import random
@@ -1003,6 +1005,104 @@ class ScientificContentViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(category=category)
         
         return queryset
+
+
+# Workforce Management Viewsets
+
+class JobSeekerViewSet(viewsets.ModelViewSet):
+    """ViewSet for job seeker profiles"""
+    serializer_class = JobSeekerSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
+    
+    def get_queryset(self):
+        """Users can see their own profile, admins and support can see all"""
+        from .models import Role
+        
+        # Check if user is admin or support staff
+        is_admin_or_support = False
+        if self.request.user.is_staff:
+            is_admin_or_support = True
+        else:
+            # Check user roles
+            user_roles = self.request.user.user_roles.filter(is_active=True).select_related('role')
+            is_admin_or_support = any(
+                role.role.name in ['admin', 'support'] 
+                for role in user_roles
+            )
+        
+        if is_admin_or_support:
+            return JobSeeker.objects.select_related('user', 'service_scope').prefetch_related('services').all()
+        return JobSeeker.objects.filter(user=self.request.user).select_related('user', 'service_scope').prefetch_related('services')
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return JobSeekerCreateSerializer
+        return JobSeekerSerializer
+
+
+class WorkRequestViewSet(viewsets.ModelViewSet):
+    """ViewSet for work requests"""
+    serializer_class = WorkRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
+    
+    def get_queryset(self):
+        """Contractors can see their own requests, admins can see all"""
+        if self.request.user.is_staff:
+            return WorkRequest.objects.select_related('contractor', 'workshop', 'service_scope').prefetch_related('required_services').all()
+        return WorkRequest.objects.filter(contractor=self.request.user).select_related('contractor', 'workshop', 'service_scope').prefetch_related('required_services')
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return WorkRequestCreateSerializer
+        return WorkRequestSerializer
+
+
+class JobMatchViewSet(viewsets.ModelViewSet):
+    """ViewSet for job matches"""
+    serializer_class = JobMatchSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
+    
+    def get_queryset(self):
+        """Admins can see all matches, users can see their own matches"""
+        if self.request.user.is_staff:
+            return JobMatch.objects.select_related('work_request', 'job_seeker', 'suggested_by', 'work_request__contractor').all()
+        
+        # Filter matches where user is contractor or job seeker
+        return JobMatch.objects.filter(
+            models.Q(work_request__contractor=self.request.user) |
+            models.Q(job_seeker__user=self.request.user)
+        ).select_related('work_request', 'job_seeker', 'work_request__contractor')
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return JobMatchCreateSerializer
+        return JobMatchSerializer
+
+
+class WorkContractViewSet(viewsets.ModelViewSet):
+    """ViewSet for work contracts"""
+    serializer_class = WorkContractSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
+    
+    def get_queryset(self):
+        """Contractors and job seekers can see their own contracts, admins can see all"""
+        if self.request.user.is_staff:
+            return WorkContract.objects.select_related('work_request', 'job_seeker', 'contractor').all()
+        
+        # Filter contracts where user is contractor or job seeker
+        return WorkContract.objects.filter(
+            models.Q(contractor=self.request.user) |
+            models.Q(job_seeker__user=self.request.user)
+        ).select_related('work_request', 'job_seeker', 'contractor')
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return WorkContractCreateSerializer
+        return WorkContractSerializer
 
 
 @api_view(['GET'])

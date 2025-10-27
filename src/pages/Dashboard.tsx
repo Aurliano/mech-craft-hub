@@ -2,13 +2,15 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Package, ShoppingCart, Bell, Clock, CheckCircle, Plus, Eye } from 'lucide-react';
+import { Package, ShoppingCart, Bell, Clock, CheckCircle, Plus, Eye, Briefcase, Users } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
+import { useGetAllJobSeekers } from '@/hooks/useWorkforce';
 
 const Dashboard = () => {
   const { user, orders, cartItems, notifications, stats, isLoadingDashboard } = useAuth();
+  const { data: myJobSeekerProfile } = useGetAllJobSeekers();
 
   if (isLoadingDashboard) {
     return (
@@ -113,6 +115,69 @@ const Dashboard = () => {
               </CardContent>
             </Card>
           </div>
+
+          {/* Job Seeker Section */}
+          {(() => {
+            const profileData = myJobSeekerProfile as { results?: Array<{ user: { id: string }, job_title: string, experience_years: number }> } | undefined;
+            const myProfile = Array.isArray(profileData?.results) 
+              ? profileData.results.find((p: { user: { id: string } }) => p.user?.id === user?.id)
+              : null;
+            
+            return (
+              <Card className="border-2 border-blue-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Briefcase className="h-5 w-5 text-blue-600" />
+                    کاریابی
+                  </CardTitle>
+                  <CardDescription>
+                    ثبت‌نام کنید تا در لیست نیروهای متخصص قرار بگیرید
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {myProfile ? (
+                    <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h4 className="font-semibold text-green-800 mb-2">پروفایل کاریابی شما فعال است</h4>
+                          <p className="text-sm text-green-700">
+                            عنوان شغل: <span className="font-medium">{myProfile.job_title}</span>
+                          </p>
+                          <p className="text-sm text-green-700">
+                            تجربه: <span className="font-medium">{myProfile.experience_years} سال</span>
+                          </p>
+                        </div>
+                        <Badge className="bg-green-600">فعال</Badge>
+                      </div>
+                      <div className="mt-4 flex gap-2">
+                        <Button variant="outline" size="sm" asChild>
+                          <Link to="/job-seeker/register">ویرایش پروفایل</Link>
+                        </Button>
+                        <Button variant="outline" size="sm" asChild>
+                          <Link to="/job-market">
+                            <Users className="h-4 w-4 ml-2" />
+                            مشاهده فرصت‌ها
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                      <p className="text-blue-800 mb-4">
+                        با ثبت‌نام در سیستم کاریابی، می‌توانید با کارگاه‌ها و شرکت‌های صنعتی ارتباط برقرار کنید.
+                      </p>
+                      <Button asChild>
+                        <Link to="/job-seeker/register">
+                          <Briefcase className="h-4 w-4 ml-2" />
+                          ثبت‌نام کاریابی
+                        </Link>
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })()}
 
           {/* Main Content */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">

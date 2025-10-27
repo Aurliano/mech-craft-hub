@@ -1441,6 +1441,188 @@ export async function changePasswordRequest(data: { old_password: string; new_pa
   }
 }
 
+// ============================================
+// Workforce Management API
+// ============================================
+
+// Job Seeker API
+export async function createJobSeekerProfile(data: {
+  job_title: string;
+  experience_years: number;
+  education: string;
+  cv_text: string;
+  service_scope?: string;
+  services?: string[];
+  skills?: string[];
+}) {
+  try {
+    return await fetchJson<{ id: string; message: string }>('/v1/job-seekers/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  } catch (error) {
+    console.error('Error creating job seeker profile:', error);
+    throw error;
+  }
+}
+
+export async function getJobSeekerProfile(profileId?: string) {
+  try {
+    const url = profileId ? `/v1/job-seekers/${profileId}/` : '/v1/job-seekers/';
+    return await fetchJson(url);
+  } catch (error) {
+    console.error('Error fetching job seeker profile:', error);
+    throw error;
+  }
+}
+
+export async function updateJobSeekerProfile(profileId: string, data: Record<string, unknown>) {
+  try {
+    return await fetchJson(`/v1/job-seekers/${profileId}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  } catch (error) {
+    console.error('Error updating job seeker profile:', error);
+    throw error;
+  }
+}
+
+// Work Request API
+export async function createWorkRequest(data: {
+  workshop?: string;
+  requested_job_title: string;
+  required_skills?: string[];
+  service_scope?: string;
+  required_services?: string[];
+  min_experience?: number;
+  preferred_education?: string;
+  offered_salary?: number;
+  work_hours?: string;
+  work_location: string;
+  work_type?: string;
+  description: string;
+  requirements?: string;
+}) {
+  try {
+    return await fetchJson<{ id: string; message: string }>('/v1/work-requests/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  } catch (error) {
+    console.error('Error creating work request:', error);
+    throw error;
+  }
+}
+
+export async function getWorkRequests(requestId?: string) {
+  try {
+    const url = requestId ? `/v1/work-requests/${requestId}/` : '/v1/work-requests/';
+    return await fetchJson(url);
+  } catch (error) {
+    console.error('Error fetching work requests:', error);
+    throw error;
+  }
+}
+
+export async function updateWorkRequestStatus(requestId: string, data: Record<string, unknown>) {
+  try {
+    return await fetchJson(`/v1/work-requests/${requestId}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  } catch (error) {
+    console.error('Error updating work request:', error);
+    throw error;
+  }
+}
+
+// Job Match API
+export async function getJobMatches(matchId?: string) {
+  try {
+    const url = matchId ? `/v1/job-matches/${matchId}/` : '/v1/job-matches/';
+    return await fetchJson(url);
+  } catch (error) {
+    console.error('Error fetching job matches:', error);
+    throw error;
+  }
+}
+
+export async function createJobMatch(data: {
+  work_request: string;
+  job_seeker: string;
+  match_score: number;
+  match_reason?: string;
+}) {
+  try {
+    return await fetchJson<{ id: string; message: string }>('/v1/job-matches/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  } catch (error) {
+    console.error('Error creating job match:', error);
+    throw error;
+  }
+}
+
+export async function updateJobMatchStatus(matchId: string, data: Record<string, unknown>) {
+  try {
+    return await fetchJson(`/v1/job-matches/${matchId}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  } catch (error) {
+    console.error('Error updating job match:', error);
+    throw error;
+  }
+}
+
+// Work Contract API
+export async function getWorkContracts(contractId?: string) {
+  try {
+    const url = contractId ? `/v1/work-contracts/${contractId}/` : '/v1/work-contracts/';
+    return await fetchJson(url);
+  } catch (error) {
+    console.error('Error fetching work contracts:', error);
+    throw error;
+  }
+}
+
+export async function createWorkContract(data: {
+  job_match: string;
+  start_date: string;
+  end_date?: string;
+  salary_amount: number;
+  salary_frequency: string;
+  work_hours: string;
+  work_location: string;
+  responsibilities: string;
+}) {
+  try {
+    return await fetchJson<{ id: string; message: string }>('/v1/work-contracts/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  } catch (error) {
+    console.error('Error creating work contract:', error);
+    throw error;
+  }
+}
+
+export async function signContract(contractId: string, signatureType: 'contractor' | 'seeker') {
+  try {
+    return await fetchJson(`/v1/work-contracts/${contractId}/`, {
+      method: 'PATCH',
+      body: JSON.stringify({ 
+        [signatureType === 'contractor' ? 'contractor_signed' : 'seeker_signed']: true 
+      }),
+    });
+  } catch (error) {
+    console.error('Error signing contract:', error);
+    throw error;
+  }
+}
+
 
 // API object for easy access to all functions
 export const api = {
@@ -1527,6 +1709,20 @@ export const api = {
   deleteTicket,
   getContentFilterLogs,
   reviewContentViolation,
+  
+  // Workforce Management
+  createJobSeekerProfile,
+  getJobSeekerProfile,
+  updateJobSeekerProfile,
+  createWorkRequest,
+  getWorkRequests,
+  updateWorkRequestStatus,
+  getJobMatches,
+  createJobMatch,
+  updateJobMatchStatus,
+  getWorkContracts,
+  createWorkContract,
+  signContract,
   
   // Utility functions
   getAccessToken,

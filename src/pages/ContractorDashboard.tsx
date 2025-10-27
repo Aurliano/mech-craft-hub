@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Package, Search, Filter, Eye, Clock, DollarSign, FileText, CheckCircle, 
   User, Star, TrendingUp, Settings, Plus, MessageSquare, Calendar,
-  Factory, AlertCircle, CheckCircle2, XCircle, Timer, Users
+  Factory, AlertCircle, CheckCircle2, XCircle, Timer, Users, Briefcase, UserPlus
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -81,9 +81,14 @@ const ContractorDashboard = () => {
   }
 
   // Filter orders that need quotes (pending status)
-  const orders = Array.isArray(contractorOrders) ? contractorOrders : [];
-  const proposals = Array.isArray(contractorProposals) ? contractorProposals : [];
-  const projects = Array.isArray(activeProjects) ? activeProjects : [];
+  type OrderType = { id: string; order_number: string; notes?: string; status: string; created_at: string; items?: Array<{ id: string }> };
+  type ProposalType = { id: string; order_item?: { order?: { order_number: string } }; status: string; price?: number; created_at: string };
+  type ProjectType = { id: string; title: string; order_number: string; days_left: number };
+  type WorkshopType = { id: string; name: string; address: string; description?: string; is_active?: boolean };
+  
+  const orders: OrderType[] = Array.isArray(contractorOrders) ? contractorOrders as OrderType[] : [];
+  const proposals: ProposalType[] = Array.isArray(contractorProposals) ? contractorProposals as ProposalType[] : [];
+  const projects: ProjectType[] = Array.isArray(activeProjects) ? activeProjects as ProjectType[] : [];
   const workshopsData = Array.isArray(workshops) ? workshops : [];
 
   const filteredOrders = orders.filter(order => {
@@ -115,7 +120,7 @@ const ContractorDashboard = () => {
 
     try {
       await createProposalMutation.mutateAsync({
-        order_item: selectedOrder.items[0]?.id || selectedOrder.id,
+        order_item: selectedOrder.items?.[0]?.id || selectedOrder.id,
         price: parseFloat(quoteData.price),
         documentation_price: parseFloat(quoteData.documentation_price) || 0,
         delivery_days: parseInt(quoteData.delivery_days),
@@ -196,7 +201,7 @@ const ContractorDashboard = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs sm:text-sm font-medium text-gray-600">تعداد پیشنهادات</p>
-                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{contractorStats?.total_proposals || 0}</p>
+                    <p className="text-xl sm:text-2xl font-bold text-gray-900">{(contractorStats as { total_proposals?: number })?.total_proposals || 0}</p>
                   </div>
                   <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
                 </div>
@@ -207,7 +212,7 @@ const ContractorDashboard = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs sm:text-sm font-medium text-gray-600">پیشنهادات پذیرفته شده</p>
-                    <p className="text-xl sm:text-2xl font-bold text-green-600">{contractorStats?.accepted_proposals || 0}</p>
+                    <p className="text-xl sm:text-2xl font-bold text-green-600">{(contractorStats as { accepted_proposals?: number })?.accepted_proposals || 0}</p>
                   </div>
                   <CheckCircle2 className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
                 </div>
@@ -218,7 +223,7 @@ const ContractorDashboard = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-xs sm:text-sm font-medium text-gray-600">پروژه‌های فعال</p>
-                    <p className="text-xl sm:text-2xl font-bold text-orange-600">{contractorStats?.active_projects || 0}</p>
+                    <p className="text-xl sm:text-2xl font-bold text-orange-600">{(contractorStats as { active_projects?: number })?.active_projects || 0}</p>
                   </div>
                   <Package className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600" />
                 </div>
@@ -228,11 +233,12 @@ const ContractorDashboard = () => {
 
           {/* Main Content Tabs */}
           <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1">
               <TabsTrigger value="orders" className="text-xs sm:text-sm">سفارشات</TabsTrigger>
               <TabsTrigger value="proposals" className="text-xs sm:text-sm">پیشنهادات من</TabsTrigger>
               <TabsTrigger value="projects" className="text-xs sm:text-sm">پروژه‌های فعال</TabsTrigger>
               <TabsTrigger value="workshops" className="text-xs sm:text-sm">کارگاه‌های من</TabsTrigger>
+              <TabsTrigger value="workforce" className="text-xs sm:text-sm">جذب نیرو</TabsTrigger>
               <TabsTrigger value="notifications" className="text-xs sm:text-sm">اعلان‌ها</TabsTrigger>
             </TabsList>
 
@@ -326,11 +332,11 @@ const ContractorDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {proposals.map((proposal) => (
+                    {proposals.map((proposal: ProposalType) => (
                       <Card key={proposal.id} className="hover:shadow-md transition-shadow">
                         <CardContent className="p-4 sm:p-6">
                           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4">
-                            <h3 className="text-base sm:text-lg font-semibold text-gray-900">{proposal.order_item?.order?.order_number || 'نامشخص'}</h3>
+                            <h3 className="text-base sm:text-lg font-semibold text-gray-900">{(proposal.order_item as { order?: { order_number: string } })?.order?.order_number || 'نامشخص'}</h3>
                             {getStatusBadge(proposal.status)}
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs sm:text-sm">
@@ -429,12 +435,12 @@ const ContractorDashboard = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {workshopsData.map((workshop) => (
+                    {workshopsData.map((workshop: WorkshopType) => (
                       <Card key={workshop.id} className="hover:shadow-md transition-shadow">
                         <CardContent className="p-4 sm:p-6">
                           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4">
                             <h3 className="text-base sm:text-lg font-semibold text-gray-900">{workshop.name}</h3>
-                            <Badge variant="default" className="w-fit">{workshop.status}</Badge>
+                            <Badge variant="default" className="w-fit">{workshop.is_active ? 'فعال' : 'غیرفعال'}</Badge>
                           </div>
                           <div className="space-y-2 text-xs sm:text-sm text-gray-600">
                             <div className="flex items-center gap-2">
@@ -487,6 +493,61 @@ const ContractorDashboard = () => {
                         <p className="text-xs sm:text-sm text-gray-600">پروژه طراحی سیستم مکانیکی با موفقیت تکمیل شد</p>
                       </div>
                       <span className="text-xs text-gray-500 self-start sm:self-center">1 روز پیش</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Workforce Tab */}
+            <TabsContent value="workforce" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <UserPlus className="w-5 h-5 text-purple-600" />
+                    جذب نیروی متخصص
+                  </CardTitle>
+                  <CardDescription>
+                    درخواست نیروی کار مورد نیاز خود را ثبت کنید
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="bg-purple-50 p-6 rounded-lg border border-purple-200">
+                      <h4 className="font-semibold text-purple-900 mb-2">چگونه کار می‌کند؟</h4>
+                      <ul className="space-y-2 text-sm text-purple-800">
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                          <span>اطلاعات نیروی مورد نیاز را مشخص کنید</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                          <span>تیم پشتیبانی درخواست شما را بررسی می‌کند</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                          <span>نیروهای متخصص مطابق با نیاز شما پیدا می‌شوند</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="w-5 h-5 text-purple-600 flex-shrink-0 mt-0.5" />
+                          <span>نیرو برای تست ارسال می‌شود و قرارداد امضا می‌شود</span>
+                        </li>
+                      </ul>
+                    </div>
+                    
+                    <div className="flex gap-3">
+                      <Button className="bg-purple-600 hover:bg-purple-700" asChild>
+                        <Link to="/contractor/workforce/request">
+                          <Plus className="w-4 h-4 ml-2" />
+                          ثبت درخواست نیرو
+                        </Link>
+                      </Button>
+                      <Button variant="outline" asChild>
+                        <Link to="/job-market">
+                          <Users className="w-4 h-4 ml-2" />
+                          مشاهده نیروهای در دسترس
+                        </Link>
+                      </Button>
                     </div>
                   </div>
                 </CardContent>

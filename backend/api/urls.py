@@ -9,6 +9,7 @@ from .views import (
     TicketViewSet, TicketMessageViewSet, TicketAttachmentViewSet, TicketFileTypeViewSet, 
     TicketCategoryViewSet, ContentFilterLogViewSet, ReviewViewSet, ScientificContentViewSet,
     MaterialEstimationViewSet, OrderStatusLogViewSet,
+    JobSeekerViewSet, WorkRequestViewSet, JobMatchViewSet, WorkContractViewSet,
     customer_register, contractor_register, login, refresh_token, logout, me, UserViewSet, UploadView,
     password_reset_request, password_reset_confirm, phone_verification_request,
     phone_verification_confirm, change_password, password_reset_request_sms, sms_credit,
@@ -74,6 +75,10 @@ router.register(r'content-filter-logs', ContentFilterLogViewSet, basename='conte
 router.register(r'scientific-content', ScientificContentViewSet, basename='scientificcontent')
 router.register(r'material-estimations', MaterialEstimationViewSet, basename='materialestimation')
 router.register(r'order-status-logs', OrderStatusLogViewSet, basename='orderstatuslog')
+router.register(r'job-seekers', JobSeekerViewSet, basename='jobseeker')
+router.register(r'work-requests', WorkRequestViewSet, basename='workrequest')
+router.register(r'job-matches', JobMatchViewSet, basename='jobmatch')
+router.register(r'work-contracts', WorkContractViewSet, basename='workcontract')
 
 urlpatterns = [
     path('health/', health, name='health'),

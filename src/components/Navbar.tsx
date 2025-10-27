@@ -76,7 +76,8 @@ const Navbar = () => {
       ]
     },
     { name: "نقشه کشی صنعتی", href: "/drawing" },
-    { name: "ساخت و تولید", href: "/manufacturing" }
+    { name: "ساخت و تولید", href: "/manufacturing" },
+    { name: "بازار کار", href: "/job-market" }
   ];
 
   return (

@@ -13,9 +13,14 @@ import {
   createContractorWorkshop, checkContractorManufacturingService,
   loginWithTurnstile, registerWithTurnstile, getFallbackCaptchaStatus, 
   getFallbackCaptchaChallenge, verifyFallbackCaptcha,
-  getServiceTabs, getTabFields, getScopes, getServices, getServiceFields, getAllServices
+  getServiceTabs, getTabFields, getScopes, getServices, getServiceFields, getAllServices,
+  createJobSeekerProfile, getJobSeekerProfile, updateJobSeekerProfile,
+  createWorkRequest, getWorkRequests, updateWorkRequestStatus,
+  getJobMatches, createJobMatch, updateJobMatchStatus,
+  getWorkContracts, createWorkContract, signContract
 } from '@/lib/api';
 import { navigateAfterLogin, navigateAfterPhoneVerification, navigateAfterRegister } from '@/lib/navigation';
+export * from './useWorkforce';
 
 export function useMe() {
   const enabled = Boolean(getAccessToken());

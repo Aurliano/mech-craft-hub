@@ -5,7 +5,7 @@ from .models import (
     Ticket, TicketMessage, TicketAttachment, TicketFileType, TicketCategory, TicketParticipant,
     ContentFilterLog, Review, Notification, SupportFeedback, BlogPost, BlogComment, ScientificContent,
     OrderProposal, MaterialEstimate, OrderStatus, Payment, MaterialEstimation, OrderStatusLog,
-    DeliveryFile
+    DeliveryFile, JobSeeker, WorkRequest, JobMatch, WorkContract
 )
 
 
@@ -914,3 +914,172 @@ class DeliveryFileUploadSerializer(serializers.Serializer):
     file = serializers.FileField()
     description = serializers.CharField(required=False, allow_blank=True)
     expires_in_days = serializers.IntegerField(default=30, min_value=1, max_value=365)
+
+
+# Workforce Management Serializers
+
+class JobSeekerSerializer(serializers.ModelSerializer):
+    """Serializer for job seeker profile"""
+    user = UserSerializer(read_only=True)
+    service_scope = ScopeSerializer(read_only=True)
+    services = ServiceSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = JobSeeker
+        fields = [
+            'id', 'user', 'job_title', 'experience_years', 'education', 
+            'cv_text', 'service_scope', 'services', 'skills',
+            'is_active', 'is_available', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'user', 'created_at', 'updated_at']
+    
+    def create(self, validated_data):
+        """Create job seeker profile for authenticated user"""
+        validated_data['user'] = self.context['request'].user
+        services = self.context['request'].data.get('services', [])
+        instance = JobSeeker.objects.create(**validated_data)
+        if services:
+            instance.services.set(services)
+        return instance
+
+
+class JobSeekerCreateSerializer(serializers.ModelSerializer):
+    """Serializer for createdAt job seeker profile"""
+    
+    class Meta:
+        model = JobSeeker
+        fields = [
+            'job_title', 'experience_years', 'education', 'cv_text',
+            'service_scope', 'services', 'skills'
+        ]
+    
+    def create(self, validated_data):
+        validated_data['user'] = self.context['request'].user
+        services = validated_data.pop('services', [])
+        instance = JobSeeker.objects.create(**validated_data)
+        if services:
+            instance.services.set(services)
+        return instance
+
+
+class WorkRequestSerializer(serializers.ModelSerializer):
+    """Serializer for work requests"""
+    contractor = UserSerializer(read_only=True)
+    workshop = WorkshopSerializer(read_only=True)
+    service_scope = ScopeSerializer(read_only=True)
+    required_services = ServiceSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = WorkRequest
+        fields = [
+            'id', 'contractor', 'workshop', 'requested_job_title',
+            'required_skills', 'service_scope', 'required_services',
+            'min_experience', 'preferred_education', 'offered_salary',
+            'work_hours', 'work_location', 'work_type', 'description',
+            'requirements', 'status', 'created_at', 'updated_at'
+        ]
+        read_only_fields = ['id', 'contractor', 'status', 'created_at', 'updated_at']
+
+
+class WorkRequestCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating work requests"""
+    
+    class Meta:
+        model = WorkRequest
+        fields = [
+            'workshop', 'requested_job_title', 'required_skills',
+            'service_scope', 'required_services', 'min_experience',
+            'preferred_education', 'offered_salary', 'work_hours',
+            'work_location', 'work_type', 'description', 'requirements'
+        ]
+    
+    def create(self, validated_data):
+        validated_data['contractor'] = self.context['request'].user
+        required_services = validated_data.pop('required_services', [])
+        instance = WorkRequest.objects.create(**validated_data)
+        if required_services:
+            instance.required_services.set(required_services)
+        return instance
+
+
+class JobMatchSerializer(serializers.ModelSerializer):
+    """Serializer for job matches"""
+    work_request = WorkRequestSerializer(read_only=True)
+    job_seeker = JobSeekerSerializer(read_only=True)
+    suggested_by_user = UserSerializer(source='suggested_by', read_only=True)
+    
+    class Meta:
+        model = JobMatch
+        fields = [
+            'id', 'work_request', 'job_seeker', 'match_score',
+            'match_reason', 'status', 'test_start_date', 'test_end_date',
+            'test_result', 'test_notes', 'contractor_feedback',
+            'seeker_feedback', 'suggested_by_user', 'suggested_at',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = [
+            'id', 'suggested_by', 'suggested_at', 
+            'created_at', 'updated_at'
+        ]
+
+
+class JobMatchCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating job matches (admin only)"""
+    
+    class Meta:
+        model = JobMatch
+        fields = [
+            'work_request', 'job_seeker', 'match_score',
+            'match_reason', 'status'
+        ]
+    
+    def create(self, validated_data):
+        validated_data['suggested_by'] = self.context['request'].user
+        return super().create(validated_data)
+
+
+class WorkContractSerializer(serializers.ModelSerializer):
+    """Serializer for work contracts"""
+    job_match = JobMatchSerializer(read_only=True)
+    work_request = WorkRequestSerializer(read_only=True)
+    job_seeker = JobSeekerSerializer(read_only=True)
+    contractor = UserSerializer(read_only=True)
+    created_by_user = UserSerializer(source='created_by', read_only=True)
+    approved_by_user = UserSerializer(source='approved_by', read_only=True)
+    
+    class Meta:
+        model = WorkContract
+        fields = [
+            'id', 'job_match', 'work_request', 'job_seeker', 'contractor',
+            'contract_number', 'start_date', 'end_date', 'salary_amount',
+            'salary_frequency', 'work_hours', 'work_location', 'responsibilities',
+            'status', 'created_by_user', 'approved_by_user', 'contractor_signed',
+            'contractor_signed_at', 'seeker_signed', 'seeker_signed_at',
+            'contract_file_path', 'termination_reason', 'termination_date',
+            'termination_by', 'created_at', 'updated_at'
+        ]
+        read_only_fields = [
+            'id', 'contract_number', 'created_by', 'created_at', 'updated_at'
+        ]
+
+
+class WorkContractCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating work contracts"""
+    
+    class Meta:
+        model = WorkContract
+        fields = [
+            'job_match', 'start_date', 'end_date', 'salary_amount',
+            'salary_frequency', 'work_hours', 'work_location', 'responsibilities',
+            'contract_file_path'
+        ]
+    
+    def create(self, validated_data):
+        validated_data['created_by'] = self.context['request'].user
+        # Get related objects from job_match
+        job_match = validated_data['job_match']
+        validated_data['work_request'] = job_match.work_request
+        validated_data['job_seeker'] = job_match.job_seeker
+        validated_data['contractor'] = job_match.work_request.contractor
+        
+        return super().create(validated_data)

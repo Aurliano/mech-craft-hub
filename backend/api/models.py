@@ -1531,3 +1531,266 @@ class DeliveryFile(models.Model):
         return timezone.now() > self.expires_at
 
 
+# Workforce Management Models
+
+class JobSeeker(models.Model):
+    """Model for users seeking job opportunities"""
+    
+    EDUCATION_CHOICES = [
+        ('no_degree', 'بدون مدرک'),
+        ('diploma', 'دیپلم'),
+        ('associate', 'کاردانی'),
+        ('bachelor', 'کارشناسی'),
+        ('master', 'کارشناسی ارشد'),
+        ('phd', 'دکترا'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='job_seeker_profile')
+    
+    # Job information
+    job_title = models.CharField(max_length=200, help_text="عنوان شغل (مثلاً: تراشکار، برنامه‌نویس)")
+    experience_years = models.PositiveIntegerField(help_text="سال‌های تجربه")
+    education = models.CharField(max_length=20, choices=EDUCATION_CHOICES, help_text="مدرک تحصیلی")
+    cv_text = models.TextField(help_text="رزومه کامل (تخصص‌ها و توانایی‌ها)")
+    
+    # Skills and services
+    service_scope = models.ForeignKey(Scope, on_delete=models.SET_NULL, null=True, blank=True, related_name='job_seekers')
+    services = models.ManyToManyField(Service, blank=True, related_name='job_seekers', help_text="خدمات قابل ارائه")
+    skills = models.JSONField(default=list, blank=True, help_text="لیست مهارت‌ها")
+    
+    # Personal information (hidden from other users)
+    address = models.TextField(blank=True, help_text="آدرس کامل")
+    phone_alt = models.CharField(max_length=17, blank=True, help_text="شماره تماس اضافی")
+    emergency_contact = models.CharField(max_length=200, blank=True, help_text="مخاطب اضطراری")
+    emergency_phone = models.CharField(max_length=17, blank=True, help_text="تلفن اضطراری")
+    
+    # Status
+    is_active = models.BooleanField(default=True, help_text="فعال بودن پروفایل")
+    is_available = models.BooleanField(default=True, help_text="در دسترس برای استخدام")
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'job_seekers'
+        verbose_name = 'جویای کار'
+        verbose_name_plural = 'جویای‌کارها'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['is_active', 'is_available']),
+            models.Index(fields=['job_title']),
+        ]
+    
+    def __str__(self):
+        return f"{self.job_title} - {self.user.username}"
+
+
+class WorkRequest(models.Model):
+    """Model for contractor/workshop workforce requests"""
+    
+    REQUEST_STATUS_CHOICES = [
+        ('pending', 'در انتظار بررسی'),
+        ('approved', 'تایید شده'),
+        ('rejected', 'رد شده'),
+        ('in_process', 'در حال جذب نیرو'),
+        ('completed', 'تکمیل شده'),
+        ('cancelled', 'لغو شده'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    contractor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='workforce_requests')
+    workshop = models.ForeignKey(Workshop, on_delete=models.CASCADE, null=True, blank=True, related_name='workforce_requests')
+    
+    # Required workforce details
+    requested_job_title = models.CharField(max_length=200, help_text="عنوان شغل مورد نظر")
+    required_skills = models.JSONField(default=list, help_text="مهارت‌های مورد نیاز")
+    service_scope = models.ForeignKey(Scope, on_delete=models.SET_NULL, null=True, blank=True, related_name='work_requests')
+    required_services = models.ManyToManyField(Service, blank=True, related_name='work_requests', help_text="خدمات مورد نیاز")
+    min_experience = models.PositiveIntegerField(default=0, help_text="حداقل تجربه (سال)")
+    preferred_education = models.CharField(max_length=20, choices=JobSeeker.EDUCATION_CHOICES, blank=True, help_text="مدرک تحصیلی ترجیحی")
+    
+    # Work details
+    offered_salary = models.DecimalField(max_digits=10, decimal_places=0, null=True, blank=True, help_text="حقوق پیشنهادی (تومان)")
+    work_hours = models.CharField(max_length=100, blank=True, help_text="ساعت کار")
+    work_location = models.CharField(max_length=200, help_text="محل کار")
+    work_type = models.CharField(max_length=50, choices=[
+        ('full_time', 'تمام وقت'),
+        ('part_time', 'پاره وقت'),
+        ('contract', 'پیمانی'),
+        ('hourly', 'ساعتی'),
+    ], default='full_time', help_text="نوع کار")
+    
+    # Additional information
+    description = models.TextField(help_text="شرح کامل نیاز")
+    requirements = models.TextField(blank=True, help_text="نیازمندی‌های اضافی")
+    
+    # Status
+    status = models.CharField(max_length=20, choices=REQUEST_STATUS_CHOICES, default='pending')
+    reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_requests')
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    admin_notes = models.TextField(blank=True, help_text="یادداشت ادمین")
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'work_requests'
+        verbose_name = 'درخواست نیروی کار'
+        verbose_name_plural = 'درخواست‌های نیروی کار'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['status']),
+            models.Index(fields=['created_at']),
+            models.Index(fields=['contractor']),
+        ]
+    
+    def __str__(self):
+        return f"درخواست {self.requested_job_title} برای {self.contractor.username}"
+
+
+class JobMatch(models.Model):
+    """Model for matching job seekers with work requests"""
+    
+    MATCH_STATUS_CHOICES = [
+        ('suggested', 'پیشنهاد شده'),
+        ('accepted_contractor', 'تایید شده توسط کارفرما'),
+        ('accepted_seeker', 'تایید شده توسط کارجو'),
+        ('rejected', 'رد شده'),
+        ('sent_for_test', 'ارسال برای تست'),
+        ('test_passed', 'تست موفق'),
+        ('test_failed', 'تست ناموفق'),
+        ('contract_signed', 'قرارداد امضا شده'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    work_request = models.ForeignKey(WorkRequest, on_delete=models.CASCADE, related_name='matches')
+    job_seeker = models.ForeignKey(JobSeeker, on_delete=models.CASCADE, related_name='matches')
+    
+    # Match details
+    match_score = models.FloatField(default=0.0, help_text="امتیاز تطابق (0-100)")
+    match_reason = models.TextField(blank=True, help_text="دلیل پیشنهاد این نیرو")
+    
+    # Status
+    status = models.CharField(max_length=30, choices=MATCH_STATUS_CHOICES, default='suggested')
+    
+    # Test period
+    test_start_date = models.DateTimeField(null=True, blank=True, help_text="شروع تست")
+    test_end_date = models.DateTimeField(null=True, blank=True, help_text="پایان تست")
+    test_result = models.TextField(blank=True, help_text="نتیجه تست")
+    test_notes = models.TextField(blank=True, help_text="یادداشت‌های تست")
+    
+    # Feedback
+    contractor_feedback = models.TextField(blank=True, help_text="نظر کارفرما")
+    seeker_feedback = models.TextField(blank=True, help_text="نظر کارجو")
+    
+    # Suggested by admin
+    suggested_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='suggested_matches')
+    suggested_at = models.DateTimeField(auto_now_add=True)
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'job_matches'
+        verbose_name = 'تطابق شغل'
+        verbose_name_plural = 'تطابق‌های شغل'
+        ordering = ['-match_score', '-created_at']
+        unique_together = ('work_request', 'job_seeker')
+        indexes = [
+            models.Index(fields=['status']),
+            models.Index(fields=['match_score']),
+            models.Index(fields=['work_request', 'job_seeker']),
+        ]
+    
+    def __str__(self):
+        return f"تطابق {self.job_seeker.user.username} با درخواست {self.work_request.requested_job_title}"
+
+
+class WorkContract(models.Model):
+    """Model for managing workforce contracts"""
+    
+    CONTRACT_STATUS_CHOICES = [
+        ('draft', 'پیش‌نویس'),
+        ('pending_signer', 'در انتظار امضا'),
+        ('pending_seeker', 'در انتظار امضای کارجو'),
+        ('active', 'فعال'),
+        ('completed', 'تکمیل شده'),
+        ('terminated', 'خاتمه یافته'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    job_match = models.OneToOneField(JobMatch, on_delete=models.CASCADE, related_name='contract')
+    work_request = models.ForeignKey(WorkRequest, on_delete=models.CASCADE, related_name='contracts')
+    job_seeker = models.ForeignKey(JobSeeker, on_delete=models.CASCADE, related_name='contracts')
+    contractor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='workforce_contracts')
+    
+    # Contract details
+    contract_number = models.CharField(max_length=50, unique=True, blank=True, help_text="شماره قرارداد")
+    start_date = models.DateTimeField(help_text="تاریخ شروع")
+    end_date = models.DateTimeField(null=True, blank=True, help_text="تاریخ پایان")
+    
+    # Financial terms
+    salary_amount = models.DecimalField(max_digits=10, decimal_places=0, help_text="مبلغ حقوق (تومان)")
+    salary_frequency = models.CharField(max_length=20, choices=[
+        ('daily', 'روزانه'),
+        ('weekly', 'هفتگی'),
+        ('monthly', 'ماهیانه'),
+        ('hourly', 'ساعتی'),
+        ('project_based', 'پروژه‌ای'),
+    ], default='monthly', help_text="فرکانس پرداخت")
+    
+    # Work conditions
+    work_hours = models.CharField(max_length=100, help_text="ساعت کار")
+    work_location = models.CharField(max_length=200, help_text="محل کار")
+    responsibilities = models.TextField(help_text="وظایف و مسئولیت‌ها")
+    
+    # Status
+    status = models.CharField(max_length=20, choices=CONTRACT_STATUS_CHOICES, default='draft')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='try_created_contracts')
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='approved_contracts')
+    
+    # Signatures
+    contractor_signed = models.BooleanField(default=False)
+    contractor_signed_at = models.DateTimeField(null=True, blank=True)
+    
+    seeker_signed = models.BooleanField(default=False)
+    seeker_signed_at = models.DateTimeField(null=True, blank=True)
+    
+    # Contract documents
+    contract_file_path = models.CharField(max_length=500, blank=True, help_text="مسیر فایل قرارداد")
+    
+    # Termination
+    termination_reason = models.TextField(blank=True, help_text="دلیل خاتمه")
+    termination_date = models.DateTimeField(null=True, blank=True, help_text="تاریخ خاتمه")
+    termination_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='terminated_contracts')
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'work_contracts'
+        verbose_name = 'قرارداد کاری'
+        verbose_name_plural = 'قراردادهای کاری'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['contract_number']),
+            models.Index(fields=['status']),
+            models.Index(fields=['contractor', 'job_seeker']),
+            models.Index(fields=['start_date', 'end_date']),
+        ]
+    
+    def __str__(self):
+        return f"قرارداد {self.contract_number} - {self.job_seeker.user.username}"
+    
+    def save(self, *args, **kwargs):
+        if not self.contract_number:
+            # Generate unique contract number
+            self.contract_number = f"WRK-{timezone.now().strftime('%Y%m%d')}-{str(uuid.uuid4())[:8].upper()}"
+        super().save(*args, **kwargs)
+
+

@@ -42,7 +42,10 @@ import BlogPage from "./pages/BlogPage";
 import BlogPostPage from "./pages/BlogPostPage";
 import FileManager from "./pages/FileManager";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminWorkforceManagement from "./pages/AdminWorkforceManagement";
 import NotFound from "./pages/NotFound";
+import JobMarket from "./pages/JobMarket";
+import JobSeekerRegistration from "./pages/JobSeekerRegistration";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -147,6 +150,7 @@ const App = () => (
               <Route path="/portfolio" element={<PortfolioPage />} />
               <Route path="/blog" element={<BlogPage />} />
               <Route path="/blog/:slug" element={<BlogPostPage />} />
+              <Route path="/job-market" element={<JobMarket />} />
               
               {/* Admin Routes */}
               <Route path="/admin/dashboard" element={
@@ -158,6 +162,18 @@ const App = () => (
                 <RoleBasedRoute allowedRoles={['admin']}>
                   <FileManager />
                 </RoleBasedRoute>
+              } />
+              <Route path="/admin/workforce-management" element={
+                <RoleBasedRoute allowedRoles={['admin']}>
+                  <AdminWorkforceManagement />
+                </RoleBasedRoute>
+              } />
+              
+              {/* Workforce Management */}
+              <Route path="/job-seeker/register" element={
+                <ProtectedRoute allowedRoles={['customer']}>
+                  <JobSeekerRegistration />
+                </ProtectedRoute>
               } />
               
               {/* Shared Routes */}
