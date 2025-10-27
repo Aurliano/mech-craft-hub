@@ -44,6 +44,9 @@ from .views import (
             create_blog_post, create_blog_comment, get_blog_comments,
             # Scientific content endpoints
             get_scientific_content_categories,
+            # Separate storage APIs
+            upload_scientific_content, upload_user_file, upload_delivery_file,
+            download_delivery_file, list_order_deliveries,
 )
 
 # Import file management views
@@ -194,6 +197,13 @@ urlpatterns = [
             path('v1/files/<str:content_id>/download/', download_content_file, name='download_content_file'),
             path('v1/files/<str:content_id>/delete/', delete_content_file, name='delete_content_file'),
             path('v1/files/<str:content_id>/info/', get_file_info, name='get_file_info'),
+            
+            # Separate Storage APIs
+            path('v1/scientific/upload/', upload_scientific_content, name='upload_scientific_content'),
+            path('v1/user-files/upload/', upload_user_file, name='upload_user_file'),
+            path('v1/deliveries/upload/', upload_delivery_file, name='upload_delivery_file'),
+            path('v1/deliveries/<uuid:file_id>/download/', download_delivery_file, name='download_delivery_file'),
+            path('v1/orders/<uuid:order_id>/deliveries/', list_order_deliveries, name='list_order_deliveries'),
             
             # Scientific Content Categories
             path('v1/scientific-content/categories/', get_scientific_content_categories, name='scientific_content_categories'),

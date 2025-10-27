@@ -259,3 +259,6 @@ class FileManager:
 
 # Instance برای استفاده در سراسر پروژه
 file_manager = FileManager()
+
+# Import new managers for gradual migration
+from .file_managers import scientific_file_manager, user_file_manager

@@ -96,7 +96,8 @@ from .models import (
     Ticket, TicketMessage, TicketAttachment, TicketFileType, TicketCategory, TicketParticipant,
     ContentFilterLog, Review, MediaFile,
     PasswordResetToken, PhoneVerificationCode, Payment, Notification, OrderStatusLog,
-    ScientificContent, OrderProposal, MaterialEstimate, OrderStatus, MaterialEstimation
+    ScientificContent, OrderProposal, MaterialEstimate, OrderStatus, MaterialEstimation,
+    DeliveryFile
 )
 from .pagination import StandardResultsSetPagination
 from .exceptions import (
@@ -3338,3 +3339,255 @@ def get_blog_comments(request, post_slug):
     serializer = BlogCommentSerializer(comments, many=True)
     
     return Response(serializer.data)
+
+
+# File Upload APIs for separate storage backends
+@api_view(['POST'])
+@permission_classes([IsAdminUser])
+def upload_scientific_content(request):
+    """Upload scientific content (articles, books) to Liara S3"""
+    from .file_managers import scientific_file_manager
+    
+    file = request.FILES.get('file')
+    if not file:
+        return Response({'error': 'فایل الزامی است'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Get content type
+    content_type = file.content_type or 'application/octet-stream'
+    
+    try:
+        result = scientific_file_manager.upload_file(file, file.name, content_type)
+        
+        if result['success']:
+            return Response({
+                'message': 'فایل با موفقیت آپلود شد',
+                'file_url': result['file_url'],
+                'file_path': result['file_path'],
+                'file_size': result['file_size'],
+                'storage_type': result['storage_type']
+            }, status=status.HTTP_201_CREATED)
+        else:
+            return Response({
+                'error': result['error']
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+    except Exception as e:
+        logger.error(f"Error uploading scientific content: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def upload_user_file(request):
+    """Upload user files (orders, designs) to local storage"""
+    from .file_managers import user_file_manager
+    
+    file = request.FILES.get('file')
+    if not file:
+        return Response({'error': 'فایل الزامی است'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Get order_id if provided
+    order_id = request.data.get('order_id')
+    content_type = file.content_type or 'application/octet-stream'
+    
+    # Check file size
+    max_size = settings.USER_FILES_MAX_SIZE
+    if file.size > max_size:
+        return Response({
+            'error': f'حجم فایل نباید بیشتر از {max_size // (1024*1024)} مگابایت باشد'
+        }, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        result = user_file_manager.upload_file(
+            file, 
+            file.name, 
+            content_type,
+            user_id=request.user.id,
+            order_id=order_id
+        )
+        
+        if result['success']:
+            return Response({
+                'message': 'فایل با موفقیت آپلود شد',
+                'file_url': result['file_url'],
+                'file_path': result['file_path'],
+                'file_size': result['file_size'],
+                'storage_type': result['storage_type']
+            }, status=status.HTTP_201_CREATED)
+        else:
+            return Response({
+                'error': result['error']
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+    except Exception as e:
+        logger.error(f"Error uploading user file: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def upload_delivery_file(request):
+    """Upload a delivery file for an order"""
+    from .file_managers import user_file_manager
+    from .serializers import DeliveryFileUploadSerializer
+    from django.utils import timezone
+    from datetime import timedelta
+    
+    serializer = DeliveryFileUploadSerializer(data=request.data)
+    if not serializer.is_valid():
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Check if user has permission to upload for this order
+    order_id = serializer.validated_data['order_id']
+    try:
+        order = Order.objects.get(id=order_id)
+        
+        # Check permission: admin or contractor assigned to order
+        if not (request.user.is_staff or 
+                (hasattr(request.user, 'contractor_profile') and 
+                 order.contractor == request.user.contractor_profile)):
+            return Response(
+                {'error': 'شما مجوز آپلود فایل برای این سفارش را ندارید'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+    except Order.DoesNotExist:
+        return Response({'error': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+    
+    file = serializer.validated_data['file']
+    description = serializer.validated_data.get('description', '')
+    expires_in_days = serializer.validated_data.get('expires_in_days', 30)
+    
+    try:
+        # Upload file
+        result = user_file_manager.upload_delivery_file(
+            file,
+            file.name,
+            file.content_type or 'application/octet-stream',
+            order_id
+        )
+        
+        if result['success']:
+            # Create DeliveryFile record
+            expires_at = timezone.now() + timedelta(days=expires_in_days)
+            
+            delivery_file = DeliveryFile.objects.create(
+                order=order,
+                file_path=result['file_path'],
+                file_name=file.name,
+                file_size=result['file_size'],
+                content_type=file.content_type or 'application/octet-stream',
+                uploaded_by=request.user,
+                description=description,
+                expires_at=expires_at
+            )
+            
+            # Notify customer
+            Notification.objects.create(
+                user=order.user,
+                title='فایل جدید برای سفارش شما',
+                message=f'فایل جدید "{file.name}" برای سفارش {order.order_number} آپلود شد',
+                link=f'/orders/{order.id}'
+            )
+            
+            from .serializers import DeliveryFileSerializer
+            serializer = DeliveryFileSerializer(delivery_file, context={'request': request})
+            
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return Response({
+                'error': result['error']
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+    except Exception as e:
+        logger.error(f"Error uploading delivery file: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def download_delivery_file(request, file_id):
+    """Download a delivery file"""
+    from django.http import HttpResponse, Http404
+    from django.core.files.storage import default_storage
+    import mimetypes
+    
+    try:
+        delivery_file = DeliveryFile.objects.get(id=file_id)
+        
+        # Check permission: owner or admin
+        if not (request.user == delivery_file.order.user or request.user.is_staff):
+            return Response(
+                {'error': 'شما مجوز دانلود این فایل را ندارید'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Check if file is active and not expired
+        if not delivery_file.is_active:
+            return Response(
+                {'error': 'این فایل غیرفعال شده است'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        if delivery_file.is_expired():
+            return Response(
+                {'error': 'مدت اعتبار این فایل به پایان رسیده است'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        # Get file from storage
+        if default_storage.exists(delivery_file.file_path):
+            file_handle = default_storage.open(delivery_file.file_path, 'rb')
+            
+            # Increment download count
+            delivery_file.increment_download()
+            
+            # Prepare response
+            response = HttpResponse(
+                file_handle.read(),
+                content_type=delivery_file.content_type
+            )
+            response['Content-Disposition'] = f'attachment; filename="{delivery_file.file_name}"'
+            response['Content-Length'] = delivery_file.file_size
+            
+            return response
+        else:
+            raise Http404("فایل یافت نشد")
+            
+    except DeliveryFile.DoesNotExist:
+        return Response({'error': 'فایل یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        logger.error(f"Error downloading delivery file: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_order_deliveries(request, order_id):
+    """List all delivery files for an order"""
+    try:
+        order = Order.objects.get(id=order_id)
+        
+        # Check permission: owner or admin
+        if not (request.user == order.user or request.user.is_staff):
+            return Response(
+                {'error': 'شما مجوز مشاهده فایل‌های این سفارش را ندارید'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        delivery_files = order.delivery_files.filter(is_active=True)
+        
+        from .serializers import DeliveryFileSerializer
+        serializer = DeliveryFileSerializer(
+            delivery_files, 
+            many=True, 
+            context={'request': request}
+        )
+        
+        return Response(serializer.data)
+        
+    except Order.DoesNotExist:
+        return Response({'error': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        logger.error(f"Error listing delivery files: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

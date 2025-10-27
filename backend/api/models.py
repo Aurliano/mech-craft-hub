@@ -1475,3 +1475,59 @@ class BlogComment(models.Model):
         return f"نظر {self.author_name} برای {self.post.title}"
 
 
+class DeliveryFile(models.Model):
+    """Model for managing delivery files for orders"""
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    order = models.ForeignKey('Order', on_delete=models.CASCADE, related_name='delivery_files')
+    
+    # File information
+    file_path = models.CharField(max_length=500, help_text="مسیر فایل در سیستم")
+    file_name = models.CharField(max_length=255, help_text="نام فایل")
+    file_size = models.BigIntegerField(default=0, help_text="اندازه فایل به بایت")
+    content_type = models.CharField(max_length=100, default='application/octet-stream', help_text="نوع محتوا")
+    
+    # Upload information
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='uploaded_deliveries')
+    upload_date = models.DateTimeField(auto_now_add=True)
+    
+    # Access control
+    download_count = models.IntegerField(default=0, help_text="تعداد دانلود")
+    last_download = models.DateTimeField(null=True, blank=True, help_text="آخرین زمان دانلود")
+    is_active = models.BooleanField(default=True, help_text="فعال بودن لینک دانلود")
+    expires_at = models.DateTimeField(null=True, blank=True, help_text="تاریخ انقضا")
+    
+    # Description
+    description = models.TextField(blank=True, help_text="توضیحات فایل")
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'فایل تحویلی'
+        verbose_name_plural = 'فایل‌های تحویلی'
+        indexes = [
+            models.Index(fields=['order', 'is_active']),
+            models.Index(fields=['upload_date']),
+        ]
+    
+    def __str__(self):
+        return f"فایل {self.file_name} برای سفارش {self.order.id}"
+    
+    def increment_download(self):
+        """Increment download count and update last download time"""
+        from django.utils import timezone
+        self.download_count += 1
+        self.last_download = timezone.now()
+        self.save(update_fields=['download_count', 'last_download'])
+    
+    def is_expired(self):
+        """Check if the file has expired"""
+        if not self.expires_at:
+            return False
+        from django.utils import timezone
+        return timezone.now() > self.expires_at
+
+

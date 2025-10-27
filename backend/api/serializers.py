@@ -4,7 +4,8 @@ from .models import (
     Cart, CartItem, Order, OrderItem, Quote, Workshop,
     Ticket, TicketMessage, TicketAttachment, TicketFileType, TicketCategory, TicketParticipant,
     ContentFilterLog, Review, Notification, SupportFeedback, BlogPost, BlogComment, ScientificContent,
-    OrderProposal, MaterialEstimate, OrderStatus, Payment, MaterialEstimation, OrderStatusLog
+    OrderProposal, MaterialEstimate, OrderStatus, Payment, MaterialEstimation, OrderStatusLog,
+    DeliveryFile
 )
 
 
@@ -875,3 +876,41 @@ class BlogCommentCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = BlogComment
         fields = ['post', 'author_name', 'author_email', 'content']
+
+
+class DeliveryFileSerializer(serializers.ModelSerializer):
+    """Serializer for delivery files"""
+    
+    download_url = serializers.SerializerMethodField()
+    uploaded_by_name = serializers.CharField(source='uploaded_by.username', read_only=True)
+    order_number = serializers.CharField(source='order.order_number', read_only=True)
+    
+    class Meta:
+        model = DeliveryFile
+        fields = [
+            'id', 'order', 'order_number', 'file_name', 'file_size', 
+            'content_type', 'uploaded_by', 'uploaded_by_name', 'upload_date',
+            'download_count', 'last_download', 'is_active', 'expires_at',
+            'description', 'download_url', 'created_at'
+        ]
+        read_only_fields = [
+            'id', 'file_path', 'uploaded_by', 'upload_date', 
+            'download_count', 'last_download', 'created_at'
+        ]
+    
+    def get_download_url(self, obj):
+        """Generate download URL for the file"""
+        if obj.is_active and not obj.is_expired():
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(f'/api/v1/deliveries/{obj.id}/download/')
+        return None
+
+
+class DeliveryFileUploadSerializer(serializers.Serializer):
+    """Serializer for uploading delivery files"""
+    
+    order_id = serializers.UUIDField()
+    file = serializers.FileField()
+    description = serializers.CharField(required=False, allow_blank=True)
+    expires_in_days = serializers.IntegerField(default=30, min_value=1, max_value=365)

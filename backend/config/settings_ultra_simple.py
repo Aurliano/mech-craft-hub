@@ -258,6 +258,25 @@ SMS_TEMPLATE_ID_PASSWORD_RESET = os.getenv('SMS_TEMPLATE_ID_PASSWORD_RESET')
 SMS_API_BASE_URL = os.getenv('SMS_API_BASE_URL', 'https://api.sms.ir/v1')
 SMS_API_TIMEOUT = int(os.getenv('SMS_API_TIMEOUT', '30'))
 
+# File Storage Configuration
+# Liara Storage Settings for Scientific Content
+FILE_STORAGE_TYPE = os.getenv('FILE_STORAGE_TYPE', 'liara')
+FILE_BUCKET_NAME = os.getenv('FILE_BUCKET_NAME', 'resources')
+FILE_REGION = os.getenv('FILE_REGION', 'iran')
+FILE_PUBLIC_ACCESS = os.getenv('FILE_PUBLIC_ACCESS', 'True').lower() == 'true'
+FILE_FALLBACK_TO_LOCAL = os.getenv('FILE_FALLBACK_TO_LOCAL', 'False').lower() == 'true'
+
+# Liara S3 Credentials
+LIARA_ACCESS_KEY_ID = os.getenv('LIARA_ACCESS_KEY_ID')
+LIARA_SECRET_ACCESS_KEY = os.getenv('LIARA_SECRET_ACCESS_KEY')
+S3_ENDPOINT_URL = os.getenv('S3_ENDPOINT_URL', 'https://storage.c2.liara.space')
+
+# User Files Settings (Local Storage)
+USER_FILES_STORAGE = 'local'
+USER_FILES_MAX_SIZE = int(os.getenv('USER_FILES_MAX_SIZE', str(100 * 1024 * 1024)))  # 100MB default
+ALLOWED_FILE_TYPES = os.getenv('ALLOWED_FILE_TYPES', 'pdf,image,document,cad,stl,stp,step,iges,dwg,dxf').split(',')
+MAX_FILE_SIZE = int(os.getenv('MAX_FILE_SIZE', str(52428800)))  # 50MB
+
 # Logging
 LOGGING = {
     'version': 1,

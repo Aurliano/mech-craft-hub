@@ -32,8 +32,17 @@ ENV DJANGO_SETTINGS_MODULE=config.settings_ultra_simple
 ENV SECRET_KEY=docker-build-secret
 
 # Set up Django directories and collect static files
-RUN mkdir -p /app/logs /app/media /app/staticfiles && \
+# Create directories for both scientific content and user uploads with proper permissions
+RUN mkdir -p /app/logs /app/staticfiles \
+    /app/backend/media/scientific-content/books \
+    /app/backend/media/scientific-content/documents \
+    /app/backend/media/scientific-content/videos \
+    /app/backend/media/scientific-content/software \
+    /app/backend/media/scientific-content/others \
+    /app/backend/media/user-uploads \
+    /app/backend/media/deliveries && \
     chown -R appuser:appuser /app && \
+    chmod -R 755 /app/backend/media && \
     cd /app/backend && \
     python manage.py collectstatic --noinput --clear
 
