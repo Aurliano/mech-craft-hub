@@ -385,12 +385,19 @@ class Workshop(models.Model):
     def save(self, *args, **kwargs):
         # Generate workshop code if not already set
         if not self.code:
-            # Generate workshop code: WS + 6 digit random number
             import random
-            self.code = f"WS{random.randint(100000, 999999)}"
-            # Ensure uniqueness
-            while Workshop.objects.filter(code=self.code).exists():
-                self.code = f"WS{random.randint(100000, 999999)}"
+            max_attempts = 100
+            for _ in range(max_attempts):
+                # Generate workshop code: WS + 6 digit random number
+                code = f"WS{random.randint(100000, 999999)}"
+                # Check if code already exists
+                if not Workshop.objects.filter(code=code).exists():
+                    self.code = code
+                    break
+            else:
+                # Fallback: use UUID if random generation fails after 100 attempts
+                from uuid import uuid4
+                self.code = f"WS{uuid4().hex[:6].upper()}"
         super().save(*args, **kwargs)
     
     class Meta:
