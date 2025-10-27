@@ -34,6 +34,7 @@ const MyWorkshops = () => {
   const { data: workshops, isLoading, refetch } = useContractorWorkshops();
   type Workshop = {
     id: string | number;
+    code?: string;
     name: string;
     is_active?: boolean;
     address?: string;
@@ -475,7 +476,12 @@ const MyWorkshops = () => {
                   <div className="flex justify-between items-start">
                     <div className="flex items-center gap-2">
                       <Building2 className="h-5 w-5 text-primary" />
-                      <CardTitle className="text-lg">{workshop.name}</CardTitle>
+                      <div>
+                        <CardTitle className="text-lg">{workshop.name}</CardTitle>
+                        {workshop.code && (
+                          <p className="text-xs text-muted-foreground">{workshop.code}</p>
+                        )}
+                      </div>
                     </div>
                     <Badge variant={workshop.is_active ? "default" : "secondary"}>
                       {workshop.is_active ? 'فعال' : 'غیرفعال'}

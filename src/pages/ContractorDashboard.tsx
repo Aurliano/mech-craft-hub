@@ -21,6 +21,7 @@ import {
 } from '@/hooks/useAuth';
 import { Link, useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 
 const ContractorDashboard = () => {
   const { user } = useAuth();
@@ -647,6 +648,7 @@ const ContractorDashboard = () => {
           )}
         </div>
       </div>
+      <Footer />
     </div>
   );
 };

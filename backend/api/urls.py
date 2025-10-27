@@ -33,6 +33,8 @@ from .views import (
     get_contractor_stats, create_contractor_proposal, get_contractor_workshops,
     create_contractor_workshop, check_contractor_manufacturing_service,
     get_contractor_ratings, get_contractor_rating_stats,
+    # Public endpoints
+    get_public_workshops,
     # Ticket endpoints
     create_ticket, create_ticket_message,
     # Captcha endpoints (Turnstile only)
@@ -162,6 +164,9 @@ urlpatterns = [
     path('v1/contractor/check-manufacturing/', check_contractor_manufacturing_service, name='check_contractor_manufacturing_service'),
     path('v1/contractor/ratings/', get_contractor_ratings, name='get_contractor_ratings'),
     path('v1/contractor/rating-stats/', get_contractor_rating_stats, name='get_contractor_rating_stats'),
+    
+    # Public Workshop Endpoint
+    path('v1/public/workshops/', get_public_workshops, name='get_public_workshops'),
     
     # Ticket Management Endpoints
     path('v1/tickets/create/', create_ticket, name='create_ticket'),

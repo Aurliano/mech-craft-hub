@@ -1045,6 +1045,15 @@ export async function checkContractorManufacturingService() {
   }
 }
 
+export async function getPublicWorkshops() {
+  try {
+    return await fetchJson<unknown[]>('/v1/public/workshops/');
+  } catch (error) {
+    console.error('Error fetching public workshops:', error);
+    return [];
+  }
+}
+
 // Turnstile API Functions
 export async function loginWithTurnstile(params: { 
   username: string; 
@@ -1682,6 +1691,7 @@ export const api = {
   getContractorWorkshops,
   createContractorWorkshop,
   checkContractorManufacturingService,
+  getPublicWorkshops,
   
   // Turnstile
   getFallbackCaptchaStatus,

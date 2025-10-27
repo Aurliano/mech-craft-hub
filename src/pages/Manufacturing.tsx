@@ -27,7 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import SubmitButton from "@/components/SubmitButton";
 import { useServiceOrder } from "@/hooks/useServiceOrder";
@@ -36,6 +36,8 @@ import LoginPrompt from "@/components/LoginPrompt";
 import { DynamicServiceForm } from "@/components/DynamicServiceForm";
 import { useContractorWorkshops } from "@/hooks/useAuth";
 import TermsAndConditions from "@/components/TermsAndConditions";
+import { getPublicWorkshops } from "@/lib/api";
+import MultiFileUpload from "@/components/MultiFileUpload";
 // import DocumentationSection from "@/components/DocumentationSection";
 
 // Mock data for workshops
@@ -97,8 +99,27 @@ const Manufacturing = () => {
   const [selectedWorkshopClass, setSelectedWorkshopClass] = useState<string>("");
   const [files, setFiles] = useState<File[]>([]);
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const [publicWorkshops, setPublicWorkshops] = useState<Workshop[]>([]);
+  const [isLoadingPublicWorkshops, setIsLoadingPublicWorkshops] = useState(false);
   
-  // Get workshops from API
+  // Load public workshops on mount
+  React.useEffect(() => {
+    const loadPublicWorkshops = async () => {
+      setIsLoadingPublicWorkshops(true);
+      try {
+        const workshops = await getPublicWorkshops();
+        setPublicWorkshops(Array.isArray(workshops) ? (workshops as Workshop[]) : []);
+      } catch (error) {
+        console.error('Error loading public workshops:', error);
+        setPublicWorkshops([]);
+      } finally {
+        setIsLoadingPublicWorkshops(false);
+      }
+    };
+    loadPublicWorkshops();
+  }, []);
+  
+  // Get workshops from API (for contractors)
   const { data: apiWorkshops, isLoading: isLoadingWorkshops } = useContractorWorkshops();
   
   // Use service order hook
@@ -128,6 +149,7 @@ const Manufacturing = () => {
   // Normalize query data defensively in case of unexpected shapes
   type Workshop = {
     id: string | number;
+    code?: string;
     name: string;
     description?: string;
     capabilities?: string[];
@@ -138,7 +160,8 @@ const Manufacturing = () => {
   const normalizedApiWorkshops: Workshop[] = Array.isArray(apiWorkshops)
     ? (apiWorkshops as unknown as Workshop[])
     : [];
-  const displayWorkshops = normalizedApiWorkshops.length > 0 ? normalizedApiWorkshops : workshops;
+  // Use public workshops if available, otherwise fallback to mock data
+  const displayWorkshops = publicWorkshops.length > 0 ? publicWorkshops : workshops;
 
   const handleOrderClick = (id: number | string) => {
     // No longer selecting a specific workshop for submission; keep scroll only
@@ -272,7 +295,7 @@ const Manufacturing = () => {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
-            {isLoadingWorkshops ? (
+            {isLoadingPublicWorkshops ? (
               <div className="col-span-full text-center py-8">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
                 <p className="text-muted-foreground">در حال بارگذاری کارگاه‌ها...</p>
@@ -285,13 +308,18 @@ const Manufacturing = () => {
                     <div>
                       <CardTitle className="text-xl mb-2">{workshop.name}</CardTitle>
                       <CardDescription className="text-sm">
-                        {workshop.description}
+                        {workshop.description || 'کارگاه تخصصی ساخت و تولید'}
                       </CardDescription>
+                      {workshop.code && (
+                        <p className="text-xs text-muted-foreground mt-1">کد: {workshop.code}</p>
+                      )}
                     </div>
-                    <div className="flex items-center gap-1 bg-primary/20 px-2 py-1 rounded-full">
-                      <CheckCircle className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-medium">{workshop.rating}</span>
-                    </div>
+                    {workshop.rating && (
+                      <div className="flex items-center gap-1 bg-primary/20 px-2 py-1 rounded-full">
+                        <CheckCircle className="h-4 w-4 text-primary" />
+                        <span className="text-sm font-medium">{workshop.rating}</span>
+                      </div>
+                    )}
                   </div>
                 </CardHeader>
                 
@@ -413,17 +441,21 @@ const Manufacturing = () => {
             </div>
 
             <div>
-              <label htmlFor="order-files" className="block text-sm font-medium mb-2">آپلود فایل‌های مربوطه</label>
-              <Input
-                id="order-files"
-                type="file"
-                multiple
-                onChange={(e) => setFiles(Array.from(e.target.files || []))}
-                accept=".pdf,.dwg,.dxf,.step,.stp,.iges,.sldprt,.sldasm,.ipt,.iam,.jpg,.jpeg,.png"
+              <MultiFileUpload
+                fieldKey="order_files"
+                label="آپلود فایل‌های مربوطه"
+                isRequired={false}
+                helpText="فایل‌های نقشه، مستندات و تصاویر محصول"
+                maxFiles={10}
+                maxSizePerFile={200}
+                acceptedTypes={['.pdf', '.dwg', '.dxf', '.step', '.stp', '.iges', '.sldprt', '.sldasm', '.ipt', '.iam', '.jpg', '.jpeg', '.png']}
+                onFilesChange={(uploadedFiles) => {
+                  // Convert to File objects for compatibility
+                  setFiles(uploadedFiles.map(f => f.file).filter(Boolean));
+                }}
+                uploadedFiles={[]}
+                contextId="manufacturing-order"
               />
-              <p className="text-xs text-muted-foreground mt-2">
-                فرمت‌های مجاز: PDF, DWG, DXF, STEP/STP, IGES, SLDPRT/SLDASM, IPT/IAM, تصاویر
-              </p>
             </div>
 
             <DynamicServiceForm

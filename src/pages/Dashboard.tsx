@@ -6,6 +6,7 @@ import { Package, ShoppingCart, Bell, Clock, CheckCircle, Plus, Eye, Briefcase, 
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
+import Footer from '@/components/Footer';
 import { useGetAllJobSeekers } from '@/hooks/useWorkforce';
 
 const Dashboard = () => {
@@ -279,6 +280,7 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 };

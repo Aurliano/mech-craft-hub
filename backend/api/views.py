@@ -2607,6 +2607,29 @@ def create_contractor_proposal(request):
 
 
 @api_view(["GET"])
+def get_public_workshops(request):
+    """Get all active workshops (public endpoint for manufacturing page)"""
+    from .models import Workshop
+    
+    workshops = Workshop.objects.filter(is_active=True)
+    
+    workshops_data = []
+    for workshop in workshops:
+        workshops_data.append({
+            'id': workshop.id,
+            'code': workshop.code,
+            'name': workshop.name,
+            'description': workshop.description,
+            'capabilities': workshop.capabilities,
+            'machines': workshop.machines,
+            'province': workshop.province,
+            'city': workshop.city,
+            # NOTE: No sensitive data like address, postal_address, manager info
+        })
+    
+    return Response(workshops_data)
+
+@api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def get_contractor_workshops(request):
     """Get workshops owned by the contractor"""
@@ -2631,6 +2654,7 @@ def get_contractor_workshops(request):
     for workshop in workshops:
         workshops_data.append({
             'id': workshop.id,
+            'code': workshop.code,
             'name': workshop.name,
             'address': workshop.address,
             'description': workshop.description,
@@ -2700,6 +2724,7 @@ def create_contractor_workshop(request):
     
     return Response({
         'id': workshop.id,
+        'code': workshop.code,
         'name': workshop.name,
         'address': workshop.address,
         'description': workshop.description,

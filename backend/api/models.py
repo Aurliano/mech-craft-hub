@@ -365,6 +365,7 @@ class Workshop(models.Model):
     """Workshops owned by contractors"""
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    code = models.CharField(max_length=10, unique=True, editable=False)  # Workshop code
     name = models.CharField(max_length=200)
     address = models.TextField()
     description = models.TextField(blank=True)
@@ -381,11 +382,22 @@ class Workshop(models.Model):
     capabilities = models.JSONField(default=list, blank=True)  # List of manufacturing processes
     machines = models.JSONField(default=list, blank=True)  # List of machines with precision
     
+    def save(self, *args, **kwargs):
+        # Generate workshop code if not already set
+        if not self.code:
+            # Generate workshop code: WS + 6 digit random number
+            import random
+            self.code = f"WS{random.randint(100000, 999999)}"
+            # Ensure uniqueness
+            while Workshop.objects.filter(code=self.code).exists():
+                self.code = f"WS{random.randint(100000, 999999)}"
+        super().save(*args, **kwargs)
+    
     class Meta:
         db_table = 'workshops'
     
     def __str__(self):
-        return f"{self.name} - {self.owner.username}"
+        return f"{self.name} ({self.code}) - {self.owner.username}"
 
 
 class WorkshopService(models.Model):
