@@ -74,10 +74,77 @@ def asset_view(request, path):
             return HttpResponse(f.read(), content_type=content_type)
     return HttpResponse(status=404)
 
+def service_worker_view(request):
+    """Serve service worker"""
+    sw_path = os.path.join(settings.BASE_DIR.parent, 'dist', 'service-worker.js')
+    if os.path.exists(sw_path):
+        with open(sw_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        response = HttpResponse(content, content_type='application/javascript; charset=utf-8')
+        response['Service-Worker-Allowed'] = '/'
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+        return response
+    return HttpResponse(status=404)
+
+def manifest_view(request):
+    """Serve manifest.json"""
+    manifest_path = os.path.join(settings.BASE_DIR.parent, 'dist', 'manifest.json')
+    if os.path.exists(manifest_path):
+        with open(manifest_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        response = HttpResponse(content, content_type='application/manifest+json; charset=utf-8')
+        response['Cache-Control'] = 'public, max-age=31536000'
+        return response
+    return HttpResponse(status=404)
+
+def icon_view(request, path):
+    """Serve PWA icons"""
+    icon_path = os.path.join(settings.BASE_DIR.parent, 'dist', 'icons', path)
+    if os.path.exists(icon_path):
+        with open(icon_path, 'rb') as f:
+            content = f.read()
+        response = HttpResponse(content, content_type='image/png')
+        response['Cache-Control'] = 'public, max-age=31536000'
+        return response
+    return HttpResponse(status=404)
+
+def screenshot_view(request, path):
+    """Serve PWA screenshots"""
+    screenshot_path = os.path.join(settings.BASE_DIR.parent, 'dist', 'screenshots', path)
+    if os.path.exists(screenshot_path):
+        with open(screenshot_path, 'rb') as f:
+            content = f.read()
+        response = HttpResponse(content, content_type='image/png')
+        response['Cache-Control'] = 'public, max-age=31536000'
+        return response
+    return HttpResponse(status=404)
+
+def pwa_debug_script_view(request, filename):
+    """Serve PWA debug/test scripts"""
+    script_path = os.path.join(settings.BASE_DIR.parent, 'dist', filename)
+    if os.path.exists(script_path):
+        with open(script_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        response = HttpResponse(content, content_type='application/javascript; charset=utf-8')
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        return response
+    return HttpResponse(status=404)
+
 urlpatterns = [
     path('', home_view, name='home'),
     path('favicon.ico', favicon_view, name='favicon'),
     path('assets/<path:path>', asset_view, name='assets'),
+    
+    # PWA endpoints - MUST come before SPA fallback
+    path('service-worker.js', service_worker_view, name='service_worker'),
+    path('manifest.json', manifest_view, name='manifest'),
+    path('pwa-debug.js', lambda r: pwa_debug_script_view(r, 'pwa-debug.js'), name='pwa_debug'),
+    path('pwa-test.js', lambda r: pwa_debug_script_view(r, 'pwa-test.js'), name='pwa_test'),
+    path('mime-test.js', lambda r: pwa_debug_script_view(r, 'mime-test.js'), name='mime_test'),
+    path('icons/<path:path>', icon_view, name='icons'),
+    path('screenshots/<path:path>', screenshot_view, name='screenshots'),
     
     # SEO endpoints
     path('robots.txt', robots_txt, name='robots_txt'),
@@ -90,8 +157,8 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/', include('api.urls')),
     
-    # SPA fallback (exclude api/admin/static/media/assets/robots/sitemap)
-    re_path(r'^(?!api/|admin/|static/|media/|assets/|robots\.txt|sitemap\.xml).*$', home_view, name='spa_fallback'),
+    # SPA fallback (exclude api/admin/static/media/assets/robots/sitemap/pwa files)
+    re_path(r'^(?!api/|admin/|static/|media/|assets/|icons/|screenshots/|robots\.txt|sitemap\.xml|service-worker\.js|manifest\.json|pwa-debug\.js|pwa-test\.js|mime-test\.js).*$', home_view, name='spa_fallback'),
 ]
 
 # Serve media files
