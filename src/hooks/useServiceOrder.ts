@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useOrderSubmission } from './useOrderSubmission';
 
+type FieldValue = string | number | boolean | string[] | File | null | Record<string, unknown>;
+
 export function useServiceOrder(serviceId: string) {
-  const [formData, setFormData] = useState<Record<string, any>>({});
-  const [tabFieldValues, setTabFieldValues] = useState<Record<string, Record<string, any>>>({});
+  const [formData, setFormData] = useState<Record<string, FieldValue>>({});
+  const [tabFieldValues, setTabFieldValues] = useState<Record<string, Record<string, FieldValue>>>({});
   const [needsDocumentation, setNeedsDocumentation] = useState(false);
   const [notes, setNotes] = useState('');
   const [documentationOptions, setDocumentationOptions] = useState<Record<string, boolean>>({});
@@ -11,14 +13,14 @@ export function useServiceOrder(serviceId: string) {
   
   const { submitOrder, isSubmitting, error, clearError } = useOrderSubmission();
 
-  const updateField = (fieldKey: string, value: any) => {
+  const updateField = (fieldKey: string, value: FieldValue) => {
     setFormData(prev => ({
       ...prev,
       [fieldKey]: value
     }));
   };
 
-  const updateTabField = (tabId: string, fieldKey: string, value: any) => {
+  const updateTabField = (tabId: string, fieldKey: string, value: FieldValue) => {
     setTabFieldValues(prev => ({
       ...prev,
       [tabId]: {
@@ -38,13 +40,20 @@ export function useServiceOrder(serviceId: string) {
   const handleSubmit = async () => {
     try {
       // Merge formData and tabFieldValues
-      const allFieldValues = { 
+      // IMPORTANT: Add tab prefix to field keys to preserve tab information
+      const allFieldValues: Record<string, FieldValue> = { 
         ...formData, 
         documentationOptions,
         documentationNotes
       };
-      Object.values(tabFieldValues).forEach(tabFields => {
-        Object.assign(allFieldValues, tabFields);
+      
+      // Add tab prefix to each field key to prevent data loss
+      Object.entries(tabFieldValues).forEach(([tabId, tabFields]) => {
+        Object.entries(tabFields).forEach(([fieldKey, value]) => {
+          // Use tab ID as prefix to maintain tab-field relationship
+          const prefixedKey = `${tabId}_${fieldKey}`;
+          allFieldValues[prefixedKey] = value;
+        });
       });
 
       await submitOrder({

@@ -97,10 +97,11 @@ class CartSerializer(serializers.ModelSerializer):
 class OrderItemSerializer(serializers.ModelSerializer):
     service = serializers.SerializerMethodField()
     service_fields = serializers.SerializerMethodField()
+    field_values_by_tab = serializers.SerializerMethodField()
     
     class Meta:
         model = OrderItem
-        fields = ['id', 'order', 'service', 'service_fields', 'assigned_contractor', 'status', 'price', 'estimated_delivery', 'actual_delivery', 'field_values', 'needs_documentation', 'created_at', 'updated_at']
+        fields = ['id', 'order', 'service', 'service_fields', 'assigned_contractor', 'status', 'price', 'estimated_delivery', 'actual_delivery', 'field_values', 'field_values_by_tab', 'needs_documentation', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
     
     def get_service(self, obj):
@@ -120,6 +121,49 @@ class OrderItemSerializer(serializers.ModelSerializer):
             fields = ServiceField.objects.filter(service=obj.service).order_by('order')
             return ServiceFieldSerializer(fields, many=True).data
         return []
+    
+    def get_field_values_by_tab(self, obj):
+        """
+        Convert flat field_values structure back to hierarchical tab structure.
+        This is important for services with tabs to properly display field values.
+        """
+        if not obj.field_values:
+            return {}
+        
+        # If service has tabs, reconstruct the tab structure
+        if obj.service and obj.service.has_tabs:
+            from .models import ServiceTab
+            tabs = ServiceTab.objects.filter(service=obj.service, is_active=True).order_by('order')
+            result = {}
+            
+            # Initialize result structure with tab IDs
+            for tab in tabs:
+                result[str(tab.id)] = {}
+            
+            # Parse field_values to reconstruct tab-based structure
+            for key, value in obj.field_values.items():
+                if '_' in key:
+                    # Split tab prefix from field key
+                    parts = key.split('_', 1)
+                    if len(parts) == 2:
+                        tab_id, field_key = parts
+                        if tab_id in result:
+                            result[tab_id][field_key] = value
+                        else:
+                            # If tab_id not in known tabs, store in general
+                            if 'general' not in result:
+                                result['general'] = {}
+                            result['general'][key] = value
+                else:
+                    # Field without tab prefix (general field)
+                    if 'general' not in result:
+                        result['general'] = {}
+                    result['general'][key] = value
+            
+            return result
+        else:
+            # Service without tabs - return as is
+            return {'general': obj.field_values}
 
 
 class OrderSerializer(serializers.ModelSerializer):

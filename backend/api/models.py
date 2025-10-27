@@ -195,7 +195,7 @@ class ServiceField(models.Model):
     
     class Meta:
         db_table = 'service_fields'
-        unique_together = ('service', 'field_key')
+        unique_together = ('service', 'tab', 'field_key')
         ordering = ['tab', 'order', 'name']
     
     def __str__(self):
