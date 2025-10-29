@@ -1,5 +1,5 @@
 // Service Worker for SaydaTech PWA
-const CACHE_NAME = 'saydatech-pwa-v3';
+const CACHE_NAME = 'saydatech-pwa-v4';
 const OFFLINE_CACHE_URLS = [
   '/',
   '/manifest.json'
