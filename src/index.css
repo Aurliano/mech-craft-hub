@@ -7,7 +7,20 @@ html {
   scroll-behavior: smooth;
 }
 body {
-  font-family: "B Roya Bold", sans-serif;
+  font-family: "B Roya Bold", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-display: swap;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Fix for Chrome font rendering */
+@supports (-webkit-appearance: none) {
+  body {
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
 }
 
 /* Mobile-specific improvements */
