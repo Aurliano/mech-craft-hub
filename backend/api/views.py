@@ -2609,39 +2609,92 @@ def create_contractor_proposal(request):
 @api_view(["GET"])
 def get_public_workshops(request):
     """Get all active and approved workshops (public endpoint for manufacturing page)"""
+    from django.db import connection
     from .models import Workshop
     
-    # Only return approved workshops
-    workshops = Workshop.objects.filter(is_active=True, is_approved=True)
+    # Check which fields exist in database
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name='workshops'
+        """)
+        existing_columns = {row[0] for row in cursor.fetchall()}
     
-    # Optional filter by workshop class
-    workshop_class = request.query_params.get('class', None)
-    if workshop_class and workshop_class in ['A', 'B', 'C']:
-        workshops = workshops.filter(workshop_class=workshop_class)
-    
-    workshops_data = []
-    for workshop in workshops:
-        workshop_data = {
-            'id': workshop.id,
-            'code': workshop.code,
-            'name': workshop.name,
-            'description': workshop.description,
-            'capabilities': workshop.capabilities,
-            'machines': workshop.machines,
-            'province': getattr(workshop, 'province', None),
-            'city': getattr(workshop, 'city', None),
-            # NOTE: No sensitive data like address, postal_address, manager info
-        }
+    # Build query safely - only use fields that exist
+    try:
+        workshops = Workshop.objects.filter(is_active=True)
         
-        # Add optional fields if they exist
-        if hasattr(workshop, 'workshop_class'):
-            workshop_data['workshop_class'] = workshop.workshop_class
-        if hasattr(workshop, 'workers_count'):
-            workshop_data['workers_count'] = workshop.workers_count
+        # Only filter by is_approved if column exists
+        if 'is_approved' in existing_columns:
+            workshops = workshops.filter(is_approved=True)
+        
+        # Optional filter by workshop class (only if column exists)
+        workshop_class = request.query_params.get('class', None)
+        if workshop_class and workshop_class in ['A', 'B', 'C'] and 'workshop_class' in existing_columns:
+            workshops = workshops.filter(workshop_class=workshop_class)
+        
+        # Use only() to select only existing fields
+        select_fields = ['id', 'code', 'name', 'description', 'capabilities', 'machines']
+        if 'province' in existing_columns:
+            select_fields.append('province')
+        if 'city' in existing_columns:
+            select_fields.append('city')
+        if 'workshop_class' in existing_columns:
+            select_fields.append('workshop_class')
+        if 'workers_count' in existing_columns:
+            select_fields.append('workers_count')
+        
+        workshops = workshops.only(*select_fields)
+        
+        workshops_data = []
+        for workshop in workshops:
+            workshop_data = {
+                'id': workshop.id,
+                'code': workshop.code,
+                'name': workshop.name,
+                'description': workshop.description or '',
+                'capabilities': workshop.capabilities or [],
+                'machines': workshop.machines or [],
+            }
             
-        workshops_data.append(workshop_data)
-    
-    return Response(workshops_data)
+            # Add optional fields if they exist
+            if 'province' in existing_columns:
+                workshop_data['province'] = getattr(workshop, 'province', None)
+            if 'city' in existing_columns:
+                workshop_data['city'] = getattr(workshop, 'city', None)
+            if 'workshop_class' in existing_columns:
+                workshop_data['workshop_class'] = getattr(workshop, 'workshop_class', None)
+            if 'workers_count' in existing_columns:
+                workshop_data['workers_count'] = getattr(workshop, 'workers_count', None)
+            
+            workshops_data.append(workshop_data)
+        
+        return Response(workshops_data)
+    except Exception as e:
+        # Fallback: try to return basic data without problematic fields
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning(f"Error fetching public workshops with full fields: {str(e)}")
+        
+        # Try fallback query with only basic fields
+        try:
+            workshops = Workshop.objects.filter(is_active=True).only('id', 'code', 'name', 'description', 'capabilities', 'machines')
+            workshops_data = []
+            for workshop in workshops:
+                workshops_data.append({
+                    'id': workshop.id,
+                    'code': workshop.code,
+                    'name': workshop.name,
+                    'description': workshop.description or '',
+                    'capabilities': workshop.capabilities or [],
+                    'machines': workshop.machines or [],
+                })
+            logger.info(f"Fallback query succeeded, returning {len(workshops_data)} workshops")
+            return Response(workshops_data)
+        except Exception as e2:
+            logger.error(f"Fallback query also failed: {str(e2)}")
+            return Response([], status=status.HTTP_200_OK)
 
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])

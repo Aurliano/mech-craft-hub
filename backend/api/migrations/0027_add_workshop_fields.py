@@ -3,38 +3,39 @@ from django.db import migrations, models
 from django.db import connection
 
 
-def check_column_exists(table_name, column_name):
-    """Check if a column exists in a table"""
-    with connection.cursor() as cursor:
-        if connection.vendor == 'postgresql':
-            cursor.execute("""
-                SELECT column_name 
-                FROM information_schema.columns 
-                WHERE table_name=%s AND column_name=%s
-            """, [table_name, column_name])
-        else:
-            cursor.execute("""
-                SELECT column_name 
-                FROM information_schema.columns 
-                WHERE table_name=? AND column_name=?
-            """, [table_name, column_name])
-        return cursor.fetchone() is not None
-
-
 def migrate_forwards(apps, schema_editor):
     """Add fields only if they don't exist"""
+    from django.db import connection
+    
     Workshop = apps.get_model('api', 'Workshop')
     table_name = Workshop._meta.db_table
     
+    def column_exists(column_name):
+        """Check if column exists using raw SQL"""
+        with connection.cursor() as cursor:
+            if connection.vendor == 'postgresql':
+                cursor.execute("""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_name=%s AND column_name=%s
+                """, [table_name, column_name])
+            else:
+                cursor.execute("""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_name=? AND column_name=?
+                """, [table_name, column_name])
+            return cursor.fetchone() is not None
+    
     # Only add fields if they don't exist
-    if not check_column_exists(table_name, 'is_approved'):
+    if not column_exists('is_approved'):
         schema_editor.add_field(
             Workshop,
             models.BooleanField(default=False, help_text='Whether the workshop is approved by admin'),
             name='is_approved'
         )
     
-    if not check_column_exists(table_name, 'workshop_class'):
+    if not column_exists('workshop_class'):
         schema_editor.add_field(
             Workshop,
             models.CharField(
@@ -46,7 +47,7 @@ def migrate_forwards(apps, schema_editor):
             name='workshop_class'
         )
     
-    if not check_column_exists(table_name, 'documents'):
+    if not column_exists('documents'):
         schema_editor.add_field(
             Workshop,
             models.JSONField(
@@ -57,7 +58,7 @@ def migrate_forwards(apps, schema_editor):
             name='documents'
         )
     
-    if not check_column_exists(table_name, 'workers_count'):
+    if not column_exists('workers_count'):
         schema_editor.add_field(
             Workshop,
             models.IntegerField(

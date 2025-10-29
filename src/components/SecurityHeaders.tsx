@@ -8,35 +8,9 @@ const SecurityHeaders: React.FC<SecurityHeadersProps> = ({ children }) => {
   useEffect(() => {
     // Set security headers via meta tags
     const setSecurityMetaTags = () => {
-      // Content Security Policy
-      let cspMeta = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
-      if (!cspMeta) {
-        cspMeta = document.createElement('meta');
-        cspMeta.setAttribute('http-equiv', 'Content-Security-Policy');
-        document.head.appendChild(cspMeta);
-      }
-      cspMeta.setAttribute('content', 
-        "default-src 'self'; " +
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com; " +
-        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-        "font-src 'self' https://fonts.gstatic.com; " +
-        "img-src 'self' data: https:; " +
-        "connect-src 'self' https://challenges.cloudflare.com; " +
-        "frame-src 'self' https://challenges.cloudflare.com; " +
-        "object-src 'none'; " +
-        "base-uri 'self'; " +
-        "form-action 'self'; " +
-        "frame-ancestors 'none';"
-      );
-
-      // X-Frame-Options
-      let frameOptionsMeta = document.querySelector('meta[http-equiv="X-Frame-Options"]');
-      if (!frameOptionsMeta) {
-        frameOptionsMeta = document.createElement('meta');
-        frameOptionsMeta.setAttribute('http-equiv', 'X-Frame-Options');
-        document.head.appendChild(frameOptionsMeta);
-      }
-      frameOptionsMeta.setAttribute('content', 'DENY');
+      // Note: CSP and X-Frame-Options should be set via HTTP headers, not meta tags
+      // These are set by the backend SecurityHeadersMiddleware
+      // We only set meta tags for client-side headers that are allowed in meta tags
 
       // X-Content-Type-Options
       let contentTypeMeta = document.querySelector('meta[http-equiv="X-Content-Type-Options"]');
