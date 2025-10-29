@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MessageCircle, X, Send, Bot, User, Loader2 } from 'lucide-react';
+import { MessageCircle, X, Send, Bot, User, Loader2, Download, CheckCircle, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePWA } from '@/hooks/usePWA';
 import { api } from '@/lib/api';
 
 interface Message {
@@ -14,6 +15,7 @@ interface Message {
   type: 'user' | 'ai';
   content: string;
   timestamp: Date;
+  isPWAMessage?: boolean;
 }
 
 interface SupportWidgetProps {
@@ -27,7 +29,13 @@ export default function SupportWidget({ className = '' }: SupportWidgetProps) {
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showFeedbackForm, setShowFeedbackForm] = useState(false);
+  const [hasSeenInstallMessage, setHasSeenInstallMessage] = useState(false);
   const { isAuthenticated, user } = useAuth();
+  const { isInstallable, isInstalled, installPWA, browserInfo } = usePWA();
+
+  // بررسی اینکه آیا پیام نصب قابل نمایش است (برای پیش‌نمایش)
+  const canShowPWAInstallMessage = !isInstalled && 
+    localStorage.getItem('saydatech-pwa-install-seen-in-support') !== 'true';
 
   // Initialize with welcome message
   useEffect(() => {
@@ -41,6 +49,63 @@ export default function SupportWidget({ className = '' }: SupportWidgetProps) {
       setMessages([welcomeMessage]);
     }
   }, [isOpen, messages.length]);
+
+  // نمایش پیام نصب PWA بعد از پیام خوش‌آمدگویی
+  useEffect(() => {
+    if (isOpen && messages.length === 1 && canShowPWAInstallMessage) {
+      const timer = setTimeout(() => {
+        const installMessage: Message = {
+          id: 'pwa-install',
+          type: 'ai',
+          content: getPWAInstallMessage(),
+          timestamp: new Date(),
+          isPWAMessage: true
+        };
+        setMessages(prev => [...prev, installMessage]);
+        setHasSeenInstallMessage(true);
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, messages.length, canShowPWAInstallMessage]);
+
+  const getPWAInstallMessage = () => {
+    let text = '💡 پیشنهاد: می‌تونید اپلیکیشن ما رو نصب کنید و از مزایای زیر بهره‌مند شوید:\n\n';
+    text += '✅ دسترسی سریع بدون نیاز به مرورگر\n';
+    text += '✅ کارایی بالاتر و سرعت بیشتر\n';
+    text += '✅ قابلیت آفلاین و استفاده بدون اینترنت\n';
+    text += '✅ آیکون اختصاصی روی صفحه اصلی\n';
+    return text;
+  };
+
+  const getPWAInstallInstructions = () => {
+    if (browserInfo?.isDesktop) {
+      return 'برای نصب، روی آیکون نصب در نوار آدرس کلیک کنید یا از دکمه زیر استفاده کنید.';
+    } else if (browserInfo?.isIOS && browserInfo?.isSafari) {
+      return 'برای نصب، از منوی Share (قسمت پایین) → Add to Home Screen استفاده کنید.';
+    } else if (browserInfo?.isAndroid) {
+      return 'برای نصب، از منوی سه نقطه → Add to Home Screen استفاده کنید یا دکمه زیر را بزنید.';
+    } else {
+      return 'برای نصب، از منوی مرورگر استفاده کنید یا دکمه زیر را بزنید.';
+    }
+  };
+
+  const handlePWAInstall = async () => {
+    if (isInstallable) {
+      await installPWA();
+      // تغییر پیام بعد از نصب
+      setMessages(prev => prev.map(msg => 
+        msg.id === 'pwa-install' 
+          ? { ...msg, content: '✅ اپلیکیشن با موفقیت نصب شد! حالا می‌تونید از طریق آیکون روی صفحه اصلی به ما دسترسی داشته باشید.' }
+          : msg
+      ));
+      localStorage.setItem('saydatech-pwa-install-seen-in-support', 'true');
+    }
+  };
+
+  const dismissInstallMessage = () => {
+    setMessages(prev => prev.filter(msg => msg.id !== 'pwa-install'));
+    localStorage.setItem('saydatech-pwa-install-seen-in-support', 'true');
+  };
 
   // Show login prompt for unauthenticated users
   useEffect(() => {
@@ -117,13 +182,21 @@ export default function SupportWidget({ className = '' }: SupportWidgetProps) {
   if (!isOpen) {
     return (
       <div className={`fixed bottom-6 right-6 z-50 ${className}`}>
-        <Button
-          onClick={toggleWidget}
-          size="lg"
-          className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl transition-all duration-300"
-        >
-          <MessageCircle className="h-6 w-6 sm:h-7 sm:w-7" />
-        </Button>
+        <div className="relative">
+          <Button
+            onClick={toggleWidget}
+            size="lg"
+            className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-blue-600 hover:bg-blue-700 shadow-lg hover:shadow-xl transition-all duration-300"
+          >
+            <MessageCircle className="h-6 w-6 sm:h-7 sm:w-7" />
+          </Button>
+          {/* پیش‌نمایش پیام نصب PWA */}
+          {canShowPWAInstallMessage && (
+            <div className="absolute -top-2 -right-2 bg-purple-600 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center shadow-lg animate-pulse border-2 border-white">
+              <Smartphone className="h-3 w-3" />
+            </div>
+          )}
+        </div>
       </div>
     );
   }
@@ -184,16 +257,48 @@ export default function SupportWidget({ className = '' }: SupportWidgetProps) {
                       className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`max-w-[80%] rounded-lg px-3 py-2 ${
+                        className={`max-w-[85%] rounded-lg px-3 py-2 ${
                           message.type === 'user'
                             ? 'bg-blue-600 text-white'
+                            : message.isPWAMessage
+                            ? 'bg-gradient-to-br from-purple-50 to-blue-50 border-2 border-purple-200'
                             : 'bg-gray-100 text-gray-900'
                         }`}
                       >
                         <div className="flex items-start gap-2">
                           {message.type === 'ai' && <Bot className="h-4 w-4 mt-0.5 flex-shrink-0" />}
                           {message.type === 'user' && <User className="h-4 w-4 mt-0.5 flex-shrink-0" />}
-                          <div className="text-sm">{message.content}</div>
+                          <div className="flex-1">
+                            <div className="text-sm whitespace-pre-line">{message.content}</div>
+                            {/* دکمه نصب و راهنمایی برای پیام PWA */}
+                            {message.isPWAMessage && (
+                              <div className="mt-3 space-y-2 pt-2 border-t border-purple-200">
+                                <div className="text-xs text-gray-600 mb-2">
+                                  {getPWAInstallInstructions()}
+                                </div>
+                                <div className="flex gap-2">
+                                  {(isInstallable || browserInfo?.isAndroid || browserInfo?.isDesktop) && (
+                                    <Button
+                                      onClick={handlePWAInstall}
+                                      size="sm"
+                                      className="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-xs"
+                                    >
+                                      <Download className="h-3 w-3 ml-1" />
+                                      نصب اپلیکیشن
+                                    </Button>
+                                  )}
+                                  <Button
+                                    onClick={dismissInstallMessage}
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-xs"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>

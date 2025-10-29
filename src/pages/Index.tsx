@@ -4,7 +4,6 @@ import ScientificContent from "@/components/ScientificContent";
 import Portfolio from "@/components/Portfolio";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
-import PWAInstallBanner from "@/components/PWAInstallBanner";
 
 const Index = () => {
   return (
@@ -15,7 +14,6 @@ const Index = () => {
       <Portfolio />
       <Contact />
       <Footer />
-      <PWAInstallBanner />
     </div>
   );
 };
