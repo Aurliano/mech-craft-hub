@@ -14,8 +14,8 @@ import { useContractorWorkshops, useCreateContractorWorkshop, useCheckContractor
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useToast } from '@/hooks/use-toast';
-import MachineSelector from '@/components/MachineSelector';
-import { SelectedMachine } from '@/data/machines';
+import CapabilityMachineSelector from '@/components/CapabilityMachineSelector';
+import { SelectedMachine } from '@/data/capabilitiesAndMachines';
 import MultiFileUpload from '@/components/MultiFileUpload';
 
 interface UploadedFile {
@@ -63,22 +63,30 @@ const MyWorkshops = () => {
     postal_address: '',
     manager_name: '',
     manager_phone: '',
+    workers_count: '',
     capabilities: [] as string[],
     machines: [] as SelectedMachine[]
   });
   
+  const [selectedCapabilities, setSelectedCapabilities] = useState<string[]>([]);
+  
   // State for uploaded documents
   const [uploadedDocuments, setUploadedDocuments] = useState<Record<string, UploadedFile[]>>({});
 
-  // Manufacturing processes list
-  const manufacturingProcesses = [
-    'تراشکاری',
-    'فرزکاری', 
-    'جوشکاری',
-    'پوشش دهی',
-    'سنگ زنی',
-    'نمونه سازی',
-    'فرآیند های متالوژی'
+  // Manufacturing capabilities list (using IDs from capabilities data)
+  const manufacturingCapabilities = [
+    { id: 'turning_milling', name: 'تراشکاری و فرزکاری' },
+    { id: 'drilling_tapping', name: 'سوراخکاری و قلاویز زنی' },
+    { id: 'grinding', name: 'سنگ زنی' },
+    { id: 'cutting', name: 'برش کاری' },
+    { id: 'sheet_metal', name: 'شیت متال' },
+    { id: 'gear_cutting', name: 'دنده زنی' },
+    { id: 'welding', name: 'جوشکاری' },
+    { id: 'edm', name: 'اسپارگ' },
+    { id: 'tool_grinding', name: 'ابزار سازی' },
+    { id: 'coating', name: 'پوشش دهی' },
+    { id: 'molding', name: 'قالب سازی' },
+    { id: 'heat_treatment', name: 'عملیات حرارتی' }
   ];
 
   // Iranian provinces
@@ -109,7 +117,7 @@ const MyWorkshops = () => {
   const handleCreateWorkshop = async () => {
     if (!newWorkshop.name.trim() || !newWorkshop.address.trim() || !newWorkshop.province || 
         !newWorkshop.city || !newWorkshop.postal_address.trim() || !newWorkshop.manager_name.trim() || 
-        !newWorkshop.manager_phone.trim()) {
+        !newWorkshop.manager_phone.trim() || selectedCapabilities.length === 0) {
       toast({
         title: "خطا",
         description: "لطفاً تمام فیلدهای اجباری را پر کنید.",
@@ -132,12 +140,35 @@ const MyWorkshops = () => {
       return;
     }
 
+    // Validate document upload limits (100MB total per section)
+    const maxTotalSizeBytes = 100 * 1024 * 1024; // 100MB
+    let hasExceededLimit = false;
+    Object.entries(uploadedDocuments).forEach(([fieldKey, files]) => {
+      const totalSize = files
+        .filter(file => file.status === 'completed')
+        .reduce((sum, file) => sum + (file.size || 0), 0);
+      if (totalSize > maxTotalSizeBytes) {
+        hasExceededLimit = true;
+      }
+    });
+    
+    if (hasExceededLimit) {
+      toast({
+        title: "خطا",
+        description: "حجم مجموع فایل‌های هر بخش نباید از 100 مگابایت بیشتر باشد.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       // Convert SelectedMachine to the format expected by backend
       const machinesForBackend = newWorkshop.machines.map(machine => ({
-        name: machine.machineType.name,
+        name: machine.isCustom ? machine.customName : machine.machineType.name,
         precision: machine.description,
-        quantity: machine.quantity
+        quantity: machine.quantity,
+        capability_id: machine.capabilityId,
+        is_custom: machine.isCustom || false
       }));
 
       // Collect uploaded documents
@@ -150,20 +181,23 @@ const MyWorkshops = () => {
 
       const workshopData = {
         ...newWorkshop,
+        capabilities: selectedCapabilities,
         machines: machinesForBackend,
-        documents: documentsData
+        documents: documentsData,
+        workers_count: newWorkshop.workers_count ? parseInt(newWorkshop.workers_count) : undefined
       };
 
       await createWorkshopMutation.mutateAsync(workshopData);
       toast({
         title: "موفق",
-        description: "کارگاه با موفقیت ثبت شد.",
+        description: "کارگاه با موفقیت ثبت شد و در انتظار تایید مدیر است. پس از تایید، کارگاه شما در صفحه ساخت و تولید نمایش داده خواهد شد.",
       });
       setNewWorkshop({ 
         name: '', address: '', description: '', province: '', city: '', 
         postal_address: '', manager_name: '', manager_phone: '', 
-        capabilities: [], machines: [] 
+        workers_count: '', capabilities: [], machines: [] 
       });
+      setSelectedCapabilities([]);
       setUploadedDocuments({});
       setIsCreateDialogOpen(false);
       refetch();
@@ -176,16 +210,15 @@ const MyWorkshops = () => {
     }
   };
 
-  const handleCapabilityChange = (capability: string, checked: boolean) => {
+  const handleCapabilityChange = (capabilityId: string, checked: boolean) => {
     if (checked) {
-      setNewWorkshop(prev => ({
-        ...prev,
-        capabilities: [...prev.capabilities, capability]
-      }));
+      setSelectedCapabilities(prev => [...prev, capabilityId]);
     } else {
+      setSelectedCapabilities(prev => prev.filter(c => c !== capabilityId));
+      // Remove machines from unchecked capability
       setNewWorkshop(prev => ({
         ...prev,
-        capabilities: prev.capabilities.filter(c => c !== capability)
+        machines: prev.machines.filter(m => m.capabilityId !== capabilityId)
       }));
     }
   };
@@ -322,39 +355,22 @@ const MyWorkshops = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="address">تعداد پرسنل </Label>
-                    <Textarea
-                      id="WorkersCount"
-                      value={newWorkshop.address}
-                      onChange={(e) => setNewWorkshop({ ...newWorkshop, address: e.target.value })}
+                    <Label htmlFor="workers_count">تعداد پرسنل</Label>
+                    <Input
+                      id="workers_count"
+                      type="number"
+                      min="0"
+                      value={newWorkshop.workers_count}
+                      onChange={(e) => setNewWorkshop({ ...newWorkshop, workers_count: e.target.value })}
                       placeholder="تعداد پرسنل رسمی"
-                      rows={1}
                     />
                   </div>
                 </div>
 
-                {/* Capabilities */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">توانمندی‌ها</h3>
-                  <p className="text-sm text-muted-foreground">کدام فرآیندهای ساخت در این کارگاه انجام می‌شود؟</p>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    {manufacturingProcesses.map((process) => (
-                      <div key={process} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={process}
-                          checked={newWorkshop.capabilities.includes(process)}
-                          onCheckedChange={(checked) => handleCapabilityChange(process, checked as boolean)}
-                        />
-                        <Label htmlFor={process} className="text-sm">
-                          {process}
-                        </Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Machines */}
-                <MachineSelector
+                {/* Capabilities and Machines */}
+                <CapabilityMachineSelector
+                  selectedCapabilities={selectedCapabilities}
+                  onCapabilityChange={handleCapabilityChange}
                   selectedMachines={newWorkshop.machines}
                   onMachinesChange={handleMachinesChange}
                 />
@@ -388,9 +404,10 @@ const MyWorkshops = () => {
                         fieldKey="workshop_license"
                         label="مجوز کارگاه"
                         isRequired={false}
-                        helpText="مجوز فعالیت کارگاه از سازمان‌های مربوطه"
-                        maxFiles={0}
-                        maxSizePerFile={50}
+                        helpText="مجوز فعالیت کارگاه از سازمان‌های مربوطه (حداکثر 100MB مجموع)"
+                        maxFiles={999}
+                        maxSizePerFile={100}
+                        maxTotalSize={100}
                         acceptedTypes={['.pdf', '.jpg', '.jpeg', '.png']}
                         onFilesChange={(files) => handleDocumentsChange('workshop_license', files)}
                         uploadedFiles={uploadedDocuments['workshop_license'] || []}
@@ -404,9 +421,10 @@ const MyWorkshops = () => {
                         fieldKey="machine_certificates"
                         label="گواهی‌های دستگاه‌ها"
                         isRequired={false}
-                        helpText="گواهی‌های کالیبراسیون و استاندارد دستگاه‌ها"
-                        maxFiles={0}
-                        maxSizePerFile={50}
+                        helpText="گواهی‌های کالیبراسیون و استاندارد دستگاه‌ها (حداکثر 100MB مجموع)"
+                        maxFiles={999}
+                        maxSizePerFile={100}
+                        maxTotalSize={100}
                         acceptedTypes={['.pdf', '.jpg', '.jpeg', '.png']}
                         onFilesChange={(files) => handleDocumentsChange('machine_certificates', files)}
                         uploadedFiles={uploadedDocuments['machine_certificates'] || []}
@@ -420,9 +438,10 @@ const MyWorkshops = () => {
                         fieldKey="quality_certificates"
                         label="گواهی‌های کیفیت"
                         isRequired={false}
-                        helpText="گواهی‌های ISO، استانداردهای کیفیت و مدیریت"
-                        maxFiles={0}
-                        maxSizePerFile={50}
+                        helpText="گواهی‌های ISO، استانداردهای کیفیت و مدیریت (حداکثر 100MB مجموع)"
+                        maxFiles={999}
+                        maxSizePerFile={100}
+                        maxTotalSize={100}
                         acceptedTypes={['.pdf', '.jpg', '.jpeg', '.png']}
                         onFilesChange={(files) => handleDocumentsChange('quality_certificates', files)}
                         uploadedFiles={uploadedDocuments['quality_certificates'] || []}
@@ -436,9 +455,10 @@ const MyWorkshops = () => {
                         fieldKey="insurance_documents"
                         label="مدارک بیمه"
                         isRequired={false}
-                        helpText="بیمه مسئولیت مدنی و بیمه کارگاه"
-                        maxFiles={0}
-                        maxSizePerFile={50}
+                        helpText="بیمه مسئولیت مدنی و بیمه کارگاه (حداکثر 100MB مجموع)"
+                        maxFiles={999}
+                        maxSizePerFile={100}
+                        maxTotalSize={100}
                         acceptedTypes={['.pdf', '.jpg', '.jpeg', '.png']}
                         onFilesChange={(files) => handleDocumentsChange('insurance_documents', files)}
                         uploadedFiles={uploadedDocuments['insurance_documents'] || []}

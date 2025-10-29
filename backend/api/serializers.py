@@ -43,11 +43,11 @@ class WorkshopSerializer(serializers.ModelSerializer):
     class Meta:
         model = Workshop
         fields = [
-            'id', 'name', 'address', 'description', 'owner', 'is_active', 'created_at',
-            'province', 'city', 'postal_address', 'manager_name', 'manager_phone',
-            'capabilities', 'machines'
+            'id', 'name', 'address', 'description', 'owner', 'is_active', 'is_approved', 'created_at',
+            'province', 'city', 'postal_address', 'manager_name', 'manager_phone', 'workers_count',
+            'capabilities', 'machines', 'documents', 'workshop_class', 'code'
         ]
-        read_only_fields = ['id', 'owner', 'created_at']
+        read_only_fields = ['id', 'owner', 'created_at', 'code', 'is_approved', 'workshop_class']
 
 
 

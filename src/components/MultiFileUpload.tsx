@@ -27,6 +27,7 @@ interface MultiFileUploadProps {
   helpText?: string;
   maxFiles?: number;
   maxSizePerFile?: number; // in MB
+  maxTotalSize?: number; // in MB - maximum total size for all files combined
   acceptedTypes?: string[];
   onFilesChange: (files: UploadedFile[]) => void;
   uploadedFiles?: UploadedFile[];
@@ -42,6 +43,7 @@ const MultiFileUpload: React.FC<MultiFileUploadProps> = ({
   helpText,
   maxFiles = 10,
   maxSizePerFile = 200, // 200 MB
+  maxTotalSize, // Maximum total size for all files in MB
   acceptedTypes = [],
   onFilesChange,
   uploadedFiles = [],
@@ -144,13 +146,32 @@ const MultiFileUpload: React.FC<MultiFileUploadProps> = ({
     const fileArray = Array.from(files);
     
     // Check if adding these files would exceed maxFiles limit
-    if (uploadedFiles.length + fileArray.length > maxFiles) {
+    if (maxFiles > 0 && uploadedFiles.length + fileArray.length > maxFiles) {
       toast({
         title: "تعداد فایل‌ها بیش از حد مجاز",
         description: `حداکثر ${maxFiles} فایل می‌توانید آپلود کنید.`,
         variant: "destructive"
       });
       return;
+    }
+
+    // Check total size limit if specified
+    if (maxTotalSize) {
+      const existingTotalSize = uploadedFiles
+        .filter(file => file.status === 'completed')
+        .reduce((sum, file) => sum + (file.size || 0), 0);
+      
+      const newFilesTotalSize = fileArray.reduce((sum, file) => sum + file.size, 0);
+      const maxTotalSizeBytes = maxTotalSize * 1024 * 1024; // Convert MB to bytes
+      
+      if (existingTotalSize + newFilesTotalSize > maxTotalSizeBytes) {
+        toast({
+          title: "حجم فایل‌ها بیش از حد مجاز",
+          description: `حجم مجموع فایل‌های این بخش نباید از ${maxTotalSize} مگابایت بیشتر باشد.`,
+          variant: "destructive"
+        });
+        return;
+      }
     }
 
     setIsUploading(true);
@@ -208,7 +229,7 @@ const MultiFileUpload: React.FC<MultiFileUploadProps> = ({
     }
 
     setIsUploading(false);
-  }, [uploadedFiles, maxFiles, disabled, onFilesChange, toast, fieldKey, uploadSingleFile]);
+  }, [uploadedFiles, maxFiles, maxTotalSize, disabled, onFilesChange, toast, fieldKey, uploadSingleFile]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -325,7 +346,8 @@ const MultiFileUpload: React.FC<MultiFileUploadProps> = ({
               فایل‌ها را اینجا بکشید یا کلیک کنید
             </p>
             <p className="text-xs text-muted-foreground">
-              حداکثر {maxFiles} فایل، هر فایل حداکثر {maxSizePerFile} MB
+              {maxFiles > 0 ? `حداکثر ${maxFiles} فایل` : 'تعداد نامحدود فایل'}، هر فایل حداکثر {maxSizePerFile} MB
+              {maxTotalSize && `، حجم مجموع حداکثر ${maxTotalSize} MB`}
             </p>
             {acceptedTypes.length > 0 && (
               <p className="text-xs text-muted-foreground">

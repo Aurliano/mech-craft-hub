@@ -379,8 +379,17 @@ class Workshop(models.Model):
     postal_address = models.TextField(blank=True)
     manager_name = models.CharField(max_length=200, blank=True)
     manager_phone = models.CharField(max_length=20, blank=True)
-    capabilities = models.JSONField(default=list, blank=True)  # List of manufacturing processes
-    machines = models.JSONField(default=list, blank=True)  # List of machines with precision
+    workers_count = models.IntegerField(default=0, blank=True, help_text='Number of formal workers')
+    capabilities = models.JSONField(default=list, blank=True)  # List of capability IDs
+    machines = models.JSONField(default=list, blank=True)  # List of machines with precision, capability_id, is_custom
+    documents = models.JSONField(default=dict, blank=True)  # Dictionary of document field keys to file URLs
+    workshop_class = models.CharField(
+        max_length=10,
+        blank=True,
+        choices=[('A', 'Class A'), ('B', 'Class B'), ('C', 'Class C')],
+        help_text='Workshop classification (A, B, or C) - set by admin during approval'
+    )
+    is_approved = models.BooleanField(default=False, help_text='Whether the workshop is approved by admin')
     
     def save(self, *args, **kwargs):
         # Generate workshop code if not already set

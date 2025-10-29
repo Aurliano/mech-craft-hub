@@ -2608,10 +2608,16 @@ def create_contractor_proposal(request):
 
 @api_view(["GET"])
 def get_public_workshops(request):
-    """Get all active workshops (public endpoint for manufacturing page)"""
+    """Get all active and approved workshops (public endpoint for manufacturing page)"""
     from .models import Workshop
     
-    workshops = Workshop.objects.filter(is_active=True)
+    # Only return approved workshops
+    workshops = Workshop.objects.filter(is_active=True, is_approved=True)
+    
+    # Optional filter by workshop class
+    workshop_class = request.query_params.get('class', None)
+    if workshop_class and workshop_class in ['A', 'B', 'C']:
+        workshops = workshops.filter(workshop_class=workshop_class)
     
     workshops_data = []
     for workshop in workshops:
@@ -2624,6 +2630,8 @@ def get_public_workshops(request):
             'machines': workshop.machines,
             'province': workshop.province,
             'city': workshop.city,
+            'workshop_class': workshop.workshop_class,
+            'workers_count': workshop.workers_count,
             # NOTE: No sensitive data like address, postal_address, manager info
         })
     
@@ -2665,7 +2673,11 @@ def get_contractor_workshops(request):
             'manager_phone': workshop.manager_phone,
             'capabilities': workshop.capabilities,
             'machines': workshop.machines,
-            'status': 'فعال' if workshop.is_active else 'غیرفعال',
+            'documents': workshop.documents,
+            'workers_count': workshop.workers_count,
+            'is_approved': workshop.is_approved,
+            'workshop_class': workshop.workshop_class,
+            'status': 'تایید شده' if workshop.is_approved else ('در انتظار تایید' if workshop.is_active else 'غیرفعال'),
             'created_at': workshop.created_at
         })
     
@@ -2717,9 +2729,12 @@ def create_contractor_workshop(request):
         postal_address=data['postal_address'],
         manager_name=data['manager_name'],
         manager_phone=data['manager_phone'],
+        workers_count=data.get('workers_count', 0),
         capabilities=data.get('capabilities', []),
         machines=data.get('machines', []),
-        owner=request.user
+        documents=data.get('documents', {}),
+        owner=request.user,
+        is_approved=False  # New workshops need admin approval
     )
     
     return Response({
