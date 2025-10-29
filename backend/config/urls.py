@@ -112,6 +112,20 @@ def icon_view(request, path):
         response = HttpResponse(content, content_type='image/png')
         response['Cache-Control'] = 'public, max-age=31536000'
         return response
+    # Fallback: redirect legacy /icons/* requests to available primary icons
+    # Map common legacy sizes to apple-touch-icon or 192/512 fallbacks
+    fallback_map = {
+        'icon-144x144.png': '/favicon/apple-touch-icon.png',
+        'icon-152x152.png': '/favicon/apple-touch-icon.png',
+        'icon-128x128.png': '/favicon/apple-touch-icon.png',
+        'icon-192x192.png': '/favicon/web-app-manifest-192x192.png',
+        'icon-512x512.png': '/favicon/web-app-manifest-512x512.png',
+    }
+    target = fallback_map.get(path)
+    if target:
+        resp = HttpResponse(status=302)
+        resp['Location'] = target
+        return resp
     return HttpResponse(status=404)
 
 def screenshot_view(request, path):

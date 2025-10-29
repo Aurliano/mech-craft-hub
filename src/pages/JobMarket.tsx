@@ -71,48 +71,11 @@ const JobMarket = () => {
                 </Link>
               )}
               <Link to="/login">
-                <Button size="lg" variant="outline" className="text-lg px-8 border-white text-white hover:bg-white hover:text-blue-600">
+                <Button size="lg" variant="outline" className="text-lg px-8 border-white text-black hover:bg-white hover:text-blue-600">
                   ورود
                 </Button>
               </Link>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="border-2 border-blue-200">
-              <CardContent className="pt-6 text-center">
-                <Briefcase className="w-12 h-12 mx-auto mb-4 text-blue-600" />
-                <div className="text-4xl font-bold text-blue-600 mb-2">
-                  {activeOpportunities.length}
-                </div>
-                <p className="text-gray-600">فرصت شغلی فعال</p>
-              </CardContent>
-            </Card>
-            
-            <Card className="border-2 border-green-200">
-              <CardContent className="pt-6 text-center">
-                <Users className="w-12 h-12 mx-auto mb-4 text-green-600" />
-                <div className="text-4xl font-bold text-green-600 mb-2">
-                  {activeWorkers.length}
-                </div>
-                <p className="text-gray-600">نیروی متخصص در دسترس</p>
-              </CardContent>
-            </Card>
-            
-            <Card className="border-2 border-purple-200">
-              <CardContent className="pt-6 text-center">
-                <TrendingUp className="w-12 h-12 mx-auto mb-4 text-purple-600" />
-                <div className="text-4xl font-bold text-purple-600 mb-2">
-                  95%
-                </div>
-                <p className="text-gray-600">نرخ موفقیت قرارداد</p>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </section>
@@ -336,7 +299,7 @@ const JobMarket = () => {
               </Button>
             </Link>
             <Link to="/contractor-register">
-              <Button size="lg" variant="outline" className="text-lg px-8 border-white text-white hover:bg-white hover:text-indigo-600">
+              <Button size="lg" variant="outline" className="text-lg px-8 border-white text-black hover:bg-white hover:text-indigo-600">
                 <Building className="w-5 h-5 ml-2" />
                 ثبت‌نام کارگاه
               </Button>
