@@ -139,6 +139,25 @@ def screenshot_view(request, path):
         return response
     return HttpResponse(status=404)
 
+def favicon_dir_view(request, path):
+    """Serve files under /favicon/* from public/favicon"""
+    fpath = os.path.join(settings.BASE_DIR.parent, 'public', 'favicon', path)
+    if os.path.exists(fpath):
+        # Set content type by extension
+        if path.endswith('.png'):
+            ctype = 'image/png'
+        elif path.endswith('.svg'):
+            ctype = 'image/svg+xml'
+        elif path.endswith('.ico'):
+            ctype = 'image/x-icon'
+        elif path.endswith('.webmanifest') or path.endswith('.json'):
+            ctype = 'application/manifest+json; charset=utf-8'
+        else:
+            ctype = 'application/octet-stream'
+        with open(fpath, 'rb') as f:
+            return HttpResponse(f.read(), content_type=ctype)
+    return HttpResponse(status=404)
+
 def pwa_debug_script_view(request, filename):
     """Serve PWA debug/test scripts"""
     script_path = os.path.join(settings.BASE_DIR.parent, 'dist', filename)
@@ -162,6 +181,7 @@ urlpatterns = [
     path('pwa-test.js', lambda r: pwa_debug_script_view(r, 'pwa-test.js'), name='pwa_test'),
     path('mime-test.js', lambda r: pwa_debug_script_view(r, 'mime-test.js'), name='mime_test'),
     path('icons/<path:path>', icon_view, name='icons'),
+    path('favicon/<path:path>', favicon_dir_view, name='favicon_dir'),
     path('screenshots/<path:path>', screenshot_view, name='screenshots'),
     
     # SEO endpoints
@@ -176,7 +196,7 @@ urlpatterns = [
     path('api/', include('api.urls')),
     
     # SPA fallback (exclude api/admin/static/media/assets/robots/sitemap/pwa files)
-    re_path(r'^(?!api/|admin/|static/|media/|assets/|icons/|screenshots/|robots\.txt|sitemap\.xml|service-worker\.js|manifest\.json|pwa-debug\.js|pwa-test\.js|mime-test\.js).*$', home_view, name='spa_fallback'),
+    re_path(r'^(?!api/|admin/|static/|media/|assets/|icons/|favicon/|screenshots/|robots\.txt|sitemap\.xml|service-worker\.js|manifest\.json|pwa-debug\.js|pwa-test\.js|mime-test\.js).*$', home_view, name='spa_fallback'),
 ]
 
 # Serve media files
