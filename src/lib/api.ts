@@ -1045,9 +1045,12 @@ export async function checkContractorManufacturingService() {
   }
 }
 
-export async function getPublicWorkshops() {
+export async function getPublicWorkshops(workshopClass?: 'A' | 'B' | 'C') {
   try {
-    return await fetchJson<unknown[]>('/v1/public/workshops/');
+    const url = workshopClass 
+      ? `/v1/public/workshops/?class=${workshopClass}`
+      : '/v1/public/workshops/';
+    return await fetchJson<unknown[]>(url);
   } catch (error) {
     console.error('Error fetching public workshops:', error);
     return [];

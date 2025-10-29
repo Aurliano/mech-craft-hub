@@ -38,6 +38,7 @@ import { useContractorWorkshops } from "@/hooks/useAuth";
 import TermsAndConditions from "@/components/TermsAndConditions";
 import { getPublicWorkshops } from "@/lib/api";
 import MultiFileUpload from "@/components/MultiFileUpload";
+import { CAPABILITIES_WITH_MACHINES } from "@/data/capabilitiesAndMachines";
 // import DocumentationSection from "@/components/DocumentationSection";
 
 // Workshop type definition
@@ -133,12 +134,13 @@ const Manufacturing = () => {
   const [publicWorkshops, setPublicWorkshops] = useState<Workshop[]>([]);
   const [isLoadingPublicWorkshops, setIsLoadingPublicWorkshops] = useState(false);
   
-  // Load public workshops on mount
+  // Load public workshops on mount and when filter changes
   React.useEffect(() => {
     const loadPublicWorkshops = async () => {
       setIsLoadingPublicWorkshops(true);
       try {
-        const workshops = await getPublicWorkshops();
+        const workshopClass = selectedWorkshopClass === '' ? undefined : selectedWorkshopClass as 'A' | 'B' | 'C';
+        const workshops = await getPublicWorkshops(workshopClass);
         setPublicWorkshops(Array.isArray(workshops) ? (workshops as Workshop[]) : []);
       } catch (error) {
         console.error('Error loading public workshops:', error);
@@ -148,7 +150,7 @@ const Manufacturing = () => {
       }
     };
     loadPublicWorkshops();
-  }, []);
+  }, [selectedWorkshopClass]);
   
   // Get workshops from API (for contractors)
   const { data: apiWorkshops, isLoading: isLoadingWorkshops } = useContractorWorkshops();
@@ -176,13 +178,8 @@ const Manufacturing = () => {
     return Object.values(options).some(value => value === true);
   };
 
-  // Use API workshops if available, otherwise fallback to mock data
-  // Normalize query data defensively in case of unexpected shapes
-  const normalizedApiWorkshops: Workshop[] = Array.isArray(apiWorkshops)
-    ? (apiWorkshops as unknown as Workshop[])
-    : [];
-  // Use public workshops if available, otherwise fallback to mock data
-  const displayWorkshops = publicWorkshops.length > 0 ? publicWorkshops : workshops;
+  // Use public workshops from API (real data from approved workshops)
+  const displayWorkshops = publicWorkshops;
 
   const handleOrderClick = (id: number | string) => {
     // No longer selecting a specific workshop for submission; keep scroll only
@@ -317,89 +314,104 @@ const Manufacturing = () => {
 
           {/* Workshop Class Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-            <Card className="border-2 border-gold-500 hover:shadow-lg transition-all">
-              <CardHeader className="bg-gradient-to-br from-yellow-50 to-yellow-100">
-                <CardTitle className="text-2xl text-center text-yellow-800">کلاس A</CardTitle>
-                <CardDescription className="text-center text-yellow-700">
-                  کارگاه‌های با بالاترین استانداردها
+            <Card className="border-2 border-yellow-500 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <CardHeader className="bg-gradient-to-br from-yellow-50 via-yellow-100 to-yellow-50 pb-4">
+                <div className="flex items-center justify-center mb-2">
+                  <Badge className="bg-yellow-500 text-white text-lg px-4 py-1">کلاس A</Badge>
+                </div>
+                <CardTitle className="text-xl text-center text-yellow-800 font-bold">کارگاه‌های کلاس A</CardTitle>
+                <CardDescription className="text-center text-yellow-700 mt-2">
+                  کارگاه‌های با بالاترین استانداردها و کیفیت
                 </CardDescription>
               </CardHeader>
-              <CardContent className="pt-6">
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">مدارک کامل:</span>
-                    <Badge variant="default" className="bg-green-500">+20 امتیاز</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">تعداد دستگاه:</span>
-                    <span className="font-medium">10+ دستگاه</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">تعداد پرسنل:</span>
-                    <span className="font-medium">20+ نفر</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">امتیاز در سایت:</span>
-                    <span className="font-medium">عالی</span>
-                  </div>
+              <CardContent className="pt-6 space-y-3">
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">دستگاه‌های متنوع و دقیق</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">پرسنل با تجربه و متخصص</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">کیفیت تضمینی و استاندارد</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">توانایی تولید انبوه</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">گواهی‌های کیفیت و مجوز تایید شده</span>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-2 border-blue-500 hover:shadow-lg transition-all">
-              <CardHeader className="bg-gradient-to-br from-blue-50 to-blue-100">
-                <CardTitle className="text-2xl text-center text-blue-800">کلاس B</CardTitle>
-                <CardDescription className="text-center text-blue-700">
-                  کارگاه‌های با استانداردهای خوب
+            <Card className="border-2 border-blue-500 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <CardHeader className="bg-gradient-to-br from-blue-50 via-blue-100 to-blue-50 pb-4">
+                <div className="flex items-center justify-center mb-2">
+                  <Badge className="bg-blue-500 text-white text-lg px-4 py-1">کلاس B</Badge>
+                </div>
+                <CardTitle className="text-xl text-center text-blue-800 font-bold">کارگاه‌های کلاس B</CardTitle>
+                <CardDescription className="text-center text-blue-700 mt-2">
+                  کارگاه‌های با استانداردهای خوب و قابل اعتماد
                 </CardDescription>
               </CardHeader>
-              <CardContent className="pt-6">
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">مدارک کامل:</span>
-                    <Badge variant="default" className="bg-green-500">+10 امتیاز</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">تعداد دستگاه:</span>
-                    <span className="font-medium">5-10 دستگاه</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">تعداد پرسنل:</span>
-                    <span className="font-medium">10-20 نفر</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">امتیاز در سایت:</span>
-                    <span className="font-medium">خوب</span>
-                  </div>
+              <CardContent className="pt-6 space-y-3">
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">دستگاه‌های تخصصی و مناسب</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">پرسنل آموزش دیده و ماهر</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">کیفیت مناسب برای پروژه‌های متوسط</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">توانایی تولید در حجم متوسط</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-5 w-5 text-blue-500 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">مجوزها و استانداردهای لازم</span>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-2 border-gray-400 hover:shadow-lg transition-all">
-              <CardHeader className="bg-gradient-to-br from-gray-50 to-gray-100">
-                <CardTitle className="text-2xl text-center text-gray-800">کلاس C</CardTitle>
-                <CardDescription className="text-center text-gray-700">
-                  کارگاه‌های در حال توسعه
+            <Card className="border-2 border-gray-400 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <CardHeader className="bg-gradient-to-br from-gray-50 via-gray-100 to-gray-50 pb-4">
+                <div className="flex items-center justify-center mb-2">
+                  <Badge className="bg-gray-500 text-white text-lg px-4 py-1">کلاس C</Badge>
+                </div>
+                <CardTitle className="text-xl text-center text-gray-800 font-bold">کارگاه‌های کلاس C</CardTitle>
+                <CardDescription className="text-center text-gray-700 mt-2">
+                  کارگاه‌های در حال توسعه و تکمیل امکانات
                 </CardDescription>
               </CardHeader>
-              <CardContent className="pt-6">
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">مدارک کامل:</span>
-                    <Badge variant="secondary">+5 امتیاز</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">تعداد دستگاه:</span>
-                    <span className="font-medium">کمتر از 5</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">تعداد پرسنل:</span>
-                    <span className="font-medium">کمتر از 10</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">امتیاز در سایت:</span>
-                    <span className="font-medium">متوسط</span>
-                  </div>
+              <CardContent className="pt-6 space-y-3">
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-5 w-5 text-gray-600 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">دستگاه‌های پایه برای تولید</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-5 w-5 text-gray-600 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">پرسنل محدود اما فعال</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-5 w-5 text-gray-600 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">مناسب برای پروژه‌های کوچک و نمونه‌سازی</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-5 w-5 text-gray-600 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">قابلیت تولید در حجم پایین تا متوسط</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="h-5 w-5 text-gray-600 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">در حال تکمیل مدارک و استانداردها</span>
                 </div>
               </CardContent>
             </Card>
@@ -411,7 +423,7 @@ const Manufacturing = () => {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
               <p className="text-muted-foreground">در حال بارگذاری کارگاه‌ها...</p>
             </div>
-          ) : displayWorkshops.length > 0 ? (
+          ) : publicWorkshops.length > 0 ? (
             <div>
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-bold">لیست کارگاه‌ها</h3>
@@ -448,9 +460,7 @@ const Manufacturing = () => {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
-                {displayWorkshops
-                  .filter(workshop => !selectedWorkshopClass || (workshop as { workshop_class?: string }).workshop_class === selectedWorkshopClass)
-                  .map((workshop) => {
+                {publicWorkshops.map((workshop) => {
                     const workshopWithClass = workshop as { workshop_class?: string; workers_count?: number };
                     const getClassBadgeColor = (cls?: string) => {
                       if (cls === 'A') return 'bg-yellow-500';
@@ -488,11 +498,17 @@ const Manufacturing = () => {
                               توانمندی ها
                             </h4>
                             <div className="flex flex-wrap gap-2">
-                              {(workshop.capabilities || []).slice(0, 3).map((capability, index) => (
-                                <Badge key={index} variant="secondary" className="text-xs">
-                                  {typeof capability === 'string' ? capability : 'توانمندی'}
-                                </Badge>
-                              ))}
+                              {(workshop.capabilities || []).slice(0, 3).map((capabilityId, index) => {
+                                const capability = typeof capabilityId === 'string' 
+                                  ? CAPABILITIES_WITH_MACHINES.find(c => c.id === capabilityId)
+                                  : null;
+                                const displayName = capability ? capability.name : (typeof capabilityId === 'string' ? capabilityId : 'توانمندی');
+                                return (
+                                  <Badge key={index} variant="secondary" className="text-xs">
+                                    {displayName}
+                                  </Badge>
+                                );
+                              })}
                               {(workshop.capabilities || []).length > 3 && (
                                 <Badge variant="outline" className="text-xs">
                                   +{(workshop.capabilities || []).length - 3} بیشتر

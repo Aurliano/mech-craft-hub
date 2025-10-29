@@ -2621,19 +2621,25 @@ def get_public_workshops(request):
     
     workshops_data = []
     for workshop in workshops:
-        workshops_data.append({
+        workshop_data = {
             'id': workshop.id,
             'code': workshop.code,
             'name': workshop.name,
             'description': workshop.description,
             'capabilities': workshop.capabilities,
             'machines': workshop.machines,
-            'province': workshop.province,
-            'city': workshop.city,
-            'workshop_class': workshop.workshop_class,
-            'workers_count': workshop.workers_count,
+            'province': getattr(workshop, 'province', None),
+            'city': getattr(workshop, 'city', None),
             # NOTE: No sensitive data like address, postal_address, manager info
-        })
+        }
+        
+        # Add optional fields if they exist
+        if hasattr(workshop, 'workshop_class'):
+            workshop_data['workshop_class'] = workshop.workshop_class
+        if hasattr(workshop, 'workers_count'):
+            workshop_data['workers_count'] = workshop.workers_count
+            
+        workshops_data.append(workshop_data)
     
     return Response(workshops_data)
 
