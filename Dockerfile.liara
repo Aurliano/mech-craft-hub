@@ -50,12 +50,10 @@ RUN mkdir -p /app/logs /app/staticfiles \
 RUN rm -rf /app/backend/staticfiles/icons /app/backend/staticfiles/screenshots /app/backend/staticfiles/service-worker.js /app/backend/staticfiles/manifest.json /app/backend/staticfiles/web.config /app/backend/staticfiles/pwa-debug.js /app/backend/staticfiles/pwa-test.js /app/backend/staticfiles/mime-test.js || true
 
 # Ensure PWA files are accessible and fix permissions
-RUN chmod 644 /app/dist/service-worker.js && \
-    chmod 644 /app/dist/manifest.json && \
-    chmod 644 /app/dist/web.config && \
-    chmod -R 644 /app/dist/icons/ && \
-    chmod -R 644 /app/dist/screenshots/ && \
-    chown -R appuser:appuser /app/dist/
+RUN chmod 644 /app/dist/service-worker.js || true && \
+    chmod 644 /app/dist/manifest.json || true && \
+    chmod 644 /app/dist/web.config || true && \
+    chown -R appuser:appuser /app/dist/ || true
 
 # Switch to app user
 USER appuser

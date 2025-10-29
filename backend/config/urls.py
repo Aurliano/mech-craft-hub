@@ -75,8 +75,10 @@ def asset_view(request, path):
     return HttpResponse(status=404)
 
 def service_worker_view(request):
-    """Serve service worker"""
-    sw_path = os.path.join(settings.BASE_DIR.parent, 'dist', 'service-worker.js')
+    """Serve service worker from public (fallback to dist)"""
+    sw_path = os.path.join(settings.BASE_DIR.parent, 'public', 'service-worker.js')
+    if not os.path.exists(sw_path):
+        sw_path = os.path.join(settings.BASE_DIR.parent, 'dist', 'service-worker.js')
     if os.path.exists(sw_path):
         with open(sw_path, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -89,8 +91,10 @@ def service_worker_view(request):
     return HttpResponse(status=404)
 
 def manifest_view(request):
-    """Serve manifest.json"""
-    manifest_path = os.path.join(settings.BASE_DIR.parent, 'dist', 'manifest.json')
+    """Serve manifest.json from public (fallback to dist)"""
+    manifest_path = os.path.join(settings.BASE_DIR.parent, 'public', 'manifest.json')
+    if not os.path.exists(manifest_path):
+        manifest_path = os.path.join(settings.BASE_DIR.parent, 'dist', 'manifest.json')
     if os.path.exists(manifest_path):
         with open(manifest_path, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -100,8 +104,8 @@ def manifest_view(request):
     return HttpResponse(status=404)
 
 def icon_view(request, path):
-    """Serve PWA icons"""
-    icon_path = os.path.join(settings.BASE_DIR.parent, 'dist', 'icons', path)
+    """Serve PWA icons from public/favicon"""
+    icon_path = os.path.join(settings.BASE_DIR.parent, 'public', 'favicon', path)
     if os.path.exists(icon_path):
         with open(icon_path, 'rb') as f:
             content = f.read()
@@ -111,8 +115,8 @@ def icon_view(request, path):
     return HttpResponse(status=404)
 
 def screenshot_view(request, path):
-    """Serve PWA screenshots"""
-    screenshot_path = os.path.join(settings.BASE_DIR.parent, 'dist', 'screenshots', path)
+    """Serve PWA screenshots from public/screenshots"""
+    screenshot_path = os.path.join(settings.BASE_DIR.parent, 'public', 'screenshots', path)
     if os.path.exists(screenshot_path):
         with open(screenshot_path, 'rb') as f:
             content = f.read()
