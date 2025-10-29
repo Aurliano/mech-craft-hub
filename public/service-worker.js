@@ -1,6 +1,6 @@
 // Service Worker for SaydaTech PWA
-const CACHE_NAME = 'saydatech-pwa-v2';
-const STATIC_CACHE_URLS = [
+const CACHE_NAME = 'saydatech-pwa-v3';
+const OFFLINE_CACHE_URLS = [
   '/',
   '/manifest.json'
 ];
@@ -12,7 +12,7 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Service Worker: Cache opened');
-        return cache.addAll(STATIC_CACHE_URLS);
+        return cache.addAll(OFFLINE_CACHE_URLS);
       })
       .catch((error) => {
         console.error('Service Worker: Cache addAll failed', error);

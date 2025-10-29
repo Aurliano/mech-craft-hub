@@ -10,6 +10,8 @@ import RoleBasedRoute from "@/components/RoleBasedRoute";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import SupportWidget from "@/components/SupportWidget";
 import PWAInstallGuide from "@/components/PWAInstallGuide";
+import SplashIntro from "@/components/SplashIntro";
+import RouteSplash from "@/components/RouteSplash";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -197,6 +199,8 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
               </BrowserRouter>
+              <SplashIntro />
+              <RouteSplash />
               <SupportWidget />
               <PWAInstallGuide />
               <Toaster />

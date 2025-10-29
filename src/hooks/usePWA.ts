@@ -17,6 +17,7 @@ interface PWAState {
     isSafari: boolean;
     isFirefox: boolean;
     isEdge: boolean;
+    isSamsungInternet: boolean;
     isDesktop: boolean;
   } | null;
 }
@@ -40,6 +41,7 @@ export const usePWA = () => {
       isSafari: /Safari/.test(userAgent) && !/Chrome/.test(userAgent),
       isFirefox: /Firefox/.test(userAgent),
       isEdge: /Edge/.test(userAgent),
+      isSamsungInternet: /SamsungBrowser/.test(userAgent),
       isDesktop: !(/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent))
     };
 
