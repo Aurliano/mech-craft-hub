@@ -81,7 +81,14 @@ const OrderPreview: React.FC<OrderPreviewProps> = ({
     }
     
     if (field.type === 'date') {
-      return value ? new Date(value).toLocaleDateString('fa-IR') : '';
+      if (
+        typeof value === 'string' ||
+        typeof value === 'number' ||
+        value instanceof Date
+      ) {
+        return new Date(value).toLocaleDateString('fa-IR');
+      }
+      return '';
     }
     
     return value || '';
@@ -296,7 +303,7 @@ const OrderPreview: React.FC<OrderPreviewProps> = ({
                           <span className={cn(
                             isFilled ? "text-gray-900" : "text-gray-500 italic"
                           )}>
-                            {isFilled ? value : 'پر نشده'}
+                            {isFilled ? (typeof value === 'string' || typeof value === 'number' ? String(value) : value == null ? '' : JSON.stringify(value)) : 'پر نشده'}
                           </span>
                         </div>
                       )}

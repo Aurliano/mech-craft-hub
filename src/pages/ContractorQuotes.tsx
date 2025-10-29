@@ -34,11 +34,11 @@ interface ServiceField {
   name: string;
   field_key: string;
   type: string;
-  options?: any;
+  options?: { value: string; label: string }[] | string[];
   is_required: boolean;
   order: number;
   help_text?: string;
-  validation_rules?: any;
+  validation_rules?: Record<string, unknown>;
 }
 
 interface OrderItem {
@@ -46,7 +46,7 @@ interface OrderItem {
   service?: Service;
   service_fields?: ServiceField[];
   needs_documentation: boolean;
-  field_values: any;
+  field_values: Record<string, unknown>;
   status: string;
   price?: number;
   estimated_delivery?: string;
@@ -77,6 +77,7 @@ interface Quote {
       name: string;
     };
     order: {
+      id?: string;
       order_number: string;
     };
   };
@@ -175,11 +176,20 @@ const ContractorQuotes = () => {
 
     try {
       // Convert empty strings to undefined for optional fields (so serializer uses defaults)
-      const formData: any = {
+      const formData: {
+        order_item: string;
+        contractor: string;
+        price: number;
+        documentation_price?: number;
+        delivery_days: number;
+        documentation_days?: number;
+        notes?: string;
+      } = {
         order_item: quoteForm.order_item,
+        contractor: (user as unknown as { id?: string })?.id || '',
         price: parseFloat(quoteForm.price),
         delivery_days: parseInt(quoteForm.delivery_days),
-        notes: quoteForm.notes
+        notes: quoteForm.notes || undefined,
       };
       
       // Only include documentation fields if they have values
@@ -203,16 +213,17 @@ const ContractorQuotes = () => {
       });
       // Refresh quotes after successful creation
       fetchQuotes();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating quote:', error);
       
       // Handle specific error cases
-      if (error.message && error.message.includes('شما قبلاً برای این آیتم سفارش پیشنهاد ارسال کرده‌اید')) {
+      const errMsg = (error as { message?: string })?.message || '';
+      if (errMsg.includes('شما قبلاً برای این آیتم سفارش پیشنهاد ارسال کرده‌اید')) {
         setError('شما قبلاً برای این آیتم سفارش پیشنهاد ارسال کرده‌اید. لطفاً پیشنهاد قبلی خود را ویرایش کنید.');
-      } else if (error.message && error.message.includes('UNIQUE constraint failed')) {
+      } else if (errMsg.includes('UNIQUE constraint failed')) {
         setError('شما قبلاً برای این آیتم سفارش پیشنهاد ارسال کرده‌اید.');
       } else {
-        setError(error.message || 'خطا در ایجاد پیشنهاد');
+        setError(errMsg || 'خطا در ایجاد پیشنهاد');
       }
     } finally {
       setIsSubmitting(false);
@@ -537,7 +548,7 @@ const ContractorQuotes = () => {
                                         <div className="mt-4">
                                           <span className="font-medium text-gray-600 mb-2 block">فیلدهای سرویس:</span>
                                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                            {item.service_fields.map((field: any) => (
+                                            {item.service_fields.map((field: ServiceField) => (
                                               <div key={field.id} className="p-3 bg-white rounded border">
                                                 <div className="flex items-center justify-between mb-2">
                                                   <span className="font-medium text-gray-700">{field.name}</span>

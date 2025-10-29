@@ -12,7 +12,7 @@ export function useOrderSubmission() {
 
   const submitOrder = async (orderData: {
     serviceId: string;
-    fieldValues: Record<string, any>;
+    fieldValues: Record<string, unknown>;
     needsDocumentation?: boolean;
     notes?: string;
     documentationOptions?: Record<string, boolean>;
@@ -54,8 +54,8 @@ export function useOrderSubmission() {
       }, 2000); // Increased delay to show toast
       
       return result;
-    } catch (err: any) {
-      const errorMessage = err.message || 'خطا در ثبت سفارش';
+    } catch (err: unknown) {
+      const errorMessage = (err as { message?: string })?.message || 'خطا در ثبت سفارش';
       setError(errorMessage);
       
       // Show error toast

@@ -76,7 +76,12 @@ const AdminTicketManagement = () => {
     try {
       setLoading(true);
       const response = await api.getTickets();
-      setTickets(Array.isArray(response) ? response : response.results || []);
+      const list: Ticket[] = Array.isArray(response)
+        ? (response as unknown as Ticket[])
+        : (Array.isArray((response as { results?: unknown[] })?.results)
+            ? ((response as { results: unknown[] }).results as unknown as Ticket[])
+            : []);
+      setTickets(list);
     } catch (error) {
       console.error('Error fetching tickets:', error);
       toast({
@@ -92,7 +97,12 @@ const AdminTicketManagement = () => {
   const fetchViolations = async () => {
     try {
       const response = await api.getContentFilterLogs();
-      setViolations(Array.isArray(response) ? response : response.results || []);
+      const list: ContentViolation[] = Array.isArray(response)
+        ? (response as unknown as ContentViolation[])
+        : (Array.isArray((response as { results?: unknown[] })?.results)
+            ? ((response as { results: unknown[] }).results as unknown as ContentViolation[])
+            : []);
+      setViolations(list);
     } catch (error) {
       console.error('Error fetching violations:', error);
       toast({

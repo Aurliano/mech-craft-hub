@@ -526,6 +526,8 @@ export function DynamicServiceForm({
           onNeedsDocumentationChange={onNeedsDocumentationChange}
           documentationOptions={documentationOptions}
           onDocumentationOptionChange={onDocumentationOptionChange}
+          documentationNotes={notes}
+          onDocumentationNotesChange={onNotesChange}
           serviceSupportsDocumentation={true}
         />
 

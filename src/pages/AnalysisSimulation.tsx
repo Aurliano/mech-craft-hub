@@ -154,7 +154,7 @@ const AnalysisSimulation = () => {
       {analysisServiceId && (
         <ServiceTabs
           serviceId={analysisServiceId}
-          onFieldChange={(tabId, fieldKey, value) => updateTabField(tabId, fieldKey, value)}
+          onFieldChange={(tabId, fieldKey, value) => updateTabField(tabId, fieldKey, value as unknown as string | number | boolean | string[] | File | null | Record<string, unknown>)}
           fieldValues={tabFieldValues}
           needsDocumentation={needsDocumentation}
           onNeedsDocumentationChange={setNeedsDocumentation}

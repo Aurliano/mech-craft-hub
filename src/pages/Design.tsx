@@ -49,11 +49,11 @@ const Design = () => {
     if (typeof updater === 'function') {
       const newData = updater(formData);
       Object.keys(newData).forEach(key => {
-        updateField(key, newData[key]);
+        updateField(key, newData[key] as unknown as string | number | boolean | string[] | File | null | Record<string, unknown>);
       });
     } else {
       Object.keys(updater).forEach(key => {
-        updateField(key, updater[key]);
+        updateField(key, (updater as Record<string, unknown>)[key] as unknown as string | number | boolean | string[] | File | null | Record<string, unknown>);
       });
     }
   };
@@ -146,7 +146,7 @@ const Design = () => {
             <DynamicServiceForm
               serviceId="550e8400-e29b-41d4-a716-446655440002"
               formData={formData}
-              onFieldChange={updateField}
+              onFieldChange={(fieldKey, value) => updateField(fieldKey, value as unknown as string | number | boolean | string[] | File | null | Record<string, unknown>)}
               needsDocumentation={needsDocumentation}
               onNeedsDocumentationChange={setNeedsDocumentation}
               documentationOptions={documentationOptions}

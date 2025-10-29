@@ -33,9 +33,11 @@ const UserDropdown: React.FC<UserDropdownProps> = ({
   const isMobile = useIsMobile();
   const { data: manufacturingCheck } = useCheckContractorManufacturingService();
   
-  // Check if user is admin
-  const roleName = user ? (typeof (user as any)?.role === 'object' ? (user as any)?.role?.name : (user as any)?.role) : undefined;
-  const isAdmin = roleName === 'admin' || (user as unknown as Record<string, unknown>)?.['is_staff'] === true || (user as unknown as Record<string, unknown>)?.['is_superuser'] === true;
+  // Check if user is admin without using any
+  type PossibleRole = string | { name?: string } | undefined;
+  const role: PossibleRole = (user as unknown as { role?: PossibleRole })?.role;
+  const roleName = typeof role === 'string' ? role : role?.name;
+  const isAdmin = roleName === 'admin' || (user as unknown as { is_staff?: boolean })?.is_staff === true || (user as unknown as { is_superuser?: boolean })?.is_superuser === true;
 
   return (
     <DropdownMenu>
