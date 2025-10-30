@@ -26,6 +26,12 @@ from config.sitemaps import sitemaps
 from config.seo_views import robots_txt
 import os
 
+# Safe import for contractor check-manufacturing endpoint to prevent runtime issues
+try:
+    from api.views import check_contractor_manufacturing_service as _check_contractor_manufacturing_service
+except Exception:
+    _check_contractor_manufacturing_service = None
+
 def home_view(request, path=None):
     # Serve the frontend index.html for all routes
     frontend_path = os.path.join(settings.BASE_DIR.parent, 'dist', 'index.html')
@@ -194,12 +200,21 @@ urlpatterns = [
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/', include('api.urls')),
-    # Explicit alias for contractor check-manufacturing (safe direct import)
-    path('api/v1/contractor/check-manufacturing/', __import__('api.views', fromlist=['check_contractor_manufacturing_service']).check_contractor_manufacturing_service, name='check_contractor_manufacturing_service_alias'),
     
     # SPA fallback (exclude api/admin/static/media/assets/robots/sitemap/pwa files)
     re_path(r'^(?!api/|admin/|static/|media/|assets/|icons/|favicon/|screenshots/|robots\.txt|sitemap\.xml|service-worker\.js|manifest\.json|pwa-debug\.js|pwa-test\.js|mime-test\.js).*$', home_view, name='spa_fallback'),
 ]
+
+# Add explicit alias only if the view import succeeded
+if _check_contractor_manufacturing_service:
+    urlpatterns.insert(
+        -1,
+        path(
+            'api/v1/contractor/check-manufacturing/',
+            _check_contractor_manufacturing_service,
+            name='check_contractor_manufacturing_service_alias'
+        )
+    )
 
 # Serve media files
 if settings.DEBUG:

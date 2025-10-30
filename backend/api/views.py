@@ -1156,6 +1156,13 @@ class UploadView(APIView):
 
         if not saved_ok:
             return Response({'detail': 'Upload failed', 'error': error_msg}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        # Validate/normalize context_id to UUID if provided; otherwise generate one
+        raw_context_id = request.data.get('context_id')
+        try:
+            context_uuid = uuid4() if not raw_context_id else uuid4() if len(str(raw_context_id)) == 0 else __import__('uuid').UUID(str(raw_context_id))
+        except Exception:
+            context_uuid = uuid4()
+
         media = MediaFile.objects.create(
             filename=new_name,
             original_name=file_obj.name,
@@ -1164,7 +1171,7 @@ class UploadView(APIView):
             file_size=file_obj.size,
             uploaded_by=request.user,
             context=request.data.get('context', 'other'),
-            context_id=request.data.get('context_id') or uuid4(),
+            context_id=context_uuid,
         )
         # Build URL; if MEDIA_URL not usable in current env, return relative path
         url = f"{settings.MEDIA_URL}{rel_path}" if getattr(settings, 'MEDIA_URL', None) else rel_path
