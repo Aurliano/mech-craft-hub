@@ -29,45 +29,37 @@ def migrate_forwards(apps, schema_editor):
     
     # Only add fields if they don't exist
     if not column_exists('is_approved'):
-        schema_editor.add_field(
-            Workshop,
-            models.BooleanField(default=False, help_text='Whether the workshop is approved by admin'),
-            name='is_approved'
-        )
+        field = models.BooleanField(default=False, help_text='Whether the workshop is approved by admin')
+        field.set_attributes_from_name('is_approved')
+        schema_editor.add_field(Workshop, field)
     
     if not column_exists('workshop_class'):
-        schema_editor.add_field(
-            Workshop,
-            models.CharField(
-                blank=True,
-                choices=[('A', 'Class A'), ('B', 'Class B'), ('C', 'Class C')],
-                help_text='Workshop classification (A, B, or C) - set by admin during approval',
-                max_length=10
-            ),
-            name='workshop_class'
+        field = models.CharField(
+            blank=True,
+            choices=[('A', 'Class A'), ('B', 'Class B'), ('C', 'Class C')],
+            help_text='Workshop classification (A, B, or C) - set by admin during approval',
+            max_length=10
         )
+        field.set_attributes_from_name('workshop_class')
+        schema_editor.add_field(Workshop, field)
     
     if not column_exists('documents'):
-        schema_editor.add_field(
-            Workshop,
-            models.JSONField(
-                blank=True,
-                default=dict,
-                help_text='Dictionary of document field keys to file URLs'
-            ),
-            name='documents'
+        field = models.JSONField(
+            blank=True,
+            default=dict,
+            help_text='Dictionary of document field keys to file URLs'
         )
+        field.set_attributes_from_name('documents')
+        schema_editor.add_field(Workshop, field)
     
     if not column_exists('workers_count'):
-        schema_editor.add_field(
-            Workshop,
-            models.IntegerField(
-                blank=True,
-                default=0,
-                help_text='Number of formal workers in the workshop'
-            ),
-            name='workers_count'
+        field = models.IntegerField(
+            blank=True,
+            default=0,
+            help_text='Number of formal workers in the workshop'
         )
+        field.set_attributes_from_name('workers_count')
+        schema_editor.add_field(Workshop, field)
 
 
 def migrate_backwards(apps, schema_editor):
