@@ -45,6 +45,7 @@ import BlogPostPage from "./pages/BlogPostPage";
 import FileManager from "./pages/FileManager";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminWorkforceManagement from "./pages/AdminWorkforceManagement";
+import AdminWorkshopManagement from "./pages/AdminWorkshopManagement";
 import NotFound from "./pages/NotFound";
 import JobMarket from "./pages/JobMarket";
 import JobSeekerRegistration from "./pages/JobSeekerRegistration";
@@ -168,6 +169,11 @@ const App = () => (
               <Route path="/admin/workforce-management" element={
                 <RoleBasedRoute allowedRoles={['admin']}>
                   <AdminWorkforceManagement />
+                </RoleBasedRoute>
+              } />
+              <Route path="/admin/workshop-management" element={
+                <RoleBasedRoute allowedRoles={['admin']}>
+                  <AdminWorkshopManagement />
                 </RoleBasedRoute>
               } />
               

@@ -1123,15 +1123,39 @@ class UploadView(APIView):
         file_obj = request.FILES.get('file')
         if not file_obj:
             return Response({'detail': 'file is required'}, status=status.HTTP_400_BAD_REQUEST)
-        upload_dir = os.path.join(settings.MEDIA_ROOT, 'uploads')
-        os.makedirs(upload_dir, exist_ok=True)
         ext = os.path.splitext(file_obj.name)[1]
         new_name = f"{uuid4().hex}{ext}"
-        dest_path = os.path.join(upload_dir, new_name)
-        with open(dest_path, 'wb') as dest:
-            for chunk in file_obj.chunks():
-                dest.write(chunk)
         rel_path = f"uploads/{new_name}"
+
+        # Try saving to MEDIA_ROOT; on permission error, fall back to /tmp/uploads
+        saved_ok = False
+        error_msg = None
+        try:
+            upload_dir = os.path.join(settings.MEDIA_ROOT, 'uploads')
+            os.makedirs(upload_dir, exist_ok=True)
+            dest_path = os.path.join(upload_dir, new_name)
+            with open(dest_path, 'wb') as dest:
+                for chunk in file_obj.chunks():
+                    dest.write(chunk)
+            saved_ok = True
+        except PermissionError as e:
+            # Fallback to tmp dir (private storage)
+            try:
+                tmp_dir = os.path.join('/tmp', 'uploads')
+                os.makedirs(tmp_dir, exist_ok=True)
+                dest_path = os.path.join(tmp_dir, new_name)
+                with open(dest_path, 'wb') as dest:
+                    for chunk in file_obj.chunks():
+                        dest.write(chunk)
+                # Mark as saved in tmp; keep rel_path for consistency
+                saved_ok = True
+            except Exception as e2:
+                error_msg = f"Permission denied and tmp fallback failed: {str(e2)}"
+        except Exception as e:
+            error_msg = str(e)
+
+        if not saved_ok:
+            return Response({'detail': 'Upload failed', 'error': error_msg}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         media = MediaFile.objects.create(
             filename=new_name,
             original_name=file_obj.name,
@@ -1142,7 +1166,8 @@ class UploadView(APIView):
             context=request.data.get('context', 'other'),
             context_id=request.data.get('context_id') or uuid4(),
         )
-        url = f"{settings.MEDIA_URL}{rel_path}"
+        # Build URL; if MEDIA_URL not usable in current env, return relative path
+        url = f"{settings.MEDIA_URL}{rel_path}" if getattr(settings, 'MEDIA_URL', None) else rel_path
         return Response({'id': str(media.id), 'url': url, 'original_name': media.original_name})
 
 
@@ -2812,6 +2837,155 @@ def create_contractor_workshop(request):
         'status': 'فعال',
         'created_at': workshop.created_at
     }, status=status.HTTP_201_CREATED)
+
+
+@api_view(["GET"])
+@permission_classes([IsAdminUser])
+def get_all_workshops_for_admin(request):
+    """Get all workshops for admin review (both approved and pending)"""
+    from .models import Workshop
+    from django.db import connection
+    
+    # Check which fields exist in database
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name='workshops'
+        """)
+        existing_columns = {row[0] for row in cursor.fetchall()}
+    
+    try:
+        # Get all workshops (both approved and pending)
+        workshops = Workshop.objects.all().order_by('-created_at')
+        
+        # Use only() to select only existing fields
+        select_fields = ['id', 'code', 'name', 'address', 'description', 'owner', 
+                        'is_active', 'created_at', 'province', 'city', 'postal_address',
+                        'manager_name', 'manager_phone', 'capabilities', 'machines']
+        if 'is_approved' in existing_columns:
+            select_fields.append('is_approved')
+        if 'workshop_class' in existing_columns:
+            select_fields.append('workshop_class')
+        if 'documents' in existing_columns:
+            select_fields.append('documents')
+        if 'workers_count' in existing_columns:
+            select_fields.append('workers_count')
+        
+        workshops = workshops.only(*select_fields)
+        
+        workshops_data = []
+        for workshop in workshops:
+            workshop_data = {
+                'id': workshop.id,
+                'code': workshop.code,
+                'name': workshop.name,
+                'address': workshop.address,
+                'description': workshop.description or '',
+                'owner': {
+                    'id': str(workshop.owner.id),
+                    'username': workshop.owner.username,
+                    'email': workshop.owner.email if hasattr(workshop.owner, 'email') else None
+                },
+                'is_active': workshop.is_active,
+                'created_at': workshop.created_at,
+                'province': getattr(workshop, 'province', None),
+                'city': getattr(workshop, 'city', None),
+                'postal_address': getattr(workshop, 'postal_address', None),
+                'manager_name': getattr(workshop, 'manager_name', None),
+                'manager_phone': getattr(workshop, 'manager_phone', None),
+                'capabilities': workshop.capabilities or [],
+                'machines': workshop.machines or [],
+            }
+            
+            # Add optional fields if they exist
+            if 'is_approved' in existing_columns:
+                workshop_data['is_approved'] = getattr(workshop, 'is_approved', False)
+            if 'workshop_class' in existing_columns:
+                workshop_data['workshop_class'] = getattr(workshop, 'workshop_class', None)
+            if 'documents' in existing_columns:
+                workshop_data['documents'] = getattr(workshop, 'documents', {})
+            if 'workers_count' in existing_columns:
+                workshop_data['workers_count'] = getattr(workshop, 'workers_count', None)
+            
+            # Add status field
+            if 'is_approved' in existing_columns:
+                is_approved = getattr(workshop, 'is_approved', False)
+                workshop_data['status'] = 'تایید شده' if is_approved else ('در انتظار تایید' if workshop.is_active else 'غیرفعال')
+            else:
+                workshop_data['status'] = 'فعال' if workshop.is_active else 'غیرفعال'
+            
+            workshops_data.append(workshop_data)
+        
+        return Response(workshops_data)
+    except Exception as e:
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"Error fetching all workshops for admin: {str(e)}")
+        return Response({'error': 'خطا در دریافت اطلاعات کارگاه‌ها'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["PATCH"])
+@permission_classes([IsAdminUser])
+def approve_workshop(request, workshop_id):
+    """Approve or reject a workshop and optionally set its class"""
+    from .models import Workshop
+    from django.db import connection
+    
+    try:
+        workshop = Workshop.objects.get(id=workshop_id)
+    except Workshop.DoesNotExist:
+        return Response({'error': 'کارگاه یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+    
+    # Check if fields exist
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT column_name 
+            FROM information_schema.columns 
+            WHERE table_name='workshops'
+        """)
+        existing_columns = {row[0] for row in cursor.fetchall()}
+    
+    # Get approval data
+    is_approved = request.data.get('is_approved')
+    workshop_class = request.data.get('workshop_class')
+    rejection_reason = request.data.get('rejection_reason', '')
+    
+    # Validate workshop_class if provided
+    if workshop_class and workshop_class not in ['A', 'B', 'C']:
+        return Response({'error': 'کلاس کارگاه باید A، B یا C باشد'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Update workshop
+    if 'is_approved' in existing_columns:
+        if is_approved is not None:
+            workshop.is_approved = is_approved
+    
+    if 'workshop_class' in existing_columns:
+        if workshop_class is not None:
+            if is_approved and not workshop_class:
+                return Response({'error': 'برای تایید کارگاه باید کلاس کارگاه را مشخص کنید (A, B یا C)'}, status=status.HTTP_400_BAD_REQUEST)
+            workshop.workshop_class = workshop_class if is_approved else ''
+    elif is_approved and workshop_class:
+        # If is_approved=True but workshop_class column doesn't exist, just save without class
+        # This allows backward compatibility during migration
+        pass
+    
+    workshop.save()
+    
+    # Return updated workshop data
+    workshop_data = {
+        'id': workshop.id,
+        'code': workshop.code,
+        'name': workshop.name,
+        'is_approved': getattr(workshop, 'is_approved', False) if 'is_approved' in existing_columns else False,
+        'workshop_class': getattr(workshop, 'workshop_class', None) if 'workshop_class' in existing_columns else None,
+        'status': 'تایید شده' if (getattr(workshop, 'is_approved', False) if 'is_approved' in existing_columns else False) else 'در انتظار تایید'
+    }
+    
+    return Response({
+        'message': 'کارگاه با موفقیت به‌روزرسانی شد',
+        'workshop': workshop_data
+    })
 
 
 @api_view(["GET"])

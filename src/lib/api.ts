@@ -1057,6 +1057,32 @@ export async function getPublicWorkshops(workshopClass?: 'A' | 'B' | 'C') {
   }
 }
 
+// Admin Workshop Management API
+export async function getAllWorkshopsForAdmin() {
+  try {
+    return await fetchJson<unknown[]>('/v1/admin/workshops/');
+  } catch (error) {
+    console.error('Error fetching all workshops for admin:', error);
+    throw error;
+  }
+}
+
+export async function approveWorkshop(workshopId: string, data: {
+  is_approved: boolean;
+  workshop_class?: 'A' | 'B' | 'C';
+  rejection_reason?: string;
+}) {
+  try {
+    return await fetchJson<{ message: string; workshop: unknown }>(`/v1/admin/workshops/${workshopId}/approve/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  } catch (error) {
+    console.error('Error approving workshop:', error);
+    throw error;
+  }
+}
+
 // Turnstile API Functions
 export async function loginWithTurnstile(params: { 
   username: string; 

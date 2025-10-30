@@ -27,6 +27,7 @@ const AdminDashboard: React.FC = () => {
   }
 
   const actions = [
+    { title: 'مدیریت کارگاه‌ها', desc: 'تایید و مدیریت کارگاه‌های ثبت شده', icon: Grid, to: '/admin/workshop-management' },
     { title: 'مدیریت فایل‌های علمی', desc: 'آپلود/حذف و دسته‌بندی منابع علمی', icon: FileText, to: '/admin/file-manager' },
     { title: 'مدیریت نیروی کار', desc: 'مدیریت نیروهای متخصص و تطابق‌ها', icon: Users, to: '/admin/workforce-management' },
     { title: 'برآورد متریال', desc: 'ثبت/ویرایش برآورد هزینه متریال سفارشات ساخت', icon: Layers, to: '/orders' },
