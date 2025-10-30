@@ -115,6 +115,16 @@ const MyWorkshops = () => {
   }
 
   const handleCreateWorkshop = async () => {
+    // Debug: log required fields to detect which is empty in production
+    console.debug('[CreateWorkshop] required fields', {
+      name: newWorkshop.name,
+      address: newWorkshop.address,
+      province: newWorkshop.province,
+      city: newWorkshop.city,
+      postal_address: newWorkshop.postal_address,
+      manager_name: newWorkshop.manager_name,
+      manager_phone: newWorkshop.manager_phone,
+    });
     // Validate only backend-required fields
     if (
       !newWorkshop.name.trim() ||
@@ -134,18 +144,10 @@ const MyWorkshops = () => {
     }
 
     // Validate machines
-    // Machines are optional; only validate provided ones
-    const invalidMachines = newWorkshop.machines.filter(machine => 
-      !machine.description.trim() || machine.quantity < 1
+    // Machines are optional; silently drop incomplete rows instead of blocking submission
+    const validMachines = newWorkshop.machines.filter(machine => 
+      machine.description.trim() && machine.quantity >= 1
     );
-    if (invalidMachines.length > 0) {
-      toast({
-        title: "خطا",
-        description: "لطفاً توضیحات و تعداد دستگاه‌های افزوده‌شده را کامل کنید یا آن‌ها را حذف کنید.",
-        variant: "destructive",
-      });
-      return;
-    }
 
     // Validate document upload limits (100MB total per section)
     const maxTotalSizeBytes = 100 * 1024 * 1024; // 100MB
@@ -170,7 +172,7 @@ const MyWorkshops = () => {
 
     try {
       // Convert SelectedMachine to the format expected by backend
-      const machinesForBackend = newWorkshop.machines.map(machine => ({
+      const machinesForBackend = validMachines.map(machine => ({
         name: machine.isCustom ? machine.customName : machine.machineType.name,
         precision: machine.description,
         quantity: machine.quantity,
