@@ -62,7 +62,7 @@ ENV DJANGO_SETTINGS_MODULE=config.settings_ultra_simple
 ENV STATIC_ROOT=/app/staticfiles_runtime
 
 # Health check (give app enough time to start after migrate/collectstatic)
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=180s --retries=10 \
     CMD curl -f http://localhost:80/health/ || exit 1
 
 # Expose port
