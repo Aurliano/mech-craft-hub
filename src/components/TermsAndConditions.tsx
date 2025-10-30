@@ -79,9 +79,8 @@ const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({
 - در صورت عدم توافق، مراجع قضایی صالح رسیدگی خواهند کرد
 
 9. تماس
-- برای سوالات: support@mechcraft.com
-- تلفن: 021-12345678
-- آدرس: تهران، خیابان ولیعصر
+- برای سوالات: info@saydatech.ir
+- تلفن: 09373497128
 
 تاریخ آخرین بروزرسانی: ${new Date().toLocaleDateString('fa-IR')}
   `;
