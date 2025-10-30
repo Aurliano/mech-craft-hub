@@ -325,6 +325,15 @@ const MyWorkshops = () => {
                 {/* Address Information */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">اطلاعات آدرس</h3>
+                  <div>
+                    <Label htmlFor="address">نشانی دقیق کارگاه *</Label>
+                    <Input
+                      id="address"
+                      value={newWorkshop.address}
+                      onChange={(e) => setNewWorkshop({ ...newWorkshop, address: e.target.value })}
+                      placeholder="مثال: تهران، خیابان ... کوچه ... پلاک ..."
+                    />
+                  </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="province">استان *</Label>
