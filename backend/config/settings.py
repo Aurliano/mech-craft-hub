@@ -168,7 +168,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+# Use a runtime-writable directory to avoid permission issues in containers
+STATIC_ROOT = os.getenv('STATIC_ROOT', os.path.join(BASE_DIR.parent, 'staticfiles_runtime'))
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
     # Add frontend build directory for Liara (excluding PWA files)

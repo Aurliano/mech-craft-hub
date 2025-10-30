@@ -40,6 +40,6 @@ ALLOWED_FILE_TYPES = [
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# تنظیمات static files
+# تنظیمات static files - استفاده از مسیر قابل‌نوشتن در زمان اجرا
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = os.getenv('STATIC_ROOT', os.path.join(BASE_DIR.parent, 'staticfiles_runtime'))
