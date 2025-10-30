@@ -31,9 +31,9 @@ ENV PYTHONUNBUFFERED=1
 ENV DJANGO_SETTINGS_MODULE=config.settings_ultra_simple
 ENV SECRET_KEY=docker-build-secret
 
-# Set up Django directories and collect static files
+# Set up Django directories (no collectstatic at build time to avoid root-owned files)
 # Create directories for both scientific content and user uploads with proper permissions
-RUN mkdir -p /app/logs /app/staticfiles \
+RUN mkdir -p /app/logs \
     /app/backend/media/scientific-content/books \
     /app/backend/media/scientific-content/documents \
     /app/backend/media/scientific-content/videos \
@@ -42,12 +42,9 @@ RUN mkdir -p /app/logs /app/staticfiles \
     /app/backend/media/user-uploads \
     /app/backend/media/deliveries && \
     chown -R appuser:appuser /app && \
-    chmod -R 755 /app/backend/media && \
-    cd /app/backend && \
-    python manage.py collectstatic --noinput --clear
+    chmod -R 755 /app/backend/media
 
-# Remove any conflicting PWA files from staticfiles to avoid conflicts
-RUN rm -rf /app/backend/staticfiles/icons /app/backend/staticfiles/screenshots /app/backend/staticfiles/service-worker.js /app/backend/staticfiles/manifest.json /app/backend/staticfiles/web.config /app/backend/staticfiles/pwa-debug.js /app/backend/staticfiles/pwa-test.js /app/backend/staticfiles/mime-test.js || true
+# No static cleanup at build time; handled at runtime in writable dir
 
 # Ensure PWA files are accessible and fix permissions
 RUN chmod 644 /app/dist/service-worker.js || true && \
@@ -62,6 +59,7 @@ USER appuser
 ENV PYTHONPATH=/app/backend
 ENV PYTHONUNBUFFERED=1
 ENV DJANGO_SETTINGS_MODULE=config.settings_ultra_simple
+ENV STATIC_ROOT=/app/staticfiles_runtime
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
@@ -73,5 +71,5 @@ EXPOSE 80
 # Working directory for runtime
 WORKDIR /app/backend
 
-# Start command - Run migrations and start gunicorn
-CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py collectstatic --noinput --clear && rm -rf /app/backend/staticfiles/icons /app/backend/staticfiles/screenshots /app/backend/staticfiles/service-worker.js /app/backend/staticfiles/manifest.json /app/backend/staticfiles/web.config /app/backend/staticfiles/pwa-debug.js /app/backend/staticfiles/pwa-test.js /app/backend/staticfiles/mime-test.js || true && exec gunicorn config.wsgi:application --bind 0.0.0.0:80 --workers 3 --timeout 120 --max-requests 1000 --max-requests-jitter 100 --preload"]
+# Start command - prepare writable static dir, collect static, start gunicorn
+CMD ["sh", "-c", "python manage.py migrate --noinput \n&& mkdir -p $STATIC_ROOT \n&& chown -R appuser:appuser $STATIC_ROOT || true \n&& python manage.py collectstatic --noinput --clear \n&& exec gunicorn config.wsgi:application --bind 0.0.0.0:80 --workers 3 --timeout 120 --max-requests 1000 --max-requests-jitter 100 --preload"]
