@@ -529,13 +529,14 @@ def login(request):
         role_names = [role.role.name for role in user_roles if role.role] if user_roles else []
         
         # Determine dashboard URL based on role
+        # Admin must take precedence if user has multiple roles
         dashboard_url = '/'
-        if 'contractor' in role_names:
+        if 'admin' in role_names:
+            dashboard_url = '/admin/dashboard'
+        elif 'contractor' in role_names:
             dashboard_url = '/contractor-dashboard'
         elif 'customer' in role_names:
             dashboard_url = '/dashboard'
-        elif 'admin' in role_names:
-            dashboard_url = '/admin-dashboard'
         
         return Response({
             'success': True,
