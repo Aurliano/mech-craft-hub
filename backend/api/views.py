@@ -2731,22 +2731,7 @@ def get_public_workshops(request):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def get_contractor_workshops(request):
-    """Get workshops owned by the contractor"""
-    # Check if contractor provides manufacturing service
-    from .models import ContractorService, Service
-    try:
-        manufacturing_service = Service.objects.get(id='550e8400-e29b-41d4-a716-446655440003')
-        contractor_manufacturing = ContractorService.objects.filter(
-            contractor=request.user,
-            service=manufacturing_service,
-            is_active=True
-        ).exists()
-        
-        if not contractor_manufacturing:
-            return Response([])
-    except Service.DoesNotExist:
-        return Response([])
-    
+    """Get workshops owned by the contractor (no service prerequisite)."""
     workshops = Workshop.objects.filter(owner=request.user, is_active=True)
     
     workshops_data = []
@@ -2778,36 +2763,23 @@ def get_contractor_workshops(request):
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def create_contractor_workshop(request):
-    """Create a new workshop for the contractor"""
-    # Check if contractor provides manufacturing service
-    from .models import ContractorService, Service
-    try:
-        manufacturing_service = Service.objects.get(id='550e8400-e29b-41d4-a716-446655440003')
-        contractor_manufacturing = ContractorService.objects.filter(
-            contractor=request.user,
-            service=manufacturing_service,
-            is_active=True
-        ).exists()
-        
-        if not contractor_manufacturing:
-            return Response({
-                'error': True,
-                'message': 'شما دسترسی به این بخش را ندارید',
-                'details': 'فقط پیمانکارانی که سرویس ساخت و تولید ارائه می‌دهند می‌توانند کارگاه ثبت کنند'
-            }, status=status.HTTP_403_FORBIDDEN)
-    except Service.DoesNotExist:
+    """Create a new workshop for the contractor (requires contractor role only)."""
+    # Allow only active contractors to create workshops
+    is_contractor = request.user.user_roles.filter(role__name='contractor', is_active=True).exists()
+    if not is_contractor:
         return Response({
             'error': True,
-            'message': 'سرویس ساخت و تولید یافت نشد'
-        }, status=status.HTTP_404_NOT_FOUND)
+            'message': 'شما دسترسی به این بخش را ندارید',
+            'details': 'تنها پیمانکاران می‌توانند کارگاه ثبت کنند'
+        }, status=status.HTTP_403_FORBIDDEN)
     
     data = request.data
     required_fields = ['name', 'address', 'province', 'city', 'postal_address', 'manager_name', 'manager_phone']
     
     for field in required_fields:
-        if field not in data:
+        if field not in data or not str(data.get(field, '')).strip():
             return Response(
-                {'detail': f'فیلد {field} الزامی است'}, 
+                {'error': True, 'message': 'اطلاعات ناقص است', 'details': f'فیلد {field} الزامی است'}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
     
@@ -2998,24 +2970,19 @@ def approve_workshop(request, workshop_id):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def check_contractor_manufacturing_service(request):
-    """Check if contractor provides manufacturing service"""
+    """Return true if the user is an active contractor (no hard dependency on a specific service)."""
     try:
-        manufacturing_service = Service.objects.get(id='550e8400-e29b-41d4-a716-446655440003')
-        contractor_manufacturing = ContractorService.objects.filter(
-            contractor=request.user,
-            service=manufacturing_service,
-            is_active=True
-        ).exists()
-        
+        # User is considered eligible if they have an active contractor role
+        is_contractor = request.user.user_roles.filter(role__name='contractor', is_active=True).exists()
         return Response({
-            'has_manufacturing_service': contractor_manufacturing,
-            'service_name': manufacturing_service.name if contractor_manufacturing else None
-        })
-    except Service.DoesNotExist:
+            'has_manufacturing_service': is_contractor,
+            'service_name': None
+        }, status=status.HTTP_200_OK)
+    except Exception:
         return Response({
             'error': True,
-            'message': 'سرویس ساخت و تولید یافت نشد'
-        }, status=status.HTTP_404_NOT_FOUND)
+            'message': 'خطا در بررسی نقش کاربر'
+        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # Turnstile Statistics and Admin
