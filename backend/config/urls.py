@@ -194,8 +194,8 @@ urlpatterns = [
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/', include('api.urls')),
-    # Explicit alias for contractor check-manufacturing (to avoid Not Found in some deployments)
-    path('api/v1/contractor/check-manufacturing/', __import__('api.views', fromlist=['check_contractor_manufacturing_service']).views.check_contractor_manufacturing_service, name='check_contractor_manufacturing_service_alias'),
+    # Explicit alias for contractor check-manufacturing (safe direct import)
+    path('api/v1/contractor/check-manufacturing/', __import__('api.views', fromlist=['check_contractor_manufacturing_service']).check_contractor_manufacturing_service, name='check_contractor_manufacturing_service_alias'),
     
     # SPA fallback (exclude api/admin/static/media/assets/robots/sitemap/pwa files)
     re_path(r'^(?!api/|admin/|static/|media/|assets/|icons/|favicon/|screenshots/|robots\.txt|sitemap\.xml|service-worker\.js|manifest\.json|pwa-debug\.js|pwa-test\.js|mime-test\.js).*$', home_view, name='spa_fallback'),
