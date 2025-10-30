@@ -25,11 +25,12 @@ from django.conf.urls.static import static
 from config.sitemaps import sitemaps
 from config.seo_views import robots_txt
 import os
-try:
-    # Reuse API health view for root-level healthcheck
-    from api.views import health as api_health_view
-except Exception:
-    api_health_view = None
+def root_health(request):
+    """Lightweight health endpoint used by container healthcheck."""
+    return JsonResponse({
+        'status': 'ok',
+        'app': 'mech-craft-hub',
+    })
 
 # Safe import for contractor check-manufacturing endpoint to prevent runtime issues
 try:
@@ -182,8 +183,7 @@ def pwa_debug_script_view(request, filename):
 
 urlpatterns = [
     # Root-level health endpoint for container healthcheck
-    # The Docker HEALTHCHECK probes /health/
-    *( [path('health/', api_health_view, name='root_health')] if api_health_view else [] ),
+    path('health/', root_health, name='root_health'),
     path('', home_view, name='home'),
     path('favicon.ico', favicon_view, name='favicon'),
     path('assets/<path:path>', asset_view, name='assets'),
