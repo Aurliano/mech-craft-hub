@@ -115,9 +115,16 @@ const MyWorkshops = () => {
   }
 
   const handleCreateWorkshop = async () => {
-    if (!newWorkshop.name.trim() || !newWorkshop.address.trim() || !newWorkshop.province || 
-        !newWorkshop.city || !newWorkshop.postal_address.trim() || !newWorkshop.manager_name.trim() || 
-        !newWorkshop.manager_phone.trim() || selectedCapabilities.length === 0) {
+    // Validate only backend-required fields
+    if (
+      !newWorkshop.name.trim() ||
+      !newWorkshop.address.trim() ||
+      !newWorkshop.province ||
+      !newWorkshop.city ||
+      !newWorkshop.postal_address.trim() ||
+      !newWorkshop.manager_name.trim() ||
+      !newWorkshop.manager_phone.trim()
+    ) {
       toast({
         title: "خطا",
         description: "لطفاً تمام فیلدهای اجباری را پر کنید.",
@@ -127,14 +134,14 @@ const MyWorkshops = () => {
     }
 
     // Validate machines
+    // Machines are optional; only validate provided ones
     const invalidMachines = newWorkshop.machines.filter(machine => 
       !machine.description.trim() || machine.quantity < 1
     );
-    
     if (invalidMachines.length > 0) {
       toast({
         title: "خطا",
-        description: "لطفاً توضیحات و تعداد تمام دستگاه‌ها را وارد کنید.",
+        description: "لطفاً توضیحات و تعداد دستگاه‌های افزوده‌شده را کامل کنید یا آن‌ها را حذف کنید.",
         variant: "destructive",
       });
       return;
