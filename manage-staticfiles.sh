@@ -49,11 +49,6 @@ clean_staticfiles() {
 collect_static() {
     print_status "Collecting static files..."
     
-    # Ensure runtime static dir exists and is writable
-    export STATIC_ROOT=${STATIC_ROOT:-/app/staticfiles_runtime}
-    mkdir -p "$STATIC_ROOT" || true
-    chmod -R u+rwX "$STATIC_ROOT" || true
-    
     cd backend
     python manage.py collectstatic --noinput --clear
     

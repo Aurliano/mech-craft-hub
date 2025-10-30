@@ -25,12 +25,6 @@ from django.conf.urls.static import static
 from config.sitemaps import sitemaps
 from config.seo_views import robots_txt
 import os
-def root_health(request):
-    """Lightweight health endpoint used by container healthcheck."""
-    return JsonResponse({
-        'status': 'ok',
-        'app': 'mech-craft-hub',
-    })
 
 # Safe import for contractor check-manufacturing endpoint to prevent runtime issues
 try:
@@ -182,8 +176,6 @@ def pwa_debug_script_view(request, filename):
     return HttpResponse(status=404)
 
 urlpatterns = [
-    # Root-level health endpoint for container healthcheck
-    path('health/', root_health, name='root_health'),
     path('', home_view, name='home'),
     path('favicon.ico', favicon_view, name='favicon'),
     path('assets/<path:path>', asset_view, name='assets'),
