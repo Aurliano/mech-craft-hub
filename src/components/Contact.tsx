@@ -9,8 +9,8 @@ const Contact = () => {
       icon: Phone,
       title: "تماس تلفنی",
       description: "برای مشاوره رایگان با ما تماس بگیرید",
-      info: "09917064658",
-      action: "tel:+989917064658"
+      info: "09373497128",
+      action: "tel:+989373497128"
     },
     {
       icon: Send,
