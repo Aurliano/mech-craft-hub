@@ -6,7 +6,8 @@ RUN apt-get update && apt-get install -y build-essential libpq-dev && rm -rf /va
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-COPY backend/requirements_liara.txt requirements.txt
+# requirements_liara.txt is at repository root
+COPY requirements_liara.txt requirements.txt
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
