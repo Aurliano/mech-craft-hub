@@ -124,7 +124,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
 # Use a runtime-writable directory to avoid permission issues
-STATIC_ROOT = os.getenv('STATIC_ROOT', os.path.join(BASE_DIR.parent, 'staticfiles_runtime'))
+STATIC_ROOT = os.getenv('STATIC_ROOT', '/tmp/staticfiles_runtime')
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
     os.path.join(BASE_DIR, '..', 'dist'),

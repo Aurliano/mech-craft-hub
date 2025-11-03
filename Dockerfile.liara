@@ -1,77 +1,43 @@
-# Optimized Dockerfile for Liara deployment - No Node.js build
-FROM python:3.11-slim
+# Liara deployment Dockerfile
+FROM python:3.11-slim as builder
 
-# Install system dependencies (no Node.js needed)
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    libpq-dev \
-    curl \
-    && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+RUN apt-get update && apt-get install -y build-essential libpq-dev && rm -rf /var/lib/apt/lists/*
 
-# Create app user
-RUN groupadd -r appuser && useradd -r -g appuser appuser
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 
-# Set working directory
-WORKDIR /app
-
-# Copy requirements first for better caching
-COPY requirements.txt .
-
-# Install Python dependencies
+COPY backend/requirements_liara.txt requirements.txt
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy source code (including pre-built frontend)
+FROM python:3.11-slim
+
+RUN apt-get update && apt-get install -y libpq5 curl && rm -rf /var/lib/apt/lists/* && apt-get clean
+
+# NOTE: run as root to be able to write to mounted disk
+# If you need to drop privileges later, do it after verifying disk permissions
+
+WORKDIR /app
+
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
 COPY . .
 
-# Set environment variables (available at build-time for management commands)
-ENV PYTHONPATH=/app/backend
+# Cleanup
+RUN find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true && \
+    find . -name "*.pyc" -delete 2>/dev/null || true
+
+# Ensure media/static directories exist (the disk will be mounted over /app/backend/media)
+RUN mkdir -p /app/backend/media /app/staticfiles_runtime /tmp/staticfiles_runtime
+
 ENV PYTHONUNBUFFERED=1
 ENV DJANGO_SETTINGS_MODULE=config.settings_ultra_simple
-ENV SECRET_KEY=docker-build-secret
-
-# Set up Django directories and collect static files
-# Create directories for both scientific content and user uploads with proper permissions
-RUN mkdir -p /app/logs /app/staticfiles \
-    /app/backend/media/scientific-content/books \
-    /app/backend/media/scientific-content/documents \
-    /app/backend/media/scientific-content/videos \
-    /app/backend/media/scientific-content/software \
-    /app/backend/media/scientific-content/others \
-    /app/backend/media/user-uploads \
-    /app/backend/media/deliveries && \
-    chown -R appuser:appuser /app && \
-    chmod -R 755 /app/backend/media && \
-    cd /app/backend && \
-    python manage.py collectstatic --noinput --clear
-
-# Remove any conflicting PWA files from staticfiles to avoid conflicts
-RUN rm -rf /app/backend/staticfiles/icons /app/backend/staticfiles/screenshots /app/backend/staticfiles/service-worker.js /app/backend/staticfiles/manifest.json /app/backend/staticfiles/web.config /app/backend/staticfiles/pwa-debug.js /app/backend/staticfiles/pwa-test.js /app/backend/staticfiles/mime-test.js || true
-
-# Ensure PWA files are accessible and fix permissions
-RUN chmod 644 /app/dist/service-worker.js || true && \
-    chmod 644 /app/dist/manifest.json || true && \
-    chmod 644 /app/dist/web.config || true && \
-    chown -R appuser:appuser /app/dist/ || true
-
-# Switch to app user
-USER appuser
-
-# Re-assert runtime environment variables (can be overridden by platform)
 ENV PYTHONPATH=/app/backend
-ENV PYTHONUNBUFFERED=1
-ENV DJANGO_SETTINGS_MODULE=config.settings_ultra_simple
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:80/health/ || exit 1
-
-# Expose port
 EXPOSE 80
 
-# Working directory for runtime
-WORKDIR /app/backend
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:80/health/ || exit 1
 
-# Start command - Run migrations and start gunicorn
-CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py collectstatic --noinput --clear && rm -rf /app/backend/staticfiles/icons /app/backend/staticfiles/screenshots /app/backend/staticfiles/service-worker.js /app/backend/staticfiles/manifest.json /app/backend/staticfiles/web.config /app/backend/staticfiles/pwa-debug.js /app/backend/staticfiles/pwa-test.js /app/backend/staticfiles/mime-test.js || true && exec gunicorn config.wsgi:application --bind 0.0.0.0:80 --workers 3 --timeout 120 --max-requests 1000 --max-requests-jitter 100 --preload"]
+CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:80", "--workers", "3", "--timeout", "120", "--max-requests", "1000", "--max-requests-jitter", "100", "--preload"]
