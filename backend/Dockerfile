@@ -26,7 +26,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/* \
     && apt-get clean
 
-# Create non-root user
+# Create non-root user (kept for reference)
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 
 # Set working directory
@@ -37,7 +37,7 @@ COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Copy application code (excluding unnecessary files)
-COPY --chown=appuser:appuser . .
+COPY --chown=root:root . .
 
 # Remove unnecessary files to reduce image size
 RUN find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true && \
@@ -49,10 +49,10 @@ RUN find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true && 
 
 # Create necessary directories with proper permissions
 RUN mkdir -p /app/logs /app/media /app/staticfiles /app/backend/media && \
-    chown -R appuser:appuser /app
+    chown -R root:root /app
 
-# Switch to non-root user
-USER appuser
+# NOTE: Run as root to ensure mounted disk at /app/backend/media is writable
+# USER appuser
 
 # Set environment variables
 ENV PYTHONPATH=/app

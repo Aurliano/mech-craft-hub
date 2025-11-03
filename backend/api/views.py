@@ -2773,6 +2773,39 @@ def create_contractor_workshop(request):
                 status=status.HTTP_400_BAD_REQUEST
             )
     
+    # Sanitize documents: accept only relative file paths; drop blob: and absolute paths
+    def _sanitize_documents(docs):
+        from urllib.parse import unquote
+        import os as _os
+        if not isinstance(docs, dict):
+            return {}
+        sanitized = {}
+        for key, values in docs.items():
+            if not isinstance(values, (list, tuple)):
+                continue
+            clean_list = []
+            for v in values:
+                if not isinstance(v, str):
+                    continue
+                s = unquote(v).strip()
+                # reject blob: and full URLs
+                if s.startswith('blob:') or s.startswith('http://') or s.startswith('https://'):
+                    continue
+                # strip leading slashes and MEDIA_ROOT parts if present
+                s = s.lstrip('/')
+                # common mistake: including 'app/backend/media/' prefix
+                s = s.replace('app/backend/media/', '').replace('/app/backend/media/', '')
+                # normalize
+                s_norm = _os.path.normpath(s)
+                # allow only user-uploads or deliveries roots
+                if s_norm.startswith('user-uploads') or s_norm.startswith('deliveries'):
+                    clean_list.append(s_norm)
+            if clean_list:
+                sanitized[key] = clean_list
+        return sanitized
+    
+    documents = _sanitize_documents(data.get('documents', {}))
+    
     workshop = Workshop.objects.create(
         name=data['name'],
         address=data['address'],
@@ -2785,7 +2818,7 @@ def create_contractor_workshop(request):
         workers_count=data.get('workers_count', 0),
         capabilities=data.get('capabilities', []),
         machines=data.get('machines', []),
-        documents=data.get('documents', {}),
+        documents=documents,
         owner=request.user,
         is_approved=False  # New workshops need admin approval
     )

@@ -21,6 +21,7 @@ import { CAPABILITIES_WITH_MACHINES } from '@/data/capabilitiesAndMachines';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown } from 'lucide-react';
+import { getApiUrl, getAccessToken, getCSRFToken } from "@/lib/api";
 
 type Workshop = {
   id: string;
@@ -203,6 +204,40 @@ const AdminWorkshopManagement = () => {
         کلاس {cls}
       </Badge>
     );
+  };
+
+  const downloadPrivateFile = async (filePath: string) => {
+    try {
+      const token = getAccessToken();
+      if (!token) {
+        throw new Error("لطفاً وارد حساب کاربری شوید");
+      }
+      const url = getApiUrl(`/v1/user-files/download/?path=${encodeURIComponent(filePath)}`);
+      const res = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'X-CSRFToken': getCSRFToken() || ''
+        },
+        credentials: 'include'
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || `HTTP ${res.status}`);
+      }
+      const blob = await res.blob();
+      const dlUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = dlUrl;
+      a.download = filePath.split('/').pop() || 'file';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(dlUrl);
+      document.body.removeChild(a);
+    } catch (e) {
+      console.error('Download failed:', e);
+      // optional: toast error if available
+    }
   };
 
   return (
@@ -439,26 +474,17 @@ const AdminWorkshopManagement = () => {
                                   {fieldKey === 'insurance_documents' && 'مدارک بیمه'}
                                 </Label>
                                 <div className="grid grid-cols-1 gap-2">
-                                  {Array.isArray(fileUrls) && fileUrls.map((filePath, idx) => {
-                                    // Check if it's a blob URL (legacy) or file_path
-                                    const isBlobUrl = typeof filePath === 'string' && filePath.startsWith('blob:');
-                                    const downloadUrl = isBlobUrl 
-                                      ? filePath // Legacy blob URL
-                                      : `/api/v1/user-files/download/?path=${encodeURIComponent(filePath)}`; // Secure download endpoint
-                                    
-                                    return (
-                                      <a
-                                        key={idx}
-                                        href={downloadUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center gap-2 text-sm text-primary hover:underline"
-                                      >
-                                        <FileText className="h-4 w-4" />
-                                        فایل {idx + 1}
-                                      </a>
-                                    );
-                                  })}
+                                  {Array.isArray(fileUrls) && fileUrls.map((filePath, idx) => (
+                                    <button
+                                      key={idx}
+                                      type="button"
+                                      onClick={() => downloadPrivateFile(String(filePath))}
+                                      className="text-left flex items-center gap-2 text-sm text-primary hover:underline"
+                                    >
+                                      <FileText className="h-4 w-4" />
+                                      فایل {idx + 1}
+                                    </button>
+                                  ))}
                                 </div>
                               </div>
                             ))}
