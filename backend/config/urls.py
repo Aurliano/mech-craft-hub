@@ -25,6 +25,7 @@ from django.conf.urls.static import static
 from config.sitemaps import sitemaps
 from config.seo_views import robots_txt
 import os
+from django.views.static import serve as static_serve
 
 # Safe import for contractor check-manufacturing endpoint to prevent runtime issues
 try:
@@ -203,6 +204,13 @@ urlpatterns = [
     
     # SPA fallback (exclude api/admin/static/media/assets/robots/sitemap/pwa files)
     re_path(r'^(?!api/|admin/|static/|media/|assets/|icons/|favicon/|screenshots/|robots\.txt|sitemap\.xml|service-worker\.js|manifest\.json|pwa-debug\.js|pwa-test\.js|mime-test\.js).*$', home_view, name='spa_fallback'),
+]
+
+# Legacy alias: map /media/uploads/* to MEDIA_ROOT/user-uploads/*
+urlpatterns += [
+    re_path(r'^media/uploads/(?P<path>.*)$', static_serve, {
+        'document_root': os.path.join(settings.MEDIA_ROOT, 'user-uploads')
+    }),
 ]
 
 # Add explicit alias only if the view import succeeded

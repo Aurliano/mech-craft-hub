@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Action, Description } from "@radix-ui/react-toast";
 import { Phone, MessageCircle, MapPin, Send, InstagramIcon, Mail } from "lucide-react";
+import EitaaIcon from "@/assets/eitaa.png";
 import { title } from "process";
 
 const Contact = () => {
@@ -20,7 +21,7 @@ const Contact = () => {
       action: "https://t.me/saydatech"
     },
     {
-      icon: MessageCircle,
+      icon: EitaaIcon,
       title: "ایتا",
       description: "پیام‌رسان داخلی برای ارتباط مستقیم با پشتیبان",
       info: "saydatech_ir@",

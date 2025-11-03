@@ -14,6 +14,7 @@ from .serializers import ScientificContentSerializer
 from django.utils.text import slugify
 from django.utils import timezone
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +77,14 @@ def upload_content_file(request):
         # Generate slug from title if not provided
         slug = request.data.get('slug', '')
         if not slug:
-            slug = slugify(title)
+            slug = slugify(title, allow_unicode=True)
+            if not slug:
+                # Fallback from filename or UUID to avoid blank slug
+                base_name, _ = os.path.splitext(file_name)
+                slug = slugify(base_name, allow_unicode=True)
+            if not slug:
+                from uuid import uuid4
+                slug = uuid4().hex[:12]
             # Ensure slug is unique by appending counter if needed
             base_slug = slug
             counter = 1
