@@ -77,11 +77,11 @@ def upload_content_file(request):
         # Generate slug from title if not provided
         slug = request.data.get('slug', '')
         if not slug:
-            slug = slugify(title, allow_unicode=True)
+            # Generate ASCII-only slug to satisfy SlugField validation
+            slug = slugify(title, allow_unicode=False)
             if not slug:
-                # Fallback from filename or UUID to avoid blank slug
                 base_name, _ = os.path.splitext(file_name)
-                slug = slugify(base_name, allow_unicode=True)
+                slug = slugify(base_name, allow_unicode=False)
             if not slug:
                 from uuid import uuid4
                 slug = uuid4().hex[:12]

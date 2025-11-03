@@ -206,9 +206,14 @@ urlpatterns = [
     re_path(r'^(?!api/|admin/|static/|media/|assets/|icons/|favicon/|screenshots/|robots\.txt|sitemap\.xml|service-worker\.js|manifest\.json|pwa-debug\.js|pwa-test\.js|mime-test\.js).*$', home_view, name='spa_fallback'),
 ]
 
-# Legacy alias: map /media/uploads/* to MEDIA_ROOT/user-uploads/*
+# Serve media subpaths explicitly
 urlpatterns += [
+    # /media/uploads/* (for UploadView and similar)
     re_path(r'^media/uploads/(?P<path>.*)$', static_serve, {
+        'document_root': os.path.join(settings.MEDIA_ROOT, 'uploads')
+    }),
+    # /media/user-uploads/* (for UserFileManager local files)
+    re_path(r'^media/user-uploads/(?P<path>.*)$', static_serve, {
         'document_root': os.path.join(settings.MEDIA_ROOT, 'user-uploads')
     }),
 ]
@@ -228,7 +233,6 @@ if _check_contractor_manufacturing_service:
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 else:
-    # Explicitly serve media in production (Liara docker) since no dedicated web server is configured
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Serve static files for frontend (always, not just in DEBUG)

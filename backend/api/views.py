@@ -1139,22 +1139,9 @@ class UploadView(APIView):
                 for chunk in file_obj.chunks():
                     dest.write(chunk)
             saved_ok = True
-        except PermissionError as e:
-            # Fallback to tmp dir (private storage)
-            try:
-                tmp_dir = os.path.join('/tmp', 'uploads')
-                os.makedirs(tmp_dir, exist_ok=True)
-                dest_path = os.path.join(tmp_dir, new_name)
-                with open(dest_path, 'wb') as dest:
-                    for chunk in file_obj.chunks():
-                        dest.write(chunk)
-                # Mark as saved in tmp; keep rel_path for consistency
-                saved_ok = True
-            except Exception as e2:
-                error_msg = f"Permission denied and tmp fallback failed: {str(e2)}"
         except Exception as e:
             error_msg = str(e)
-
+        
         if not saved_ok:
             return Response({'detail': 'Upload failed', 'error': error_msg}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         # Validate/normalize context_id to UUID if provided; otherwise generate one
