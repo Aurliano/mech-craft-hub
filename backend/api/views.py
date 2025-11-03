@@ -3747,10 +3747,12 @@ def upload_user_file(request):
         )
         
         if result['success']:
+            # Generate secure download endpoint for private files
+            download_endpoint = f"/api/v1/user-files/download/?path={result['file_path']}"
             return Response({
                 'message': 'فایل با موفقیت آپلود شد',
-                'file_url': result['file_url'],
                 'file_path': result['file_path'],
+                'download_endpoint': download_endpoint,
                 'file_size': result['file_size'],
                 'storage_type': result['storage_type']
             }, status=status.HTTP_201_CREATED)

@@ -439,18 +439,26 @@ const AdminWorkshopManagement = () => {
                                   {fieldKey === 'insurance_documents' && 'مدارک بیمه'}
                                 </Label>
                                 <div className="grid grid-cols-1 gap-2">
-                                  {Array.isArray(fileUrls) && fileUrls.map((url, idx) => (
-                                    <a
-                                      key={idx}
-                                      href={url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="flex items-center gap-2 text-sm text-primary hover:underline"
-                                    >
-                                      <FileText className="h-4 w-4" />
-                                      فایل {idx + 1}
-                                    </a>
-                                  ))}
+                                  {Array.isArray(fileUrls) && fileUrls.map((filePath, idx) => {
+                                    // Check if it's a blob URL (legacy) or file_path
+                                    const isBlobUrl = typeof filePath === 'string' && filePath.startsWith('blob:');
+                                    const downloadUrl = isBlobUrl 
+                                      ? filePath // Legacy blob URL
+                                      : `/api/v1/user-files/download/?path=${encodeURIComponent(filePath)}`; // Secure download endpoint
+                                    
+                                    return (
+                                      <a
+                                        key={idx}
+                                        href={downloadUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-2 text-sm text-primary hover:underline"
+                                      >
+                                        <FileText className="h-4 w-4" />
+                                        فایل {idx + 1}
+                                      </a>
+                                    );
+                                  })}
                                 </div>
                               </div>
                             ))}

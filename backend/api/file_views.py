@@ -9,7 +9,7 @@ from django.views import View
 import json
 import mimetypes
 from .models import ScientificContent
-from .file_manager import file_manager
+from .file_managers import scientific_file_manager
 from .serializers import ScientificContentSerializer
 from django.utils.text import slugify
 from django.utils import timezone
@@ -63,7 +63,7 @@ def upload_content_file(request):
         
         # آپلود فایل
         logger.info(f"Attempting to upload file: {file_name}, size: {file_obj.size}, content_type: {content_type}")
-        upload_result = file_manager.upload_file(file_obj, file_name, content_type)
+        upload_result = scientific_file_manager.upload_file(file_obj, file_name, content_type)
         logger.info(f"Upload result: success={upload_result.get('success')}, error={upload_result.get('error', 'None')}")
         
         if not upload_result['success']:
@@ -137,7 +137,7 @@ def upload_content_file(request):
             # در صورت خطا در ذخیره، فایل را حذف کنید
             logger.error(f"Serializer validation failed: {serializer.errors}")
             logger.info(f"Deleting uploaded file from storage: {upload_result['file_path']}")
-            file_manager.delete_file(upload_result['file_path'])
+            scientific_file_manager.delete_file(upload_result['file_path'])
             return Response({
                 'error': 'خطا در ذخیره اطلاعات',
                 'details': serializer.errors
@@ -163,7 +163,7 @@ def download_content_file(request, content_id):
         content.save(update_fields=['download_count'])
         
         # دریافت URL فایل
-        file_url = file_manager.get_file_url(content.file_path, content.is_public)
+        file_url = scientific_file_manager.get_file_url(content.file_path, content.is_public)
         
         if not file_url:
             return Response({
@@ -196,7 +196,7 @@ def delete_content_file(request, content_id):
         
         # حذف فایل از storage
         if content.file_path:
-            file_manager.delete_file(content.file_path)
+            scientific_file_manager.delete_file(content.file_path)
         
         # حذف رکورد از دیتابیس
         content.delete()
@@ -223,7 +223,7 @@ def get_file_info(request, content_id):
     try:
         content = ScientificContent.objects.get(id=content_id, status='published')
         
-        file_info = file_manager.get_file_info(content.file_path)
+        file_info = scientific_file_manager.get_file_info(content.file_path)
         
         return Response({
             'file_name': content.file_name,

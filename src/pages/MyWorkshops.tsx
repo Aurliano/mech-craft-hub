@@ -180,12 +180,12 @@ const MyWorkshops = () => {
         is_custom: machine.isCustom || false
       }));
 
-      // Collect uploaded documents
+      // Collect uploaded documents - store file_path instead of blob URL
       const documentsData: Record<string, string[]> = {};
       Object.entries(uploadedDocuments).forEach(([fieldKey, files]) => {
         documentsData[fieldKey] = files
-          .filter(file => file.status === 'completed')
-          .map(file => file.url);
+          .filter(file => file.status === 'completed' && file.file_path)
+          .map(file => file.file_path!); // Use file_path for private files
       });
 
       const workshopData = {

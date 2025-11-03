@@ -775,10 +775,9 @@ class ScientificContentSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at', 'published_at', 'view_count', 'like_count']
     
     def get_file_url(self, obj):
-        from django.conf import settings
-        from .file_manager import file_manager
+        from .file_managers import scientific_file_manager
         if obj.file_path:
-            return file_manager.get_file_url(obj.file_path, is_public=True)
+            return scientific_file_manager.get_file_url(obj.file_path, is_public=True)
         return None
 
 
@@ -800,9 +799,9 @@ class ScientificContentListSerializer(serializers.ModelSerializer):
         ]
     
     def get_file_url(self, obj):
-        from .file_manager import file_manager
+        from .file_managers import scientific_file_manager
         if obj.file_path:
-            return file_manager.get_file_url(obj.file_path, is_public=True)
+            return scientific_file_manager.get_file_url(obj.file_path, is_public=True)
         return None
 
 

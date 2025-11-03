@@ -367,6 +367,66 @@ export async function createCartItem(data: {
 }
 
 
+// Upload private user files (workshops, orders, etc.) - returns file_path
+export async function uploadUserFile(file: File, orderId?: string, retries = 3): Promise<{ file_path: string; download_endpoint: string; file_size: number }> {
+  const token = getAccessToken();
+  if (!token) {
+    throw new Error("Authentication token not found. Please log in.");
+  }
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      if (orderId) form.append('order_id', orderId);
+
+      const headers = new Headers();
+      headers.append('Authorization', `Bearer ${token}`);
+      headers.append('X-CSRFToken', getCSRFToken() || '');
+
+      console.log(`Upload user file attempt ${attempt}/${retries}:`, file.name, 'Size:', file.size);
+
+      const res = await fetch(getApiUrl('/v1/user-files/upload/'), {
+        method: 'POST',
+        headers: headers,
+        credentials: 'include',
+        body: form,
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        console.error('Upload error response:', text);
+        
+        if (attempt === retries) {
+          throw new Error(`Upload failed after ${retries} attempts: ${res.status} - ${text}`);
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        continue;
+      }
+      
+      const result = await res.json();
+      console.log('Upload success:', result);
+      return {
+        file_path: result.file_path,
+        download_endpoint: result.download_endpoint,
+        file_size: result.file_size
+      };
+    } catch (error) {
+      console.error(`Upload error attempt ${attempt}:`, error);
+      
+      if (attempt === retries) {
+        throw error;
+      }
+      
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+    }
+  }
+  
+  throw new Error('Upload failed after all retries');
+}
+
+// Legacy upload function for public files (kept for backward compatibility)
 export async function uploadFile(file: File, extra?: { context?: string; context_id?: string }, retries = 3): Promise<{ id: string; url: string; original_name: string }> {
   const token = getAccessToken();
   if (!token) {

@@ -6,13 +6,15 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { X, Upload, File, AlertCircle, CheckCircle2, Trash2, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { uploadFile } from '@/lib/api';
+import { uploadFile, uploadUserFile } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 
 interface UploadedFile {
   id: string;
   file: File;
-  url: string;
+  url?: string; // Legacy: for public files
+  file_path?: string; // For private user files
+  download_endpoint?: string; // Secure download endpoint for private files
   originalName: string;
   size: number;
   status: 'uploading' | 'completed' | 'error';
@@ -103,7 +105,6 @@ const MultiFileUpload: React.FC<MultiFileUploadProps> = ({
     const uploadedFile: UploadedFile = {
       id: tempId,
       file,
-      url: '',
       originalName: file.name,
       size: file.size,
       status: 'uploading',
@@ -111,32 +112,21 @@ const MultiFileUpload: React.FC<MultiFileUploadProps> = ({
     };
 
     try {
-      const result = await uploadFile(file, { 
-        context: 'service', 
-        context_id: contextId || undefined
-      });
+      // Use uploadUserFile for private user files (workshops, orders, etc.)
+      const result = await uploadUserFile(file);
 
       return {
         ...uploadedFile,
-        id: result.id,
-        url: result.url,
-        originalName: (result as { original_name?: string }).original_name || uploadedFile.originalName,
+        id: tempId,
+        file_path: result.file_path,
+        download_endpoint: result.download_endpoint,
+        originalName: file.name,
         status: 'completed',
         progress: 100
       };
     } catch (error) {
       console.error('Upload error for file:', file.name, error);
-      
-      // Fallback: create a local URL for testing
-      const localUrl = URL.createObjectURL(file);
-      
-      return {
-        ...uploadedFile,
-        id: tempId,
-        url: localUrl,
-        status: 'completed',
-        progress: 100
-      };
+      throw error; // Don't create fallback blob URLs for private files
     }
   };
 
