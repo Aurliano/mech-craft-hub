@@ -11,6 +11,8 @@ import mimetypes
 from .models import ScientificContent
 from .file_manager import file_manager
 from .serializers import ScientificContentSerializer
+from django.utils.text import slugify
+from django.utils import timezone
 import logging
 
 logger = logging.getLogger(__name__)
@@ -59,17 +61,32 @@ def upload_content_file(request):
             }, status=status.HTTP_400_BAD_REQUEST)
         
         # آپلود فایل
+        logger.info(f"Attempting to upload file: {file_name}, size: {file_obj.size}, content_type: {content_type}")
         upload_result = file_manager.upload_file(file_obj, file_name, content_type)
+        logger.info(f"Upload result: success={upload_result.get('success')}, error={upload_result.get('error', 'None')}")
         
         if not upload_result['success']:
+            logger.error(f"File upload failed: {upload_result.get('error')}")
             return Response({
                 'error': f'خطا در آپلود فایل: {upload_result["error"]}'
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
         # ذخیره اطلاعات فایل در دیتابیس
+        title = request.data.get('title', file_name)
+        # Generate slug from title if not provided
+        slug = request.data.get('slug', '')
+        if not slug:
+            slug = slugify(title)
+            # Ensure slug is unique by appending timestamp if needed
+            base_slug = slug
+            counter = 1
+            while ScientificContent.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+        
         content_data = {
-            'title': request.data.get('title', file_name),
-            'slug': request.data.get('slug', ''),
+            'title': title,
+            'slug': slug,
             'excerpt': request.data.get('excerpt', ''),
             'content': request.data.get('content', ''),
             'content_type': request.data.get('content_type', 'book'),
@@ -84,9 +101,11 @@ def upload_content_file(request):
             'is_public': request.data.get('is_public', True)
         }
         
+        logger.info(f"Creating ScientificContent with data: title={content_data.get('title')}, slug={content_data.get('slug')}")
         serializer = ScientificContentSerializer(data=content_data)
         if serializer.is_valid():
             content = serializer.save()
+            logger.info(f"ScientificContent created successfully: {content.id}")
             return Response({
                 'success': True,
                 'message': 'فایل با موفقیت آپلود شد',
@@ -94,6 +113,8 @@ def upload_content_file(request):
             }, status=status.HTTP_201_CREATED)
         else:
             # در صورت خطا در ذخیره، فایل را حذف کنید
+            logger.error(f"Serializer validation failed: {serializer.errors}")
+            logger.info(f"Deleting uploaded file from storage: {upload_result['file_path']}")
             file_manager.delete_file(upload_result['file_path'])
             return Response({
                 'error': 'خطا در ذخیره اطلاعات',
@@ -101,9 +122,11 @@ def upload_content_file(request):
             }, status=status.HTTP_400_BAD_REQUEST)
     
     except Exception as e:
-        logger.error(f"Error in upload_content_file: {str(e)}")
+        import traceback
+        error_details = traceback.format_exc()
+        logger.error(f"Error in upload_content_file: {str(e)}\n{error_details}")
         return Response({
-            'error': 'خطای سرور'
+            'error': f'خطای سرور: {str(e)}'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 

@@ -22,23 +22,25 @@ class ScientificFileManager(BaseFileManager):
         logger.info(f"ScientificFileManager initialized with storage_type: {self.storage_type}, bucket: {self.bucket_name}")
         
         if BOTO3_AVAILABLE:
-            # Use Liara credentials
-            aws_access_key_id = getattr(settings, 'LIARA_ACCESS_KEY_ID', None)
-            aws_secret_access_key = getattr(settings, 'LIARA_SECRET_ACCESS_KEY', None)
+            # Use Liara credentials - support both naming conventions
+            aws_access_key_id = getattr(settings, 'LIARA_ACCESS_KEY_ID', None) or getattr(settings, 'LIARA_ACCESS_KEY', None)
+            aws_secret_access_key = getattr(settings, 'LIARA_SECRET_ACCESS_KEY', None) or getattr(settings, 'LIARA_SECRET_KEY', None)
             
             # Check if credentials are available
             if not aws_access_key_id or not aws_secret_access_key:
                 logger.warning(f"No Liara credentials available, scientific content upload will fail")
                 self.s3_client = None
             else:
+                # Default to c2 endpoint as per Liara bucket settings
+                endpoint_url = getattr(settings, 'S3_ENDPOINT_URL', None) or getattr(settings, 'LIARA_ENDPOINT_URL', 'https://storage.c2.liara.space')
                 self.s3_client = boto3.client(
                     's3',
-                    endpoint_url=getattr(settings, 'S3_ENDPOINT_URL', None),
+                    endpoint_url=endpoint_url,
                     aws_access_key_id=aws_access_key_id,
                     aws_secret_access_key=aws_secret_access_key,
                     region_name=self.region
                 )
-                logger.info(f"S3 client created for Liara bucket: {self.bucket_name}")
+                logger.info(f"S3 client created for Liara bucket: {self.bucket_name}, endpoint: {endpoint_url}")
         else:
             logger.error("boto3 not available, scientific content upload will fail")
             self.s3_client = None
@@ -79,32 +81,43 @@ class ScientificFileManager(BaseFileManager):
             file_path = self.generate_file_path(file_name, content_type)
             logger.info(f"Generated S3 path: {file_path}")
             
-            # Upload to S3
+            # Upload to S3 - Liara doesn't support ACL in the same way as AWS
             file_obj.seek(0)
-            self.s3_client.upload_fileobj(
-                file_obj,
-                self.bucket_name,
-                file_path,
-                ExtraArgs={
-                    'ContentType': content_type,
-                    'ACL': 'public-read'  # Scientific content is public
-                }
-            )
+            try:
+                # Try without ACL first (Liara's recommended approach)
+                self.s3_client.upload_fileobj(
+                    file_obj,
+                    self.bucket_name,
+                    file_path,
+                    ExtraArgs={
+                        'ContentType': content_type,
+                    }
+                )
+                logger.info(f"File uploaded successfully to {self.bucket_name}/{file_path}")
+            except ClientError as e:
+                # Log detailed error for debugging
+                error_code = e.response.get('Error', {}).get('Code', 'Unknown')
+                error_message = e.response.get('Error', {}).get('Message', str(e))
+                logger.error(f"S3 upload failed - Code: {error_code}, Message: {error_message}")
+                raise Exception(f"S3 upload error: {error_code} - {error_message}")
             
             # Generate public URL
-            endpoint_url = getattr(settings, 'S3_ENDPOINT_URL', 'https://storage.c2.liara.space')
+            endpoint_url = getattr(settings, 'S3_ENDPOINT_URL', None) or getattr(settings, 'LIARA_ENDPOINT_URL', 'https://storage.c2.liara.space')
             file_url = f"{endpoint_url}/{self.bucket_name}/{file_path}"
+            logger.info(f"Generated file URL: {file_url}")
             
             return {
                 'success': True,
                 'file_path': file_path,
                 'file_url': file_url,
                 'file_size': file_obj.size,
-                'storage_type': 's3'
+                'storage_type': 'liara'
             }
             
         except Exception as e:
-            logger.error(f"Error uploading file to S3: {str(e)}")
+            import traceback
+            error_details = traceback.format_exc()
+            logger.error(f"Error uploading file to S3: {str(e)}\n{error_details}")
             return {
                 'success': False,
                 'error': str(e)

@@ -510,15 +510,20 @@ S3_BACKUP_BUCKET = os.getenv('S3_BACKUP_BUCKET')
 
 # File Storage Configuration for Scientific Content
 FILE_STORAGE_TYPE = os.getenv('FILE_STORAGE_TYPE', 'liara')  # local, s3, liara
-FILE_BUCKET_NAME = os.getenv('FILE_BUCKET_NAME', 'resources')  # Liara bucket name
+FILE_BUCKET_NAME = os.getenv('FILE_BUCKET_NAME', None) or os.getenv('BUCKET_NAME', 'resources')  # Liara bucket name
 FILE_REGION = os.getenv('FILE_REGION', 'iran')
-S3_ENDPOINT_URL = os.getenv('S3_ENDPOINT_URL', 'https://storage.c2.liara.space')
+# Support both S3_ENDPOINT_URL and LIARA_ENDPOINT_URL for compatibility
+S3_ENDPOINT_URL = os.getenv('S3_ENDPOINT_URL', None) or os.getenv('LIARA_ENDPOINT_URL', 'https://storage.iran.liara.space')
+LIARA_ENDPOINT_URL = os.getenv('LIARA_ENDPOINT_URL', None) or S3_ENDPOINT_URL
 FILE_PUBLIC_ACCESS = os.getenv('FILE_PUBLIC_ACCESS', 'True').lower() == 'true'
 FILE_FALLBACK_TO_LOCAL = os.getenv('FILE_FALLBACK_TO_LOCAL', 'False').lower() == 'true'
 
 # Liara Storage Credentials (for scientific content)
-LIARA_ACCESS_KEY_ID = os.getenv('LIARA_ACCESS_KEY_ID', 'n5emtge4ckg3bspk')
-LIARA_SECRET_ACCESS_KEY = os.getenv('LIARA_SECRET_ACCESS_KEY', '9c599091-f43f-4db6-b1c5-483afaea0532')
+# Support both naming conventions for backward compatibility
+LIARA_ACCESS_KEY = os.getenv('LIARA_ACCESS_KEY', None)
+LIARA_SECRET_KEY = os.getenv('LIARA_SECRET_KEY', None)
+LIARA_ACCESS_KEY_ID = os.getenv('LIARA_ACCESS_KEY_ID', None) or LIARA_ACCESS_KEY
+LIARA_SECRET_ACCESS_KEY = os.getenv('LIARA_SECRET_ACCESS_KEY', None) or LIARA_SECRET_KEY
 
 # ClamAV Configuration
 CLAMAV_SOCKET = os.getenv('CLAMAV_SOCKET', '/var/run/clamav/clamd.ctl')

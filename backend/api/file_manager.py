@@ -45,16 +45,20 @@ class FileManager:
                 self.storage_type = 'local'
                 self.s3_client = None
             else:
+                endpoint_url = getattr(settings, 'S3_ENDPOINT_URL', None) or getattr(settings, 'LIARA_ENDPOINT_URL', None)
+                if not endpoint_url and self.storage_type == 'liara':
+                    endpoint_url = 'https://storage.iran.liara.space'
+                
                 self.s3_client = boto3.client(
                     's3',
-                    endpoint_url=getattr(settings, 'S3_ENDPOINT_URL', None),
+                    endpoint_url=endpoint_url,
                     aws_access_key_id=aws_access_key_id,
                     aws_secret_access_key=aws_secret_access_key,
                     region_name=self.region
                 )
             
                 # Skip connection test to avoid startup crashes
-                logger.info(f"S3/Liara client created for {self.storage_type} bucket: {self.bucket_name}")
+                logger.info(f"S3/Liara client created for {self.storage_type} bucket: {self.bucket_name}, endpoint: {endpoint_url}")
                 logger.warning("Connection test skipped to prevent startup crashes")
         else:
             self.s3_client = None
@@ -124,21 +128,33 @@ class FileManager:
                 
                 # آپلود به S3/Liara
                 file_obj.seek(0)
-                self.s3_client.upload_fileobj(
-                    file_obj,
-                    self.bucket_name,
-                    file_path,
-                    ExtraArgs={
-                        'ContentType': content_type,
-                        'ACL': 'public-read' if getattr(settings, 'FILE_PUBLIC_ACCESS', True) else 'private'
-                    }
-                )
+                try:
+                    # Liara doesn't support ACL parameter in the same way as AWS
+                    # Remove ACL for Liara compatibility
+                    extra_args = {'ContentType': content_type}
+                    # Only add ACL for AWS S3, not for Liara
+                    if self.storage_type == 's3' and getattr(settings, 'FILE_PUBLIC_ACCESS', True):
+                        extra_args['ACL'] = 'public-read'
+                    
+                    self.s3_client.upload_fileobj(
+                        file_obj,
+                        self.bucket_name,
+                        file_path,
+                        ExtraArgs=extra_args
+                    )
+                    logger.info(f"File uploaded successfully to {self.bucket_name}/{file_path}")
+                except ClientError as e:
+                    # Log detailed error for debugging
+                    error_code = e.response.get('Error', {}).get('Code', 'Unknown')
+                    error_message = e.response.get('Error', {}).get('Message', str(e))
+                    logger.error(f"S3 upload failed - Code: {error_code}, Message: {error_message}")
+                    raise Exception(f"S3 upload error: {error_code} - {error_message}")
                 
                 # تولید URL عمومی
                 if getattr(settings, 'FILE_PUBLIC_ACCESS', True):
                     if self.storage_type == 'liara':
                         # URL لیارا - استفاده از endpoint اصلی
-                        endpoint_url = getattr(settings, 'S3_ENDPOINT_URL', 'https://storage.c2.liara.space')
+                        endpoint_url = getattr(settings, 'S3_ENDPOINT_URL', None) or getattr(settings, 'LIARA_ENDPOINT_URL', 'https://storage.iran.liara.space')
                         file_url = f"{endpoint_url}/{self.bucket_name}/{file_path}"
                     else:
                         # URL AWS S3
@@ -178,7 +194,9 @@ class FileManager:
                     }
             
         except Exception as e:
-            logger.error(f"Error uploading file: {str(e)}")
+            import traceback
+            error_details = traceback.format_exc()
+            logger.error(f"Error uploading file: {str(e)}\n{error_details}")
             return {
                 'success': False,
                 'error': str(e)
@@ -212,7 +230,7 @@ class FileManager:
             elif self.storage_type in ['s3', 'liara'] and self.s3_client:
                 if is_public and getattr(settings, 'FILE_PUBLIC_ACCESS', True):
                     if self.storage_type == 'liara':
-                        endpoint_url = getattr(settings, 'S3_ENDPOINT_URL', 'https://storage.c2.liara.space')
+                        endpoint_url = getattr(settings, 'S3_ENDPOINT_URL', None) or getattr(settings, 'LIARA_ENDPOINT_URL', 'https://storage.iran.liara.space')
                         return f"{endpoint_url}/{self.bucket_name}/{file_path}"
                     else:
                         return f"https://{self.bucket_name}.{self.region}.amazonaws.com/{file_path}"

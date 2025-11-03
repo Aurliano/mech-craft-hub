@@ -269,9 +269,15 @@ FILE_PUBLIC_ACCESS = os.getenv('FILE_PUBLIC_ACCESS', 'True').lower() == 'true'
 FILE_FALLBACK_TO_LOCAL = os.getenv('FILE_FALLBACK_TO_LOCAL', 'False').lower() == 'true'
 
 # Liara S3 Credentials
-LIARA_ACCESS_KEY_ID = os.getenv('LIARA_ACCESS_KEY_ID')
-LIARA_SECRET_ACCESS_KEY = os.getenv('LIARA_SECRET_ACCESS_KEY')
-S3_ENDPOINT_URL = os.getenv('S3_ENDPOINT_URL', 'https://storage.c2.liara.space')
+# Support both naming conventions for backward compatibility
+LIARA_ACCESS_KEY = os.getenv('LIARA_ACCESS_KEY', None)
+LIARA_SECRET_KEY = os.getenv('LIARA_SECRET_KEY', None)
+LIARA_ACCESS_KEY_ID = os.getenv('LIARA_ACCESS_KEY_ID', None) or LIARA_ACCESS_KEY
+LIARA_SECRET_ACCESS_KEY = os.getenv('LIARA_SECRET_ACCESS_KEY', None) or LIARA_SECRET_KEY
+# Support both S3_ENDPOINT_URL and LIARA_ENDPOINT_URL for compatibility
+# Default to c2 endpoint as per Liara bucket settings
+S3_ENDPOINT_URL = os.getenv('S3_ENDPOINT_URL', None) or os.getenv('LIARA_ENDPOINT_URL', 'https://storage.c2.liara.space')
+LIARA_ENDPOINT_URL = os.getenv('LIARA_ENDPOINT_URL', None) or S3_ENDPOINT_URL
 
 # User Files Settings (Local Storage)
 USER_FILES_STORAGE = 'local'
