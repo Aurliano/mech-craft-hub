@@ -6,7 +6,6 @@
     "location": "iran",
     "dockerfile": "Dockerfile.liara"
   },
-  "disks": [],
   "disks": [
     {
       "name": "sayda-disk",

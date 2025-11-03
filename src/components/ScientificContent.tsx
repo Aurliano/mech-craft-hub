@@ -154,9 +154,15 @@ const ScientificContent = () => {
                         </div>
                       </div>
                     </CardContent>
-                    <Button asChild variant="outline" className="mt-4 w-full">
-                      <Link to={`/blog/${item.id}`}>مشاهده</Link>
-                    </Button>
+                    {item.file_url ? (
+                      <Button asChild variant="outline" className="mt-4 w-full">
+                        <a href={item.file_url} target="_blank" rel="noopener noreferrer">دانلود/مشاهده</a>
+                      </Button>
+                    ) : (
+                      <Button disabled variant="outline" className="mt-4 w-full">
+                        لینک ناموجود
+                      </Button>
+                    )}
                   </Card>
                 );
               })}

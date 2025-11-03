@@ -48,7 +48,7 @@ RUN find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true && 
     find . -name "*.log" -delete 2>/dev/null || true
 
 # Create necessary directories with proper permissions
-RUN mkdir -p /app/logs /app/media /app/staticfiles && \
+RUN mkdir -p /app/logs /app/media /app/staticfiles /app/backend/media && \
     chown -R appuser:appuser /app
 
 # Switch to non-root user
