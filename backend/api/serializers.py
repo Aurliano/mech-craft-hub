@@ -760,6 +760,7 @@ class ScientificContentSerializer(serializers.ModelSerializer):
     content_type_display = serializers.CharField(source='get_content_type_display', read_only=True)
     category_display = serializers.CharField(source='get_category_display', read_only=True)
     reading_time = serializers.ReadOnlyField()
+    file_url = serializers.SerializerMethodField()
     
     class Meta:
         model = ScientificContent
@@ -768,10 +769,17 @@ class ScientificContentSerializer(serializers.ModelSerializer):
             'category', 'category_display', 'status', 'meta_description', 'meta_keywords',
             'author', 'author_name', 'featured_image', 'source_url', 'source_name',
             'view_count', 'like_count', 'download_url', 'video_url', 'file_size', 'duration',
-            'file_name', 'file_type', 'file_path', 'is_public', 'download_count',
+            'file_name', 'file_type', 'file_path', 'file_url', 'is_public', 'download_count',
             'created_at', 'updated_at', 'published_at', 'reading_time'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'published_at', 'view_count', 'like_count']
+    
+    def get_file_url(self, obj):
+        from django.conf import settings
+        from .file_manager import file_manager
+        if obj.file_path:
+            return file_manager.get_file_url(obj.file_path, is_public=True)
+        return None
 
 
 class ScientificContentListSerializer(serializers.ModelSerializer):
@@ -780,6 +788,7 @@ class ScientificContentListSerializer(serializers.ModelSerializer):
     content_type_display = serializers.CharField(source='get_content_type_display', read_only=True)
     category_display = serializers.CharField(source='get_category_display', read_only=True)
     reading_time = serializers.ReadOnlyField()
+    file_url = serializers.SerializerMethodField()
     
     class Meta:
         model = ScientificContent
@@ -787,8 +796,14 @@ class ScientificContentListSerializer(serializers.ModelSerializer):
             'id', 'title', 'slug', 'excerpt', 'content_type', 'content_type_display',
             'category', 'category_display', 'author_name', 'featured_image',
             'view_count', 'like_count', 'download_url', 'video_url', 'file_size', 'duration',
-            'created_at', 'published_at', 'reading_time'
+            'file_url', 'created_at', 'published_at', 'reading_time'
         ]
+    
+    def get_file_url(self, obj):
+        from .file_manager import file_manager
+        if obj.file_path:
+            return file_manager.get_file_url(obj.file_path, is_public=True)
+        return None
 
 
 class ScientificContentCreateSerializer(serializers.ModelSerializer):

@@ -52,6 +52,7 @@ from .views import (
             # Separate storage APIs
             upload_scientific_content, upload_user_file, upload_delivery_file,
             download_delivery_file, list_order_deliveries,
+    download_user_private_file,
 )
 
 # Import file management views
@@ -213,6 +214,9 @@ urlpatterns = [
             path('v1/files/<str:content_id>/download/', download_content_file, name='download_content_file'),
             path('v1/files/<str:content_id>/delete/', delete_content_file, name='delete_content_file'),
             path('v1/files/<str:content_id>/info/', get_file_info, name='get_file_info'),
+            
+            # Secure user file download
+            path('v1/user-files/download/', download_user_private_file, name='download_user_private_file'),
             
             # Separate Storage APIs
             path('v1/scientific/upload/', upload_scientific_content, name='upload_scientific_content'),

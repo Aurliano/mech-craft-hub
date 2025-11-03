@@ -135,6 +135,8 @@ from .utils.turnstile import (
     check_fallback_available,
     get_fallback_captcha_data, verify_fallback_captcha, get_turnstile_stats
 )
+from django.http import FileResponse
+import mimetypes
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -3694,10 +3696,13 @@ def upload_scientific_content(request):
         result = scientific_file_manager.upload_file(file, file.name, content_type)
         
         if result['success']:
+            # Do not expose direct file_url for private files
+            secure_download = f"/api/v1/user-files/download/?path={result['file_path']}"
             return Response({
                 'message': 'فایل با موفقیت آپلود شد',
-                'file_url': result['file_url'],
+                'file_url': None,
                 'file_path': result['file_path'],
+                'download_endpoint': secure_download,
                 'file_size': result['file_size'],
                 'storage_type': result['storage_type']
             }, status=status.HTTP_201_CREATED)
@@ -3926,3 +3931,61 @@ def list_order_deliveries(request, order_id):
     except Exception as e:
         logger.error(f"Error listing delivery files: {str(e)}")
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def download_user_private_file(request):
+    """Secure download for user private files stored locally.
+    Accepts query param ?path=<file_path relative to MEDIA_ROOT> (e.g., user-uploads/users/<user_id>/.../file.ext)
+    Authorization:
+      - Admins can download any user-uploads or deliveries
+      - Non-admins can only download paths under user-uploads/users/<their_user_id>/
+    Security:
+      - Prevent path traversal; ensure resolved path stays under MEDIA_ROOT
+      - Only allow roots: MEDIA_ROOT/user-uploads and MEDIA_ROOT/deliveries
+    """
+    from django.conf import settings
+    import os
+
+    file_path = request.GET.get('path')
+    if not file_path:
+        return Response({'error': 'path query parameter is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Normalize and build absolute path
+    normalized_rel_path = os.path.normpath(file_path).lstrip(os.sep)
+    abs_path = os.path.abspath(os.path.join(settings.MEDIA_ROOT, normalized_rel_path))
+
+    # Enforce containment within MEDIA_ROOT
+    media_root_abs = os.path.abspath(str(settings.MEDIA_ROOT))
+    if not abs_path.startswith(media_root_abs + os.sep) and abs_path != media_root_abs:
+        return Response({'error': 'Invalid path'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Restrict to allowed roots
+    allowed_roots = [
+        os.path.abspath(os.path.join(settings.MEDIA_ROOT, 'user-uploads')),
+        os.path.abspath(os.path.join(settings.MEDIA_ROOT, 'deliveries')),
+    ]
+    if not any(abs_path.startswith(root + os.sep) or abs_path == root for root in allowed_roots):
+        return Response({'error': 'Access to this path is not allowed'}, status=status.HTTP_403_FORBIDDEN)
+
+    # Authorization: admin OR owner if path starts with their user directory
+    is_admin = request.user.is_staff or request.user.is_superuser
+    if not is_admin:
+        expected_user_prefix = os.path.abspath(os.path.join(settings.MEDIA_ROOT, 'user-uploads', 'users', str(request.user.id)))
+        if not (abs_path.startswith(expected_user_prefix + os.sep) or abs_path == expected_user_prefix):
+            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+
+    # File existence
+    if not os.path.exists(abs_path) or not os.path.isfile(abs_path):
+        return Response({'error': 'File not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Content type
+    content_type, _ = mimetypes.guess_type(abs_path)
+    content_type = content_type or 'application/octet-stream'
+
+    # Stream file (private; no public URL exposure)
+    response = FileResponse(open(abs_path, 'rb'), content_type=content_type)
+    # Optional: attachment; comment out to display inline where supported
+    # filename = os.path.basename(abs_path)
+    # response["Content-Disposition"] = f"attachment; filename=\"{filename}\""
+    return response

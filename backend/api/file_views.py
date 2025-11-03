@@ -118,7 +118,7 @@ def upload_content_file(request):
             'file_name': file_name,
             'file_type': content_type,
             'file_path': upload_result['file_path'],
-            'download_url': safe_download_url,
+            'download_url': '',  # computed by serializer when needed
             'file_size': upload_result['file_size'],
             'is_public': request.data.get('is_public', True)
         }

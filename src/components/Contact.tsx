@@ -17,7 +17,7 @@ const Contact = () => {
       icon: Send,
       title: "تلگرام",
       description: "ارتباط سریع و آسان از طریق کانال رسمی ما در تلگرام",
-      info: "@saydatech",
+      info: "saydatech@",
       action: "https://t.me/saydatech"
     },
     {
