@@ -61,7 +61,7 @@ ENV DJANGO_SETTINGS_MODULE=config.settings_ultra_simple
 
 # Health check - using curl instead of requests for better reliability
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:80/health/ || exit 1
+    CMD curl -f http://localhost:80/api/health/ || exit 1
 
 # Expose port
 EXPOSE 80
