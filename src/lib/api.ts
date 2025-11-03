@@ -1830,3 +1830,6 @@ export const api = {
   getRefreshToken,
   fetchJson,
 };
+
+// Re-export csrf helper for consumers that need it (e.g., authenticated downloads in admin pages)
+export { getCSRFToken } from './csrfProtection';

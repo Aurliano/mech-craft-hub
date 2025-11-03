@@ -21,7 +21,9 @@ import MultiFileUpload from '@/components/MultiFileUpload';
 interface UploadedFile {
   id: string;
   file: File;
-  url: string;
+  url?: string;
+  file_path?: string;
+  download_endpoint?: string;
   originalName: string;
   size: number;
   status: 'uploading' | 'completed' | 'error';
