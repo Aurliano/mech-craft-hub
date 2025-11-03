@@ -77,18 +77,32 @@ def upload_content_file(request):
         slug = request.data.get('slug', '')
         if not slug:
             slug = slugify(title)
-            # Ensure slug is unique by appending timestamp if needed
+            # Ensure slug is unique by appending counter if needed
             base_slug = slug
             counter = 1
             while ScientificContent.objects.filter(slug=slug).exists():
                 slug = f"{base_slug}-{counter}"
                 counter += 1
-        
+
+        # Excerpt/content safe defaults and max lengths
+        raw_excerpt = request.data.get('excerpt')
+        if not raw_excerpt:
+            raw_excerpt = title
+        excerpt = str(raw_excerpt)[:500]
+
+        raw_content = request.data.get('content')
+        if not raw_content:
+            raw_content = title
+        content_text = str(raw_content)
+
+        # Trim download_url to avoid exceeding model limits (commonly 200)
+        safe_download_url = (upload_result['file_url'] or '')[:200]
+
         content_data = {
             'title': title,
             'slug': slug,
-            'excerpt': request.data.get('excerpt', ''),
-            'content': request.data.get('content', ''),
+            'excerpt': excerpt,
+            'content': content_text,
             'content_type': request.data.get('content_type', 'book'),
             'category': request.data.get('category', 'general'),
             'status': request.data.get('status', 'published'),
@@ -96,7 +110,7 @@ def upload_content_file(request):
             'file_name': file_name,
             'file_type': content_type,
             'file_path': upload_result['file_path'],
-            'download_url': upload_result['file_url'],
+            'download_url': safe_download_url,
             'file_size': upload_result['file_size'],
             'is_public': request.data.get('is_public', True)
         }

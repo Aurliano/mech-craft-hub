@@ -219,6 +219,9 @@ if _check_contractor_manufacturing_service:
 # Serve media files
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+else:
+    # Explicitly serve media in production (Liara docker) since no dedicated web server is configured
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # Serve static files for frontend (always, not just in DEBUG)
 urlpatterns += static('/static/', document_root=settings.STATIC_ROOT)
