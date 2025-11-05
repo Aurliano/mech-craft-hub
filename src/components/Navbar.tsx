@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
-import { Menu, X, ChevronDown, ChevronUp, User, ShoppingCart, Package, HelpCircle, LogOut, Home, LogIn, UserPlus, Bell, BarChart3, Wrench, Settings, Briefcase, MessageSquare, Building2, BookOpen, Briefcase as BriefcaseIcon, Phone } from "lucide-react";
+import { Menu, X, ChevronDown, ChevronUp, User, ShoppingCart, Package, HelpCircle, LogOut, Home, LogIn, UserPlus, Bell, BarChart3, Wrench, Settings, Briefcase, MessageSquare, Building2, BookOpen, Briefcase as BriefcaseIcon, Phone, Plus } from "lucide-react";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -92,7 +92,7 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className="bg-background border-b border-border sticky top-0 z-50" dir="rtl">
+    <nav className="bg-background border-b border-border fixed top-0 left-0 right-0 z-50" dir="rtl">
       <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8" dir="rtl">
         {/* Desktop Layout */}
         <div className="hidden lg:flex flex-col" dir="rtl">
@@ -177,7 +177,7 @@ const Navbar = () => {
                   </NavigationMenuLink>
                 </NavigationMenuItem>
 
-                {/* Services Dropdown - Using DropdownMenu for better reliability */}
+                {/* Services Dropdown - Redesigned with multi-level hierarchy */}
                 <NavigationMenuItem dir="rtl">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -188,53 +188,78 @@ const Navbar = () => {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent 
                       align="end" 
-                      className="w-[400px] bg-card/95 backdrop-blur-sm border border-border/50 shadow-elegant p-4"
+                      className="w-[280px] p-2 bg-yellow-50 border border-yellow-200 shadow-lg"
+                      sideOffset={5}
                     >
-                      <div className="grid grid-cols-1 gap-4" dir="rtl">
+                      <div className="space-y-1" dir="rtl">
                         {services.map((service, index) => (
                           <React.Fragment key={service.name}>
                             {service.subItems ? (
                               <DropdownMenuSub>
-                                <DropdownMenuSubTrigger className="flex items-center gap-2">
-                                  {service.name}
+                                <DropdownMenuSubTrigger 
+                                  className="flex items-center justify-between w-full bg-yellow-100 hover:bg-yellow-200 text-foreground px-3 py-2 rounded-md transition-colors"
+                                >
+                                  <span>{service.name}</span>
+                                  <Plus className="h-3 w-3" />
                                 </DropdownMenuSubTrigger>
-                                <DropdownMenuSubContent className="w-[360px] bg-card/95 backdrop-blur-sm">
-                                  {service.subItems.map((subItem) => (
-                                    <React.Fragment key={subItem.name}>
-                                      {subItem.subItems ? (
-                                        <DropdownMenuSub>
-                                          <DropdownMenuSubTrigger className="text-xs">
-                                            {subItem.name}
-                                          </DropdownMenuSubTrigger>
-                                          <DropdownMenuSubContent className="w-[320px] bg-card/95 backdrop-blur-sm">
-                                            {subItem.subItems.map((thirdLevel) => (
-                                              <DropdownMenuItem key={thirdLevel.name} asChild>
-                                                <Link to={thirdLevel.href} className="text-xs">
-                                                  • {thirdLevel.name}
-                                                </Link>
-                                              </DropdownMenuItem>
-                                            ))}
-                                          </DropdownMenuSubContent>
-                                        </DropdownMenuSub>
-                                      ) : (
-                                        <DropdownMenuItem asChild>
-                                          <Link to={subItem.href}>
-                                            {subItem.name}
-                                          </Link>
-                                        </DropdownMenuItem>
-                                      )}
-                                    </React.Fragment>
-                                  ))}
+                                <DropdownMenuSubContent 
+                                  className="w-[260px] bg-yellow-200/80 border border-yellow-300 shadow-lg"
+                                >
+                                  <div className="space-y-1 p-1" dir="rtl">
+                                    {service.subItems.map((subItem) => (
+                                      <React.Fragment key={subItem.name}>
+                                        {subItem.subItems ? (
+                                          <DropdownMenuSub>
+                                            <DropdownMenuSubTrigger 
+                                              className="flex items-center justify-between w-full bg-yellow-300/80 hover:bg-yellow-400/80 text-foreground px-3 py-2 rounded-md transition-colors text-sm"
+                                            >
+                                              <span>{subItem.name}</span>
+                                              <Plus className="h-3 w-3" />
+                                            </DropdownMenuSubTrigger>
+                                            <DropdownMenuSubContent 
+                                              className="w-[240px] bg-yellow-400/80 border border-yellow-500 shadow-lg"
+                                            >
+                                              <div className="space-y-1 p-1" dir="rtl">
+                                                {subItem.subItems.map((thirdLevel) => (
+                                                  <DropdownMenuItem 
+                                                    key={thirdLevel.name} 
+                                                    asChild
+                                                    className="bg-yellow-500/80 hover:bg-yellow-600/80 text-foreground px-3 py-2 rounded-md transition-colors text-xs"
+                                                  >
+                                                    <Link to={thirdLevel.href}>
+                                                      {thirdLevel.name}
+                                                    </Link>
+                                                  </DropdownMenuItem>
+                                                ))}
+                                              </div>
+                                            </DropdownMenuSubContent>
+                                          </DropdownMenuSub>
+                                        ) : (
+                                          <DropdownMenuItem 
+                                            asChild
+                                            className="bg-yellow-300/80 hover:bg-yellow-400/80 text-foreground px-3 py-2 rounded-md transition-colors text-sm"
+                                          >
+                                            <Link to={subItem.href}>
+                                              {subItem.name}
+                                            </Link>
+                                          </DropdownMenuItem>
+                                        )}
+                                      </React.Fragment>
+                                    ))}
+                                  </div>
                                 </DropdownMenuSubContent>
                               </DropdownMenuSub>
                             ) : (
-                              <DropdownMenuItem asChild>
+                              <DropdownMenuItem 
+                                asChild
+                                className="bg-yellow-100 hover:bg-yellow-200 text-foreground px-3 py-2 rounded-md transition-colors"
+                              >
                                 <Link to={service.href}>
                                   {service.name}
                                 </Link>
                               </DropdownMenuItem>
                             )}
-                            {index < services.length - 1 && <DropdownMenuSeparator />}
+                            {index < services.length - 1 && <DropdownMenuSeparator className="my-1 bg-yellow-200" />}
                           </React.Fragment>
                         ))}
                       </div>
