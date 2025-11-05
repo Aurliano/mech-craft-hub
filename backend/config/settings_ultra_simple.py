@@ -123,8 +123,9 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = '/static/'
-# Use a runtime-writable directory to avoid permission issues
-STATIC_ROOT = os.getenv('STATIC_ROOT', '/tmp/staticfiles_runtime')
+# Place collectstatic output in an app-mounted directory inside the container
+# so WhiteNoise and the Django static() helper can serve admin assets reliably
+STATIC_ROOT = os.getenv('STATIC_ROOT', '/app/staticfiles')
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
     os.path.join(BASE_DIR, '..', 'dist'),

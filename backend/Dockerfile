@@ -58,6 +58,7 @@ RUN mkdir -p /app/logs /app/media /app/staticfiles /app/backend/media && \
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 ENV DJANGO_SETTINGS_MODULE=config.settings_ultra_simple
+ENV STATIC_ROOT=/app/staticfiles
 
 # Health check - using curl instead of requests for better reliability
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
@@ -65,6 +66,9 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 # Expose port
 EXPOSE 80
+
+# Collect static files at build time so admin assets are available
+RUN python backend/manage.py collectstatic --noinput
 
 # Default command
 CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:80", "--workers", "3", "--timeout", "120", "--max-requests", "1000", "--max-requests-jitter", "100", "--preload"]
