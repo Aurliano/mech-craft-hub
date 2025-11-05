@@ -30,13 +30,17 @@ RUN find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true && 
     find . -name "*.pyc" -delete 2>/dev/null || true
 
 # Ensure media/static directories exist (the disk will be mounted over /app/backend/media)
-RUN mkdir -p /app/backend/media /app/staticfiles_runtime /tmp/staticfiles_runtime
+RUN mkdir -p /app/backend/media /app/staticfiles /tmp/staticfiles_runtime
 
 ENV PYTHONUNBUFFERED=1
 ENV DJANGO_SETTINGS_MODULE=config.settings_ultra_simple
 ENV PYTHONPATH=/app/backend
+ENV STATIC_ROOT=/app/staticfiles
 
 EXPOSE 80
+
+# Collect static files at build time so Django admin assets are present
+RUN python backend/manage.py collectstatic --noinput
 
 # Use root path for healthcheck to avoid missing /health endpoint
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \

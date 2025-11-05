@@ -1,5 +1,5 @@
 // Service Worker for SaydaTech PWA
-const CACHE_NAME = 'saydatech-pwa-v4';
+const CACHE_NAME = 'saydatech-pwa-v5';
 const OFFLINE_CACHE_URLS = [
   '/',
   '/manifest.json'
@@ -44,47 +44,49 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event
 self.addEventListener('fetch', (event) => {
-  // Skip non-GET requests
-  if (event.request.method !== 'GET') {
-    return;
+  // Only handle GET, same-origin requests
+  if (event.request.method !== 'GET') return;
+  if (!event.request.url.startsWith(self.location.origin)) return;
+
+  const url = new URL(event.request.url);
+  const path = url.pathname || '';
+
+  // Bypass caching/interception for admin, static, media and API endpoints
+  // Admin needs fresh assets; static/media are served by Django/WhiteNoise
+  if (
+    path.startsWith('/admin/') ||
+    path.startsWith('/static/') ||
+    path.startsWith('/media/') ||
+    path.startsWith('/api/')
+  ) {
+    return; // Let the network handle it directly
   }
 
-  // Skip cross-origin requests
-  if (!event.request.url.startsWith(self.location.origin)) {
-    return;
-  }
-
+  // Cache-first strategy for app shell and assets under /assets/
   event.respondWith(
-    caches.match(event.request)
-      .then((cachedResponse) => {
-        if (cachedResponse) {
-          console.log('Service Worker: Serving from cache', event.request.url);
-          return cachedResponse;
-        }
-
-        console.log('Service Worker: Fetching from network', event.request.url);
-        return fetch(event.request)
-          .then((response) => {
-            // Don't cache non-successful responses
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-
-            // Clone the response
-            const responseToCache = response.clone();
-
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
-
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      return fetch(event.request)
+        .then((response) => {
+          if (!response || response.status !== 200 || response.type !== 'basic') {
             return response;
-          })
-          .catch((error) => {
-            console.error('Service Worker: Fetch failed', error);
-            throw error;
-          });
-      })
+          }
+          const isCachable = path === '/' || path.startsWith('/assets/');
+          if (isCachable) {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return response;
+        })
+        .catch((error) => {
+          console.error('Service Worker: Fetch failed', error);
+          throw error;
+        });
+    })
   );
 });
 
