@@ -181,9 +181,9 @@ const ContractorRegister = () => {
   };
 
   return (
-    <div className="min-h-screen" dir="rtl">
+    <div className="min-h-screen overflow-x-hidden" dir="rtl">
       <Navbar />
-      <div className="flex items-center justify-center bg-gradient-to-br from-background to-muted p-4 min-h-[calc(100vh-4rem)]">
+      <div className="flex items-center justify-center bg-gradient-to-br from-background to-muted p-4 min-h-[calc(100vh-4rem)] overflow-x-hidden w-full">
         <Card className="w-full max-w-2xl">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">ثبت نام پیمانکار</CardTitle>
