@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Eye, EyeOff } from 'lucide-react';
 import { ValidationRule } from '@/lib/formValidation';
 
 interface FormFieldProps {
@@ -38,8 +40,9 @@ const FormField: React.FC<FormFieldProps> = ({
   disabled = false,
   autoComplete
 }) => {
+  const [showPassword, setShowPassword] = useState(false);
   const hasError = error && touched;
-  const inputClassName = `text-right ${hasError ? 'border-red-500 focus:border-red-500' : ''} ${className}`;
+  const inputClassName = `text-right ${hasError ? 'border-red-500 focus:border-red-500' : ''} ${className} ${type === 'password' ? 'pr-10' : ''}`;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     onChange(e.target.value);
@@ -82,6 +85,37 @@ const FormField: React.FC<FormFieldProps> = ({
         );
       
       default:
+        if (type === 'password') {
+          return (
+            <div className="relative">
+              <Input
+                id={name}
+                type={showPassword ? "text" : "password"}
+                value={value || ''}
+                onChange={handleChange}
+                onBlur={onBlur}
+                className={inputClassName}
+                placeholder={placeholder}
+                disabled={disabled}
+                autoComplete={autoComplete}
+                required={required}
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute left-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          );
+        }
         return (
           <Input
             id={name}

@@ -1,5 +1,5 @@
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
 import { Menu, X, ChevronDown, ChevronUp, User, ShoppingCart, Package, HelpCircle, LogOut, Home, LogIn, UserPlus, Bell, BarChart3, Wrench, Settings, Briefcase, MessageSquare, Building2, BookOpen, Briefcase as BriefcaseIcon, Phone } from "lucide-react";
@@ -12,6 +12,17 @@ import {
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import UserDropdown from "@/components/UserDropdown";
@@ -166,79 +177,69 @@ const Navbar = () => {
                   </NavigationMenuLink>
                 </NavigationMenuItem>
 
-                {/* Services Dropdown */}
+                {/* Services Dropdown - Using DropdownMenu for better reliability */}
                 <NavigationMenuItem dir="rtl">
-                  <NavigationMenuTrigger className="bg-transparent hover:bg-muted/50 data-[state=open]:bg-muted/50">
-                    <Wrench className="h-4 w-4 ml-2" />
-                    خدمات تخصصی
-                  </NavigationMenuTrigger>
-                  <NavigationMenuContent className="bg-card/95 backdrop-blur-sm border border-border/50 shadow-elegant" dir="rtl">
-                    <div className="w-[400px] p-4" dir="rtl">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className={cn(navigationMenuTriggerStyle(), "bg-transparent hover:bg-muted/50 data-[state=open]:bg-muted/50")}>
+                        <Wrench className="h-4 w-4 ml-2" />
+                        خدمات تخصصی
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent 
+                      align="end" 
+                      className="w-[400px] bg-card/95 backdrop-blur-sm border border-border/50 shadow-elegant p-4"
+                    >
                       <div className="grid grid-cols-1 gap-4" dir="rtl">
-                        {services.map((service) => (
-                          <div key={service.name} className="group">
+                        {services.map((service, index) => (
+                          <React.Fragment key={service.name}>
                             {service.subItems ? (
-                              <div>
-                                <h3 className="text-sm font-medium text-foreground mb-2 px-3 py-2 bg-muted/30 rounded-md">
+                              <DropdownMenuSub>
+                                <DropdownMenuSubTrigger className="flex items-center gap-2">
                                   {service.name}
-                                </h3>
-                                <div className="grid grid-cols-1 gap-1 mr-4" dir="rtl">
+                                </DropdownMenuSubTrigger>
+                                <DropdownMenuSubContent className="w-[360px] bg-card/95 backdrop-blur-sm">
                                   {service.subItems.map((subItem) => (
-                                    <div key={subItem.name}>
+                                    <React.Fragment key={subItem.name}>
                                       {subItem.subItems ? (
-                                        <div className="mb-2">
-                                          <h4 className="text-xs font-medium text-muted-foreground mb-1 px-2 py-1">
+                                        <DropdownMenuSub>
+                                          <DropdownMenuSubTrigger className="text-xs">
                                             {subItem.name}
-                                          </h4>
-                                          <div className="grid grid-cols-1 gap-1 mr-4">
+                                          </DropdownMenuSubTrigger>
+                                          <DropdownMenuSubContent className="w-[320px] bg-card/95 backdrop-blur-sm">
                                             {subItem.subItems.map((thirdLevel) => (
-                                              <NavigationMenuLink
-                                                key={thirdLevel.name}
-                                                asChild
-                                              >
-                                                <Link
-                                                  to={thirdLevel.href}
-                                                  className="block px-2 py-1 text-xs text-muted-foreground hover:text-primary hover:bg-muted/30 rounded transition-colors"
-                                                >
+                                              <DropdownMenuItem key={thirdLevel.name} asChild>
+                                                <Link to={thirdLevel.href} className="text-xs">
                                                   • {thirdLevel.name}
                                                 </Link>
-                                              </NavigationMenuLink>
+                                              </DropdownMenuItem>
                                             ))}
-                                          </div>
-                                        </div>
+                                          </DropdownMenuSubContent>
+                                        </DropdownMenuSub>
                                       ) : (
-                                        <NavigationMenuLink
-                                          asChild
-                                        >
-                                          <Link
-                                            to={subItem.href}
-                                            className="block px-2 py-2 text-sm text-foreground hover:text-primary hover:bg-muted/50 rounded transition-colors"
-                                          >
+                                        <DropdownMenuItem asChild>
+                                          <Link to={subItem.href}>
                                             {subItem.name}
                                           </Link>
-                                        </NavigationMenuLink>
+                                        </DropdownMenuItem>
                                       )}
-                                    </div>
+                                    </React.Fragment>
                                   ))}
-                                </div>
-                              </div>
+                                </DropdownMenuSubContent>
+                              </DropdownMenuSub>
                             ) : (
-                              <NavigationMenuLink
-                                asChild
-                              >
-                                <Link
-                                  to={service.href}
-                                  className="block px-3 py-2 text-sm font-medium text-foreground hover:text-primary hover:bg-muted/50 rounded transition-colors"
-                                >
+                              <DropdownMenuItem asChild>
+                                <Link to={service.href}>
                                   {service.name}
                                 </Link>
-                              </NavigationMenuLink>
+                              </DropdownMenuItem>
                             )}
-                          </div>
+                            {index < services.length - 1 && <DropdownMenuSeparator />}
+                          </React.Fragment>
                         ))}
                       </div>
-                    </div>
-                  </NavigationMenuContent>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </NavigationMenuItem>
 
                 {/* Blog */}

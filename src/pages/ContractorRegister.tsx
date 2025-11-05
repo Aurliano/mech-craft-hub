@@ -301,15 +301,30 @@ const ContractorRegister = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">تکرار رمز عبور *</Label>
-                  <Input 
-                    id="confirmPassword" 
-                    type="password" 
-                    value={confirm} 
-                    onChange={(e) => setConfirm(e.target.value)} 
-                    className={`text-right ${validationErrors.confirmPassword ? 'border-red-500' : ''}`}
-                    required 
-                    minLength={8} 
-                  />
+                  <div className="relative">
+                    <Input 
+                      id="confirmPassword" 
+                      type={showConfirmPassword ? "text" : "password"} 
+                      value={confirm} 
+                      onChange={(e) => setConfirm(e.target.value)} 
+                      className={`text-right pr-10 ${validationErrors.confirmPassword ? 'border-red-500' : ''}`}
+                      required 
+                      minLength={8} 
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute left-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
                   {validationErrors.confirmPassword && (
                     <p className="text-xs text-red-500">{validationErrors.confirmPassword}</p>
                   )}
