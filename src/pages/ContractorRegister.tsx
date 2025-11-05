@@ -322,7 +322,7 @@ const ContractorRegister = () => {
                     <SelectTrigger className={validationErrors.scope ? 'border-red-500' : ''}>
                       <SelectValue placeholder="زمینه فعالیت خود را انتخاب کنید" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent position="item-aligned" className="max-h-[300px] overflow-y-auto">
                       {Array.isArray(scopes) && scopes.map((scope) => (
                         <SelectItem key={scope.id} value={scope.id}>
                           {scope.name}
