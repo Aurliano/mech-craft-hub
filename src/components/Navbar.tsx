@@ -172,8 +172,8 @@ const Navbar = () => {
                     <Wrench className="h-4 w-4 ml-2" />
                     خدمات تخصصی
                   </NavigationMenuTrigger>
-                  <NavigationMenuContent className="bg-card/95 backdrop-blur-sm border border-border/50 shadow-elegant">
-                    <div className="w-[400px] p-4">
+                  <NavigationMenuContent className="bg-card/95 backdrop-blur-sm border border-border/50 shadow-elegant" dir="rtl">
+                    <div className="w-[400px] p-4" dir="rtl">
                       <div className="grid grid-cols-1 gap-4" dir="rtl">
                         {services.map((service) => (
                           <div key={service.name} className="group">
@@ -194,20 +194,28 @@ const Navbar = () => {
                                             {subItem.subItems.map((thirdLevel) => (
                                               <NavigationMenuLink
                                                 key={thirdLevel.name}
-                                                href={thirdLevel.href}
-                                                className="block px-2 py-1 text-xs text-muted-foreground hover:text-primary hover:bg-muted/30 rounded transition-colors"
+                                                asChild
                                               >
-                                                • {thirdLevel.name}
+                                                <Link
+                                                  to={thirdLevel.href}
+                                                  className="block px-2 py-1 text-xs text-muted-foreground hover:text-primary hover:bg-muted/30 rounded transition-colors"
+                                                >
+                                                  • {thirdLevel.name}
+                                                </Link>
                                               </NavigationMenuLink>
                                             ))}
                                           </div>
                                         </div>
                                       ) : (
                                         <NavigationMenuLink
-                                          href={subItem.href}
-                                          className="block px-2 py-2 text-sm text-foreground hover:text-primary hover:bg-muted/50 rounded transition-colors"
+                                          asChild
                                         >
-                                          {subItem.name}
+                                          <Link
+                                            to={subItem.href}
+                                            className="block px-2 py-2 text-sm text-foreground hover:text-primary hover:bg-muted/50 rounded transition-colors"
+                                          >
+                                            {subItem.name}
+                                          </Link>
                                         </NavigationMenuLink>
                                       )}
                                     </div>
@@ -216,10 +224,14 @@ const Navbar = () => {
                               </div>
                             ) : (
                               <NavigationMenuLink
-                                href={service.href}
-                                className="block px-3 py-2 text-sm font-medium text-foreground hover:text-primary hover:bg-muted/50 rounded transition-colors"
+                                asChild
                               >
-                                {service.name}
+                                <Link
+                                  to={service.href}
+                                  className="block px-3 py-2 text-sm font-medium text-foreground hover:text-primary hover:bg-muted/50 rounded transition-colors"
+                                >
+                                  {service.name}
+                                </Link>
                               </NavigationMenuLink>
                             )}
                           </div>
