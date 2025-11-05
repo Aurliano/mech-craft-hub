@@ -87,8 +87,10 @@ const Footer = () => {
                 <img 
                   referrerPolicy='origin' 
                   src='https://trustseal.enamad.ir/logo.aspx?id=655020&Code=y58ivNNQdkWEpCN9q6GsBZKUAUGg7EhO' 
-                  alt='نماد اعتماد الکترونیکی سایت سایدا' 
-                  className="h-16 w-auto hover:opacity-80 transition-opacity cursor-pointer"
+                  alt='' 
+                  style={{ cursor: 'pointer' }}
+                  code='y58ivNNQdkWEpCN9q6GsBZKUAUGg7EhO'
+                  className="h-16 w-auto hover:opacity-80 transition-opacity"
                 />
               </a>
             </div>
