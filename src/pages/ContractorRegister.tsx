@@ -88,8 +88,7 @@ const ContractorRegister = () => {
       email,
       phone,
       password,
-      role: 'contractor', // Set role as contractor
-      selected_scope: selectedScopeId,
+      selected_scope: selectedScopeId || null,
       selected_services: selectedServices
     };
 

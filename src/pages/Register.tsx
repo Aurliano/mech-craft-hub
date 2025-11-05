@@ -70,7 +70,6 @@ const Register = () => {
       email,
       phone,
       password,
-      role: 'customer', // Set role as customer
     };
 
     // Since Turnstile is disabled, always use regular registration
