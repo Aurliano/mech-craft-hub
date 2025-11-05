@@ -6,7 +6,7 @@ const ServicesPage = () => {
   return (
     <div className="min-h-screen" dir="rtl">
       <Navbar />
-      <main className="pt-16">
+      <main>
         <div className="bg-gradient-primary py-20">
           <div className="container mx-auto px-4 text-center">
             <h1 className="text-4xl md:text-5xl font-bold text-primary-foreground mb-6">

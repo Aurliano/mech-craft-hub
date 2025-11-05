@@ -188,7 +188,7 @@ const Navbar = () => {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent 
                       align="end" 
-                      className="w-[280px] p-2 bg-yellow-50 border border-yellow-200 shadow-lg"
+                      className="w-[280px] p-2 bg-amber-50/50 border border-amber-200/50 shadow-lg"
                       sideOffset={5}
                     >
                       <div className="space-y-1" dir="rtl">
@@ -197,13 +197,13 @@ const Navbar = () => {
                             {service.subItems ? (
                               <DropdownMenuSub>
                                 <DropdownMenuSubTrigger 
-                                  className="flex items-center justify-between w-full bg-yellow-100 hover:bg-yellow-200 text-foreground px-3 py-2 rounded-md transition-colors"
+                                  className="flex items-center justify-between w-full bg-amber-100/60 hover:bg-amber-200/60 text-foreground px-3 py-2 rounded-md transition-colors"
                                 >
                                   <span>{service.name}</span>
                                   <Plus className="h-3 w-3" />
                                 </DropdownMenuSubTrigger>
                                 <DropdownMenuSubContent 
-                                  className="w-[260px] bg-yellow-200/80 border border-yellow-300 shadow-lg"
+                                  className="w-[260px] bg-amber-200/60 border border-amber-300/60 shadow-lg"
                                 >
                                   <div className="space-y-1 p-1" dir="rtl">
                                     {service.subItems.map((subItem) => (
@@ -211,20 +211,20 @@ const Navbar = () => {
                                         {subItem.subItems ? (
                                           <DropdownMenuSub>
                                             <DropdownMenuSubTrigger 
-                                              className="flex items-center justify-between w-full bg-yellow-300/80 hover:bg-yellow-400/80 text-foreground px-3 py-2 rounded-md transition-colors text-sm"
+                                              className="flex items-center justify-between w-full bg-amber-300/60 hover:bg-amber-400/60 text-foreground px-3 py-2 rounded-md transition-colors text-sm"
                                             >
                                               <span>{subItem.name}</span>
                                               <Plus className="h-3 w-3" />
                                             </DropdownMenuSubTrigger>
                                             <DropdownMenuSubContent 
-                                              className="w-[240px] bg-yellow-400/80 border border-yellow-500 shadow-lg"
+                                              className="w-[240px] bg-amber-400/60 border border-amber-500/60 shadow-lg"
                                             >
                                               <div className="space-y-1 p-1" dir="rtl">
                                                 {subItem.subItems.map((thirdLevel) => (
                                                   <DropdownMenuItem 
                                                     key={thirdLevel.name} 
                                                     asChild
-                                                    className="bg-yellow-500/80 hover:bg-yellow-600/80 text-foreground px-3 py-2 rounded-md transition-colors text-xs"
+                                                    className="bg-amber-500/60 hover:bg-amber-600/60 text-foreground px-3 py-2 rounded-md transition-colors text-xs"
                                                   >
                                                     <Link to={thirdLevel.href}>
                                                       {thirdLevel.name}
@@ -237,7 +237,7 @@ const Navbar = () => {
                                         ) : (
                                           <DropdownMenuItem 
                                             asChild
-                                            className="bg-yellow-300/80 hover:bg-yellow-400/80 text-foreground px-3 py-2 rounded-md transition-colors text-sm"
+                                            className="bg-amber-300/60 hover:bg-amber-400/60 text-foreground px-3 py-2 rounded-md transition-colors text-sm"
                                           >
                                             <Link to={subItem.href}>
                                               {subItem.name}
@@ -252,14 +252,14 @@ const Navbar = () => {
                             ) : (
                               <DropdownMenuItem 
                                 asChild
-                                className="bg-yellow-100 hover:bg-yellow-200 text-foreground px-3 py-2 rounded-md transition-colors"
+                                className="bg-amber-100/60 hover:bg-amber-200/60 text-foreground px-3 py-2 rounded-md transition-colors"
                               >
                                 <Link to={service.href}>
                                   {service.name}
                                 </Link>
                               </DropdownMenuItem>
                             )}
-                            {index < services.length - 1 && <DropdownMenuSeparator className="my-1 bg-yellow-200" />}
+                            {index < services.length - 1 && <DropdownMenuSeparator className="my-1 bg-amber-200/40" />}
                           </React.Fragment>
                         ))}
                       </div>
