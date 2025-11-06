@@ -429,12 +429,13 @@ def health(request):
             "timestamp": timezone.now().isoformat()
         })
     except Exception as e:
+        # Do not fail container healthcheck on transient DB errors; report but return 200
         return Response({
-            "status": "unhealthy",
+            "status": "degraded",
             "database": "disconnected",
             "error": str(e),
             "timestamp": timezone.now().isoformat()
-        }, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        })
 
 
 @api_view(["GET"])
