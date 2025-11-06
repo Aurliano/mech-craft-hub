@@ -1125,7 +1125,12 @@ class UploadView(APIView):
     def post(self, request):
         file_obj = request.FILES.get('file')
         if not file_obj:
-            return Response({'detail': 'file is required'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({
+                'error': True,
+                'message': 'فایل الزامی است',
+                'details': 'لطفاً یک فایل انتخاب کنید',
+                'code': 'file_required'
+            }, status=status.HTTP_400_BAD_REQUEST)
         ext = os.path.splitext(file_obj.name)[1]
         new_name = f"{uuid4().hex}{ext}"
         rel_path = f"uploads/{new_name}"
@@ -1145,7 +1150,12 @@ class UploadView(APIView):
             error_msg = str(e)
         
         if not saved_ok:
-            return Response({'detail': 'Upload failed', 'error': error_msg}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({
+                'error': True,
+                'message': 'آپلود فایل ناموفق بود',
+                'details': 'خطا در ذخیره فایل. لطفاً دوباره تلاش کنید',
+                'code': 'upload_failed'
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         # Validate/normalize context_id to UUID if provided; otherwise generate one
         raw_context_id = request.data.get('context_id')
         try:

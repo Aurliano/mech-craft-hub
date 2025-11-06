@@ -1,3 +1,4 @@
+import uuid
 from rest_framework import serializers
 from .models import (
     User, Role, UserRole, Scope, Service, ServiceField, ServiceTab,
@@ -505,9 +506,9 @@ class LoginSerializer(serializers.Serializer):
             if user:
                 data['user'] = user
             else:
-                raise serializers.ValidationError("Invalid username or password")
+                raise serializers.ValidationError("نام کاربری یا رمز عبور اشتباه است")
         else:
-            raise serializers.ValidationError("Username and password are required")
+            raise serializers.ValidationError("نام کاربری و رمز عبور الزامی است")
         
         return data
 
@@ -545,6 +546,42 @@ class CreateOrderSerializer(serializers.Serializer):
         child=serializers.DictField(),
         min_length=1
     )
+    
+    def validate_items(self, value):
+        """Validate that all service IDs in items exist and are active"""
+        if not value:
+            raise serializers.ValidationError("لیست آیتم‌ها نمی‌تواند خالی باشد")
+        
+        service_ids = []
+        for item in value:
+            if 'service' not in item:
+                raise serializers.ValidationError("هر آیتم باید دارای شناسه سرویس (service) باشد")
+            
+            service_id = item['service']
+            try:
+                # Try to convert to UUID if it's a string
+                if isinstance(service_id, str):
+                    service_id = uuid.UUID(service_id)
+            except (ValueError, AttributeError):
+                raise serializers.ValidationError(f"شناسه سرویس نامعتبر: {item['service']}")
+            
+            service_ids.append(service_id)
+        
+        # Check if all services exist and are active
+        existing_services = Service.objects.filter(id__in=service_ids, is_active=True)
+        existing_service_ids = set(existing_services.values_list('id', flat=True))
+        
+        missing_services = []
+        for service_id in service_ids:
+            if service_id not in existing_service_ids:
+                missing_services.append(str(service_id))
+        
+        if missing_services:
+            raise serializers.ValidationError(
+                f"سرویس‌های زیر یافت نشدند یا غیرفعال هستند: {', '.join(missing_services)}"
+            )
+        
+        return value
 
 
 class OrderStatusUpdateSerializer(serializers.Serializer):

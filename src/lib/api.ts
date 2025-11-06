@@ -457,11 +457,43 @@ export async function uploadFile(file: File, extra?: { context?: string; context
       console.log('Upload response status:', res.status);
 
       if (!res.ok) {
-        const text = await res.text();
-        console.error('Upload error response:', text);
+        let errorMessage = 'آپلود فایل ناموفق بود';
+        try {
+          const errorData = await res.json();
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          } else if (errorData.detail) {
+            errorMessage = errorData.detail;
+          } else if (errorData.error) {
+            errorMessage = errorData.error;
+          }
+        } catch {
+          const text = await res.text();
+          if (text) {
+            try {
+              const parsed = JSON.parse(text);
+              errorMessage = parsed.message || parsed.detail || errorMessage;
+            } catch {
+              // Use default error message
+            }
+          }
+        }
+        
+        // Handle specific status codes
+        if (res.status === 413) {
+          errorMessage = 'حجم فایل بیش از حد مجاز است. لطفاً فایل کوچکتری انتخاب کنید';
+        } else if (res.status === 415) {
+          errorMessage = 'نوع فایل پشتیبانی نمی‌شود. لطفاً فایل با فرمت مناسب ارسال کنید';
+        } else if (res.status === 401) {
+          errorMessage = 'لطفاً وارد حساب کاربری خود شوید';
+        } else if (res.status === 403) {
+          errorMessage = 'شما مجاز به آپلود فایل نیستید';
+        } else if (res.status >= 500) {
+          errorMessage = 'خطای سرور. لطفاً بعداً تلاش کنید';
+        }
         
         if (attempt === retries) {
-          throw new Error(`Upload failed after ${retries} attempts: ${res.status} - ${text}`);
+          throw new Error(errorMessage);
         }
         
         // Wait before retry
@@ -476,7 +508,14 @@ export async function uploadFile(file: File, extra?: { context?: string; context
       console.error(`Upload error attempt ${attempt}:`, error);
       
       if (attempt === retries) {
-        throw error;
+        // Check if it's a network error
+        if (error instanceof TypeError && error.message.includes('fetch')) {
+          throw new Error('خطا در اتصال به سرور. لطفاً اتصال اینترنت خود را بررسی کنید');
+        }
+        if (error instanceof Error) {
+          throw error;
+        }
+        throw new Error('آپلود فایل ناموفق بود. لطفاً دوباره تلاش کنید');
       }
       
       // Wait before retry
@@ -484,7 +523,7 @@ export async function uploadFile(file: File, extra?: { context?: string; context
     }
   }
   
-  throw new Error('Upload failed after all retries');
+  throw new Error('آپلود فایل پس از تلاش‌های متعدد ناموفق بود');
 }
 
 // Password Reset Functions

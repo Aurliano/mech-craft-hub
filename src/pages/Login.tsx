@@ -145,20 +145,8 @@ const Login = () => {
               <ErrorDisplay 
                 error={currentError} 
                 onRetry={() => window.location.reload()}
+                showDismiss={false}
               />
-              
-              {/* Custom error messages */}
-              {currentError && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>
-                    {currentError.message?.includes('Invalid credentials') || 
-                     currentError.message?.includes('نام کاربری یا رمز عبور اشتباه') ? 
-                     'نام کاربری یا رمز عبور اشتباه است. لطفاً دوباره تلاش کنید.' :
-                     currentError.message || 'خطایی رخ داده است. لطفاً دوباره تلاش کنید.'}
-                  </AlertDescription>
-                </Alert>
-              )}
 
               <div className="flex items-center justify-between">
                 <Link to="/forgot-password" className="text-sm text-primary hover:underline">
