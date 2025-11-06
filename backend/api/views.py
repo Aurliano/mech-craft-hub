@@ -417,25 +417,11 @@ class TicketFilter(filters_drf.FilterSet):
 def health(request):
     """Health check endpoint for Docker and load balancers"""
     from django.utils import timezone
-    try:
-        # Test database connection
-        from django.db import connection
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT 1")
-        
-        return Response({
-            "status": "healthy",
-            "database": "connected",
-            "timestamp": timezone.now().isoformat()
-        })
-    except Exception as e:
-        # Do not fail container healthcheck on transient DB errors; report but return 200
-        return Response({
-            "status": "degraded",
-            "database": "disconnected",
-            "error": str(e),
-            "timestamp": timezone.now().isoformat()
-        })
+    # Keep this endpoint dependency-free from DB/cache to avoid failing container health
+    return Response({
+        "status": "ok",
+        "timestamp": timezone.now().isoformat()
+    })
 
 
 @api_view(["GET"])
