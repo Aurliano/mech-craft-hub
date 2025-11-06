@@ -124,6 +124,69 @@ export async function refreshAccessToken(): Promise<string | null> {
   }
 }
 
+/**
+ * Parse error response and extract user-friendly message
+ */
+function parseErrorResponse(errorText: string, defaultMessage: string = 'خطایی رخ داده است'): string {
+  if (!errorText) {
+    return defaultMessage;
+  }
+
+  // Try to parse as JSON first
+  if (errorText.trim().startsWith('{') || errorText.trim().startsWith('[')) {
+    try {
+      const errorData = JSON.parse(errorText);
+      // Check for our custom error format
+      if (errorData.message) {
+        return errorData.message;
+      } else if (errorData.detail) {
+        return errorData.detail;
+      } else if (errorData.non_field_errors && Array.isArray(errorData.non_field_errors) && errorData.non_field_errors.length > 0) {
+        return errorData.non_field_errors[0];
+      } else if (typeof errorData === 'string') {
+        return errorData;
+      }
+    } catch {
+      // If JSON parsing fails, try to extract message using regex
+      if (errorText.includes('non_field_errors')) {
+        const match = errorText.match(/"non_field_errors":\s*\["([^"]+)"/);
+        if (match && match[1]) {
+          return match[1];
+        } else {
+          // Try to extract any message field
+          const messageMatch = errorText.match(/"message":\s*"([^"]+)"/);
+          if (messageMatch && messageMatch[1]) {
+            return messageMatch[1];
+          }
+        }
+      } else {
+        // Try to extract message field
+        const messageMatch = errorText.match(/"message":\s*"([^"]+)"/);
+        if (messageMatch && messageMatch[1]) {
+          return messageMatch[1];
+        }
+      }
+    }
+  }
+  
+  // Not JSON, use as is
+  return errorText;
+}
+
+/**
+ * Create a properly formatted error from response
+ */
+async function createErrorFromResponse(res: Response, defaultMessage: string = 'خطایی رخ داده است'): Promise<Error> {
+  const errorText = await res.text();
+  const errorMessage = parseErrorResponse(errorText, defaultMessage);
+  const error = new Error(errorMessage);
+  // Add response info to error for better error handling
+  Object.assign(error, {
+    response: { status: res.status, data: { message: errorMessage } }
+  });
+  return error;
+}
+
 // Simple fetch function without retry logic
 async function simpleFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getAccessToken();
@@ -199,8 +262,7 @@ async function simpleFetch<T>(path: string, options: RequestInit = {}): Promise<
   }
 
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text || res.statusText);
+    throw await createErrorFromResponse(res, res.statusText || 'خطایی رخ داده است');
   }
   if (res.status === 204) return undefined as unknown as T;
   return (await res.json()) as T;
@@ -236,8 +298,7 @@ export async function loginRequest(params: {
     body: JSON.stringify(params),
   });
   if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || 'Invalid credentials');
+    throw await createErrorFromResponse(res, 'نام کاربری یا رمز عبور اشتباه است');
   }
   const data = (await res.json()) as { access: string; refresh: string } & Record<string, unknown>;
   // Persist tokens for subsequent authenticated requests
@@ -265,10 +326,9 @@ export async function customerRegisterRequest(params: {
     credentials: 'include',
     body: JSON.stringify(params),
   });
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || 'Customer registration failed');
-  }
+    if (!res.ok) {
+      throw await createErrorFromResponse(res, 'ثبت نام ناموفق بود');
+    }
   return (await res.json()) as unknown;
 }
 
@@ -292,10 +352,9 @@ export async function contractorRegisterRequest(params: {
     credentials: 'include',
     body: JSON.stringify(params),
   });
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || 'Contractor registration failed');
-  }
+    if (!res.ok) {
+      throw await createErrorFromResponse(res, 'ثبت نام پیمانکار ناموفق بود');
+    }
   return (await res.json()) as unknown;
 }
 
@@ -394,11 +453,9 @@ export async function uploadUserFile(file: File, orderId?: string, retries = 3):
       });
 
       if (!res.ok) {
-        const text = await res.text();
-        console.error('Upload error response:', text);
-        
         if (attempt === retries) {
-          throw new Error(`Upload failed after ${retries} attempts: ${res.status} - ${text}`);
+          const error = await createErrorFromResponse(res, 'آپلود فایل ناموفق بود');
+          throw error;
         }
         
         await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
@@ -457,43 +514,22 @@ export async function uploadFile(file: File, extra?: { context?: string; context
       console.log('Upload response status:', res.status);
 
       if (!res.ok) {
-        let errorMessage = 'آپلود فایل ناموفق بود';
-        try {
-          const errorData = await res.json();
-          if (errorData.message) {
-            errorMessage = errorData.message;
-          } else if (errorData.detail) {
-            errorMessage = errorData.detail;
-          } else if (errorData.error) {
-            errorMessage = errorData.error;
-          }
-        } catch {
-          const text = await res.text();
-          if (text) {
-            try {
-              const parsed = JSON.parse(text);
-              errorMessage = parsed.message || parsed.detail || errorMessage;
-            } catch {
-              // Use default error message
-            }
-          }
-        }
-        
-        // Handle specific status codes
-        if (res.status === 413) {
-          errorMessage = 'حجم فایل بیش از حد مجاز است. لطفاً فایل کوچکتری انتخاب کنید';
-        } else if (res.status === 415) {
-          errorMessage = 'نوع فایل پشتیبانی نمی‌شود. لطفاً فایل با فرمت مناسب ارسال کنید';
-        } else if (res.status === 401) {
-          errorMessage = 'لطفاً وارد حساب کاربری خود شوید';
-        } else if (res.status === 403) {
-          errorMessage = 'شما مجاز به آپلود فایل نیستید';
-        } else if (res.status >= 500) {
-          errorMessage = 'خطای سرور. لطفاً بعداً تلاش کنید';
-        }
-        
         if (attempt === retries) {
-          throw new Error(errorMessage);
+          let defaultMessage = 'آپلود فایل ناموفق بود';
+          // Handle specific status codes
+          if (res.status === 413) {
+            defaultMessage = 'حجم فایل بیش از حد مجاز است. لطفاً فایل کوچکتری انتخاب کنید';
+          } else if (res.status === 415) {
+            defaultMessage = 'نوع فایل پشتیبانی نمی‌شود. لطفاً فایل با فرمت مناسب ارسال کنید';
+          } else if (res.status === 401) {
+            defaultMessage = 'لطفاً وارد حساب کاربری خود شوید';
+          } else if (res.status === 403) {
+            defaultMessage = 'شما مجاز به آپلود فایل نیستید';
+          } else if (res.status >= 500) {
+            defaultMessage = 'خطای سرور. لطفاً بعداً تلاش کنید';
+          }
+          const error = await createErrorFromResponse(res, defaultMessage);
+          throw error;
         }
         
         // Wait before retry
@@ -538,8 +574,7 @@ export async function passwordResetRequest(email: string) {
     body: JSON.stringify({ email }),
   });
   if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || 'Password reset request failed');
+    throw await createErrorFromResponse(res, 'درخواست بازیابی رمز عبور ناموفق بود');
   }
   return (await res.json()) as { detail: string; reset_url?: string };
 }
@@ -555,8 +590,7 @@ export async function passwordResetConfirm(token: string, newPassword: string) {
     body: JSON.stringify({ token, new_password: newPassword }),
   });
   if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || 'Password reset confirmation failed');
+    throw await createErrorFromResponse(res, 'تایید بازیابی رمز عبور ناموفق بود');
   }
   return (await res.json()) as { detail: string };
 }
@@ -572,8 +606,7 @@ export async function changePassword(oldPassword: string, newPassword: string) {
     body: JSON.stringify({ old_password: oldPassword, new_password: newPassword }),
   });
   if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || 'Change password failed');
+    throw await createErrorFromResponse(res, 'تغییر رمز عبور ناموفق بود');
   }
   return (await res.json()) as { detail: string };
 }
@@ -610,8 +643,7 @@ export async function phoneVerificationRequest(phone: string) {
     body: JSON.stringify({ phone }),
   });
   if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || 'Phone verification request failed');
+    throw await createErrorFromResponse(res, 'درخواست تایید شماره تلفن ناموفق بود');
   }
   return (await res.json()) as { detail: string; code?: string; expires_in: number; message_id?: string };
 }
@@ -627,8 +659,7 @@ export async function phoneVerificationConfirm(phone: string, code: string) {
     body: JSON.stringify({ phone, code }),
   });
   if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || 'Phone verification confirmation failed');
+    throw await createErrorFromResponse(res, 'تایید شماره تلفن ناموفق بود');
   }
   return (await res.json()) as { detail: string };
 }
@@ -645,8 +676,7 @@ export async function passwordResetRequestSMS(email: string) {
     body: JSON.stringify({ email }),
   });
   if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || 'SMS password reset request failed');
+    throw await createErrorFromResponse(res, 'درخواست بازیابی رمز عبور از طریق پیامک ناموفق بود');
   }
   return (await res.json()) as { detail: string; phone?: string; code?: string; expires_in: number; message_id?: string };
 }
@@ -662,8 +692,7 @@ export async function passwordResetConfirmSMS(code: string, newPassword: string)
     body: JSON.stringify({ token: code, new_password: newPassword }),
   });
   if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || 'SMS password reset confirmation failed');
+    throw await createErrorFromResponse(res, 'تایید بازیابی رمز عبور از طریق پیامک ناموفق بود');
   }
   return (await res.json()) as { detail: string };
 }
@@ -680,8 +709,7 @@ export async function verifyPasswordResetSMS(code: string) {
     body: JSON.stringify({ token: code, verify_only: true }),
   });
   if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || 'SMS code verification failed');
+    throw await createErrorFromResponse(res, 'تایید کد پیامک ناموفق بود');
   }
   return (await res.json()) as { detail: string };
 }
@@ -699,8 +727,7 @@ export async function verifyUserPhone(phone: string) {
     body: JSON.stringify({ phone }),
   });
   if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || 'User phone verification request failed');
+    throw await createErrorFromResponse(res, 'درخواست تایید شماره تلفن کاربر ناموفق بود');
   }
   return (await res.json()) as { detail: string; code?: string; expires_in: number; message_id?: string };
 }
@@ -715,8 +742,7 @@ export async function getSMSCredit() {
     credentials: 'include',
   });
   if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || 'SMS credit check failed');
+    throw await createErrorFromResponse(res, 'بررسی اعتبار پیامک ناموفق بود');
   }
   return (await res.json()) as { credit: number; message: string };
 }
@@ -1198,8 +1224,7 @@ export async function loginWithTurnstile(params: {
     body: JSON.stringify(params),
   });
   if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || 'Login failed');
+    throw await createErrorFromResponse(res, 'ورود ناموفق بود');
   }
   return (await res.json()) as { access: string; refresh: string };
 }
@@ -1221,8 +1246,7 @@ export async function registerWithTurnstile(params: {
     body: JSON.stringify(params),
   });
   if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(errorText || 'Registration failed');
+    throw await createErrorFromResponse(res, 'ثبت نام ناموفق بود');
   }
   return (await res.json()) as unknown;
 }

@@ -221,11 +221,26 @@ def custom_exception_handler(exc, context):
             custom_response_data['details'] = 'خطای داخلی سرور رخ داده است. لطفاً بعداً تلاش کنید'
             custom_response_data['code'] = 'server_error'
         
-        # Handle non_field_errors specially
+        # Handle non_field_errors specially (highest priority - override other messages)
         if isinstance(original_detail, dict) and 'non_field_errors' in original_detail:
             non_field_errors = original_detail['non_field_errors']
             if isinstance(non_field_errors, list) and len(non_field_errors) > 0:
-                custom_response_data['message'] = translate_error_message(non_field_errors[0])
+                error_msg = non_field_errors[0]
+                # Make sure it's a string and translate it
+                if isinstance(error_msg, str):
+                    custom_response_data['message'] = translate_error_message(error_msg)
+                else:
+                    custom_response_data['message'] = translate_error_message(str(error_msg))
+                custom_response_data['details'] = ''
+        # Also check in response.data directly
+        elif isinstance(response.data, dict) and 'non_field_errors' in response.data:
+            non_field_errors = response.data['non_field_errors']
+            if isinstance(non_field_errors, list) and len(non_field_errors) > 0:
+                error_msg = non_field_errors[0]
+                if isinstance(error_msg, str):
+                    custom_response_data['message'] = translate_error_message(error_msg)
+                else:
+                    custom_response_data['message'] = translate_error_message(str(error_msg))
                 custom_response_data['details'] = ''
         
         # Log the error

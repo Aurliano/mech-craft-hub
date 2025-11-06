@@ -36,7 +36,12 @@ const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
       <AlertDescription className="space-y-2">
         <div>
           <p className="font-medium">{sanitizedError.message}</p>
-          <p className="text-sm opacity-90">{actionText}</p>
+          {sanitizedError.details && sanitizedError.details !== sanitizedError.message && (
+            <p className="text-sm opacity-90 mt-1">{sanitizedError.details}</p>
+          )}
+          {!sanitizedError.details && actionText && (
+            <p className="text-sm opacity-90 mt-1">{actionText}</p>
+          )}
         </div>
         
         <div className="flex items-center gap-2">
