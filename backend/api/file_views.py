@@ -187,16 +187,26 @@ def download_content_file(request, content_id):
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-@api_view(['POST'])
+@api_view(['DELETE', 'POST'])
 @permission_classes([IsAuthenticated])
 def delete_content_file(request, content_id):
-    """حذف فایل محتوای علمی"""
+    """حذف فایل محتوای علمی - ادمین می‌تواند هر فایلی را حذف کند"""
     try:
-        content = ScientificContent.objects.get(id=content_id, author=request.user)
+        # بررسی اینکه کاربر ادمین است یا خیر
+        is_admin = request.user.is_staff or request.user.is_superuser
+        
+        # اگر ادمین است، هر فایلی را می‌تواند حذف کند
+        if is_admin:
+            content = ScientificContent.objects.get(id=content_id)
+        else:
+            # اگر ادمین نیست، فقط فایل‌های خودش را می‌تواند حذف کند
+            content = ScientificContent.objects.get(id=content_id, author=request.user)
         
         # حذف فایل از storage
         if content.file_path:
-            scientific_file_manager.delete_file(content.file_path)
+            delete_result = scientific_file_manager.delete_file(content.file_path)
+            if not delete_result.get('success'):
+                logger.warning(f"File deletion from storage failed: {delete_result.get('error')}")
         
         # حذف رکورد از دیتابیس
         content.delete()

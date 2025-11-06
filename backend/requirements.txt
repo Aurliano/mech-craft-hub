@@ -19,8 +19,7 @@ django-simple-captcha==0.6.0
 argon2-cffi==25.1.0
 django-csp==4.0
 # File storage dependencies
-boto3==1.34.0
-botocore==1.34.0
+
 bandit==1.7.5
 safety==2.3.5
 pip-audit==2.6.1
@@ -40,3 +39,7 @@ boto3==1.34.0
 # Additional security
 cryptography>=41.0.0
 django-ratelimit==4.1.0
+
+# Object Storage (Liara S3-compatible)
+boto3==1.34.162
+botocore==1.34.162

@@ -26,23 +26,36 @@ class ScientificFileManager(BaseFileManager):
             aws_access_key_id = getattr(settings, 'LIARA_ACCESS_KEY_ID', None) or getattr(settings, 'LIARA_ACCESS_KEY', None)
             aws_secret_access_key = getattr(settings, 'LIARA_SECRET_ACCESS_KEY', None) or getattr(settings, 'LIARA_SECRET_KEY', None)
             
+            # Log credential status for debugging (without exposing actual values)
+            logger.info(f"Checking Liara credentials...")
+            logger.info(f"LIARA_ACCESS_KEY_ID: {'SET' if aws_access_key_id else 'NOT SET'}")
+            logger.info(f"LIARA_SECRET_ACCESS_KEY: {'SET' if aws_secret_access_key else 'NOT SET'}")
+            
             # Check if credentials are available
             if not aws_access_key_id or not aws_secret_access_key:
-                logger.warning(f"No Liara credentials available, scientific content upload will fail")
+                logger.error(f"No Liara credentials available!")
+                logger.error(f"Please check environment variables: LIARA_ACCESS_KEY_ID and LIARA_SECRET_ACCESS_KEY")
+                logger.error(f"Alternative variable names: LIARA_ACCESS_KEY and LIARA_SECRET_KEY")
                 self.s3_client = None
             else:
                 # Default to c2 endpoint as per Liara bucket settings
                 endpoint_url = getattr(settings, 'S3_ENDPOINT_URL', None) or getattr(settings, 'LIARA_ENDPOINT_URL', 'https://storage.c2.liara.space')
-                self.s3_client = boto3.client(
-                    's3',
-                    endpoint_url=endpoint_url,
-                    aws_access_key_id=aws_access_key_id,
-                    aws_secret_access_key=aws_secret_access_key,
-                    region_name=self.region
-                )
-                logger.info(f"S3 client created for Liara bucket: {self.bucket_name}, endpoint: {endpoint_url}")
+                logger.info(f"Using endpoint URL: {endpoint_url}")
+                
+                try:
+                    self.s3_client = boto3.client(
+                        's3',
+                        endpoint_url=endpoint_url,
+                        aws_access_key_id=aws_access_key_id,
+                        aws_secret_access_key=aws_secret_access_key,
+                        region_name=self.region
+                    )
+                    logger.info(f"S3 client created successfully for Liara bucket: {self.bucket_name}, endpoint: {endpoint_url}")
+                except Exception as e:
+                    logger.error(f"Failed to create S3 client: {str(e)}")
+                    self.s3_client = None
         else:
-            logger.error("boto3 not available, scientific content upload will fail")
+            logger.error("boto3 not available, scientific content upload will fail. Please install boto3: pip install boto3")
             self.s3_client = None
     
     def generate_file_path(self, file_name, content_type):
@@ -68,13 +81,47 @@ class ScientificFileManager(BaseFileManager):
         
         return f"scientific-content/{folder}/{timestamp}/{unique_name}"
     
+    def _ensure_s3_client(self):
+        """Ensure S3 client is initialized, try to reinitialize if needed"""
+        if self.s3_client:
+            return True
+        
+        if not BOTO3_AVAILABLE:
+            logger.error("boto3 not available")
+            return False
+        
+        # Try to get credentials again (in case they were set after initialization)
+        aws_access_key_id = getattr(settings, 'LIARA_ACCESS_KEY_ID', None) or getattr(settings, 'LIARA_ACCESS_KEY', None)
+        aws_secret_access_key = getattr(settings, 'LIARA_SECRET_ACCESS_KEY', None) or getattr(settings, 'LIARA_SECRET_KEY', None)
+        
+        if not aws_access_key_id or not aws_secret_access_key:
+            logger.error("Liara credentials still not available")
+            return False
+        
+        # Try to reinitialize client
+        endpoint_url = getattr(settings, 'S3_ENDPOINT_URL', None) or getattr(settings, 'LIARA_ENDPOINT_URL', 'https://storage.c2.liara.space')
+        try:
+            self.s3_client = boto3.client(
+                's3',
+                endpoint_url=endpoint_url,
+                aws_access_key_id=aws_access_key_id,
+                aws_secret_access_key=aws_secret_access_key,
+                region_name=self.region
+            )
+            logger.info(f"S3 client reinitialized successfully")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to reinitialize S3 client: {str(e)}")
+            return False
+    
     def upload_file(self, file_obj, file_name, content_type):
         """Upload file to Liara S3"""
         try:
-            if not self.s3_client:
+            # Try to ensure client is available
+            if not self._ensure_s3_client():
                 return {
                     'success': False,
-                    'error': 'Liara S3 client not available. Please check credentials.'
+                    'error': 'Liara S3 client not available. Please check credentials (LIARA_ACCESS_KEY_ID and LIARA_SECRET_ACCESS_KEY).'
                 }
             
             logger.info(f"Starting file upload to S3: {file_name}")
@@ -122,3 +169,13 @@ class ScientificFileManager(BaseFileManager):
                 'success': False,
                 'error': str(e)
             }
+    
+    def delete_file(self, file_path):
+        """Delete file from Liara S3"""
+        # Ensure client is available before deletion
+        if not self._ensure_s3_client():
+            return {
+                'success': False,
+                'error': 'Liara S3 client not available. Please check credentials.'
+            }
+        return super().delete_file(file_path)
