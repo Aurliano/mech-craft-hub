@@ -56,7 +56,8 @@ const BlogPostPage: React.FC = () => {
     
     try {
       setIsLoading(true);
-      const response = await fetch(getApiUrl(`/api/v1/blog/posts/${slug}/`));
+      // Use scientific-content public endpoint by slug to match cards
+      const response = await fetch(getApiUrl(`/api/v1/scientific-content/by-slug/${slug}/`));
       if (!response.ok) throw new Error('مقاله یافت نشد');
       
       const data = await response.json();

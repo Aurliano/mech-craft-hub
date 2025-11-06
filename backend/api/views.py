@@ -3621,6 +3621,25 @@ def get_blog_post(request, slug):
 @permission_classes([AllowAny])
 def get_blog_categories(request):
     """Get blog categories with post counts"""
+
+
+# Scientific Content - Public detail by slug (for blog cards)
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def get_scientific_content_by_slug(request, slug: str):
+    """Return a published scientific content item by slug and bump view count."""
+    try:
+        from .models import ScientificContent
+        from .serializers import ScientificContentSerializer
+
+        content = ScientificContent.objects.get(slug=slug, status='published')
+        # Increment view count safely
+        content.view_count = (content.view_count or 0) + 1
+        content.save(update_fields=['view_count'])
+
+        return Response(ScientificContentSerializer(content).data)
+    except ScientificContent.DoesNotExist:
+        return Response({'error': 'مطلب یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
     from .models import BlogPost
     
     categories = []

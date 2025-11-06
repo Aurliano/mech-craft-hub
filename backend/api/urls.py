@@ -227,6 +227,8 @@ urlpatterns = [
             
             # Scientific Content Categories
             path('v1/scientific-content/categories/', get_scientific_content_categories, name='scientific_content_categories'),
+            # Scientific Content public detail by slug
+            path('v1/scientific-content/by-slug/<str:slug>/', get_scientific_content_by_slug, name='scientific_content_by_slug'),
     
     # Aliases for requested endpoints
     path('v1/categories/', ScopeViewSet.as_view({'get': 'list'}), name='categories'),
