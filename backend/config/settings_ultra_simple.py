@@ -101,7 +101,9 @@ else:
             'PORT': os.getenv('POSTGRES_PORT', '5432'),
             'OPTIONS': {
                 'connect_timeout': int(os.getenv('POSTGRES_CONNECT_TIMEOUT', '10')),
-            }
+            },
+            # Connection pooling and retry settings for better reliability
+            'CONN_MAX_AGE': 600,  # Keep connections alive for 10 minutes
         }
     }
 
