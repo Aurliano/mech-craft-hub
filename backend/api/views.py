@@ -335,10 +335,9 @@ class TicketFilter(filters_drf.FilterSet):
 @permission_classes([AllowAny])
 def health(request):
     """Health check endpoint for Docker and load balancers"""
-    # Keep this endpoint dependency-free from DB/cache to avoid failing container health
+    # Keep this endpoint dependency-free from DB/cache/timezone to avoid failing container health
     return Response({
-        "status": "ok",
-        "timestamp": timezone.now().isoformat()
+        "status": "ok"
     })
 
 
