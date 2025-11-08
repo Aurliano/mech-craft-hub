@@ -4,7 +4,12 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # Import existing simple settings to reuse all current configuration safely
-from ..settings_ultra_simple import *  # noqa: F401,F403
+# Use try/except to handle cases where settings_ultra_simple might not be available
+try:
+    from ..settings_ultra_simple import *  # noqa: F401,F403
+except ImportError:
+    # Fallback: import from main settings if ultra_simple is not available
+    from ..settings import *  # noqa: F401,F403
 
 # Resolve repo paths: backend/ directory
 ROOT_DIR = Path(__file__).resolve().parents[2]
