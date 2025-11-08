@@ -2,7 +2,8 @@ from django.urls import path, include
 from django.http import HttpResponseRedirect
 from rest_framework.routers import DefaultRouter
 from .views import (
-    health, version_info, api_status, csrf_token,
+    # health,  # Moved to config/urls.py
+    version_info, api_status, csrf_token,
     ScopeViewSet, ServiceViewSet, ServiceFieldViewSet, ServiceTabViewSet,
     CartViewSet, CartItemViewSet,
     OrderViewSet, OrderItemViewSet, QuoteViewSet,
@@ -86,7 +87,8 @@ router.register(r'job-matches', JobMatchViewSet, basename='jobmatch')
 router.register(r'work-contracts', WorkContractViewSet, basename='workcontract')
 
 urlpatterns = [
-    path('health/', health, name='health'),
+    # Health endpoint moved to config/urls.py to bypass middleware
+    # path('health/', health, name='health'),
     path('csrf-token/', csrf_token, name='csrf_token'),
     path('version/', version_info, name='version_info'),
     path('status/', api_status, name='api_status'),

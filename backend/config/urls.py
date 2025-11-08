@@ -195,6 +195,9 @@ urlpatterns = [
     path('robots.txt', robots_txt, name='robots_txt'),
     path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
     
+    # Health check endpoint - must be before api.urls to bypass middleware
+    path('api/health/', lambda r: JsonResponse({'status': 'ok'}), name='health_check'),
+    
     path('admin/', admin.site.urls),
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),

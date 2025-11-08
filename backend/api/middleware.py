@@ -17,6 +17,10 @@ class JWTAuthenticationMiddleware(MiddlewareMixin):
         # Skip for non-API requests
         if not request.path.startswith('/api/'):
             return None
+        
+        # Skip for health check endpoint
+        if request.path in ['/api/health/', '/api/health']:
+            return None
             
         # Skip for auth endpoints (login, register, etc.)
         if request.path.startswith('/api/v1/auth/'):
@@ -123,6 +127,10 @@ class CSRFProtectionMiddleware(MiddlewareMixin):
     def process_request(self, request):
         # Skip CSRF for safe methods
         if request.method in ('GET', 'HEAD', 'OPTIONS', 'TRACE'):
+            return None
+        
+        # Skip for health check endpoint
+        if request.path in ['/api/health/', '/api/health']:
             return None
         
         # Skip CSRF for API endpoints that use token authentication
