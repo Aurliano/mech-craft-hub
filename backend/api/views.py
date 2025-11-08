@@ -2,87 +2,6 @@ from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from rest_framework import viewsets, permissions, status, filters
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
-
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def initiate_payment_material(request, order_id):
-    """Initiate payment specifically for material estimate of a manufacturing order."""
-    try:
-        order = Order.objects.get(id=order_id)
-        if order.customer != request.user and not request.user.is_staff:
-            return Response({'detail': 'دسترسی غیرمجاز'}, status=status.HTTP_403_FORBIDDEN)
-        material_estimate = getattr(order, 'material_estimate', None)
-        if not material_estimate:
-            return Response({'detail': 'برآورد متریال یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
-        if material_estimate.is_paid:
-            return Response({'detail': 'متریال قبلا پرداخت شده است'}, status=status.HTTP_400_BAD_REQUEST)
-
-        data = {
-            'order': str(order.id),
-            'amount': int(material_estimate.estimated_cost),
-            'payment_type': 'material',
-            'description': 'پرداخت متریال سفارش'
-        }
-        return initiate_payment(request._request.__class__())  # Delegate to common handler
-    except Order.DoesNotExist:
-        return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
-
-
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def initiate_payment_project_advance(request, order_id):
-    """Initiate payment for project advance (50%)."""
-    try:
-        order = Order.objects.get(id=order_id)
-        if order.customer != request.user and not request.user.is_staff:
-            return Response({'detail': 'دسترسی غیرمجاز'}, status=status.HTTP_403_FORBIDDEN)
-        # Use accepted proposal price if available; fallback to total_amount
-        accepted_proposal = order.proposals.filter(status='accepted').order_by('-created_at').first()
-        if accepted_proposal:
-            advance = int(float(accepted_proposal.price) * 0.5)
-        elif order.total_amount and float(order.total_amount) > 0:
-            advance = int(float(order.total_amount) * 0.5)
-        else:
-            return Response({'detail': 'مبلغ پیشنهاد یا کل سفارش مشخص نیست'}, status=status.HTTP_400_BAD_REQUEST)
-        data = {
-            'order': str(order.id),
-            'amount': advance,
-            'payment_type': 'project_advance',
-            'description': 'پیش‌پرداخت پروژه (۵۰٪)'
-        }
-        return initiate_payment(request._request.__class__())
-    except Order.DoesNotExist:
-        return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
-
-
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def initiate_payment_project_final(request, order_id):
-    """Initiate payment for project final (remaining 50%)."""
-    try:
-        order = Order.objects.get(id=order_id)
-        if order.customer != request.user and not request.user.is_staff:
-            return Response({'detail': 'دسترسی غیرمجاز'}, status=status.HTTP_403_FORBIDDEN)
-        accepted_proposal = order.proposals.filter(status='accepted').order_by('-created_at').first()
-        if accepted_proposal:
-            final_amount = int(float(accepted_proposal.price) * 0.5)
-        elif order.total_amount and float(order.total_amount) > 0:
-            final_amount = int(float(order.total_amount) * 0.5)
-        else:
-            return Response({'detail': 'مبلغ پیشنهاد یا کل سفارش مشخص نیست'}, status=status.HTTP_400_BAD_REQUEST)
-        data = {
-            'order': str(order.id),
-            'amount': final_amount,
-            'payment_type': 'project_final',
-            'description': 'تسویه نهایی پروژه (۵۰٪)'
-        }
-        return initiate_payment(request._request.__class__())
-    except Order.DoesNotExist:
-        return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
-from rest_framework.decorators import api_view, permission_classes, action
-from rest_framework.response import Response
-from rest_framework import viewsets, permissions, status, filters
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 from django_filters.rest_framework import DjangoFilterBackend
@@ -416,7 +335,6 @@ class TicketFilter(filters_drf.FilterSet):
 @permission_classes([AllowAny])
 def health(request):
     """Health check endpoint for Docker and load balancers"""
-    from django.utils import timezone
     # Keep this endpoint dependency-free from DB/cache to avoid failing container health
     return Response({
         "status": "ok",
