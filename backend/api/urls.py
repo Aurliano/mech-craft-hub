@@ -49,7 +49,7 @@ from .views import (
             get_blog_posts, get_blog_post, get_blog_categories, get_featured_posts, get_recent_posts,
             create_blog_post, create_blog_comment, get_blog_comments,
             # Scientific content endpoints
-            get_scientific_content_categories,
+            get_scientific_content_categories, get_scientific_content_by_slug,
             # Separate storage APIs
             upload_scientific_content, upload_user_file, upload_delivery_file,
             download_delivery_file, list_order_deliveries,

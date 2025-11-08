@@ -215,6 +215,202 @@ def initiate_payment(request):
 
 
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def initiate_payment_material(request, order_id):
+    """Initiate payment for material estimate"""
+    try:
+        order = Order.objects.get(id=order_id)
+        if order.customer != request.user and not request.user.is_staff:
+            return Response({'detail': 'دسترسی غیرمجاز'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Get material estimate
+        material_estimate = getattr(order, 'material_estimate', None)
+        if not material_estimate:
+            return Response({'detail': 'برآورد متریال برای این سفارش وجود ندارد'}, status=status.HTTP_404_NOT_FOUND)
+        
+        if material_estimate.is_paid:
+            return Response({'detail': 'هزینه متریال قبلاً پرداخت شده است'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Create payment data and call initiate_payment logic directly
+        from .serializers import ProcessPaymentSerializer
+        payment_data = {
+            'order': str(order_id),
+            'amount': material_estimate.estimated_cost,
+            'payment_type': 'material',
+            'description': request.data.get('description', 'پرداخت هزینه متریال')
+        }
+        serializer = ProcessPaymentSerializer(data=payment_data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        
+        # Create pending payment
+        payment = Payment.objects.create(
+            order=order,
+            amount=data['amount'],
+            payment_type=data['payment_type'],
+            status='pending'
+        )
+
+        # Prepare BitPay payload
+        rial_amount = toman_to_rial(data['amount'])
+        nonce = get_random_string(24)
+        payload = {
+            'api': settings.BITPAY_API_KEY,
+            'amount': rial_amount,
+            'callback': settings.BITPAY_CALLBACK_URL,
+            'order_id': str(order.id),
+            'payer_desc': data.get('description', ''),
+            'nonce': nonce,
+        }
+
+        resp = requests.post(f"{settings.BITPAY_BASE_URL}/api/create", json=payload, timeout=20)
+        if resp.status_code != 200:
+            return Response({'detail': 'خطا در اتصال به درگاه پرداخت'}, status=status.HTTP_502_BAD_GATEWAY)
+        body = resp.json()
+        if not body.get('success'):
+            return Response({'detail': body.get('message', 'خطای درگاه پرداخت')}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Return payment URL to client
+        return Response({
+            'payment_id': str(payment.id),
+            'gateway': 'bitpay',
+            'redirect_url': body.get('link')
+        })
+    except Order.DoesNotExist:
+        return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def initiate_payment_project_advance(request, order_id):
+    """Initiate payment for project advance (50%)"""
+    try:
+        order = Order.objects.get(id=order_id)
+        if order.customer != request.user and not request.user.is_staff:
+            return Response({'detail': 'دسترسی غیرمجاز'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Get payment summary
+        summary = compute_order_payment_summary(order)
+        advance_amount = summary['project']['advance_50']
+        
+        if advance_amount <= 0:
+            return Response({'detail': 'مبلغ پیش‌پرداخت نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Create payment data and call initiate_payment logic directly
+        from .serializers import ProcessPaymentSerializer
+        payment_data = {
+            'order': str(order_id),
+            'amount': advance_amount,
+            'payment_type': 'project_advance',
+            'description': request.data.get('description', 'پیش‌پرداخت پروژه (50%)')
+        }
+        serializer = ProcessPaymentSerializer(data=payment_data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        
+        # Create pending payment
+        payment = Payment.objects.create(
+            order=order,
+            amount=data['amount'],
+            payment_type=data['payment_type'],
+            status='pending'
+        )
+
+        # Prepare BitPay payload
+        rial_amount = toman_to_rial(data['amount'])
+        nonce = get_random_string(24)
+        payload = {
+            'api': settings.BITPAY_API_KEY,
+            'amount': rial_amount,
+            'callback': settings.BITPAY_CALLBACK_URL,
+            'order_id': str(order.id),
+            'payer_desc': data.get('description', ''),
+            'nonce': nonce,
+        }
+
+        resp = requests.post(f"{settings.BITPAY_BASE_URL}/api/create", json=payload, timeout=20)
+        if resp.status_code != 200:
+            return Response({'detail': 'خطا در اتصال به درگاه پرداخت'}, status=status.HTTP_502_BAD_GATEWAY)
+        body = resp.json()
+        if not body.get('success'):
+            return Response({'detail': body.get('message', 'خطای درگاه پرداخت')}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Return payment URL to client
+        return Response({
+            'payment_id': str(payment.id),
+            'gateway': 'bitpay',
+            'redirect_url': body.get('link')
+        })
+    except Order.DoesNotExist:
+        return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def initiate_payment_project_final(request, order_id):
+    """Initiate payment for project final payment (50%)"""
+    try:
+        order = Order.objects.get(id=order_id)
+        if order.customer != request.user and not request.user.is_staff:
+            return Response({'detail': 'دسترسی غیرمجاز'}, status=status.HTTP_403_FORBIDDEN)
+        
+        # Get payment summary
+        summary = compute_order_payment_summary(order)
+        final_amount = summary['project']['final_50']
+        
+        if final_amount <= 0:
+            return Response({'detail': 'مبلغ تسویه نهایی نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Create payment data and call initiate_payment logic directly
+        from .serializers import ProcessPaymentSerializer
+        payment_data = {
+            'order': str(order_id),
+            'amount': final_amount,
+            'payment_type': 'project_final',
+            'description': request.data.get('description', 'تسویه نهایی پروژه (50%)')
+        }
+        serializer = ProcessPaymentSerializer(data=payment_data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+        
+        # Create pending payment
+        payment = Payment.objects.create(
+            order=order,
+            amount=data['amount'],
+            payment_type=data['payment_type'],
+            status='pending'
+        )
+
+        # Prepare BitPay payload
+        rial_amount = toman_to_rial(data['amount'])
+        nonce = get_random_string(24)
+        payload = {
+            'api': settings.BITPAY_API_KEY,
+            'amount': rial_amount,
+            'callback': settings.BITPAY_CALLBACK_URL,
+            'order_id': str(order.id),
+            'payer_desc': data.get('description', ''),
+            'nonce': nonce,
+        }
+
+        resp = requests.post(f"{settings.BITPAY_BASE_URL}/api/create", json=payload, timeout=20)
+        if resp.status_code != 200:
+            return Response({'detail': 'خطا در اتصال به درگاه پرداخت'}, status=status.HTTP_502_BAD_GATEWAY)
+        body = resp.json()
+        if not body.get('success'):
+            return Response({'detail': body.get('message', 'خطای درگاه پرداخت')}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Return payment URL to client
+        return Response({
+            'payment_id': str(payment.id),
+            'gateway': 'bitpay',
+            'redirect_url': body.get('link')
+        })
+    except Order.DoesNotExist:
+        return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["POST"])
 @permission_classes([AllowAny])
 def bitpay_webhook(request):
     """Handle BitPay callback/webhook to confirm payment and update order status."""
