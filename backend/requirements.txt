@@ -21,8 +21,8 @@ django-csp==4.0
 # File storage dependencies
 
 bandit==1.7.5
-safety==2.3.5
-pip-audit==2.6.1
+# safety==2.3.5  # Commented out due to packaging version conflict
+# pip-audit==2.6.1  # Commented out due to packaging version conflict
 
 # Monitoring and logging
 sentry-sdk[django]==1.38.0
@@ -33,8 +33,7 @@ python-magic==0.4.27
 clamd==1.0.2
 
 # Database backup
-psycopg2-binary==2.9.9
-boto3==1.34.0
+# psycopg2-binary==2.9.9  # Commented out for Python 3.13 compatibility (only needed for production PostgreSQL)
 
 # Additional security
 cryptography>=41.0.0
