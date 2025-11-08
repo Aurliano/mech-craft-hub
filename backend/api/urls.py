@@ -86,8 +86,7 @@ router.register(r'job-matches', JobMatchViewSet, basename='jobmatch')
 router.register(r'work-contracts', WorkContractViewSet, basename='workcontract')
 
 urlpatterns = [
-    path('health', health, name='health'),
-    path('health/', health, name='health_slash'),
+    path('health/', health, name='health'),
     path('csrf-token/', csrf_token, name='csrf_token'),
     path('version/', version_info, name='version_info'),
     path('status/', api_status, name='api_status'),

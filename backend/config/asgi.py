@@ -11,10 +11,6 @@ import os
 
 from django.core.asgi import get_asgi_application
 
-# In production (Liara), DJANGO_SETTINGS_MODULE is set via Dockerfile/liara.json
-# Only set default if not already set (for local dev)
-# For local dev, manage.py will override this with config.settings.dev
-if 'DJANGO_SETTINGS_MODULE' not in os.environ:
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
 application = get_asgi_application()
