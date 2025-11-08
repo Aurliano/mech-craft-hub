@@ -65,12 +65,25 @@ class ServiceFieldSerializer(serializers.ModelSerializer):
         fields = ['id', 'tab', 'name', 'field_key', 'type', 'options', 'is_required', 'order', 'help_text', 'validation_rules']
 
 class ServiceSerializer(serializers.ModelSerializer):
-    tabs = ServiceTabSerializer(many=True, read_only=True)
-    fields = ServiceFieldSerializer(many=True, read_only=True)
+    tabs = serializers.SerializerMethodField()
+    fields = serializers.SerializerMethodField()
 
     class Meta:
         model = Service
         fields = ['id', 'scope', 'name', 'type', 'description', 'base_price', 'estimated_delivery_days', 'supports_documentation', 'has_tabs', 'is_active', 'tabs', 'fields']
+    
+    def get_tabs(self, obj):
+        """Return only active tabs"""
+        tabs = obj.tabs.filter(is_active=True).order_by('order')
+        return ServiceTabSerializer(tabs, many=True).data
+    
+    def get_fields(self, obj):
+        """Return only fields from active tabs or fields without tabs"""
+        from django.db.models import Q
+        fields = obj.fields.filter(
+            Q(tab__isnull=True) | Q(tab__is_active=True)
+        ).order_by('tab', 'order', 'name')
+        return ServiceFieldSerializer(fields, many=True).data
 
 
 
@@ -120,7 +133,13 @@ class OrderItemSerializer(serializers.ModelSerializer):
     def get_service_fields(self, obj):
         if obj.service:
             from .models import ServiceField
-            fields = ServiceField.objects.filter(service=obj.service).order_by('order')
+            from django.db.models import Q
+            # Return only fields from active tabs or fields without tabs
+            fields = ServiceField.objects.filter(
+                service=obj.service
+            ).filter(
+                Q(tab__isnull=True) | Q(tab__is_active=True)
+            ).order_by('tab', 'order', 'name')
             return ServiceFieldSerializer(fields, many=True).data
         return []
     
@@ -567,18 +586,31 @@ class CreateOrderSerializer(serializers.Serializer):
             
             service_ids.append(service_id)
         
-        # Check if all services exist and are active
-        existing_services = Service.objects.filter(id__in=service_ids, is_active=True)
-        existing_service_ids = set(existing_services.values_list('id', flat=True))
+        # Check if all services exist
+        all_services = Service.objects.filter(id__in=service_ids)
+        existing_service_ids = set(all_services.values_list('id', flat=True))
+        active_service_ids = set(all_services.filter(is_active=True).values_list('id', flat=True))
         
         missing_services = []
+        inactive_services = []
+        
         for service_id in service_ids:
             if service_id not in existing_service_ids:
                 missing_services.append(str(service_id))
+            elif service_id not in active_service_ids:
+                inactive_services.append(str(service_id))
         
         if missing_services:
             raise serializers.ValidationError(
-                f"سرویس‌های زیر یافت نشدند یا غیرفعال هستند: {', '.join(missing_services)}"
+                f"سرویس‌های زیر یافت نشدند: {', '.join(missing_services)}"
+            )
+        
+        if inactive_services:
+            # Get service names for better error message
+            inactive_service_objs = Service.objects.filter(id__in=inactive_services)
+            service_names = [s.name for s in inactive_service_objs]
+            raise serializers.ValidationError(
+                f"سرویس‌های زیر غیرفعال هستند و نمی‌توان از آن‌ها سفارش ایجاد کرد: {', '.join(service_names)}"
             )
         
         return value

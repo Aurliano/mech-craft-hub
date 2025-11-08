@@ -668,11 +668,19 @@ class ServiceFieldViewSet(viewsets.ReadOnlyModelViewSet):
         
         if service_id:
             if tab_id:
-                # فیلدهای مخصوص یک تب
-                queryset = queryset.filter(service_id=service_id, tab_id=tab_id)
+                # فیلدهای مخصوص یک تب (فقط اگر تب فعال باشد)
+                queryset = queryset.filter(
+                    service_id=service_id, 
+                    tab_id=tab_id,
+                    tab__is_active=True
+                )
             else:
-                # همه فیلدهای سرویس (چه با تب چه بدون تب)
-                queryset = queryset.filter(service_id=service_id)
+                # همه فیلدهای سرویس (فیلدهای بدون تب + فیلدهای تب‌های فعال)
+                queryset = queryset.filter(
+                    service_id=service_id
+                ).filter(
+                    models.Q(tab__isnull=True) | models.Q(tab__is_active=True)
+                )
         
         return queryset.order_by('tab', 'order', 'name')
 
@@ -1650,7 +1658,12 @@ def get_service_fields(request, service_id):
     """Get fields for a specific service"""
     try:
         service = Service.objects.get(id=service_id)
-        fields = ServiceField.objects.filter(service=service).order_by('order')
+        # Return only fields from active tabs or fields without tabs
+        fields = ServiceField.objects.filter(
+            service=service
+        ).filter(
+            models.Q(tab__isnull=True) | models.Q(tab__is_active=True)
+        ).order_by('tab', 'order', 'name')
         return Response(ServiceFieldSerializer(fields, many=True).data)
     except Service.DoesNotExist:
         raise NotFoundException('سرویس یافت نشد', 'سرویس مورد نظر وجود ندارد')
