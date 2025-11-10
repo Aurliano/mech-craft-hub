@@ -4,9 +4,24 @@ Security middleware for Django
 from django.utils.deprecation import MiddlewareMixin
 from django.http import HttpResponse
 from django.conf import settings
+from django.views.decorators.csrf import csrf_exempt
 import logging
 
 logger = logging.getLogger(__name__)
+
+class CSRFExemptAPIMiddleware(MiddlewareMixin):
+    """
+    Middleware to exempt API endpoints from CSRF protection
+    This must run BEFORE Django's CsrfViewMiddleware
+    """
+    
+    def process_request(self, request):
+        # Exempt all API endpoints from CSRF (they use JWT, not session cookies)
+        if request.path.startswith('/api/') or request.path.startswith('/v1/'):
+            # Mark request to skip CSRF check
+            setattr(request, '_dont_enforce_csrf_checks', True)
+        return None
+
 
 class JWTAuthenticationMiddleware(MiddlewareMixin):
     """
@@ -133,9 +148,10 @@ class CSRFProtectionMiddleware(MiddlewareMixin):
         if request.path in ['/api/health/', '/api/health']:
             return None
         
-        # Skip CSRF for API endpoints that use token authentication
-        if request.path.startswith('/api/v1/auth/'):
-            # Skip CSRF for all auth endpoints (login, register, etc.)
+        # Skip CSRF for all API endpoints that use token authentication
+        # This is safe because API uses JWT authentication, not session-based auth
+        if request.path.startswith('/api/') or request.path.startswith('/v1/'):
+            # Skip CSRF for all API endpoints (they use JWT, not session cookies)
             return None
         
         # Skip CSRF for file uploads (handled by Django's CSRF middleware)

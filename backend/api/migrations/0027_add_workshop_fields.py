@@ -11,7 +11,7 @@ def migrate_forwards(apps, schema_editor):
     table_name = Workshop._meta.db_table
     
     def column_exists(column_name):
-        """Check if column exists using raw SQL"""
+        """Check if column exists using raw SQL - supports both PostgreSQL and SQLite"""
         with connection.cursor() as cursor:
             if connection.vendor == 'postgresql':
                 cursor.execute("""
@@ -19,13 +19,29 @@ def migrate_forwards(apps, schema_editor):
                     FROM information_schema.columns 
                     WHERE table_name=%s AND column_name=%s
                 """, [table_name, column_name])
+                return cursor.fetchone() is not None
+            elif connection.vendor == 'sqlite':
+                # SQLite uses PRAGMA table_info instead of information_schema
+                # Note: table_name is from Django's _meta.db_table, so it's safe
+                # But we still use quote_name for safety
+                quoted_table = connection.ops.quote_name(table_name)
+                cursor.execute(f"PRAGMA table_info({quoted_table})")
+                columns = cursor.fetchall()
+                # PRAGMA table_info returns: (cid, name, type, notnull, default_value, pk)
+                # Column name is at index 1
+                return any(col[1] == column_name for col in columns)
             else:
-                cursor.execute("""
-                    SELECT column_name 
-                    FROM information_schema.columns 
-                    WHERE table_name=? AND column_name=?
-                """, [table_name, column_name])
-            return cursor.fetchone() is not None
+                # Fallback for other databases
+                try:
+                    cursor.execute("""
+                        SELECT column_name 
+                        FROM information_schema.columns 
+                        WHERE table_name=? AND column_name=?
+                    """, [table_name, column_name])
+                    return cursor.fetchone() is not None
+                except Exception:
+                    # If information_schema doesn't work, try to add the field and catch the error
+                    return False
     
     # Only add fields if they don't exist
     if not column_exists('is_approved'):

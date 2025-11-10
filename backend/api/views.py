@@ -8,6 +8,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import rest_framework as filters_drf
 from django.db import models
 from django.middleware.csrf import get_token
+from django.views.decorators.csrf import csrf_exempt
 from .models import (
     User,
     Scope, Service, ServiceField, ServiceTab,
@@ -573,6 +574,7 @@ def api_status(request):
     })
 
 
+@csrf_exempt
 @api_view(["POST"]) 
 @permission_classes([AllowAny])
 def customer_register(request):
@@ -592,6 +594,7 @@ def customer_register(request):
     }, status=status.HTTP_201_CREATED)
 
 
+@csrf_exempt
 @api_view(["POST"]) 
 @permission_classes([AllowAny])
 def contractor_register(request):
@@ -611,6 +614,7 @@ def contractor_register(request):
     }, status=status.HTTP_201_CREATED)
 
 
+@csrf_exempt
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def login(request):
