@@ -574,7 +574,6 @@ def api_status(request):
     })
 
 
-@csrf_exempt
 @api_view(["POST"]) 
 @permission_classes([AllowAny])
 def customer_register(request):
@@ -594,7 +593,6 @@ def customer_register(request):
     }, status=status.HTTP_201_CREATED)
 
 
-@csrf_exempt
 @api_view(["POST"]) 
 @permission_classes([AllowAny])
 def contractor_register(request):
@@ -614,7 +612,6 @@ def contractor_register(request):
     }, status=status.HTTP_201_CREATED)
 
 
-@csrf_exempt
 @api_view(["POST"])
 @permission_classes([AllowAny])
 def login(request):
