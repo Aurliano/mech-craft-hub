@@ -48,6 +48,7 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'api.middleware.CSRFExemptAPIMiddleware',  # Exempt API endpoints from CSRF (must be before CsrfViewMiddleware)
     'django.middleware.csrf.CsrfViewMiddleware',
     'api.middleware.CSRFProtectionMiddleware',  # Custom CSRF middleware
     'django.contrib.auth.middleware.AuthenticationMiddleware',
