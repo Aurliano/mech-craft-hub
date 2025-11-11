@@ -499,10 +499,8 @@ const Manufacturing = () => {
                             </h4>
                             <div className="flex flex-wrap gap-2">
                               {(workshop.capabilities || []).slice(0, 3).map((capabilityId, index) => {
-                                const capability = typeof capabilityId === 'string' 
-                                  ? CAPABILITIES_WITH_MACHINES.find(c => c.id === capabilityId)
-                                  : null;
-                                const displayName = capability ? capability.name : (typeof capabilityId === 'string' ? capabilityId : 'توانمندی');
+                                const capabilityObj = CAPABILITIES_WITH_MACHINES.find(c => c.id === capabilityId);
+                                const displayName = capabilityObj ? capabilityObj.name : capabilityId; // If not found, show id (fallback)
                                 return (
                                   <Badge key={index} variant="secondary" className="text-xs">
                                     {displayName}

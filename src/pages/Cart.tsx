@@ -17,6 +17,14 @@ import { useProcessPayment, useDownloadInvoice } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 
+interface Order {
+  status: string;
+  order_number: string;
+  notes?: string;
+  total_amount?: number;
+  // بقیه خواص در صورت نیاز اضافه شود
+}
+
 const Cart = () => {
   const { orders, isLoadingDashboard } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
@@ -54,7 +62,7 @@ const Cart = () => {
   }
 
   // فیلتر کردن سفارشات بر اساس وضعیت
-  const allOrders = Array.isArray(orders) ? orders : [];
+  const allOrders: Order[] = Array.isArray(orders) ? orders as Order[] : [];
   
   const quotedOrders = allOrders.filter(order => order.status === 'quoted');
   const acceptedOrders = allOrders.filter(order => order.status === 'accepted');
