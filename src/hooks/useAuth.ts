@@ -371,7 +371,7 @@ export function useRemoveFromCart() {
 export function useProcessPayment() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ orderId, paymentData }: { orderId: string; paymentData: { amount: number; method: string; gateway_response?: unknown } }) =>
+    mutationFn: ({ orderId, paymentData }: { orderId: string; paymentData: { amount: number; method: string; payment_type?: string; gateway_response?: unknown } }) =>
       processPayment(orderId, paymentData),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['userOrders'] });

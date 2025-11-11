@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import CapabilityMachineSelector from '@/components/CapabilityMachineSelector';
 import { SelectedMachine } from '@/data/capabilitiesAndMachines';
 import MultiFileUpload from '@/components/MultiFileUpload';
+import { CAPABILITIES_WITH_MACHINES } from '@/data/capabilitiesAndMachines';
 
 interface UploadedFile {
   id: string;
@@ -565,11 +566,15 @@ const MyWorkshops = () => {
                       <div>
                         <div className="font-medium text-sm mb-2">توانمندی‌ها:</div>
                         <div className="flex flex-wrap gap-1">
-                          {workshop.capabilities.map((capability, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs">
-                              {capability}
-                            </Badge>
-                          ))}
+                          {workshop.capabilities.map((capabilityId, index) => {
+                            const capabilityObj = CAPABILITIES_WITH_MACHINES.find(c => c.id === capabilityId);
+                            const capabilityName = capabilityObj ? capabilityObj.name : capabilityId; // Fallback: id shown if not found
+                            return (
+                              <Badge key={index} variant="secondary" className="text-xs">
+                                {capabilityName}
+                              </Badge>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
