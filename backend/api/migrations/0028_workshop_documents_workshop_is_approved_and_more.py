@@ -13,26 +13,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='workshop',
-            name='documents',
-            field=models.JSONField(blank=True, default=dict),
-        ),
-        migrations.AddField(
-            model_name='workshop',
-            name='is_approved',
-            field=models.BooleanField(default=False, help_text='Whether the workshop is approved by admin'),
-        ),
-        migrations.AddField(
-            model_name='workshop',
-            name='workers_count',
-            field=models.IntegerField(blank=True, default=0, help_text='Number of formal workers'),
-        ),
-        migrations.AddField(
-            model_name='workshop',
-            name='workshop_class',
-            field=models.CharField(blank=True, choices=[('A', 'Class A'), ('B', 'Class B'), ('C', 'Class C')], help_text='Workshop classification (A, B, or C) - set by admin during approval', max_length=10),
-        ),
         migrations.AlterField(
             model_name='role',
             name='name',
