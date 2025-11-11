@@ -1,31 +1,5 @@
-# Liara deployment Dockerfile
-FROM python:3.11-slim as builder
-
-# Configure apt to handle network timeouts better
-RUN echo 'Acquire::http::Timeout "60";' > /etc/apt/apt.conf.d/99timeout && \
-    echo 'Acquire::ftp::Timeout "60";' >> /etc/apt/apt.conf.d/99timeout && \
-    echo 'Acquire::Retries "5";' >> /etc/apt/apt.conf.d/99timeout
-
-# Install system dependencies with retry logic for network issues
-# Retry up to 3 times with exponential backoff
-RUN for i in 1 2 3; do \
-        apt-get update --fix-missing && \
-        apt-get install -y --no-install-recommends \
-            build-essential \
-            libpq-dev \
-        && rm -rf /var/lib/apt/lists/* \
-        && apt-get clean \
-        && break || sleep $((i * 10)); \
-    done
-
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
-# requirements_liara.txt is at repository root
-COPY requirements_liara.txt requirements.txt
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r requirements.txt
-
+# Liara deployment Dockerfile - Optimized for fast builds
+# Using single-stage build since psycopg2-binary doesn't need compilation
 FROM python:3.11-slim
 
 # Configure apt to handle network timeouts better
@@ -33,7 +7,7 @@ RUN echo 'Acquire::http::Timeout "60";' > /etc/apt/apt.conf.d/99timeout && \
     echo 'Acquire::ftp::Timeout "60";' >> /etc/apt/apt.conf.d/99timeout && \
     echo 'Acquire::Retries "5";' >> /etc/apt/apt.conf.d/99timeout
 
-# Install runtime dependencies with retry logic for network issues
+# Install ONLY runtime dependencies (no build tools needed for psycopg2-binary)
 # Retry up to 3 times with exponential backoff
 RUN for i in 1 2 3; do \
         apt-get update --fix-missing && \
@@ -50,9 +24,14 @@ RUN for i in 1 2 3; do \
 
 WORKDIR /app
 
-COPY --from=builder /opt/venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
+# Copy requirements first for better Docker layer caching
+COPY requirements_liara.txt requirements.txt
 
+# Install Python dependencies (psycopg2-binary is pre-compiled, no build tools needed)
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
 COPY . .
 
 # Cleanup
