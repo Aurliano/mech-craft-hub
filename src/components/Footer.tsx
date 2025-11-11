@@ -36,7 +36,7 @@ const Footer = () => {
               <li><a href="/" className="hover:text-accent transition-colors">خانه</a></li>
               <li><a href="/blog" className="hover:text-accent transition-colors">مقالات و منابع علمی</a></li>
               <li><a href="/services" className="hover:text-accent transition-colors">خدمات ما</a></li>
-              <li><a href="/portfolio" className="hover:text-accent transition-colors">نمونه کارها</a></li>
+              <li><a href="/specialist-hiring" className="hover:text-accent transition-colors">شبکه همکاران متخصص</a></li>
             </ul>
           </div>
 

@@ -26,6 +26,7 @@ interface AuthContextType {
   // Role checking
   isContractor: boolean;
   isCustomer: boolean;
+  isSpecialist: boolean;
   // Dashboard data
   orders: unknown[];
   cart: unknown;
@@ -104,6 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   })();
   const isContractor = roleNames.includes('contractor');
   const isCustomer = roleNames.includes('customer');
+  const isSpecialist = roleNames.includes('specialist');
   
   // Log errors for debugging
   if (ordersError) console.warn('Error fetching orders:', ordersError);
@@ -120,6 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isLoading: authState.isLoading,
       isContractor,
       isCustomer,
+      isSpecialist,
       orders,
       cart,
       cartItems,

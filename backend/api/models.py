@@ -48,6 +48,7 @@ class Role(models.Model):
         ('contractor', 'پیمانکار'),
         ('admin', 'مدیر'),
         ('support', 'پشتیبان'),
+        ('specialist', 'نیروی متخصص'),
     ]
     
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -1820,5 +1821,130 @@ class WorkContract(models.Model):
             # Generate unique contract number
             self.contract_number = f"WRK-{timezone.now().strftime('%Y%m%d')}-{str(uuid.uuid4())[:8].upper()}"
         super().save(*args, **kwargs)
+
+
+class SpecialistProfile(models.Model):
+    """Profile for specialist users seeking job opportunities"""
+    
+    EDUCATION_CHOICES = [
+        ('diploma', 'دیپلم'),
+        ('associate', 'کاردانی'),
+        ('bachelor_student', 'دانشجو کارشناسی'),
+        ('bachelor', 'کارشناسی'),
+        ('master', 'کارشناسی ارشد'),
+        ('phd', 'دکتری'),
+    ]
+    
+    SKILL_LEVEL_CHOICES = [
+        ('beginner', 'مبتدی'),
+        ('intermediate', 'متوسط'),
+        ('advanced', 'پیشرفته'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='specialist_profile')
+    
+    # Location
+    province = models.CharField(max_length=100, help_text="استان محل زندگی")
+    city = models.CharField(max_length=100, help_text="شهر")
+    address = models.TextField(help_text="آدرس محل زندگی")
+    
+    # Personal information
+    birth_date = models.DateField(help_text="تاریخ تولد")
+    national_id = models.CharField(max_length=10, unique=True, help_text="کد ملی (10 رقم)")
+    
+    # Education
+    education = models.CharField(max_length=30, choices=EDUCATION_CHOICES, help_text="تحصیلات")
+    field_of_study = models.CharField(max_length=50, help_text="رشته تحصیلی")
+    
+    # Specialization
+    specializations = models.ManyToManyField(Scope, blank=True, related_name='specialists', help_text="زمینه تخصصی")
+    specialization_services = models.ManyToManyField(Service, blank=True, related_name='specialists', help_text="خدمات تخصصی")
+    
+    # Skills (JSON: [{"name": "string", "level": "beginner|intermediate|advanced"}])
+    skills = models.JSONField(default=list, blank=True, help_text="توانمندی‌ها (حداکثر 10)")
+    
+    # Work experience (JSON: [{"company": "string", "position": "string", "start_date": "YYYY-MM-DD", "end_date": "YYYY-MM-DD|null", "description": "string"}])
+    work_experience = models.JSONField(default=list, blank=True, help_text="سابقه کار (حداکثر 10)")
+    
+    # Resume
+    resume_file = models.CharField(max_length=500, blank=True, help_text="مسیر فایل رزومه (private)")
+    
+    # Additional info
+    description = models.CharField(max_length=200, blank=True, help_text="توضیحات (حداکثر 200 کاراکتر)")
+    
+    # Status
+    is_approved = models.BooleanField(default=False, help_text="تایید شده توسط ادمین")
+    specialist_code = models.CharField(max_length=20, unique=True, editable=False, help_text="کد اختصاصی")
+    reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_specialists')
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    admin_notes = models.TextField(blank=True, help_text="یادداشت ادمین")
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'specialist_profiles'
+        verbose_name = 'پروفایل نیروی متخصص'
+        verbose_name_plural = 'پروفایل‌های نیروی متخصص'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['is_approved']),
+            models.Index(fields=['province', 'city']),
+            models.Index(fields=['specialist_code']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.get_full_name() or self.user.username} - {self.specialist_code}"
+    
+    def save(self, *args, **kwargs):
+        if not self.specialist_code:
+            # Generate unique specialist code
+            self.specialist_code = f"SP-{timezone.now().strftime('%Y%m%d')}-{str(uuid.uuid4())[:8].upper()}"
+        super().save(*args, **kwargs)
+
+
+class SpecialistHireRequest(models.Model):
+    """Request to hire a specialist"""
+    
+    REQUEST_STATUS_CHOICES = [
+        ('pending', 'در انتظار بررسی'),
+        ('approved', 'تایید شده'),
+        ('rejected', 'رد شده'),
+        ('contacted', 'تماس برقرار شده'),
+        ('completed', 'تکمیل شده'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    requester = models.ForeignKey(User, on_delete=models.CASCADE, related_name='specialist_hire_requests')
+    specialist_profile = models.ForeignKey(SpecialistProfile, on_delete=models.CASCADE, related_name='hire_requests')
+    
+    # Request details
+    message = models.TextField(blank=True, help_text="پیام درخواست")
+    status = models.CharField(max_length=20, choices=REQUEST_STATUS_CHOICES, default='pending')
+    
+    # Admin handling
+    admin_notes = models.TextField(blank=True, help_text="یادداشت ادمین")
+    handled_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='handled_hire_requests')
+    handled_at = models.DateTimeField(null=True, blank=True)
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'specialist_hire_requests'
+        verbose_name = 'درخواست جذب نیروی متخصص'
+        verbose_name_plural = 'درخواست‌های جذب نیروی متخصص'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['status']),
+            models.Index(fields=['requester', 'specialist_profile']),
+            models.Index(fields=['created_at']),
+        ]
+    
+    def __str__(self):
+        return f"درخواست {self.requester.username} برای {self.specialist_profile.specialist_code}"
 
 

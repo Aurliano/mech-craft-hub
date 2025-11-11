@@ -6,7 +6,8 @@ from .models import (
     Ticket, TicketMessage, TicketAttachment, TicketFileType, TicketCategory, TicketParticipant,
     ContentFilterLog, Review, Notification, SupportFeedback, BlogPost, BlogComment, ScientificContent,
     OrderProposal, MaterialEstimate, OrderStatus, Payment, MaterialEstimation, OrderStatusLog,
-    DeliveryFile, JobSeeker, WorkRequest, JobMatch, WorkContract
+    DeliveryFile, JobSeeker, WorkRequest, JobMatch, WorkContract,
+    SpecialistProfile, SpecialistHireRequest
 )
 
 
@@ -1165,4 +1166,142 @@ class WorkContractCreateSerializer(serializers.ModelSerializer):
         validated_data['job_seeker'] = job_match.job_seeker
         validated_data['contractor'] = job_match.work_request.contractor
         
+        return super().create(validated_data)
+
+
+class SpecialistProfileSerializer(serializers.ModelSerializer):
+    """Serializer for specialist profile (full details)"""
+    user = UserSerializer(read_only=True)
+    specializations = ScopeSerializer(many=True, read_only=True)
+    specialization_services = ServiceSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = SpecialistProfile
+        fields = [
+            'id', 'user', 'province', 'city', 'address', 'birth_date', 'national_id',
+            'education', 'field_of_study', 'specializations', 'specialization_services',
+            'skills', 'work_experience', 'resume_file', 'description',
+            'is_approved', 'specialist_code', 'reviewed_by', 'reviewed_at', 'admin_notes',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = [
+            'id', 'user', 'specialist_code', 'is_approved', 'reviewed_by', 
+            'reviewed_at', 'created_at', 'updated_at'
+        ]
+
+
+class SpecialistProfileCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating/updating specialist profile"""
+    
+    class Meta:
+        model = SpecialistProfile
+        fields = [
+            'province', 'city', 'address', 'birth_date', 'national_id',
+            'education', 'field_of_study', 'specializations', 'specialization_services',
+            'skills', 'work_experience', 'resume_file', 'description'
+        ]
+    
+    def validate_national_id(self, value):
+        """Validate national ID (10 digits)"""
+        if not value.isdigit() or len(value) != 10:
+            raise serializers.ValidationError("کد ملی باید 10 رقم باشد")
+        return value
+    
+    def validate_skills(self, value):
+        """Validate skills (max 10)"""
+        if len(value) > 10:
+            raise serializers.ValidationError("حداکثر 10 توانمندی می‌توانید ثبت کنید")
+        return value
+    
+    def validate_work_experience(self, value):
+        """Validate work experience (max 10)"""
+        if len(value) > 10:
+            raise serializers.ValidationError("حداکثر 10 سابقه کار می‌توانید ثبت کنید")
+        return value
+    
+    def validate_description(self, value):
+        """Validate description (max 200 characters)"""
+        if len(value) > 200:
+            raise serializers.ValidationError("توضیحات نباید بیشتر از 200 کاراکتر باشد")
+        return value
+    
+    def validate_field_of_study(self, value):
+        """Validate field of study (max 50 characters)"""
+        if len(value) > 50:
+            raise serializers.ValidationError("رشته تحصیلی نباید بیشتر از 50 کاراکتر باشد")
+        return value
+    
+    def create(self, validated_data):
+        """Create specialist profile for authenticated user"""
+        validated_data['user'] = self.context['request'].user
+        specializations = validated_data.pop('specializations', [])
+        specialization_services = validated_data.pop('specialization_services', [])
+        instance = SpecialistProfile.objects.create(**validated_data)
+        if specializations:
+            instance.specializations.set(specializations)
+        if specialization_services:
+            instance.specialization_services.set(specialization_services)
+        return instance
+    
+    def update(self, instance, validated_data):
+        """Update specialist profile"""
+        specializations = validated_data.pop('specializations', None)
+        specialization_services = validated_data.pop('specialization_services', None)
+        
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        if specializations is not None:
+            instance.specializations.set(specializations)
+        if specialization_services is not None:
+            instance.specialization_services.set(specialization_services)
+        
+        return instance
+
+
+class SpecialistProfilePublicSerializer(serializers.ModelSerializer):
+    """Public serializer for specialist profile (without contact info)"""
+    specializations = ScopeSerializer(many=True, read_only=True)
+    specialization_services = ServiceSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = SpecialistProfile
+        fields = [
+            'id', 'specialist_code', 'province', 'city',
+            'education', 'field_of_study', 'specializations', 'specialization_services',
+            'skills', 'work_experience', 'description', 'is_approved', 'created_at'
+        ]
+        read_only_fields = ['id', 'specialist_code', 'is_approved', 'created_at']
+
+
+class SpecialistHireRequestSerializer(serializers.ModelSerializer):
+    """Serializer for specialist hire requests"""
+    requester = UserSerializer(read_only=True)
+    specialist_profile = SpecialistProfilePublicSerializer(read_only=True)
+    handled_by_user = UserSerializer(source='handled_by', read_only=True)
+    
+    class Meta:
+        model = SpecialistHireRequest
+        fields = [
+            'id', 'requester', 'specialist_profile', 'message', 'status',
+            'admin_notes', 'handled_by_user', 'handled_at',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = [
+            'id', 'requester', 'status', 'handled_by', 'handled_at',
+            'created_at', 'updated_at'
+        ]
+
+
+class SpecialistHireRequestCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating specialist hire requests"""
+    
+    class Meta:
+        model = SpecialistHireRequest
+        fields = ['specialist_profile', 'message']
+    
+    def create(self, validated_data):
+        """Create hire request for authenticated user"""
+        validated_data['requester'] = self.context['request'].user
         return super().create(validated_data)

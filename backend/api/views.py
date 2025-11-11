@@ -17,7 +17,8 @@ from .models import (
     ContentFilterLog, Review, MediaFile,
     PasswordResetToken, PhoneVerificationCode, Payment, Notification, OrderStatusLog,
     ScientificContent, OrderProposal, MaterialEstimate, OrderStatus, MaterialEstimation,
-    DeliveryFile, JobSeeker, WorkRequest, JobMatch, WorkContract
+    DeliveryFile, JobSeeker, WorkRequest, JobMatch, WorkContract,
+    SpecialistProfile, SpecialistHireRequest
 )
 from .pagination import StandardResultsSetPagination
 from .exceptions import (
@@ -38,7 +39,9 @@ from .serializers import (
     OrderStatusSerializer, OrderStatusLogSerializer, PaymentSerializer, ProcessPaymentSerializer,
     MaterialEstimationSerializer, MaterialEstimationCreateSerializer,
     JobSeekerSerializer, JobSeekerCreateSerializer, WorkRequestSerializer, WorkRequestCreateSerializer,
-    JobMatchSerializer, JobMatchCreateSerializer, WorkContractSerializer, WorkContractCreateSerializer
+    JobMatchSerializer, JobMatchCreateSerializer, WorkContractSerializer, WorkContractCreateSerializer,
+    SpecialistProfileSerializer, SpecialistProfileCreateSerializer, SpecialistProfilePublicSerializer,
+    SpecialistHireRequestSerializer, SpecialistHireRequestCreateSerializer
 )
 import os
 import random
@@ -606,6 +609,46 @@ def contractor_register(request):
     return Response({
         'success': True,
         'message': 'ثبت‌نام پیمانکار با موفقیت انجام شد. لطفاً شماره تلفن خود را تأیید کنید.',
+        'user': UserSerializer(user).data,
+        'phone_verification_required': True,
+        'phone': user.phone
+    }, status=status.HTTP_201_CREATED)
+
+
+@api_view(["POST"]) 
+@permission_classes([AllowAny])
+def specialist_register(request):
+    """Specialist registration"""
+    from .serializers import CustomerRegisterSerializer
+    from .models import Role, UserRole
+    
+    # Use CustomerRegisterSerializer for basic user creation
+    serializer = CustomerRegisterSerializer(data=request.data, context={'request': request})
+    serializer.is_valid(raise_exception=True)
+    user = serializer.save()
+    
+    # Assign specialist role to the user
+    try:
+        specialist_role = Role.objects.get(name='specialist')
+    except Role.DoesNotExist:
+        # If specialist role doesn't exist, create it
+        specialist_role = Role.objects.create(
+            name='specialist',
+            display_name='نیروی متخصص',
+            description='نیروهای متخصص جویای کار'
+        )
+    
+    # Create UserRole if it doesn't exist
+    UserRole.objects.get_or_create(
+        user=user,
+        role=specialist_role,
+        defaults={'is_active': True}
+    )
+    
+    # Return success response with user data and phone verification info
+    return Response({
+        'success': True,
+        'message': 'ثبت‌نام نیروی متخصص با موفقیت انجام شد. لطفاً شماره تلفن خود را تأیید کنید.',
         'user': UserSerializer(user).data,
         'phone_verification_required': True,
         'phone': user.phone
@@ -1215,6 +1258,56 @@ class WorkContractViewSet(viewsets.ModelViewSet):
         if self.action == 'create':
             return WorkContractCreateSerializer
         return WorkContractSerializer
+
+
+class SpecialistProfileViewSet(viewsets.ModelViewSet):
+    """ViewSet for specialist profiles"""
+    serializer_class = SpecialistProfileSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
+    
+    def get_queryset(self):
+        """Users can see their own profile, admins can see all"""
+        from .models import Role
+        
+        # Check if user is admin or support staff
+        is_admin_or_support = False
+        if self.request.user.is_staff:
+            is_admin_or_support = True
+        else:
+            # Check user roles
+            user_roles = self.request.user.user_roles.filter(is_active=True).select_related('role')
+            is_admin_or_support = any(
+                role.role.name in ['admin', 'support'] 
+                for role in user_roles
+            )
+        
+        if is_admin_or_support:
+            return SpecialistProfile.objects.select_related('user', 'reviewed_by').prefetch_related('specializations', 'specialization_services').all()
+        return SpecialistProfile.objects.filter(user=self.request.user).select_related('user').prefetch_related('specializations', 'specialization_services')
+    
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return SpecialistProfileCreateSerializer
+        return SpecialistProfileSerializer
+
+
+class SpecialistHireRequestViewSet(viewsets.ModelViewSet):
+    """ViewSet for specialist hire requests"""
+    serializer_class = SpecialistHireRequestSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    pagination_class = StandardResultsSetPagination
+    
+    def get_queryset(self):
+        """Admins can see all requests, users can see their own requests"""
+        if self.request.user.is_staff:
+            return SpecialistHireRequest.objects.select_related('requester', 'specialist_profile', 'handled_by').all()
+        return SpecialistHireRequest.objects.filter(requester=self.request.user).select_related('requester', 'specialist_profile')
+    
+    def get_serializer_class(self):
+        if self.action == 'create':
+            return SpecialistHireRequestCreateSerializer
+        return SpecialistHireRequestSerializer
 
 
 @api_view(['GET'])
@@ -3130,6 +3223,59 @@ def check_contractor_manufacturing_service(request):
             'error': True,
             'message': 'خطا در بررسی نقش کاربر'
         }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def get_public_specialists(request):
+    """Get all approved specialist profiles (public endpoint)"""
+    try:
+        specialists = SpecialistProfile.objects.filter(is_approved=True).select_related('user').prefetch_related('specializations', 'specialization_services')
+        
+        # Optional filters
+        province = request.query_params.get('province')
+        if province:
+            specialists = specialists.filter(province=province)
+        
+        city = request.query_params.get('city')
+        if city:
+            specialists = specialists.filter(city=city)
+        
+        # Serialize with public serializer (no contact info)
+        serializer = SpecialistProfilePublicSerializer(specialists, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        logger.error(f"Error getting public specialists: {str(e)}")
+        return Response({'error': 'خطا در دریافت اطلاعات نیروهای متخصص'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["PATCH"])
+@permission_classes([IsAdminUser])
+def approve_specialist_profile(request, specialist_id):
+    """Approve or reject a specialist profile"""
+    try:
+        specialist = SpecialistProfile.objects.get(id=specialist_id)
+    except SpecialistProfile.DoesNotExist:
+        return Response({'error': 'پروفایل نیروی متخصص یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+    
+    # Get approval data
+    is_approved = request.data.get('is_approved')
+    admin_notes = request.data.get('admin_notes', '')
+    
+    # Update specialist profile
+    if is_approved is not None:
+        specialist.is_approved = is_approved
+        specialist.reviewed_by = request.user
+        specialist.reviewed_at = timezone.now()
+        specialist.admin_notes = admin_notes
+        specialist.save()
+    
+    # Return updated specialist data
+    serializer = SpecialistProfileSerializer(specialist)
+    return Response({
+        'message': 'پروفایل نیروی متخصص با موفقیت به‌روزرسانی شد',
+        'specialist': serializer.data
+    })
 
 
 # Turnstile Statistics and Admin

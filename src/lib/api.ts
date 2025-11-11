@@ -365,6 +365,30 @@ export async function contractorRegisterRequest(params: {
   return (await res.json()) as unknown;
 }
 
+export async function specialistRegisterRequest(params: { 
+  username: string; 
+  email: string; 
+  phone: string; 
+  password: string;
+  first_name?: string;
+  last_name?: string;
+  turnstile_token?: string;
+}) {
+  const res = await fetch(getApiUrl('/v1/auth/specialist-register/'), {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCSRFToken() || '',
+    },
+    credentials: 'include',
+    body: JSON.stringify(params),
+  });
+    if (!res.ok) {
+      throw await createErrorFromResponse(res, 'ثبت نام نیروی متخصص ناموفق بود');
+    }
+  return (await res.json()) as unknown;
+}
+
 export async function meRequest(): Promise<{ id: string; username: string; email: string; first_name?: string; last_name?: string; roles?: { role?: { name?: string } }[]; role?: { name?: string } }> {
   return fetchJson<{ id: string; username: string; email: string; first_name?: string; last_name?: string; roles?: { role?: { name?: string } }[]; role?: { name?: string } }>('/v1/auth/me/', { method: 'GET' });
 }
@@ -1791,6 +1815,119 @@ export async function signContract(contractId: string, signatureType: 'contracto
   }
 }
 
+// Specialist Profile API
+export async function createSpecialistProfile(data: {
+  province: string;
+  city: string;
+  address: string;
+  birth_date: string;
+  national_id: string;
+  education: string;
+  field_of_study: string;
+  specializations?: string[];
+  specialization_services?: string[];
+  skills?: Array<{ name: string; level: string }>;
+  work_experience?: Array<{ company: string; position: string; start_date: string; end_date?: string | null; description: string }>;
+  resume_file?: string;
+  description?: string;
+}) {
+  try {
+    return await fetchJson<{ id: string; message: string }>('/v1/specialist-profiles/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  } catch (error) {
+    console.error('Error creating specialist profile:', error);
+    throw error;
+  }
+}
+
+export async function getSpecialistProfile(profileId?: string) {
+  try {
+    const url = profileId ? `/v1/specialist-profiles/${profileId}/` : '/v1/specialist-profiles/';
+    return await fetchJson(url);
+  } catch (error) {
+    console.error('Error fetching specialist profile:', error);
+    throw error;
+  }
+}
+
+export async function updateSpecialistProfile(profileId: string, data: Record<string, unknown>) {
+  try {
+    return await fetchJson(`/v1/specialist-profiles/${profileId}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  } catch (error) {
+    console.error('Error updating specialist profile:', error);
+    throw error;
+  }
+}
+
+export async function getPublicSpecialists(params?: { province?: string; city?: string }) {
+  try {
+    const queryParams = new URLSearchParams();
+    if (params?.province) queryParams.append('province', params.province);
+    if (params?.city) queryParams.append('city', params.city);
+    const url = `/v1/public/specialists/?${queryParams.toString()}`;
+    return await fetchJson(url);
+  } catch (error) {
+    console.error('Error fetching public specialists:', error);
+    throw error;
+  }
+}
+
+// Specialist Hire Request API
+export async function createSpecialistHireRequest(data: {
+  specialist_profile: string;
+  message?: string;
+}) {
+  try {
+    return await fetchJson<{ id: string; message: string }>('/v1/specialist-hire-requests/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  } catch (error) {
+    console.error('Error creating specialist hire request:', error);
+    throw error;
+  }
+}
+
+export async function getSpecialistHireRequests(requestId?: string) {
+  try {
+    const url = requestId ? `/v1/specialist-hire-requests/${requestId}/` : '/v1/specialist-hire-requests/';
+    return await fetchJson(url);
+  } catch (error) {
+    console.error('Error fetching specialist hire requests:', error);
+    throw error;
+  }
+}
+
+// Admin Specialist Management API
+export async function approveSpecialistProfile(specialistId: string, data: {
+  is_approved: boolean;
+  admin_notes?: string;
+}) {
+  try {
+    return await fetchJson(`/v1/admin/specialists/${specialistId}/approve/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  } catch (error) {
+    console.error('Error approving specialist profile:', error);
+    throw error;
+  }
+}
+
+export async function getAllSpecialistsForAdmin() {
+  try {
+    return await fetchJson('/v1/specialist-profiles/');
+  } catch (error) {
+    console.error('Error fetching all specialists for admin:', error);
+    throw error;
+  }
+}
+
 
 // API object for easy access to all functions
 export const api = {
@@ -1892,6 +2029,16 @@ export const api = {
   getWorkContracts,
   createWorkContract,
   signContract,
+  
+  // Specialist Management
+  createSpecialistProfile,
+  getSpecialistProfile,
+  updateSpecialistProfile,
+  getPublicSpecialists,
+  createSpecialistHireRequest,
+  getSpecialistHireRequests,
+  approveSpecialistProfile,
+  getAllSpecialistsForAdmin,
   
   // Utility functions
   getAccessToken,

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
-  customerRegisterRequest, contractorRegisterRequest, meRequest, setTokens, clearTokens, getAccessToken,
+  customerRegisterRequest, contractorRegisterRequest, specialistRegisterRequest, meRequest, setTokens, clearTokens, getAccessToken,
   loginRequest, passwordResetRequest, passwordResetConfirm, changePassword,
   phoneVerificationRequest, phoneVerificationConfirm, checkPhoneVerificationStatus,
   getUserOrders, getUserCart, getUserCartItems, getUserNotifications, getUserStats,
@@ -61,6 +61,17 @@ export function useContractorRegister() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: contractorRegisterRequest,
+    onSuccess: async (data: { phone?: string }) => {
+      await qc.invalidateQueries({ queryKey: ['me'] });
+      navigateAfterRegister(data.phone || '');
+    },
+  });
+}
+
+export function useSpecialistRegister() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: specialistRegisterRequest,
     onSuccess: async (data: { phone?: string }) => {
       await qc.invalidateQueries({ queryKey: ['me'] });
       navigateAfterRegister(data.phone || '');
