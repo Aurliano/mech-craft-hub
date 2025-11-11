@@ -38,7 +38,11 @@ import CustomerQuotes from "./pages/CustomerQuotes";
 import MyWorkshops from "./pages/MyWorkshops";
 import OrderDetails from "./pages/OrderDetails";
 import ServicesPage from "./pages/ServicesPage";
-import PortfolioPage from "./pages/PortfolioPage";
+import SpecialistRegister from "./pages/SpecialistRegister";
+import SpecialistDashboard from "./pages/SpecialistDashboard";
+import SpecialistProfileForm from "./pages/SpecialistProfileForm";
+import SpecialistHiring from "./pages/SpecialistHiring";
+import AdminSpecialistManagement from "./pages/AdminSpecialistManagement";
 import Blog from "./pages/Blog";
 import BlogPage from "./pages/BlogPage";
 import BlogPostPage from "./pages/BlogPostPage";
@@ -76,6 +80,7 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/contractor-register" element={<ContractorRegister />} />
+              <Route path="/specialist-register" element={<SpecialistRegister />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/password-reset-sms" element={<PasswordResetSMS />} />
@@ -102,6 +107,18 @@ const App = () => (
               <Route path="/contractor-dashboard" element={
                 <ProtectedRoute allowedRoles={['contractor']}>
                   <ContractorDashboard />
+                </ProtectedRoute>
+              } />
+              
+              {/* Specialist Routes - Only accessible by specialists */}
+              <Route path="/specialist-dashboard" element={
+                <ProtectedRoute allowedRoles={['specialist']}>
+                  <SpecialistDashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/specialist-profile" element={
+                <ProtectedRoute allowedRoles={['specialist']}>
+                  <SpecialistProfileForm />
                 </ProtectedRoute>
               } />
               <Route path="/contractor/quotes" element={
@@ -150,7 +167,7 @@ const App = () => (
               
               {/* Info Pages */}
               <Route path="/services" element={<ServicesPage />} />
-              <Route path="/portfolio" element={<PortfolioPage />} />
+              <Route path="/specialist-hiring" element={<SpecialistHiring />} />
               <Route path="/blog" element={<BlogPage />} />
               <Route path="/blog/:slug" element={<BlogPostPage />} />
               <Route path="/job-market" element={<JobMarket />} />
@@ -174,6 +191,11 @@ const App = () => (
               <Route path="/admin/workshop-management" element={
                 <RoleBasedRoute allowedRoles={['admin']}>
                   <AdminWorkshopManagement />
+                </RoleBasedRoute>
+              } />
+              <Route path="/admin/specialist-management" element={
+                <RoleBasedRoute allowedRoles={['admin']}>
+                  <AdminSpecialistManagement />
                 </RoleBasedRoute>
               } />
               

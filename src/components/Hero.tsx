@@ -72,6 +72,17 @@ const Hero = () => {
                 ثبت نام کاربران و ثبت سفارش
               </Link>
             </Button>
+            {/* Specialist Register Button */}
+            <Button
+              variant="outline"
+              size="lg"
+              className="bg-white/10 text-white border-white/30 hover:bg-white hover:text-primary w-full sm:w-[18rem] font-bold tracking-wide transition-all duration-300 shadow-xl rounded-xl"
+              asChild
+            >
+              <Link to="/specialist-register">
+                جذب نیروی متخصص
+              </Link>
+            </Button>
           </div>
         </div>
         {/* Instructional glassy message - now transparent and grid-aligned */}

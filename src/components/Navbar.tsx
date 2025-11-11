@@ -60,7 +60,7 @@ const Navbar = () => {
   }, [isOpen]);
   
   // Use real authentication state
-  const { isAuthenticated, user, logout, cartItems, notifications, stats, isContractor, isCustomer } = useAuth();
+  const { isAuthenticated, user, logout, cartItems, notifications, stats, isContractor, isCustomer, isSpecialist } = useAuth();
   const isMobile = useIsMobile();
   const { data: manufacturingCheck } = useCheckContractorManufacturingService();
   const userName = user?.username || "کاربر";
@@ -137,6 +137,12 @@ const Navbar = () => {
                       <Link to="/admin/dashboard">داشبورد مدیر</Link>
                     </Button>
                   ) : null}
+                  {/* Specialist Dashboard Link */}
+                  {isSpecialist && (
+                    <Button variant="outline" size="sm" asChild title="داشبورد نیروی متخصص">
+                      <Link to="/specialist-dashboard">داشبورد نیروی متخصص</Link>
+                    </Button>
+                  )}
                   {/* Shopping Cart */}
                   {isCustomer && (
                     <Button variant="ghost" size="sm" className="relative" asChild title="سبد خرید">
@@ -275,13 +281,6 @@ const Navbar = () => {
                   </NavigationMenuLink>
                 </NavigationMenuItem>
 
-                {/* Portfolio */}
-                <NavigationMenuItem dir="rtl">
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()} href="/portfolio">
-                    <Briefcase className="h-4 w-4 ml-2" />
-                    نمونه کارها
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
 
                 {/* Services Page */}
                 <NavigationMenuItem dir="rtl">
@@ -504,14 +503,6 @@ const Navbar = () => {
                     <span className="font-medium">مقالات و منابع علمی</span>
                   </Link>
 
-                  <Link 
-                    to="/portfolio" 
-                    className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-100 transition-colors"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <Briefcase className="h-5 w-5 text-gray-600" />
-                    <span className="font-medium">نمونه کارها</span>
-                  </Link>
 
                   <Link 
                     to="/services" 
@@ -615,6 +606,15 @@ const Navbar = () => {
                             </Button>
                           )}
                         </>
+                      )}
+                      
+                      {isSpecialist && (
+                        <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
+                          <Link to="/specialist-dashboard" onClick={() => setIsOpen(false)}>
+                            <Briefcase className="mr-2 h-4 w-4" />
+                            داشبورد نیروی متخصص
+                          </Link>
+                        </Button>
                       )}
                       
                       <Button 

@@ -11,7 +11,8 @@ from .views import (
     TicketCategoryViewSet, ContentFilterLogViewSet, ReviewViewSet, ScientificContentViewSet,
     MaterialEstimationViewSet, OrderStatusLogViewSet,
     JobSeekerViewSet, WorkRequestViewSet, JobMatchViewSet, WorkContractViewSet,
-    customer_register, contractor_register, login, refresh_token, logout, me, UserViewSet, UploadView,
+    SpecialistProfileViewSet, SpecialistHireRequestViewSet,
+    customer_register, contractor_register, specialist_register, login, refresh_token, logout, me, UserViewSet, UploadView,
     password_reset_request, password_reset_confirm, phone_verification_request,
     phone_verification_confirm, change_password, password_reset_request_sms, sms_credit,
     verify_user_phone, password_reset_confirm_sms, check_phone_verification_status,
@@ -35,9 +36,11 @@ from .views import (
     create_contractor_workshop, check_contractor_manufacturing_service,
     get_contractor_ratings, get_contractor_rating_stats,
     # Public endpoints
-    get_public_workshops,
+    get_public_workshops, get_public_specialists,
     # Admin workshop management endpoints
     get_all_workshops_for_admin, approve_workshop,
+    # Admin specialist management endpoints
+    approve_specialist_profile,
     # Ticket endpoints
     create_ticket, create_ticket_message,
     # Captcha endpoints (Turnstile only)
@@ -85,6 +88,8 @@ router.register(r'job-seekers', JobSeekerViewSet, basename='jobseeker')
 router.register(r'work-requests', WorkRequestViewSet, basename='workrequest')
 router.register(r'job-matches', JobMatchViewSet, basename='jobmatch')
 router.register(r'work-contracts', WorkContractViewSet, basename='workcontract')
+router.register(r'specialist-profiles', SpecialistProfileViewSet, basename='specialistprofile')
+router.register(r'specialist-hire-requests', SpecialistHireRequestViewSet, basename='specialisthirerequest')
 
 urlpatterns = [
     # Health endpoint moved to config/urls.py to bypass middleware
@@ -94,6 +99,7 @@ urlpatterns = [
     path('status/', api_status, name='api_status'),
     path('v1/auth/customer-register/', customer_register, name='customer_register'),
     path('v1/auth/contractor-register/', contractor_register, name='contractor_register'),
+    path('v1/auth/specialist-register/', specialist_register, name='specialist_register'),
     path('v1/auth/login/', login, name='login'),
     path('v1/auth/refresh/', refresh_token, name='refresh_token'),
     path('v1/auth/logout/', logout, name='logout'),
@@ -173,9 +179,15 @@ urlpatterns = [
     # Public Workshop Endpoint
     path('v1/public/workshops/', get_public_workshops, name='get_public_workshops'),
     
+    # Public Specialist Endpoint
+    path('v1/public/specialists/', get_public_specialists, name='get_public_specialists'),
+    
     # Admin Workshop Management Endpoints
     path('v1/admin/workshops/', get_all_workshops_for_admin, name='get_all_workshops_for_admin'),
     path('v1/admin/workshops/<uuid:workshop_id>/approve/', approve_workshop, name='approve_workshop'),
+    
+    # Admin Specialist Management Endpoints
+    path('v1/admin/specialists/<uuid:specialist_id>/approve/', approve_specialist_profile, name='approve_specialist_profile'),
     
     # Ticket Management Endpoints
     path('v1/tickets/create/', create_ticket, name='create_ticket'),
