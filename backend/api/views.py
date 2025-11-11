@@ -8,6 +8,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django_filters import rest_framework as filters_drf
 from django.db import models
 from django.middleware.csrf import get_token
+from django.views.decorators.csrf import csrf_exempt
 from .models import (
     User,
     Scope, Service, ServiceField, ServiceTab,

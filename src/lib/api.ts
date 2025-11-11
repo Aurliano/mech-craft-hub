@@ -42,6 +42,13 @@ export const API_ROOT = '/api';
 // Utility function to get the correct API URL for both development and production
 // Version: 2025-10-08-14:00 - Cache bust
 export function getApiUrl(endpoint: string): string {
+  // Always check for VITE_API_BASE_URL first (for local development override)
+  const envApiUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envApiUrl) {
+    // If VITE_API_BASE_URL is set, use it (for local development)
+    return endpoint.startsWith('/') ? `${envApiUrl}${endpoint}` : `${envApiUrl}/${endpoint}`;
+  }
+  
   const isProduction = import.meta.env.PROD;
   if (isProduction) {
     // In production, always use HTTPS
@@ -50,8 +57,8 @@ export function getApiUrl(endpoint: string): string {
     const apiEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
     return `${baseUrl}${apiEndpoint}`;
   } else {
-    // Development mode - use environment variable or default localhost
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000';
+    // Development mode - default to localhost
+    const baseUrl = 'http://127.0.0.1:8000';
     return endpoint.startsWith('/') ? `${baseUrl}${endpoint}` : `${baseUrl}/${endpoint}`;
   }
 }
