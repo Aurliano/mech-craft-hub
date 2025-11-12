@@ -40,7 +40,7 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0
 export const API_ROOT = '/api';
 
 // Utility function to get the correct API URL for both development and production
-// Version: 2025-11-11 - Fixed production URL detection with runtime hostname check
+// Version: 2025-11-11 - Use relative URLs in production for better reliability
 export function getApiUrl(endpoint: string): string {
   // Always check for VITE_API_BASE_URL first (for local development override)
   const envApiUrl = import.meta.env.VITE_API_BASE_URL;
@@ -56,20 +56,21 @@ export function getApiUrl(endpoint: string): string {
     const hostname = window.location.hostname;
     isProduction = hostname === 'saydatech.ir' || 
                    hostname === 'www.saydatech.ir' ||
-                   hostname.endsWith('.saydatech.ir');
+                   hostname.endsWith('.saydatech.ir') ||
+                   // Also check if we're not on localhost
+                   (hostname !== 'localhost' && hostname !== '127.0.0.1' && !hostname.includes('192.168'));
   }
   
   // Fallback to build-time env if hostname check didn't work
-  if (!isProduction) {
+  if (!isProduction && typeof window === 'undefined') {
     isProduction = import.meta.env.PROD === true;
   }
   
   if (isProduction) {
-    // In production, always use HTTPS
-    const baseUrl = 'https://saydatech.ir';
-    // Ensure endpoint starts with /api
+    // In production, use relative URLs - this ensures requests go to the same domain
+    // This is more reliable than hardcoding the domain
     const apiEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
-    return `${baseUrl}${apiEndpoint}`;
+    return apiEndpoint;
   } else {
     // Development mode - default to localhost
     const baseUrl = 'http://127.0.0.1:8000';
