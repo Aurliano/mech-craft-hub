@@ -51,7 +51,7 @@ class CSRFTokenManager {
 
   public async refreshToken(): Promise<boolean> {
     try {
-      const response = await fetch(getApiUrl('/api/csrf-token/'), {
+      const response = await fetch(getApiUrl('/csrf-token/'), {
         method: 'GET',
         credentials: 'include',
         headers: {
