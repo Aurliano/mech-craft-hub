@@ -46,36 +46,34 @@ export function getApiUrl(endpoint: string): string {
   const envApiUrl = import.meta.env.VITE_API_BASE_URL;
   if (envApiUrl) {
     // If VITE_API_BASE_URL is set, use it (for local development)
-    return endpoint.startsWith('/') ? `${envApiUrl}${endpoint}` : `${envApiUrl}/${endpoint}`;
+    const apiEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
+    return `${envApiUrl}${apiEndpoint}`;
   }
   
-  // Check if we're in production by checking the hostname at runtime
+  // Check if we're in development by checking the hostname at runtime
   // This is more reliable than build-time env variables
-  let isProduction = false;
+  let isDevelopment = false;
   if (typeof window !== 'undefined' && window.location) {
     const hostname = window.location.hostname;
-    // Only consider production if hostname is saydatech.ir or its subdomains
-    isProduction = hostname === 'saydatech.ir' || 
-                   hostname === 'www.saydatech.ir' ||
-                   hostname.endsWith('.saydatech.ir');
-  }
-  
-  // Fallback to build-time env if hostname check didn't work (e.g., SSR)
-  if (!isProduction) {
-    isProduction = import.meta.env.PROD === true;
+    // Only use localhost if we're actually on localhost
+    isDevelopment = hostname === 'localhost' || 
+                    hostname === '127.0.0.1' ||
+                    hostname.startsWith('192.168.') ||
+                    hostname.startsWith('10.') ||
+                    hostname.startsWith('172.');
   }
   
   // Ensure endpoint starts with /api (both development and production)
   const apiEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
   
-  if (isProduction) {
-    // In production, use relative URLs - this ensures requests go to the same domain
-    // This is more reliable than hardcoding the domain
-    return apiEndpoint;
-  } else {
-    // Development mode - default to localhost
+  if (isDevelopment) {
+    // Development mode - use localhost
     const baseUrl = 'http://127.0.0.1:8000';
     return `${baseUrl}${apiEndpoint}`;
+  } else {
+    // Production mode - use relative URLs (same domain as frontend)
+    // This ensures requests go to the same domain and avoids CORS issues
+    return apiEndpoint;
   }
 }
 
