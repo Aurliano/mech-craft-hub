@@ -66,15 +66,17 @@ export function getApiUrl(endpoint: string): string {
     isProduction = import.meta.env.PROD === true;
   }
   
+  // Ensure endpoint starts with /api (both development and production)
+  const apiEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
+  
   if (isProduction) {
     // In production, use relative URLs - this ensures requests go to the same domain
     // This is more reliable than hardcoding the domain
-    const apiEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
     return apiEndpoint;
   } else {
     // Development mode - default to localhost
     const baseUrl = 'http://127.0.0.1:8000';
-    return endpoint.startsWith('/') ? `${baseUrl}${endpoint}` : `${baseUrl}/${endpoint}`;
+    return `${baseUrl}${apiEndpoint}`;
   }
 }
 
