@@ -155,12 +155,12 @@ const SpecialistHiring = () => {
                   </div>
                   <div>
                     <Label>استان</Label>
-                    <Select value={selectedProvince} onValueChange={setSelectedProvince}>
+                    <Select value={selectedProvince || "all"} onValueChange={(value) => setSelectedProvince(value === "all" ? "" : value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="همه استان‌ها" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">همه استان‌ها</SelectItem>
+                        <SelectItem value="all">همه استان‌ها</SelectItem>
                         {provinces.map((province) => (
                           <SelectItem key={province} value={province}>
                             {province}

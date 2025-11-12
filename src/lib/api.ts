@@ -40,8 +40,14 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0
 export const API_ROOT = '/api';
 
 // Utility function to get the correct API URL for both development and production
-// Version: 2025-10-08-14:00 - Cache bust
+// Version: 2025-11-11 - Fixed production URL detection
 export function getApiUrl(endpoint: string): string {
+  // Check if we're in production by checking the hostname
+  const isProduction = typeof window !== 'undefined' && 
+    (window.location.hostname === 'saydatech.ir' || 
+     window.location.hostname === 'www.saydatech.ir' ||
+     import.meta.env.PROD);
+  
   // Always check for VITE_API_BASE_URL first (for local development override)
   const envApiUrl = import.meta.env.VITE_API_BASE_URL;
   if (envApiUrl) {
@@ -49,7 +55,6 @@ export function getApiUrl(endpoint: string): string {
     return endpoint.startsWith('/') ? `${envApiUrl}${endpoint}` : `${envApiUrl}/${endpoint}`;
   }
   
-  const isProduction = import.meta.env.PROD;
   if (isProduction) {
     // In production, always use HTTPS
     const baseUrl = 'https://saydatech.ir';
