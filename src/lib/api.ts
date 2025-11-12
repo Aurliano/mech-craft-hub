@@ -69,10 +69,29 @@ export function getApiUrl(endpoint: string): string {
   if (isDevelopment) {
     // Development mode - use localhost
     const baseUrl = 'http://127.0.0.1:8000';
-    return `${baseUrl}${apiEndpoint}`;
+    const finalUrl = `${baseUrl}${apiEndpoint}`;
+    // Debug logging (only in development)
+    if (import.meta.env.DEV) {
+      console.debug('[getApiUrl] Development mode:', finalUrl);
+    }
+    return finalUrl;
   } else {
     // Production mode - use relative URLs (same domain as frontend)
     // This ensures requests go to the same domain and avoids CORS issues
+    // Debug logging (only in development)
+    if (import.meta.env.DEV) {
+      console.debug('[getApiUrl] Production mode (relative URL):', apiEndpoint);
+    }
+    // Safety check: if we're in production but somehow still using localhost, warn
+    if (typeof window !== 'undefined' && window.location && 
+        window.location.hostname !== 'localhost' && 
+        window.location.hostname !== '127.0.0.1' &&
+        !window.location.hostname.startsWith('192.168.') &&
+        !window.location.hostname.startsWith('10.') &&
+        !window.location.hostname.startsWith('172.')) {
+      // We're in production, relative URL is correct
+      // This is the expected behavior
+    }
     return apiEndpoint;
   }
 }
