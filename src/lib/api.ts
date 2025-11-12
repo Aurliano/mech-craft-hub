@@ -54,15 +54,14 @@ export function getApiUrl(endpoint: string): string {
   let isProduction = false;
   if (typeof window !== 'undefined' && window.location) {
     const hostname = window.location.hostname;
+    // Only consider production if hostname is saydatech.ir or its subdomains
     isProduction = hostname === 'saydatech.ir' || 
                    hostname === 'www.saydatech.ir' ||
-                   hostname.endsWith('.saydatech.ir') ||
-                   // Also check if we're not on localhost
-                   (hostname !== 'localhost' && hostname !== '127.0.0.1' && !hostname.includes('192.168'));
+                   hostname.endsWith('.saydatech.ir');
   }
   
-  // Fallback to build-time env if hostname check didn't work
-  if (!isProduction && typeof window === 'undefined') {
+  // Fallback to build-time env if hostname check didn't work (e.g., SSR)
+  if (!isProduction) {
     isProduction = import.meta.env.PROD === true;
   }
   
