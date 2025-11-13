@@ -1,5 +1,5 @@
 // Service Worker for SaydaTech PWA
-const CACHE_NAME = 'saydatech-pwa-v5';
+const CACHE_NAME = 'saydatech-pwa-v6';
 const OFFLINE_CACHE_URLS = [
   '/',
   '/manifest.json'
@@ -62,7 +62,30 @@ self.addEventListener('fetch', (event) => {
     return; // Let the network handle it directly
   }
 
-  // Cache-first strategy for app shell and assets under /assets/
+  // Network-first strategy for JavaScript assets to ensure fresh code
+  // Cache-first for HTML and other static assets
+  if (path.startsWith('/assets/') && path.endsWith('.js')) {
+    // Network-first for JavaScript files to ensure we get the latest code
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200 && response.type === 'basic') {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return response;
+        })
+        .catch(() => {
+          // If network fails, try cache as fallback
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
+
+  // Cache-first strategy for other assets (HTML, CSS, images)
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
@@ -73,7 +96,7 @@ self.addEventListener('fetch', (event) => {
           if (!response || response.status !== 200 || response.type !== 'basic') {
             return response;
           }
-          const isCachable = path === '/' || path.startsWith('/assets/');
+          const isCachable = path === '/' || (path.startsWith('/assets/') && !path.endsWith('.js'));
           if (isCachable) {
             const responseToCache = response.clone();
             caches.open(CACHE_NAME).then((cache) => {
