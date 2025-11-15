@@ -59,12 +59,9 @@ export function getApiUrl(endpoint: string): string {
     if (isLocalhost) {
       const apiEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
       const finalUrl = `${envApiUrl}${apiEndpoint}`;
-      console.log('[getApiUrl] Using VITE_API_BASE_URL (localhost):', finalUrl);
       return finalUrl;
-    } else {
-      // In production, ignore VITE_API_BASE_URL even if it's set
-      console.warn('[getApiUrl] VITE_API_BASE_URL is set but ignored in production. Using relative URLs instead.');
     }
+    // In production, ignore VITE_API_BASE_URL even if it's set
   }
   
   // Ensure endpoint starts with /api (both development and production)
@@ -98,12 +95,10 @@ export function getApiUrl(endpoint: string): string {
     // Development mode - use localhost
     const baseUrl = 'http://127.0.0.1:8000';
     const finalUrl = `${baseUrl}${apiEndpoint}`;
-    console.log('[getApiUrl] Development mode - using localhost:', { hostname, finalUrl });
     return finalUrl;
   } else {
     // Production mode - use relative URLs (same domain as frontend)
     // This ensures requests go to the same domain and avoids CORS issues
-    console.log('[getApiUrl] Production mode - using relative URL:', { hostname, apiEndpoint });
     return apiEndpoint;
   }
 }
