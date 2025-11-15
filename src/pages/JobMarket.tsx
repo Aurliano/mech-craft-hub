@@ -88,7 +88,6 @@ const JobMarket = () => {
               <TabsTrigger value="opportunities" className="text-lg">
                 <Briefcase className="w-5 h-5 ml-2" />
                 فرصت‌های شغلی
- مبتلی
               </TabsTrigger>
               <TabsTrigger value="workers" className="text-lg">
                 <Users className="w-5 h-5 ml-2" />

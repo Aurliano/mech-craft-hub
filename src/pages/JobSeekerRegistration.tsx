@@ -155,15 +155,19 @@ const JobSeekerRegistration = () => {
 
               {/* Experience */}
               <div>
-                <Label htmlFor="experience">سال‌های تجربه *</Label>
+                <Label htmlFor="experience">سابقه کاری *</Label>
                 <Input
                   id="experience"
                   type="number"
                   min="0"
                   value={formData.experience_years}
                   onChange={(e) => handleInputChange('experience_years', e.target.value)}
+                  placeholder="چه مدت سابقه کار در حوزه‌های مشابه را دارید؟"
                   required
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  چه مدت سابقه کار در حوزه‌های مشابه را دارید؟
+                </p>
               </div>
 
               {/* Education */}

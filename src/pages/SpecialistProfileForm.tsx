@@ -18,6 +18,7 @@ import { useNavigate } from 'react-router-dom';
 import { uploadUserFile } from '@/lib/api';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown } from 'lucide-react';
+import { searchSkills, getSkillsForScope, type Skill } from '@/data/skills';
 
 // Iranian provinces
 const provinces = [
@@ -26,16 +27,6 @@ const provinces = [
   'همدان', 'یزد', 'کرمانشاه', 'چهارمحال و بختیاری', 'قزوین', 'زنجان',
   'اردبیل', 'آذربایجان غربی', 'کهگیلویه و بویراحمد', 'ایلام', 'بوشهر',
   'هرمزگان', 'سمنان', 'قم', 'گلستان', 'البرز', 'خراسان شمالی', 'خراسان جنوبی'
-];
-
-// Predefined skills for autocomplete (inspired by JobVision)
-const predefinedSkills = [
-  'SolidWorks', 'AutoCAD', 'CATIA', 'ANSYS', 'MATLAB', 'Simulink',
-  'Python', 'C++', 'Java', 'JavaScript', 'React', 'Node.js',
-  'PLC Programming', 'Electrical Design', 'Mechanical Design',
-  'CNC Programming', 'Welding', 'Machining', '3D Modeling', 'CAD/CAM',
-  'Project Management', 'Quality Control', 'Technical Writing',
-  'FPGA', 'Embedded Systems', 'IoT', 'Machine Learning', 'Data Analysis'
 ];
 
 const SpecialistProfileForm = () => {
@@ -69,7 +60,7 @@ const SpecialistProfileForm = () => {
   });
   
   const [currentSkill, setCurrentSkill] = useState('');
-  const [skillSuggestions, setSkillSuggestions] = useState<string[]>([]);
+  const [skillSuggestions, setSkillSuggestions] = useState<Skill[]>([]);
   const [expandedScopes, setExpandedScopes] = useState<Set<string>>(new Set());
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [isUploadingResume, setIsUploadingResume] = useState(false);
@@ -132,18 +123,43 @@ const SpecialistProfileForm = () => {
     }
   }, [myProfile]);
 
-  // Skill autocomplete
+  // Skill autocomplete - filter by selected scopes
   useEffect(() => {
     if (currentSkill.trim()) {
-      const filtered = predefinedSkills.filter(skill =>
-        skill.toLowerCase().includes(currentSkill.toLowerCase()) &&
-        !formData.skills.some(s => s.name === skill)
-      );
-      setSkillSuggestions(filtered.slice(0, 5));
+      // Get skills based on selected scopes
+      const selectedScopes = (scopes as Array<{ id: string; name: string }>)?.filter(
+        scope => formData.specializations.includes(scope.id)
+      ) || [];
+      
+      let suggestions: Skill[] = [];
+      
+      if (selectedScopes.length > 0) {
+        // Search in selected scopes
+        selectedScopes.forEach(scope => {
+          // Try both name and display_name for scope matching
+          const scopeName = (scope as { name?: string; display_name?: string }).display_name || scope.name;
+          const scopeSkills = getSkillsForScope(scopeName);
+          const filtered = scopeSkills.filter(skill =>
+            skill.name.toLowerCase().includes(currentSkill.toLowerCase()) &&
+            !formData.skills.some(s => s.name === skill.name)
+          );
+          suggestions.push(...filtered);
+        });
+      } else {
+        // If no scope selected, search in all skills
+        suggestions = searchSkills(currentSkill);
+      }
+      
+      // Remove duplicates and limit to 10
+      const uniqueSuggestions = suggestions.filter((skill, index, self) =>
+        index === self.findIndex(s => s.name === skill.name)
+      ).slice(0, 10);
+      
+      setSkillSuggestions(uniqueSuggestions);
     } else {
       setSkillSuggestions([]);
     }
-  }, [currentSkill, formData.skills]);
+  }, [currentSkill, formData.skills, formData.specializations, scopes]);
 
   // Convert Gregorian to Jalali (simplified)
   const gregorianToJalali = (gy: number, gm: number, gd: number) => {
@@ -615,10 +631,11 @@ const SpecialistProfileForm = () => {
               <div>
                 <Label>زمینه تخصصی * (در چه زمینه‌ای می‌توانید با ما همکاری داشته باشید؟)</Label>
                 <div className="space-y-2 mt-2">
-                  {scopes && (scopes as Array<{ id: string; name: string }>).map((scope) => {
+                  {scopes && (scopes as Array<{ id: string; name: string; display_name?: string }>).map((scope) => {
                     const scopeServices = selectedScopeServices.filter(s => s.scope?.id === scope.id);
                     const isExpanded = expandedScopes.has(scope.id);
                     const isSelected = formData.specializations.includes(scope.id);
+                    const scopeDisplayName = scope.display_name || scope.name;
                     
                     return (
                       <div key={scope.id} className="border rounded-lg p-3">
@@ -630,7 +647,7 @@ const SpecialistProfileForm = () => {
                               onChange={() => handleScopeToggle(scope.id)}
                               className="w-4 h-4"
                             />
-                            <Label className="font-medium">{scope.name}</Label>
+                            <Label className="font-medium">{scopeDisplayName}</Label>
                           </div>
                           {scopeServices.length > 0 && (
                             <Collapsible open={isExpanded} onOpenChange={(open) => {
@@ -690,15 +707,18 @@ const SpecialistProfileForm = () => {
                         }}
                       />
                       {skillSuggestions.length > 0 && (
-                        <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg">
+                        <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
                           {skillSuggestions.map((skill) => (
                             <button
-                              key={skill}
+                              key={skill.name}
                               type="button"
-                              className="w-full text-right px-4 py-2 hover:bg-gray-100"
-                              onClick={() => handleAddSkill(skill)}
+                              className="w-full text-right px-4 py-2 hover:bg-gray-100 flex items-center justify-between"
+                              onClick={() => handleAddSkill(skill.name)}
                             >
-                              {skill}
+                              <span>{skill.name}</span>
+                              {skill.category && (
+                                <span className="text-xs text-gray-500">{skill.category}</span>
+                              )}
                             </button>
                           ))}
                         </div>
