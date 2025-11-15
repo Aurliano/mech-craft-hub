@@ -1813,16 +1813,21 @@ def create_order(request):
         
         # Create order items
         items_data = data.get('items', [])
+        total_amount = 0
         for item_data in items_data:
-            OrderItem.objects.create(
+            service = Service.objects.get(id=item_data['service'])
+            order_item = OrderItem.objects.create(
                 order=order,
-                service_id=item_data['service'],
+                service=service,
                 field_values=item_data.get('field_values', {}),
                 needs_documentation=item_data.get('needs_documentation', False)
             )
+            # Use service base_price as initial price (will be updated when quote is accepted)
+            if service.base_price:
+                total_amount += float(service.base_price)
         
-        # Calculate total amount (simplified)
-        order.total_amount = sum(item.price or 0 for item in order.items.all())
+        # Calculate total amount from service base prices
+        order.total_amount = total_amount
         order.save()
         
         return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)

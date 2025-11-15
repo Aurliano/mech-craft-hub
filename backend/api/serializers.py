@@ -53,13 +53,26 @@ class WorkshopSerializer(serializers.ModelSerializer):
 
 
 
-class ServiceTabSerializer(serializers.ModelSerializer):
+class ServiceTabBasicSerializer(serializers.ModelSerializer):
+    """Basic tab serializer without fields to avoid circular reference"""
     class Meta:
         model = ServiceTab
         fields = ['id', 'name', 'display_name', 'description', 'order', 'is_active']
 
+class ServiceTabSerializer(serializers.ModelSerializer):
+    fields = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = ServiceTab
+        fields = ['id', 'name', 'display_name', 'description', 'order', 'is_active', 'fields']
+    
+    def get_fields(self, obj):
+        """Return fields for this tab"""
+        fields = obj.fields.filter(is_active=True).order_by('order', 'name')
+        return ServiceFieldSerializer(fields, many=True).data
+
 class ServiceFieldSerializer(serializers.ModelSerializer):
-    tab = ServiceTabSerializer(read_only=True)
+    tab = ServiceTabBasicSerializer(read_only=True)
     
     class Meta:
         model = ServiceField
@@ -67,24 +80,31 @@ class ServiceFieldSerializer(serializers.ModelSerializer):
 
 class ServiceSerializer(serializers.ModelSerializer):
     tabs = serializers.SerializerMethodField()
-    fields = serializers.SerializerMethodField()
+    form_fields = serializers.SerializerMethodField()
 
     class Meta:
         model = Service
-        fields = ['id', 'scope', 'name', 'type', 'description', 'base_price', 'estimated_delivery_days', 'supports_documentation', 'has_tabs', 'is_active', 'tabs', 'fields']
+        fields = ['id', 'scope', 'name', 'type', 'description', 'base_price', 'estimated_delivery_days', 'supports_documentation', 'has_tabs', 'is_active', 'tabs', 'form_fields']
     
     def get_tabs(self, obj):
         """Return only active tabs"""
         tabs = obj.tabs.filter(is_active=True).order_by('order')
         return ServiceTabSerializer(tabs, many=True).data
     
-    def get_fields(self, obj):
+    def get_form_fields(self, obj):
         """Return only fields from active tabs or fields without tabs"""
         from django.db.models import Q
         fields = obj.fields.filter(
             Q(tab__isnull=True) | Q(tab__is_active=True)
         ).order_by('tab', 'order', 'name')
         return ServiceFieldSerializer(fields, many=True).data
+    
+    def to_representation(self, instance):
+        """Add 'fields' alias for backward compatibility"""
+        data = super().to_representation(instance)
+        # Add 'fields' as alias to 'form_fields' for backward compatibility
+        data['fields'] = data.get('form_fields', [])
+        return data
 
 
 
