@@ -42,14 +42,29 @@ export const API_ROOT = '/api';
 // Utility function to get the correct API URL for both development and production
 // Version: 2025-11-11 - Use relative URLs in production for better reliability
 export function getApiUrl(endpoint: string): string {
-  // Always check for VITE_API_BASE_URL first (for local development override)
+  // Check for VITE_API_BASE_URL only in development
+  // In production, we should NOT use VITE_API_BASE_URL to avoid hardcoded URLs
   const envApiUrl = import.meta.env.VITE_API_BASE_URL;
-  if (envApiUrl) {
-    // If VITE_API_BASE_URL is set, use it (for local development)
-    const apiEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
-    const finalUrl = `${envApiUrl}${apiEndpoint}`;
-    console.log('[getApiUrl] Using VITE_API_BASE_URL:', finalUrl);
-    return finalUrl;
+  
+  // Only use VITE_API_BASE_URL if we're actually in development (localhost)
+  if (envApiUrl && typeof window !== 'undefined' && window.location) {
+    const hostname = window.location.hostname;
+    const isLocalhost = hostname === 'localhost' || 
+                       hostname === '127.0.0.1' ||
+                       hostname.startsWith('192.168.') ||
+                       hostname.startsWith('10.') ||
+                       hostname.startsWith('172.');
+    
+    // Only use VITE_API_BASE_URL if we're on localhost
+    if (isLocalhost) {
+      const apiEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
+      const finalUrl = `${envApiUrl}${apiEndpoint}`;
+      console.log('[getApiUrl] Using VITE_API_BASE_URL (localhost):', finalUrl);
+      return finalUrl;
+    } else {
+      // In production, ignore VITE_API_BASE_URL even if it's set
+      console.warn('[getApiUrl] VITE_API_BASE_URL is set but ignored in production. Using relative URLs instead.');
+    }
   }
   
   // Ensure endpoint starts with /api (both development and production)
