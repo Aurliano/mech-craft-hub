@@ -47,23 +47,30 @@ export function getApiUrl(endpoint: string): string {
   if (envApiUrl) {
     // If VITE_API_BASE_URL is set, use it (for local development)
     const apiEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
-    return `${envApiUrl}${apiEndpoint}`;
+    const finalUrl = `${envApiUrl}${apiEndpoint}`;
+    console.log('[getApiUrl] Using VITE_API_BASE_URL:', finalUrl);
+    return finalUrl;
   }
   
-  // Check if we're in development by checking the hostname at runtime
-  // This is more reliable than build-time env variables
-  let isDevelopment = false;
+  // Ensure endpoint starts with /api (both development and production)
+  const apiEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
+  
+  // Default to relative URLs (production mode)
+  // Only use localhost if we're explicitly on localhost
+  let useLocalhost = false;
   let hostname = '';
+  
   if (typeof window !== 'undefined' && window.location) {
     hostname = window.location.hostname;
-    // Only use localhost if we're actually on localhost
-    // Explicitly check for production domains to avoid false positives
+    
+    // Explicitly check for production domains first
     const isProductionDomain = hostname === 'saydatech.ir' || 
                               hostname === 'www.saydatech.ir' ||
                               hostname.endsWith('.liara.run') ||
                               hostname.endsWith('.liara.ir');
     
-    isDevelopment = !isProductionDomain && (
+    // Only use localhost if we're NOT on a production domain AND we're on localhost
+    useLocalhost = !isProductionDomain && (
       hostname === 'localhost' || 
       hostname === '127.0.0.1' ||
       hostname.startsWith('192.168.') ||
@@ -72,19 +79,16 @@ export function getApiUrl(endpoint: string): string {
     );
   }
   
-  // Ensure endpoint starts with /api (both development and production)
-  const apiEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
-  
-  if (isDevelopment) {
+  if (useLocalhost) {
     // Development mode - use localhost
     const baseUrl = 'http://127.0.0.1:8000';
     const finalUrl = `${baseUrl}${apiEndpoint}`;
-    console.debug('[getApiUrl] Development mode detected:', { hostname, finalUrl });
+    console.log('[getApiUrl] Development mode - using localhost:', { hostname, finalUrl });
     return finalUrl;
   } else {
     // Production mode - use relative URLs (same domain as frontend)
     // This ensures requests go to the same domain and avoids CORS issues
-    console.debug('[getApiUrl] Production mode detected:', { hostname, apiEndpoint });
+    console.log('[getApiUrl] Production mode - using relative URL:', { hostname, apiEndpoint });
     return apiEndpoint;
   }
 }
