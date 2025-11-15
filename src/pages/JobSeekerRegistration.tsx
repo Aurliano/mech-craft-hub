@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +14,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useScopes, useServices } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { searchSkills, getSkillsForScope, type Skill } from '@/data/skills';
+import { Badge } from '@/components/ui/badge';
+import { X } from 'lucide-react';
 
 const JobSeekerRegistration = () => {
   const { user } = useAuth();
@@ -40,18 +43,57 @@ const JobSeekerRegistration = () => {
   });
   
   const [currentSkill, setCurrentSkill] = useState('');
+  const [skillSuggestions, setSkillSuggestions] = useState<Skill[]>([]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleAddSkill = () => {
+  // Skill autocomplete - filter by selected scope
+  useEffect(() => {
     if (currentSkill.trim()) {
+      let suggestions: Skill[] = [];
+      
+      if (formData.service_scope) {
+        // Get selected scope
+        const selectedScope = (scopes as Array<{ id: string; name: string; display_name?: string }>)?.find(
+          scope => scope.id === formData.service_scope
+        );
+        
+        if (selectedScope) {
+          // Search in selected scope
+          const scopeName = selectedScope.display_name || selectedScope.name;
+          const scopeSkills = getSkillsForScope(scopeName);
+          suggestions = scopeSkills.filter(skill =>
+            skill.name.toLowerCase().includes(currentSkill.toLowerCase()) &&
+            !formData.skills.includes(skill.name)
+          );
+        }
+      } else {
+        // If no scope selected, search in all skills
+        suggestions = searchSkills(currentSkill);
+      }
+      
+      // Remove duplicates and limit to 10
+      const uniqueSuggestions = suggestions.filter((skill, index, self) =>
+        index === self.findIndex(s => s.name === skill.name)
+      ).slice(0, 10);
+      
+      setSkillSuggestions(uniqueSuggestions);
+    } else {
+      setSkillSuggestions([]);
+    }
+  }, [currentSkill, formData.skills, formData.service_scope, scopes]);
+
+  const handleAddSkill = (skillName?: string) => {
+    const skillToAdd = skillName || currentSkill.trim();
+    if (skillToAdd && !formData.skills.includes(skillToAdd)) {
       setFormData(prev => ({ 
         ...prev, 
-        skills: [...prev.skills, currentSkill.trim()] 
+        skills: [...prev.skills, skillToAdd] 
       }));
       setCurrentSkill('');
+      setSkillSuggestions([]);
     }
   };
 
@@ -204,11 +246,14 @@ const JobSeekerRegistration = () => {
                       <SelectValue placeholder="انتخاب حوزه کاری (اختیاری)" />
                     </SelectTrigger>
                     <SelectContent>
-                      {(scopes as { id: string; name: string }[]).map((scope: { id: string; name: string }) => (
-                        <SelectItem key={scope.id} value={scope.id}>
-                          {scope.name}
-                        </SelectItem>
-                      ))}
+                      {(scopes as { id: string; name: string; display_name?: string }[]).map((scope: { id: string; name: string; display_name?: string }) => {
+                        const scopeDisplayName = scope.display_name || scope.name;
+                        return (
+                          <SelectItem key={scope.id} value={scope.id}>
+                            {scopeDisplayName}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 </div>
@@ -229,39 +274,64 @@ const JobSeekerRegistration = () => {
 
               {/* Skills */}
               <div>
-                <Label>مهارت‌های کلیدی</Label>
-                <div className="flex gap-2 mb-2">
-                  <Input
-                    value={currentSkill}
-                    onChange={(e) => setCurrentSkill(e.target.value)}
-                    placeholder="مثال: SolidWorks"
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleAddSkill();
-                      }
-                    }}
-                  />
-                  <Button type="button" onClick={handleAddSkill} variant="outline">
-                    افزودن
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {formData.skills.map((skill, idx) => (
-                    <span
-                      key={idx}
-                      className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm flex items-center gap-2"
+                <Label>مهارت‌های کلیدی (حداکثر 10)</Label>
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <div className="flex-1 relative">
+                      <Input
+                        value={currentSkill}
+                        onChange={(e) => setCurrentSkill(e.target.value)}
+                        placeholder="نام مهارت را تایپ کنید..."
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter' && currentSkill.trim() && formData.skills.length < 10) {
+                            e.preventDefault();
+                            handleAddSkill();
+                          }
+                        }}
+                        disabled={formData.skills.length >= 10}
+                      />
+                      {skillSuggestions.length > 0 && (
+                        <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                          {skillSuggestions.map((skill) => (
+                            <button
+                              key={skill.name}
+                              type="button"
+                              className="w-full text-right px-4 py-2 hover:bg-gray-100 flex items-center justify-between"
+                              onClick={() => handleAddSkill(skill.name)}
+                            >
+                              <span>{skill.name}</span>
+                              {skill.category && (
+                                <span className="text-xs text-gray-500">{skill.category}</span>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <Button 
+                      type="button" 
+                      onClick={() => handleAddSkill()} 
+                      variant="outline"
+                      disabled={formData.skills.length >= 10}
                     >
-                      {skill}
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveSkill(skill)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
+                      افزودن
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {formData.skills.map((skill, idx) => (
+                      <Badge key={idx} variant="secondary" className="flex items-center gap-1">
+                        {skill}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSkill(skill)}
+                          className="text-red-600 hover:text-red-800 ml-1"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground">{formData.skills.length}/10</p>
                 </div>
               </div>
 
