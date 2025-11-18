@@ -6,8 +6,9 @@ from django.db import migrations, models
 def rename_indexes_if_exist(apps, schema_editor):
     """Rename indexes only if they exist"""
     db_alias = schema_editor.connection.alias
+    connection = schema_editor.connection
     
-    with schema_editor.connection.cursor() as cursor:
+    with connection.cursor() as cursor:
         # Check and rename each index if it exists
         indexes_to_rename = [
             ('turnstile_at_created_idx', 'turnstile_a_created_9679d0_idx'),
@@ -17,22 +18,48 @@ def rename_indexes_if_exist(apps, schema_editor):
         ]
         
         for old_name, new_name in indexes_to_rename:
-            cursor.execute("""
-                SELECT EXISTS (
-                    SELECT FROM pg_indexes 
-                    WHERE indexname = %s
-                );
-            """, [old_name])
+            # Check if index exists based on database vendor
+            index_exists = False
+            if connection.vendor == 'postgresql':
+                cursor.execute("""
+                    SELECT EXISTS (
+                        SELECT 1 FROM pg_indexes 
+                        WHERE indexname = %s
+                    );
+                """, [old_name])
+                index_exists = cursor.fetchone()[0]
+            elif connection.vendor == 'sqlite':
+                # SQLite doesn't support renaming indexes directly
+                # We'll skip this for SQLite as it's only for test databases
+                continue
+            else:
+                # For other databases, try to check if index exists
+                try:
+                    cursor.execute("""
+                        SELECT EXISTS (
+                            SELECT 1 FROM information_schema.statistics 
+                            WHERE index_name = %s
+                        );
+                    """, [old_name])
+                    index_exists = cursor.fetchone()[0]
+                except Exception:
+                    # If we can't check, skip renaming
+                    continue
             
-            if cursor.fetchone()[0]:
-                cursor.execute(f'ALTER INDEX "{old_name}" RENAME TO "{new_name}";')
+            if index_exists:
+                try:
+                    cursor.execute(f'ALTER INDEX "{old_name}" RENAME TO "{new_name}";')
+                except Exception:
+                    # If renaming fails, skip it
+                    pass
 
 
 def reverse_rename_indexes(apps, schema_editor):
     """Reverse the index renaming"""
     db_alias = schema_editor.connection.alias
+    connection = schema_editor.connection
     
-    with schema_editor.connection.cursor() as cursor:
+    with connection.cursor() as cursor:
         indexes_to_rename = [
             ('turnstile_a_created_9679d0_idx', 'turnstile_at_created_idx'),
             ('turnstile_a_ip_8d290d_idx', 'turnstile_at_ip_idx'),
@@ -41,15 +68,40 @@ def reverse_rename_indexes(apps, schema_editor):
         ]
         
         for old_name, new_name in indexes_to_rename:
-            cursor.execute("""
-                SELECT EXISTS (
-                    SELECT FROM pg_indexes 
-                    WHERE indexname = %s
-                );
-            """, [old_name])
+            # Check if index exists based on database vendor
+            index_exists = False
+            if connection.vendor == 'postgresql':
+                cursor.execute("""
+                    SELECT EXISTS (
+                        SELECT 1 FROM pg_indexes 
+                        WHERE indexname = %s
+                    );
+                """, [old_name])
+                index_exists = cursor.fetchone()[0]
+            elif connection.vendor == 'sqlite':
+                # SQLite doesn't support renaming indexes directly
+                # We'll skip this for SQLite as it's only for test databases
+                continue
+            else:
+                # For other databases, try to check if index exists
+                try:
+                    cursor.execute("""
+                        SELECT EXISTS (
+                            SELECT 1 FROM information_schema.statistics 
+                            WHERE index_name = %s
+                        );
+                    """, [old_name])
+                    index_exists = cursor.fetchone()[0]
+                except Exception:
+                    # If we can't check, skip renaming
+                    continue
             
-            if cursor.fetchone()[0]:
-                cursor.execute(f'ALTER INDEX "{old_name}" RENAME TO "{new_name}";')
+            if index_exists:
+                try:
+                    cursor.execute(f'ALTER INDEX "{old_name}" RENAME TO "{new_name}";')
+                except Exception:
+                    # If renaming fails, skip it
+                    pass
 
 
 class Migration(migrations.Migration):

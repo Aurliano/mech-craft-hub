@@ -1738,7 +1738,7 @@ export async function getPublicJobSeekers(params?: { service_scope?: string }) {
       queryParams.append('service_scope', params.service_scope);
     }
     const queryString = queryParams.toString();
-    const url = `/v1/public/job-seekers/${queryString ? `?${queryString}` : ''}`;
+    const url = queryString ? `/v1/public/job-seekers/?${queryString}` : '/v1/public/job-seekers/';
     return await fetchJson<Array<{ id: string; job_title: string; experience_years: number; education?: string; cv_text?: string; service_scope?: { id: string; name: string; display_name?: string }; services?: Array<{ id: string; name: string }>; skills?: string[]; is_active?: boolean; is_available?: boolean; created_at?: string }>>(url);
   } catch (error) {
     console.error('Error fetching public job seekers:', error);
