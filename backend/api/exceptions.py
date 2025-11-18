@@ -7,7 +7,6 @@ from django.http import Http404
 from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework.exceptions import AuthenticationFailed, NotAuthenticated, PermissionDenied, NotFound
 import logging
-import json
 
 logger = logging.getLogger(__name__)
 

@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django_filters',
     'corsheaders',
     'drf_spectacular',
+    'axes',  # For login lockout protection
     'api',
 ]
 
@@ -53,6 +54,9 @@ MIDDLEWARE = [
     'api.middleware.CSRFProtectionMiddleware',  # Custom CSRF middleware
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'api.middleware.JWTAuthenticationMiddleware',  # Custom JWT middleware
+    'axes.middleware.AxesMiddleware',  # Must be after AuthenticationMiddleware
+    'api.middleware.SecurityHeadersMiddleware',  # Security headers middleware
+    'api.middleware.RateLimitMiddleware',  # Rate limiting middleware
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -114,6 +118,14 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
     },
+]
+
+# Password hashing - Use Argon2 for better security
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.Argon2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
 ]
 
 # Internationalization
@@ -223,6 +235,28 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
+
+# Authentication backends - Axes must be first
+AUTHENTICATION_BACKENDS = [
+    'axes.backends.AxesStandaloneBackend',  # Must be first
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+# django-axes Configuration - Enhanced Security
+AXES_ENABLED = True  # Enable axes for production
+AXES_FAILURE_LIMIT = 5  # Lock after 5 failed attempts
+AXES_COOLOFF_TIME = 1  # 1 hour lockout
+AXES_LOCKOUT_TEMPLATE = 'axes/lockout.html'
+AXES_VERBOSE = True
+AXES_LOCKOUT_PARAMETERS = ['ip_address', 'user_agent']
+AXES_RESET_ON_SUCCESS = True
+AXES_DISABLE_ACCESS_LOG = False
+AXES_HANDLER = 'axes.handlers.database.AxesDatabaseHandler'
+AXES_LOCKOUT_URL = '/locked/'
+AXES_ENABLE_ADMIN = True
+AXES_NEVER_LOCKOUT_WHITELIST = True
+AXES_NEVER_LOCKOUT_GET = True
+AXES_LOCKOUT_BY_COMBINATION_USER_AND_IP = True
 
 # Payments (BitPay)
 BITPAY_API_KEY = os.getenv('BITPAY_API_KEY', '')

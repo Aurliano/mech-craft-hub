@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Briefcase, Users, Search, TrendingUp, CheckCircle, 
   MapPin, DollarSign, Clock, FileText, Star,
-  Building, Calendar, Award, UserPlus
+  Building, Calendar, Award, UserPlus, AlertCircle
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
@@ -34,8 +34,8 @@ const JobMarket = () => {
   const [showHireDialog, setShowHireDialog] = useState(false);
   
   // Fetch data - only basic info for public display
-  const { data: workRequests } = useGetAllWorkRequests();
-  const { data: jobSeekers } = useGetPublicJobSeekers();
+  const { data: workRequests, isLoading: isLoadingWorkRequests, isError: isErrorWorkRequests } = useGetAllWorkRequests();
+  const { data: jobSeekers, isLoading: isLoadingJobSeekers, isError: isErrorJobSeekers } = useGetPublicJobSeekers();
   const createHireRequestMutation = useCreateJobSeekerHireRequest();
   
   type WorkRequestType = { 
@@ -267,7 +267,25 @@ const JobMarket = () => {
                   </CardHeader>
                 </Card>
 
-                {activeWorkers.length === 0 ? (
+                {isLoadingJobSeekers ? (
+                  <Card>
+                    <CardContent className="text-center py-12">
+                      <Users className="w-16 h-16 mx-auto mb-4 text-gray-300 animate-pulse" />
+                      <p className="text-gray-500 text-lg">
+                        در حال بارگذاری...
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : isErrorJobSeekers ? (
+                  <Card>
+                    <CardContent className="text-center py-12">
+                      <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-300" />
+                      <p className="text-red-500 text-lg">
+                        خطا در بارگذاری اطلاعات. لطفاً صفحه را رفرش کنید.
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : activeWorkers.length === 0 ? (
                   <Card>
                     <CardContent className="text-center py-12">
                       <Users className="w-16 h-16 mx-auto mb-4 text-gray-300" />

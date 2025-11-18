@@ -10,7 +10,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
-from api.models import User, Service, ContractorService
+# Import after Django setup
+from api.models import User, Service, ContractorService  # noqa: E402
 
 def add_manufacturing_service_to_contractors():
     """Add manufacturing service to all contractors"""

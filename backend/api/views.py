@@ -3270,11 +3270,15 @@ def get_public_job_seekers(request):
         if service_scope:
             job_seekers = job_seekers.filter(service_scope_id=service_scope)
         
+        # Log for debugging
+        logger.info(f"get_public_job_seekers: Found {job_seekers.count()} job seekers")
+        
         # Serialize with public serializer (no user info, only ID)
         serializer = JobSeekerPublicSerializer(job_seekers, many=True)
+        logger.info(f"get_public_job_seekers: Serialized {len(serializer.data)} job seekers")
         return Response(serializer.data, status=status.HTTP_200_OK)
     except Exception as e:
-        logger.error(f"Error getting public job seekers: {str(e)}")
+        logger.error(f"Error getting public job seekers: {str(e)}", exc_info=True)
         return Response({'error': 'خطا در دریافت اطلاعات جویندگان کار'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
@@ -3283,12 +3287,17 @@ def get_public_job_seekers(request):
 def create_job_seeker_hire_request(request):
     """Create a hire request for a job seeker (contractor to admin)"""
     try:
+        logger.info(f"create_job_seeker_hire_request: User {request.user.username} attempting to create hire request")
+        
         # Check if user is contractor
         from .models import Role
         user_roles = request.user.user_roles.filter(is_active=True).select_related('role')
         is_contractor = any(role.role.name == 'contractor' for role in user_roles)
         
+        logger.info(f"create_job_seeker_hire_request: User {request.user.username} is_contractor={is_contractor}")
+        
         if not is_contractor:
+            logger.warning(f"create_job_seeker_hire_request: User {request.user.username} is not a contractor")
             return Response(
                 {'error': 'فقط پیمانکاران می‌توانند درخواست جذب نیرو ثبت کنند'},
                 status=status.HTTP_403_FORBIDDEN
@@ -3297,6 +3306,7 @@ def create_job_seeker_hire_request(request):
         serializer = JobSeekerHireRequestCreateSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             hire_request = serializer.save()
+            logger.info(f"create_job_seeker_hire_request: Created hire request {hire_request.id} for job seeker {hire_request.job_seeker.id}")
             
             # Create notification for admin
             from .models import Notification
@@ -3304,6 +3314,7 @@ def create_job_seeker_hire_request(request):
             admin_role = Role.objects.filter(name='admin').first()
             if admin_role:
                 admin_users = admin_role.user_roles.filter(is_active=True).select_related('user')
+                notification_count = 0
                 for admin_role_obj in admin_users:
                     Notification.objects.create(
                         user=admin_role_obj.user,
@@ -3311,6 +3322,10 @@ def create_job_seeker_hire_request(request):
                         title='درخواست جذب نیروی کاریابی جدید',
                         message=f'پیمانکار {request.user.username} درخواست جذب نیروی کاریابی {hire_request.job_seeker.id} را ثبت کرده است',
                     )
+                    notification_count += 1
+                logger.info(f"create_job_seeker_hire_request: Created {notification_count} notifications for admins")
+            else:
+                logger.warning("create_job_seeker_hire_request: No admin role found, skipping notification")
             
             response_serializer = JobSeekerHireRequestSerializer(hire_request)
             return Response({
@@ -3318,9 +3333,10 @@ def create_job_seeker_hire_request(request):
                 'hire_request': response_serializer.data
             }, status=status.HTTP_201_CREATED)
         
+        logger.warning(f"create_job_seeker_hire_request: Serializer validation failed: {serializer.errors}")
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
-        logger.error(f"Error creating job seeker hire request: {str(e)}")
+        logger.error(f"Error creating job seeker hire request: {str(e)}", exc_info=True)
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 

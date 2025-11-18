@@ -78,7 +78,7 @@ class ThrottlingTestCase(APITestCase):
     
     def test_register_throttling(self):
         """Test that registration endpoint is properly throttled"""
-        url = reverse('register')
+        url = reverse('customer_register')
         
         # Make multiple requests to trigger throttling
         for i in range(4):  # Exceed the 3/minute limit

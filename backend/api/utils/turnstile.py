@@ -239,7 +239,7 @@ def get_fallback_captcha_data(request=None) -> Dict[str, Any]:
     """Get fallback captcha challenge data with enhanced security."""
     from django.core.cache import cache
     import uuid
-    import random
+    import secrets  # Use secrets module for cryptographically secure random
     import hashlib
     import time
     
@@ -262,20 +262,21 @@ def get_fallback_captcha_data(request=None) -> Dict[str, Any]:
     challenge_id = str(uuid.uuid4())
     
     # Enhanced math challenge with more complexity
-    operation = random.choice(['+', '-', '*'])
+    # Use secrets.choice for cryptographically secure random selection
+    operation = secrets.choice(['+', '-', '*'])
     if operation == '+':
-        a = random.randint(10, 99)
-        b = random.randint(10, 99)
+        a = secrets.randbelow(90) + 10  # 10-99
+        b = secrets.randbelow(90) + 10  # 10-99
         answer = a + b
         challenge = f"{a} + {b} = ?"
     elif operation == '-':
-        a = random.randint(20, 99)
-        b = random.randint(10, a-1)
+        a = secrets.randbelow(80) + 20  # 20-99
+        b = secrets.randbelow(a - 10) + 10  # 10 to a-1
         answer = a - b
         challenge = f"{a} - {b} = ?"
     else:  # multiplication
-        a = random.randint(2, 12)
-        b = random.randint(2, 12)
+        a = secrets.randbelow(11) + 2  # 2-12
+        b = secrets.randbelow(11) + 2  # 2-12
         answer = a * b
         challenge = f"{a} × {b} = ?"
     

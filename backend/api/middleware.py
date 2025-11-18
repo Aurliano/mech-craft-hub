@@ -2,9 +2,6 @@
 Security middleware for Django
 """
 from django.utils.deprecation import MiddlewareMixin
-from django.http import HttpResponse
-from django.conf import settings
-from django.views.decorators.csrf import csrf_exempt
 import logging
 
 logger = logging.getLogger(__name__)
@@ -187,6 +184,36 @@ class RateLimitMiddleware(MiddlewareMixin):
             
             # Increment counter
             cache.set(cache_key, attempts + 1, 60)  # 1 minute
+        
+        # Rate limiting for anonymous users on general API endpoints
+        if not request.user.is_authenticated and request.path.startswith('/api/'):
+            cache_key = f"rate_limit_anon_{client_ip}"
+            attempts = cache.get(cache_key, 0)
+            
+            if attempts >= 100:  # 100 requests per hour for anonymous users
+                logger.warning(f"Anonymous rate limit exceeded for IP: {client_ip}")
+                return JsonResponse({
+                    'error': 'Rate limit exceeded',
+                    'message': 'تعداد درخواست‌ها بیش از حد مجاز است'
+                }, status=429)
+            
+            # Increment counter (1 hour TTL)
+            cache.set(cache_key, attempts + 1, 3600)
+        
+        # Rate limiting for authenticated users on general API endpoints
+        if request.user.is_authenticated and request.path.startswith('/api/'):
+            cache_key = f"rate_limit_auth_user_{request.user.id}"
+            attempts = cache.get(cache_key, 0)
+            
+            if attempts >= 1000:  # 1000 requests per hour for authenticated users
+                logger.warning(f"Authenticated rate limit exceeded for user: {request.user.id}")
+                return JsonResponse({
+                    'error': 'Rate limit exceeded',
+                    'message': 'تعداد درخواست‌ها بیش از حد مجاز است'
+                }, status=429)
+            
+            # Increment counter (1 hour TTL)
+            cache.set(cache_key, attempts + 1, 3600)
         
         return None
     

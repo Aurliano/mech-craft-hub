@@ -37,10 +37,10 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        dry_run = options['dry_run']
-        compress = options['compress']
-        s3_upload = options['s3_upload']
-        backup_dir = options['backup_dir']
+        dry_run = options.get('dry_run', False)
+        compress = options.get('compress', False)
+        s3_upload = options.get('s3_upload', False)
+        backup_dir = options.get('backup_dir', '/app/backups')
 
         # Get database configuration
         db_config = settings.DATABASES['default']
@@ -141,14 +141,34 @@ class Command(BaseCommand):
     def upload_to_s3(self, backup_file):
         """Upload backup file to S3."""
         try:
-            s3_client = boto3.client(
-                's3',
-                aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-                aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-                region_name=settings.AWS_S3_REGION_NAME
-            )
+            # Try Liara S3 settings first
+            access_key = getattr(settings, 'LIARA_ACCESS_KEY_ID', None) or getattr(settings, 'LIARA_ACCESS_KEY', None)
+            secret_key = getattr(settings, 'LIARA_SECRET_ACCESS_KEY', None) or getattr(settings, 'LIARA_SECRET_KEY', None)
+            endpoint_url = getattr(settings, 'LIARA_ENDPOINT_URL', None) or getattr(settings, 'S3_ENDPOINT_URL', None)
+            bucket_name = getattr(settings, 'FILE_BUCKET_NAME', None) or getattr(settings, 'S3_BACKUP_BUCKET', None)
             
-            bucket_name = settings.S3_BACKUP_BUCKET
+            # Fallback to AWS settings
+            if not access_key:
+                access_key = getattr(settings, 'AWS_ACCESS_KEY_ID', None)
+            if not secret_key:
+                secret_key = getattr(settings, 'AWS_SECRET_ACCESS_KEY', None)
+            if not bucket_name:
+                bucket_name = getattr(settings, 'S3_BACKUP_BUCKET', None)
+            
+            if not access_key or not secret_key or not bucket_name:
+                raise CommandError("S3 configuration missing. Please set LIARA_ACCESS_KEY_ID, LIARA_SECRET_ACCESS_KEY, and FILE_BUCKET_NAME (or AWS equivalents).")
+            
+            # Create S3 client
+            s3_config = {
+                'aws_access_key_id': access_key,
+                'aws_secret_access_key': secret_key,
+            }
+            if endpoint_url:
+                s3_config['endpoint_url'] = endpoint_url
+                s3_config['region_name'] = getattr(settings, 'FILE_REGION', 'iran')
+            
+            s3_client = boto3.client('s3', **s3_config)
+            
             s3_key = f"postgresql/{os.path.basename(backup_file)}"
             
             self.stdout.write(f"Uploading to S3: s3://{bucket_name}/{s3_key}")
@@ -161,8 +181,8 @@ class Command(BaseCommand):
             
         except ClientError as e:
             raise CommandError(f"S3 upload failed: {e}")
-        except AttributeError:
-            raise CommandError("S3 configuration missing. Please set AWS credentials and S3_BACKUP_BUCKET.")
+        except Exception as e:
+            raise CommandError(f"S3 upload failed: {str(e)}")
 
     def cleanup_old_backups(self, backup_dir, retention_days=30):
         """Remove backup files older than retention_days."""

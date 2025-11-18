@@ -310,7 +310,9 @@ class MonitoringSecurityTests(TestCase):
         response = health_check(request)
         
         self.assertEqual(response.status_code, 200)
-        data = response.json()
+        # JsonResponse has .content which is bytes, need to decode and parse JSON
+        import json
+        data = json.loads(response.content.decode('utf-8'))
         self.assertEqual(data['status'], 'healthy')
     
     def test_metrics_endpoint_unauthorized(self):
