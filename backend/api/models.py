@@ -1950,3 +1950,46 @@ class SpecialistHireRequest(models.Model):
         return f"درخواست {self.requester.username} برای {self.specialist_profile.specialist_code}"
 
 
+class JobSeekerHireRequest(models.Model):
+    """Request to hire a job seeker (from contractor to admin)"""
+    
+    REQUEST_STATUS_CHOICES = [
+        ('pending', 'در انتظار بررسی'),
+        ('approved', 'تایید شده'),
+        ('rejected', 'رد شده'),
+        ('contacted', 'تماس برقرار شده'),
+        ('completed', 'تکمیل شده'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    requester = models.ForeignKey(User, on_delete=models.CASCADE, related_name='job_seeker_hire_requests')
+    job_seeker = models.ForeignKey(JobSeeker, on_delete=models.CASCADE, related_name='hire_requests')
+    
+    # Request details
+    message = models.TextField(blank=True, help_text="پیام درخواست")
+    status = models.CharField(max_length=20, choices=REQUEST_STATUS_CHOICES, default='pending')
+    
+    # Admin handling
+    admin_notes = models.TextField(blank=True, help_text="یادداشت ادمین")
+    handled_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='handled_job_seeker_hire_requests')
+    handled_at = models.DateTimeField(null=True, blank=True)
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'job_seeker_hire_requests'
+        verbose_name = 'درخواست جذب نیروی کاریابی'
+        verbose_name_plural = 'درخواست‌های جذب نیروی کاریابی'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['status']),
+            models.Index(fields=['requester', 'job_seeker']),
+            models.Index(fields=['created_at']),
+        ]
+    
+    def __str__(self):
+        return f"درخواست {self.requester.username} برای نیروی کاریابی {self.job_seeker.id}"
+
+

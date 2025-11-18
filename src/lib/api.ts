@@ -1720,6 +1720,47 @@ export async function updateJobSeekerProfile(profileId: string, data: Record<str
   }
 }
 
+export async function deleteJobSeekerProfile(profileId: string) {
+  try {
+    return await fetchJson(`/v1/job-seekers/${profileId}/`, {
+      method: 'DELETE',
+    });
+  } catch (error) {
+    console.error('Error deleting job seeker profile:', error);
+    throw error;
+  }
+}
+
+export async function getPublicJobSeekers(params?: { service_scope?: string }) {
+  try {
+    const queryParams = new URLSearchParams();
+    if (params?.service_scope) {
+      queryParams.append('service_scope', params.service_scope);
+    }
+    const queryString = queryParams.toString();
+    const url = `/v1/public/job-seekers/${queryString ? `?${queryString}` : ''}`;
+    return await fetchJson<Array<{ id: string; job_title: string; experience_years: number; education?: string; cv_text?: string; service_scope?: { id: string; name: string; display_name?: string }; services?: Array<{ id: string; name: string }>; skills?: string[]; is_active?: boolean; is_available?: boolean; created_at?: string }>>(url);
+  } catch (error) {
+    console.error('Error fetching public job seekers:', error);
+    throw error;
+  }
+}
+
+export async function createJobSeekerHireRequest(data: {
+  job_seeker: string;
+  message?: string;
+}) {
+  try {
+    return await fetchJson<{ id: string; job_seeker: { id: string; job_title: string }; message?: string; status: string; created_at: string }>('/v1/job-seekers/hire-request/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  } catch (error) {
+    console.error('Error creating job seeker hire request:', error);
+    throw error;
+  }
+}
+
 // Work Request API
 export async function createWorkRequest(data: {
   workshop?: string;

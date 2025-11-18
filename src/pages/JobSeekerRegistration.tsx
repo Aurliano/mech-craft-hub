@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,17 +6,45 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { FileText, AlertCircle, CheckCircle } from 'lucide-react';
+import { FileText, AlertCircle, CheckCircle, Trash2, Eye } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { useCreateJobSeekerProfile, useGetJobSeekerProfile, useUpdateJobSeekerProfile } from '@/hooks/useWorkforce';
+import { useCreateJobSeekerProfile, useDeleteJobSeekerProfile, useGetJobSeekerProfile, useUpdateJobSeekerProfile } from '@/hooks/useWorkforce';
 import { useAuth } from '@/contexts/AuthContext';
-import { useScopes, useServices } from '@/hooks/useAuth';
+import { useScopes } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { searchSkills, getSkillsForScope, type Skill } from '@/data/skills';
 import { Badge } from '@/components/ui/badge';
 import { X } from 'lucide-react';
+
+type JobSeekerProfile = {
+  id: string;
+  job_title?: string;
+  experience_years?: number;
+  education?: string;
+  cv_text?: string;
+  service_scope?: { id: string; name: string; display_name?: string };
+  services?: Array<{ id: string; name: string }>;
+  skills?: string[];
+  is_active?: boolean;
+  is_available?: boolean;
+  created_at?: string;
+};
+
+const initialFormState = {
+  job_title: '',
+  experience_years: '',
+  education: '',
+  cv_text: '',
+  service_scope: '',
+  services: [] as string[],
+  skills: [] as string[],
+  address: '',
+  phone_alt: '',
+  emergency_contact: '',
+  emergency_phone: '',
+};
 
 const JobSeekerRegistration = () => {
   const { user } = useAuth();
@@ -24,26 +52,44 @@ const JobSeekerRegistration = () => {
   const { toast } = useToast();
   
   const { data: scopes } = useScopes();
-  const { data: myProfile } = useGetJobSeekerProfile();
+  const { data: myProfile, refetch } = useGetJobSeekerProfile();
   const createMutation = useCreateJobSeekerProfile();
   const updateMutation = useUpdateJobSeekerProfile();
+  const deleteMutation = useDeleteJobSeekerProfile();
   
-  const [formData, setFormData] = useState({
-    job_title: '',
-    experience_years: '',
-    education: '',
-    cv_text: '',
-    service_scope: '',
-    services: [] as string[],
-    skills: [] as string[],
-    address: '',
-    phone_alt: '',
-    emergency_contact: '',
-    emergency_phone: '',
-  });
-  
+  const [formData, setFormData] = useState(initialFormState);
   const [currentSkill, setCurrentSkill] = useState('');
+  const [hasInitialized, setHasInitialized] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+  
+  const profileData = myProfile as { results?: JobSeekerProfile[] } | undefined;
+  const existingProfile = profileData?.results?.[0];
+  const hasProfile = Boolean(existingProfile);
   const [skillSuggestions, setSkillSuggestions] = useState<Skill[]>([]);
+
+  useEffect(() => {
+    if (existingProfile && !hasInitialized) {
+      setFormData({
+        job_title: existingProfile.job_title || '',
+        experience_years: existingProfile.experience_years !== undefined ? String(existingProfile.experience_years) : '',
+        education: existingProfile.education || '',
+        cv_text: existingProfile.cv_text || '',
+        service_scope: existingProfile.service_scope?.id || '',
+        services: existingProfile.services?.map(service => service.id) || [],
+        skills: existingProfile.skills || [],
+        address: '',
+        phone_alt: '',
+        emergency_contact: '',
+        emergency_phone: '',
+      });
+      setHasInitialized(true);
+    }
+
+    if (!existingProfile && hasInitialized) {
+      setFormData(initialFormState);
+      setHasInitialized(false);
+    }
+  }, [existingProfile, hasInitialized]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -64,10 +110,15 @@ const JobSeekerRegistration = () => {
           // Search in selected scope
           const scopeName = selectedScope.display_name || selectedScope.name;
           const scopeSkills = getSkillsForScope(scopeName);
-          suggestions = scopeSkills.filter(skill =>
+          const filtered = scopeSkills.filter(skill =>
             skill.name.toLowerCase().includes(currentSkill.toLowerCase()) &&
             !formData.skills.includes(skill.name)
           );
+          if (filtered.length > 0) {
+            suggestions = filtered;
+          } else {
+            suggestions = searchSkills(currentSkill);
+          }
         }
       } else {
         // If no scope selected, search in all skills
@@ -87,7 +138,11 @@ const JobSeekerRegistration = () => {
 
   const handleAddSkill = (skillName?: string) => {
     const skillToAdd = skillName || currentSkill.trim();
-    if (skillToAdd && !formData.skills.includes(skillToAdd)) {
+    if (
+      skillToAdd &&
+      !formData.skills.includes(skillToAdd) &&
+      formData.skills.length < 10
+    ) {
       setFormData(prev => ({ 
         ...prev, 
         skills: [...prev.skills, skillToAdd] 
@@ -143,7 +198,8 @@ const JobSeekerRegistration = () => {
           description: "پروفایل کاریابی شما با موفقیت ثبت شد",
         });
       }
-      navigate('/dashboard');
+      await refetch();
+      setHasInitialized(false);
     } catch (error) {
       toast({
         title: "خطا",
@@ -153,11 +209,122 @@ const JobSeekerRegistration = () => {
     }
   };
 
+  const handleDeleteProfile = async () => {
+    if (!existingProfile?.id) return;
+    const confirmed = window.confirm('آیا از حذف پروفایل کاریابی خود مطمئن هستید؟');
+    if (!confirmed) return;
+    
+    try {
+      await deleteMutation.mutateAsync(existingProfile.id);
+      await refetch();
+      setFormData(initialFormState);
+      setHasInitialized(false);
+      toast({
+        title: "موفقیت",
+        description: "پروفایل کاریابی شما با موفقیت حذف شد",
+      });
+    } catch (error) {
+      toast({
+        title: "خطا",
+        description: "در حذف پروفایل مشکلی رخ داد",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleScrollToForm = () => {
+    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50" dir="rtl">
       <Navbar />
       
       <div className="container mx-auto py-12 px-4 max-w-4xl">
+        {hasProfile && existingProfile && (
+          <Card className="mb-6 border-green-500 bg-green-50/40">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                پروفایل کاریابی شما ثبت شده است
+              </CardTitle>
+              <CardDescription>
+                می‌توانید اطلاعات ثبت شده را مشاهده، ویرایش یا حذف کنید.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-muted-foreground">عنوان شغلی</p>
+                  <p className="font-medium">{existingProfile.job_title || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">سابقه کاری</p>
+                  <p className="font-medium">
+                    {existingProfile.experience_years !== undefined ? `${existingProfile.experience_years} سال` : '-'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">تحصیلات</p>
+                  <p className="font-medium">{existingProfile.education || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">حوزه کاری</p>
+                  <p className="font-medium">
+                    {existingProfile.service_scope?.display_name || existingProfile.service_scope?.name || '-'}
+                  </p>
+                </div>
+              </div>
+              
+              {existingProfile.services && existingProfile.services.length > 0 && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">خدمات انتخاب شده</p>
+                  <div className="flex flex-wrap gap-2">
+                    {existingProfile.services.map((service) => (
+                      <Badge key={service.id} variant="secondary">
+                        {service.name}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {existingProfile.skills && existingProfile.skills.length > 0 && (
+                <div>
+                  <p className="text-sm text-muted-foreground mb-2">مهارت‌ها</p>
+                  <div className="flex flex-wrap gap-2">
+                    {existingProfile.skills.map((skill, idx) => (
+                      <Badge key={idx}>{skill}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Button 
+                  type="button" 
+                  variant="default" 
+                  onClick={handleScrollToForm}
+                  className="flex-1 sm:flex-none"
+                >
+                  <Eye className="h-4 w-4 ml-2" />
+                  ویرایش اطلاعات
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={handleDeleteProfile}
+                  disabled={deleteMutation.isPending}
+                  className="flex-1 sm:flex-none"
+                >
+                  <Trash2 className="h-4 w-4 ml-2" />
+                  حذف پروفایل
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-2xl">
@@ -171,18 +338,18 @@ const JobSeekerRegistration = () => {
           
           <CardContent>
             {(() => {
-              const profileData = myProfile as { results?: Array<unknown> } | undefined;
-              return profileData?.results?.[0] && (
-                <Alert className="mb-6 border-green-500 bg-green-50">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                  <AlertDescription className="text-green-800">
-                    شما قبلاً پروفایل کاریابی خود را ایجاد کرده‌اید. می‌توانید اطلاعات را به‌روزرسانی کنید.
+              if (hasProfile) return null;
+              return (
+                <Alert className="mb-6 border-blue-300 bg-blue-50">
+                  <AlertCircle className="h-4 w-4 text-blue-600" />
+                  <AlertDescription className="text-blue-900">
+                    هنوز پروفایل کاریابی ثبت نکرده‌اید. لطفاً فرم زیر را تکمیل کنید تا در لیست نیروهای متخصص قرار بگیرید.
                   </AlertDescription>
                 </Alert>
               );
             })()}
             
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
               {/* Job Title */}
               <div>
                 <Label htmlFor="job_title">عنوان شغل *</Label>

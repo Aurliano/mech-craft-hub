@@ -225,35 +225,84 @@ export const skillsByScope: Record<string, Skill[]> = {
 
 // Helper function to get skills for a scope by name or display_name
 export function getSkillsForScope(scopeName: string): Skill[] {
-  const scopeKey = scopeName.toLowerCase().replace(/\s+/g, '').replace(/[^\w\u0600-\u06FF]/g, '');
+  if (!scopeName) {
+    return [];
+  }
+
+  const normalized = scopeName
+    .toLowerCase()
+    .replace(/[\s_-]+/g, '')
+    .replace(/[^\w\u0600-\u06FF]/g, '');
   
-  // Map common scope names (both English and Persian) to keys
   const scopeMap: Record<string, string> = {
     // Mechanical Engineering
     'mechanical': 'mechanical',
-    'مهندسی مکانیک': 'mechanical',
-    'مکانیک': 'mechanical',
     'mechanicalengineering': 'mechanical',
+    'مهندسی‌مکانیک': 'mechanical',
+    'مهندسی‌مکانیکو ساخت': 'mechanical',
+    'مکانیک': 'mechanical',
+    'مکانیکصنعتی': 'mechanical',
     
     // Computer Engineering
     'computer': 'computer',
-    'مهندسی کامپیوتر': 'computer',
-    'کامپیوتر': 'computer',
     'computerengineering': 'computer',
+    'softwareengineering': 'computer',
+    'مهندسی‌کامپیوتر': 'computer',
+    'مهندسی‌نرم‌افزار': 'computer',
+    'کامپیوتر': 'computer',
     
     // Electrical Engineering
     'electrical': 'electrical',
-    'مهندسی برق': 'electrical',
-    'برق': 'electrical',
     'electricalengineering': 'electrical',
+    'powerengineering': 'electrical',
+    'مهندسی‌برق': 'electrical',
+    'برقصنعتی': 'electrical',
+    'برققدرت': 'electrical',
+    'برقکنترل': 'electrical',
     
     // Metaverse
     'metaverse': 'metaverse',
+    'virtualreality': 'metaverse',
+    'augmentedreality': 'metaverse',
+    'xr': 'metaverse',
     'متاورس': 'metaverse',
+    'واقعیتمجازی': 'metaverse',
+    'واقعیتافزوده': 'metaverse',
   };
   
-  const key = scopeMap[scopeKey] || scopeKey;
-  return skillsByScope[key] || [];
+  let key = scopeMap[normalized];
+  
+  if (!key) {
+    if (normalized.includes('mechanic') || normalized.includes('مکانیک')) {
+      key = 'mechanical';
+    } else if (
+      normalized.includes('computer') ||
+      normalized.includes('software') ||
+      normalized.includes('کامپیوتر')
+    ) {
+      key = 'computer';
+    } else if (
+      normalized.includes('electrical') ||
+      normalized.includes('برق') ||
+      normalized.includes('power')
+    ) {
+      key = 'electrical';
+    } else if (
+      normalized.includes('metaverse') ||
+      normalized.includes('xr') ||
+      normalized.includes('vr') ||
+      normalized.includes('ar') ||
+      normalized.includes('متاورس')
+    ) {
+      key = 'metaverse';
+    }
+  }
+  
+  if (key && skillsByScope[key]) {
+    return skillsByScope[key];
+  }
+  
+  return getAllSkills();
 }
 
 // Get all unique skills across all scopes

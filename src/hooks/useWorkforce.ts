@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { 
-  createJobSeekerProfile, getJobSeekerProfile, updateJobSeekerProfile,
+  createJobSeekerProfile, getJobSeekerProfile, updateJobSeekerProfile, deleteJobSeekerProfile,
+  getPublicJobSeekers, createJobSeekerHireRequest,
   createWorkRequest, getWorkRequests, updateWorkRequestStatus,
   getJobMatches, createJobMatch, updateJobMatchStatus,
   getWorkContracts, createWorkContract, signContract
@@ -35,11 +36,38 @@ export function useGetAllJobSeekers() {
   });
 }
 
+export function useGetPublicJobSeekers(params?: { service_scope?: string }) {
+  return useQuery({
+    queryKey: ['publicJobSeekers', params],
+    queryFn: () => getPublicJobSeekers(params),
+  });
+}
+
+export function useCreateJobSeekerHireRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createJobSeekerHireRequest,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobSeekerHireRequests'] });
+    },
+  });
+}
+
 export function useUpdateJobSeekerProfile() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ profileId, data }: { profileId: string; data: Record<string, unknown> }) => 
       updateJobSeekerProfile(profileId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobSeekers'] });
+    },
+  });
+}
+
+export function useDeleteJobSeekerProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (profileId: string) => deleteJobSeekerProfile(profileId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['jobSeekers'] });
     },

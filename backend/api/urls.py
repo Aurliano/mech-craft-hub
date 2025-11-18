@@ -36,7 +36,9 @@ from .views import (
     create_contractor_workshop, check_contractor_manufacturing_service,
     get_contractor_ratings, get_contractor_rating_stats,
     # Public endpoints
-    get_public_workshops, get_public_specialists,
+    get_public_workshops, get_public_specialists, get_public_job_seekers,
+    # Job seeker hire request endpoints
+    create_job_seeker_hire_request,
     # Admin workshop management endpoints
     get_all_workshops_for_admin, approve_workshop,
     # Admin specialist management endpoints
@@ -181,6 +183,12 @@ urlpatterns = [
     
     # Public Specialist Endpoint
     path('v1/public/specialists/', get_public_specialists, name='get_public_specialists'),
+    
+    # Public Job Seeker Endpoint
+    path('v1/public/job-seekers/', get_public_job_seekers, name='get_public_job_seekers'),
+    
+    # Job Seeker Hire Request Endpoint
+    path('v1/job-seekers/hire-request/', create_job_seeker_hire_request, name='create_job_seeker_hire_request'),
     
     # Admin Workshop Management Endpoints
     path('v1/admin/workshops/', get_all_workshops_for_admin, name='get_all_workshops_for_admin'),

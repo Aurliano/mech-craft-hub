@@ -7,7 +7,7 @@ from .models import (
     ContentFilterLog, Review, Notification, SupportFeedback, BlogPost, BlogComment, ScientificContent,
     OrderProposal, MaterialEstimate, OrderStatus, Payment, MaterialEstimation, OrderStatusLog,
     DeliveryFile, JobSeeker, WorkRequest, JobMatch, WorkContract,
-    SpecialistProfile, SpecialistHireRequest
+    SpecialistProfile, SpecialistHireRequest, JobSeekerHireRequest
 )
 
 
@@ -1066,6 +1066,21 @@ class JobSeekerCreateSerializer(serializers.ModelSerializer):
         return instance
 
 
+class JobSeekerPublicSerializer(serializers.ModelSerializer):
+    """Public serializer for job seeker profile (without user info, only ID)"""
+    service_scope = ScopeSerializer(read_only=True)
+    services = ServiceSerializer(many=True, read_only=True)
+    
+    class Meta:
+        model = JobSeeker
+        fields = [
+            'id', 'job_title', 'experience_years', 'education', 
+            'cv_text', 'service_scope', 'services', 'skills',
+            'is_active', 'is_available', 'created_at'
+        ]
+        read_only_fields = ['id', 'created_at']
+
+
 class WorkRequestSerializer(serializers.ModelSerializer):
     """Serializer for work requests"""
     contractor = UserSerializer(read_only=True)
@@ -1320,6 +1335,38 @@ class SpecialistHireRequestCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = SpecialistHireRequest
         fields = ['specialist_profile', 'message']
+    
+    def create(self, validated_data):
+        """Create hire request for authenticated user"""
+        validated_data['requester'] = self.context['request'].user
+        return super().create(validated_data)
+
+
+class JobSeekerHireRequestSerializer(serializers.ModelSerializer):
+    """Serializer for job seeker hire requests"""
+    requester = UserSerializer(read_only=True)
+    job_seeker = JobSeekerPublicSerializer(read_only=True)
+    handled_by_user = UserSerializer(source='handled_by', read_only=True)
+    
+    class Meta:
+        model = JobSeekerHireRequest
+        fields = [
+            'id', 'requester', 'job_seeker', 'message', 'status',
+            'admin_notes', 'handled_by_user', 'handled_at',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = [
+            'id', 'requester', 'status', 'handled_by', 'handled_at',
+            'created_at', 'updated_at'
+        ]
+
+
+class JobSeekerHireRequestCreateSerializer(serializers.ModelSerializer):
+    """Serializer for creating job seeker hire requests"""
+    
+    class Meta:
+        model = JobSeekerHireRequest
+        fields = ['job_seeker', 'message']
     
     def create(self, validated_data):
         """Create hire request for authenticated user"""

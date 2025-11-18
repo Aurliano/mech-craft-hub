@@ -6,21 +6,37 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Briefcase, Users, Search, TrendingUp, CheckCircle, 
   MapPin, DollarSign, Clock, FileText, Star,
-  Building, Calendar, Award
+  Building, Calendar, Award, UserPlus
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { useGetAllJobSeekers, useGetAllWorkRequests } from '@/hooks/useWorkforce';
+import { useGetAllWorkRequests, useGetPublicJobSeekers, useCreateJobSeekerHireRequest } from '@/hooks/useWorkforce';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 
 const JobMarket = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isContractor } = useAuth();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('opportunities');
+  const [selectedJobSeeker, setSelectedJobSeeker] = useState<string | null>(null);
+  const [hireMessage, setHireMessage] = useState('');
+  const [showHireDialog, setShowHireDialog] = useState(false);
   
   // Fetch data - only basic info for public display
   const { data: workRequests } = useGetAllWorkRequests();
-  const { data: jobSeekers } = useGetAllJobSeekers();
+  const { data: jobSeekers } = useGetPublicJobSeekers();
+  const createHireRequestMutation = useCreateJobSeekerHireRequest();
   
   type WorkRequestType = { 
     id: string; requested_job_title: string; status: string; work_type?: string; 
@@ -28,14 +44,18 @@ const JobMarket = () => {
   };
   type JobSeekerType = {
     id: string; job_title: string; experience_years: number; education?: string;
-    is_active: boolean; is_available: boolean; skills?: string[]
+    is_active?: boolean; is_available?: boolean; skills?: string[];
+    service_scope?: { id: string; name: string; display_name?: string };
+    services?: Array<{ id: string; name: string }>;
+    cv_text?: string;
+    created_at?: string;
   };
   
   const opportunities: WorkRequestType[] = Array.isArray((workRequests as { results?: WorkRequestType[] })?.results) 
     ? (workRequests as { results: WorkRequestType[] }).results 
     : [];
-  const availableWorkers: JobSeekerType[] = Array.isArray((jobSeekers as { results?: JobSeekerType[] })?.results)
-    ? (jobSeekers as { results: JobSeekerType[] }).results
+  const availableWorkers: JobSeekerType[] = Array.isArray(jobSeekers) 
+    ? jobSeekers 
     : [];
   
   // Only show approved or pending requests
@@ -45,8 +65,46 @@ const JobMarket = () => {
   
   // Only show available job seekers
   const activeWorkers = availableWorkers.filter(
-    (worker) => worker.is_active && worker.is_available
+    (worker) => worker.is_active !== false && worker.is_available !== false
   );
+
+  const handleHireRequest = (jobSeekerId: string) => {
+    if (!isAuthenticated || !isContractor) {
+      toast({
+        title: "نیاز به ورود",
+        description: "برای ثبت درخواست جذب نیرو باید به عنوان پیمانکار وارد شوید",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSelectedJobSeeker(jobSeekerId);
+    setHireMessage('');
+    setShowHireDialog(true);
+  };
+
+  const handleSubmitHireRequest = async () => {
+    if (!selectedJobSeeker) return;
+    
+    try {
+      await createHireRequestMutation.mutateAsync({
+        job_seeker: selectedJobSeeker,
+        message: hireMessage || undefined,
+      });
+      toast({
+        title: "موفقیت",
+        description: "درخواست جذب نیرو با موفقیت ثبت شد. این درخواست برای بررسی به مدیر سایت ارسال شد.",
+      });
+      setShowHireDialog(false);
+      setSelectedJobSeeker(null);
+      setHireMessage('');
+    } catch (error) {
+      toast({
+        title: "خطا",
+        description: "خطایی در ثبت درخواست رخ داد",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-gray-50" dir="rtl">
@@ -225,9 +283,14 @@ const JobMarket = () => {
                         <CardHeader>
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
-                              <CardTitle className="text-xl mb-2">
-                                {worker.job_title}
-                              </CardTitle>
+                              <div className="flex items-center gap-2 mb-2">
+                                <CardTitle className="text-xl">
+                                  {worker.job_title}
+                                </CardTitle>
+                                <Badge variant="outline" className="text-xs">
+                                  ID: {worker.id.slice(0, 8)}...
+                                </Badge>
+                              </div>
                               <div className="flex flex-wrap gap-2 mb-3">
                                 <Badge variant="secondary">
                                   {worker.experience_years} سال تجربه
@@ -239,6 +302,11 @@ const JobMarket = () => {
                                     {worker.education === 'bachelor' && 'کارشناسی'}
                                     {worker.education === 'master' && 'کارشناسی ارشد'}
                                     {worker.education === 'phd' && 'دکترا'}
+                                  </Badge>
+                                )}
+                                {worker.service_scope && (
+                                  <Badge variant="outline">
+                                    {worker.service_scope.display_name || worker.service_scope.name}
                                   </Badge>
                                 )}
                                 {worker.is_available && (
@@ -259,7 +327,17 @@ const JobMarket = () => {
                               ))}
                             </div>
                           )}
-                          {!isAuthenticated ? (
+                          {isAuthenticated && isContractor ? (
+                            <Button 
+                              variant="default" 
+                              className="w-full bg-green-600 hover:bg-green-700"
+                              onClick={() => handleHireRequest(worker.id)}
+                              disabled={createHireRequestMutation.isPending}
+                            >
+                              <UserPlus className="w-4 h-4 ml-2" />
+                              درخواست جذب نیرو
+                            </Button>
+                          ) : !isAuthenticated ? (
                             <Link to="/contractor-register">
                               <Button variant="default" className="w-full bg-green-600 hover:bg-green-700">
                                 ثبت‌نام کارگاه و جذب نیرو
@@ -267,7 +345,7 @@ const JobMarket = () => {
                             </Link>
                           ) : (
                             <Button variant="outline" className="w-full" disabled>
-                              ورود به داشبورد پیمانکار
+                              فقط پیمانکاران می‌توانند درخواست جذب نیرو ثبت کنند
                             </Button>
                           )}
                         </CardContent>
@@ -291,7 +369,7 @@ const JobMarket = () => {
             ثبت‌نام کنید و از خدمات ما استفاده کنید
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <Link to="/register">
+            <Link to="/job-seeker/register">
               <Button size="lg" variant="secondary" className="text-lg px-8">
                 <Users className="w-5 h-5 ml-2" />
                 ثبت‌نام به عنوان نیروی متخصص
@@ -307,10 +385,51 @@ const JobMarket = () => {
         </div>
       </section>
 
+      {/* Hire Request Dialog */}
+      <Dialog open={showHireDialog} onOpenChange={setShowHireDialog}>
+        <DialogContent className="sm:max-w-[425px]" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>درخواست جذب نیرو</DialogTitle>
+            <DialogDescription>
+              درخواست شما برای بررسی به مدیر سایت ارسال خواهد شد. نیروی متخصص از این درخواست مطلع نخواهد شد.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="message">پیام (اختیاری)</Label>
+              <Textarea
+                id="message"
+                value={hireMessage}
+                onChange={(e) => setHireMessage(e.target.value)}
+                placeholder="در صورت نیاز، پیام یا توضیحات خود را وارد کنید..."
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowHireDialog(false);
+                setSelectedJobSeeker(null);
+                setHireMessage('');
+              }}
+            >
+              انصراف
+            </Button>
+            <Button
+              onClick={handleSubmitHireRequest}
+              disabled={createHireRequestMutation.isPending}
+            >
+              {createHireRequestMutation.isPending ? 'در حال ثبت...' : 'ثبت درخواست'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Footer />
     </div>
   );
 };
 
 export default JobMarket;
-

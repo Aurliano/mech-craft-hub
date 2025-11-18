@@ -18,7 +18,7 @@ from .models import (
     PasswordResetToken, PhoneVerificationCode, Payment, Notification, OrderStatusLog,
     ScientificContent, OrderProposal, MaterialEstimate, OrderStatus, MaterialEstimation,
     DeliveryFile, JobSeeker, WorkRequest, JobMatch, WorkContract,
-    SpecialistProfile, SpecialistHireRequest
+    SpecialistProfile, SpecialistHireRequest, JobSeekerHireRequest
 )
 from .pagination import StandardResultsSetPagination
 from .exceptions import (
@@ -38,10 +38,11 @@ from .serializers import (
     OrderProposalSerializer, CreateOrderProposalSerializer, MaterialEstimateSerializer, CreateMaterialEstimateSerializer,
     OrderStatusSerializer, OrderStatusLogSerializer, PaymentSerializer, ProcessPaymentSerializer,
     MaterialEstimationSerializer, MaterialEstimationCreateSerializer,
-    JobSeekerSerializer, JobSeekerCreateSerializer, WorkRequestSerializer, WorkRequestCreateSerializer,
+    JobSeekerSerializer, JobSeekerCreateSerializer, JobSeekerPublicSerializer, WorkRequestSerializer, WorkRequestCreateSerializer,
     JobMatchSerializer, JobMatchCreateSerializer, WorkContractSerializer, WorkContractCreateSerializer,
     SpecialistProfileSerializer, SpecialistProfileCreateSerializer, SpecialistProfilePublicSerializer,
-    SpecialistHireRequestSerializer, SpecialistHireRequestCreateSerializer
+    SpecialistHireRequestSerializer, SpecialistHireRequestCreateSerializer,
+    JobSeekerHireRequestSerializer, JobSeekerHireRequestCreateSerializer
 )
 import os
 import random
@@ -3252,6 +3253,75 @@ def get_public_specialists(request):
     except Exception as e:
         logger.error(f"Error getting public specialists: {str(e)}")
         return Response({'error': 'خطا در دریافت اطلاعات نیروهای متخصص'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def get_public_job_seekers(request):
+    """Get all active and available job seeker profiles (public endpoint)"""
+    try:
+        job_seekers = JobSeeker.objects.filter(
+            is_active=True,
+            is_available=True
+        ).select_related('service_scope').prefetch_related('services')
+        
+        # Optional filters
+        service_scope = request.query_params.get('service_scope')
+        if service_scope:
+            job_seekers = job_seekers.filter(service_scope_id=service_scope)
+        
+        # Serialize with public serializer (no user info, only ID)
+        serializer = JobSeekerPublicSerializer(job_seekers, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        logger.error(f"Error getting public job seekers: {str(e)}")
+        return Response({'error': 'خطا در دریافت اطلاعات جویندگان کار'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def create_job_seeker_hire_request(request):
+    """Create a hire request for a job seeker (contractor to admin)"""
+    try:
+        # Check if user is contractor
+        from .models import Role
+        user_roles = request.user.user_roles.filter(is_active=True).select_related('role')
+        is_contractor = any(role.role.name == 'contractor' for role in user_roles)
+        
+        if not is_contractor:
+            return Response(
+                {'error': 'فقط پیمانکاران می‌توانند درخواست جذب نیرو ثبت کنند'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        serializer = JobSeekerHireRequestCreateSerializer(data=request.data, context={'request': request})
+        if serializer.is_valid():
+            hire_request = serializer.save()
+            
+            # Create notification for admin
+            from .models import Notification
+            from .models import Role
+            admin_role = Role.objects.filter(name='admin').first()
+            if admin_role:
+                admin_users = admin_role.user_roles.filter(is_active=True).select_related('user')
+                for admin_role_obj in admin_users:
+                    Notification.objects.create(
+                        user=admin_role_obj.user,
+                        notification_type='hire_request',
+                        title='درخواست جذب نیروی کاریابی جدید',
+                        message=f'پیمانکار {request.user.username} درخواست جذب نیروی کاریابی {hire_request.job_seeker.id} را ثبت کرده است',
+                    )
+            
+            response_serializer = JobSeekerHireRequestSerializer(hire_request)
+            return Response({
+                'message': 'درخواست جذب نیرو با موفقیت ثبت شد',
+                'hire_request': response_serializer.data
+            }, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        logger.error(f"Error creating job seeker hire request: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(["PATCH"])
