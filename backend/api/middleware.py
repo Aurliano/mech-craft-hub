@@ -78,10 +78,10 @@ class SecurityHeadersMiddleware(MiddlewareMixin):
         csp_policy = (
             "default-src 'self'; "
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com; "
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-            "font-src 'self' https://fonts.gstatic.com; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://db.onlinewebfonts.com; "
+            "font-src 'self' https://fonts.gstatic.com https://db.onlinewebfonts.com data:; "
             "img-src 'self' data: https:; "
-            "connect-src 'self' https://challenges.cloudflare.com; "
+            "connect-src 'self' https://challenges.cloudflare.com https://db.onlinewebfonts.com; "
             "frame-src 'self' https://challenges.cloudflare.com; "
             "object-src 'none'; "
             "base-uri 'self'; "

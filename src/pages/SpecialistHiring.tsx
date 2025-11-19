@@ -1,90 +1,108 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
-  Users, Search, MapPin, GraduationCap, Briefcase, 
-  Star, Filter, UserPlus, CheckCircle
+  Users, Search, Star, Filter, UserPlus, AlertCircle, GraduationCap
 } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import { useGetPublicSpecialists, useCreateHireRequest } from '@/hooks/useSpecialist';
+import { useGetPublicJobSeekers, useCreateJobSeekerHireRequest } from '@/hooks/useWorkforce';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-
-// Iranian provinces
-const provinces = [
-  'تهران', 'اصفهان', 'فارس', 'خراسان رضوی', 'آذربایجان شرقی', 'مازندران',
-  'گیلان', 'کرمان', 'خوزستان', 'سیستان و بلوچستان', 'کردستان', 'لرستان',
-  'همدان', 'یزد', 'کرمانشاه', 'چهارمحال و بختیاری', 'قزوین', 'زنجان',
-  'اردبیل', 'آذربایجان غربی', 'کهگیلویه و بویراحمد', 'ایلام', 'بوشهر',
-  'هرمزگان', 'سمنان', 'قم', 'گلستان', 'البرز', 'خراسان شمالی', 'خراسان جنوبی'
-];
+import { useScopes } from '@/hooks/useAuth';
 
 const SpecialistHiring = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isContractor } = useAuth();
   const { toast } = useToast();
-  const [selectedProvince, setSelectedProvince] = useState<string>('');
-  const [selectedCity, setSelectedCity] = useState<string>('');
+  const { data: scopes } = useScopes();
+  const [selectedScope, setSelectedScope] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSpecialist, setSelectedSpecialist] = useState<string | null>(null);
+  const [selectedJobSeeker, setSelectedJobSeeker] = useState<string | null>(null);
   const [hireMessage, setHireMessage] = useState('');
   const [showHireDialog, setShowHireDialog] = useState(false);
   
-  const { data: specialistsData, isLoading } = useGetPublicSpecialists({
-    province: selectedProvince || undefined,
-    city: selectedCity || undefined,
-  });
-  const createHireRequestMutation = useCreateHireRequest();
+  // Fetch job seekers with scope filter
+  const { data: jobSeekersData, isLoading, isError, refetch } = useGetPublicJobSeekers(
+    selectedScope ? { service_scope: selectedScope } : undefined
+  );
+  const createHireRequestMutation = useCreateJobSeekerHireRequest();
 
-  type SpecialistType = {
+  // Retry fetching if failed
+  useEffect(() => {
+    if (isError) {
+      const timer = setTimeout(() => {
+        refetch();
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [isError, refetch]);
+
+  type JobSeekerType = {
     id: string;
-    specialist_code?: string;
-    province?: string;
-    city?: string;
+    job_title: string;
+    experience_years: number;
     education?: string;
-    field_of_study?: string;
-    specializations?: Array<{ name: string }>;
-    specialization_services?: Array<{ name: string }>;
-    skills?: Array<{ name: string; level: string }>;
-    work_experience?: Array<{ company: string; position: string; start_date: string; end_date?: string | null }>;
-    description?: string;
+    cv_text?: string;
+    service_scope?: { id: string; name: string; display_name?: string };
+    services?: Array<{ id: string; name: string }>;
+    skills?: string[];
+    is_active?: boolean;
+    is_available?: boolean;
+    created_at?: string;
   };
 
-  const specialists: SpecialistType[] = Array.isArray(specialistsData) 
-    ? (specialistsData as SpecialistType[]) 
+  const jobSeekers: JobSeekerType[] = Array.isArray(jobSeekersData) 
+    ? jobSeekersData 
     : [];
 
-  // Filter by search term
-  const filteredSpecialists = specialists.filter(specialist => {
+  // Filter by search term and availability
+  const filteredJobSeekers = jobSeekers.filter(seeker => {
+    const isActive = seeker.is_active !== false && seeker.is_available !== false;
+    if (!isActive) return false;
+    
     const matchesSearch = !searchTerm || 
-      (specialist.specialist_code?.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (specialist.field_of_study?.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (specialist.specializations?.some(s => s.name.toLowerCase().includes(searchTerm.toLowerCase()))) ||
-      (specialist.specialization_services?.some(s => s.name.toLowerCase().includes(searchTerm.toLowerCase())));
+      (seeker.job_title?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (seeker.skills?.some(s => s.toLowerCase().includes(searchTerm.toLowerCase()))) ||
+      (seeker.service_scope?.name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (seeker.service_scope?.display_name?.toLowerCase().includes(searchTerm.toLowerCase()));
     return matchesSearch;
   });
 
-  const handleHireRequest = async () => {
-    if (!selectedSpecialist) return;
+  const handleHireRequest = (jobSeekerId: string) => {
+    if (!isAuthenticated || !isContractor) {
+      toast({
+        title: "نیاز به ورود",
+        description: "برای ثبت درخواست جذب نیرو باید به عنوان پیمانکار وارد شوید",
+        variant: "destructive",
+      });
+      return;
+    }
+    setSelectedJobSeeker(jobSeekerId);
+    setHireMessage('');
+    setShowHireDialog(true);
+  };
 
+  const handleSubmitHireRequest = async () => {
+    if (!selectedJobSeeker) return;
+    
     try {
       await createHireRequestMutation.mutateAsync({
-        specialist_profile: selectedSpecialist,
-        message: hireMessage,
+        job_seeker: selectedJobSeeker,
+        message: hireMessage || undefined,
       });
       toast({
         title: "موفقیت",
-        description: "درخواست شما با موفقیت ثبت شد. ادمین با شما تماس خواهد گرفت.",
+        description: "درخواست جذب نیرو با موفقیت ثبت شد. این درخواست برای بررسی به مدیر سایت ارسال شد.",
       });
       setShowHireDialog(false);
-      setSelectedSpecialist(null);
+      setSelectedJobSeeker(null);
       setHireMessage('');
     } catch (error) {
       toast({
@@ -99,21 +117,11 @@ const SpecialistHiring = () => {
     const labels: Record<string, string> = {
       'diploma': 'دیپلم',
       'associate': 'کاردانی',
-      'bachelor_student': 'دانشجو کارشناسی',
       'bachelor': 'کارشناسی',
       'master': 'کارشناسی ارشد',
-      'phd': 'دکتری',
+      'phd': 'دکترا',
     };
     return labels[education || ''] || education;
-  };
-
-  const getSkillLevelLabel = (level: string) => {
-    const labels: Record<string, string> = {
-      'beginner': 'مبتدی',
-      'intermediate': 'متوسط',
-      'advanced': 'پیشرفته',
-    };
-    return labels[level] || level;
   };
 
   return (
@@ -140,7 +148,7 @@ const SpecialistHiring = () => {
           <div className="max-w-7xl mx-auto">
             <Card>
               <CardContent className="p-4">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <Label>جستجو</Label>
                     <div className="relative">
@@ -148,41 +156,32 @@ const SpecialistHiring = () => {
                       <Input
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="کد، رشته، تخصص..."
+                        placeholder="عنوان شغل، مهارت، حوزه کاری..."
                         className="pr-10"
                       />
                     </div>
                   </div>
                   <div>
-                    <Label>استان</Label>
-                    <Select value={selectedProvince || "all"} onValueChange={(value) => setSelectedProvince(value === "all" ? "" : value)}>
+                    <Label>حوزه کاری</Label>
+                    <Select value={selectedScope || "all"} onValueChange={(value) => setSelectedScope(value === "all" ? "" : value)}>
                       <SelectTrigger>
-                        <SelectValue placeholder="همه استان‌ها" />
+                        <SelectValue placeholder="همه حوزه‌ها" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">همه استان‌ها</SelectItem>
-                        {provinces.map((province) => (
-                          <SelectItem key={province} value={province}>
-                            {province}
+                        <SelectItem value="all">همه حوزه‌ها</SelectItem>
+                        {(scopes as Array<{ id: string; name: string; display_name?: string }>)?.map((scope) => (
+                          <SelectItem key={scope.id} value={scope.id}>
+                            {scope.display_name || scope.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-                  <div>
-                    <Label>شهر</Label>
-                    <Input
-                      value={selectedCity}
-                      onChange={(e) => setSelectedCity(e.target.value)}
-                      placeholder="نام شهر"
-                    />
-                  </div>
                   <div className="flex items-end">
                     <Button
                       variant="outline"
                       onClick={() => {
-                        setSelectedProvince('');
-                        setSelectedCity('');
+                        setSelectedScope('');
                         setSearchTerm('');
                       }}
                       className="w-full"
@@ -198,7 +197,7 @@ const SpecialistHiring = () => {
         </div>
       </section>
 
-      {/* Specialists List */}
+      {/* Job Seekers List */}
       <section className="py-12">
         <div className="container mx-auto px-4">
           <div className="max-w-7xl mx-auto">
@@ -207,7 +206,19 @@ const SpecialistHiring = () => {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
                 <p className="text-gray-600">در حال بارگذاری...</p>
               </div>
-            ) : filteredSpecialists.length === 0 ? (
+            ) : isError ? (
+              <Card>
+                <CardContent className="text-center py-12">
+                  <AlertCircle className="w-16 h-16 mx-auto mb-4 text-red-300" />
+                  <p className="text-red-500 text-lg mb-4">
+                    خطا در بارگذاری اطلاعات
+                  </p>
+                  <Button onClick={() => refetch()} variant="outline">
+                    تلاش مجدد
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : filteredJobSeekers.length === 0 ? (
               <Card>
                 <CardContent className="text-center py-12">
                   <Users className="w-16 h-16 mx-auto mb-4 text-gray-300" />
@@ -218,26 +229,36 @@ const SpecialistHiring = () => {
               </Card>
             ) : (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {filteredSpecialists.map((specialist) => (
-                  <Card key={specialist.id} className="hover:shadow-lg transition-shadow">
+                {filteredJobSeekers.map((seeker) => (
+                  <Card key={seeker.id} className="hover:shadow-lg transition-shadow border-l-4 border-l-green-500">
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <CardTitle className="text-xl mb-2">
-                            {specialist.specialist_code || `SP-${specialist.id.slice(0, 8)}`}
-                          </CardTitle>
+                          <div className="flex items-center gap-2 mb-2">
+                            <CardTitle className="text-xl">
+                              {seeker.job_title}
+                            </CardTitle>
+                            <Badge variant="outline" className="text-xs">
+                              ID: {seeker.id.slice(0, 8)}...
+                            </Badge>
+                          </div>
                           <div className="flex flex-wrap gap-2 mb-3">
-                            {specialist.province && specialist.city && (
-                              <Badge variant="secondary">
-                                <MapPin className="w-3 h-3 ml-1" />
-                                {specialist.province}، {specialist.city}
-                              </Badge>
-                            )}
-                            {specialist.education && (
+                            <Badge variant="secondary">
+                              {seeker.experience_years} سال تجربه
+                            </Badge>
+                            {seeker.education && (
                               <Badge variant="outline">
                                 <GraduationCap className="w-3 h-3 ml-1" />
-                                {getEducationLabel(specialist.education)}
+                                {getEducationLabel(seeker.education)}
                               </Badge>
+                            )}
+                            {seeker.service_scope && (
+                              <Badge variant="outline">
+                                {seeker.service_scope.display_name || seeker.service_scope.name}
+                              </Badge>
+                            )}
+                            {seeker.is_available && (
+                              <Badge className="bg-green-500">در دسترس</Badge>
                             )}
                           </div>
                         </div>
@@ -245,77 +266,45 @@ const SpecialistHiring = () => {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      {specialist.field_of_study && (
+                      {seeker.skills && seeker.skills.length > 0 && (
                         <div className="mb-3">
-                          <p className="text-sm text-gray-600">رشته تحصیلی:</p>
-                          <p className="font-medium">{specialist.field_of_study}</p>
-                        </div>
-                      )}
-                      
-                      {specialist.specializations && specialist.specializations.length > 0 && (
-                        <div className="mb-3">
-                          <p className="text-sm text-gray-600 mb-1">زمینه تخصصی:</p>
+                          <p className="text-sm text-gray-600 mb-1">مهارت‌ها:</p>
                           <div className="flex flex-wrap gap-1">
-                            {specialist.specializations.slice(0, 3).map((spec, idx) => (
+                            {seeker.skills.slice(0, 4).map((skill, idx) => (
                               <Badge key={idx} variant="outline" className="text-xs">
-                                {spec.name}
+                                {skill}
                               </Badge>
                             ))}
-                            {specialist.specializations.length > 3 && (
+                            {seeker.skills.length > 4 && (
                               <Badge variant="outline" className="text-xs">
-                                +{specialist.specializations.length - 3}
+                                +{seeker.skills.length - 4} بیشتر
                               </Badge>
                             )}
                           </div>
                         </div>
                       )}
 
-                      {specialist.specialization_services && specialist.specialization_services.length > 0 && (
+                      {seeker.services && seeker.services.length > 0 && (
                         <div className="mb-3">
-                          <p className="text-sm text-gray-600 mb-1">خدمات تخصصی:</p>
+                          <p className="text-sm text-gray-600 mb-1">خدمات:</p>
                           <div className="flex flex-wrap gap-1">
-                            {specialist.specialization_services.slice(0, 3).map((service, idx) => (
-                              <Badge key={idx} variant="secondary" className="text-xs">
+                            {seeker.services.slice(0, 3).map((service) => (
+                              <Badge key={service.id} variant="secondary" className="text-xs">
                                 {service.name}
                               </Badge>
                             ))}
-                            {specialist.specialization_services.length > 3 && (
+                            {seeker.services.length > 3 && (
                               <Badge variant="secondary" className="text-xs">
-                                +{specialist.specialization_services.length - 3}
+                                +{seeker.services.length - 3}
                               </Badge>
                             )}
                           </div>
                         </div>
                       )}
 
-                      {specialist.skills && specialist.skills.length > 0 && (
-                        <div className="mb-3">
-                          <p className="text-sm text-gray-600 mb-1">توانمندی‌ها:</p>
-                          <div className="flex flex-wrap gap-1">
-                            {specialist.skills.slice(0, 4).map((skill, idx) => (
-                              <Badge key={idx} variant="outline" className="text-xs">
-                                {skill.name} ({getSkillLevelLabel(skill.level)})
-                              </Badge>
-                            ))}
-                            {specialist.skills.length > 4 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{specialist.skills.length - 4} بیشتر
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {specialist.work_experience && specialist.work_experience.length > 0 && (
-                        <div className="mb-3">
-                          <p className="text-sm text-gray-600 mb-1">سابقه کار:</p>
-                          <p className="text-sm">{specialist.work_experience.length} مورد ثبت شده</p>
-                        </div>
-                      )}
-
-                      {specialist.description && (
+                      {seeker.cv_text && (
                         <div className="mb-4">
-                          <p className="text-sm text-gray-600 line-clamp-2">{specialist.description}</p>
+                          <p className="text-sm text-gray-600 line-clamp-2">{seeker.cv_text}</p>
                         </div>
                       )}
 
@@ -327,60 +316,20 @@ const SpecialistHiring = () => {
                               ورود برای درخواست جذب
                             </Button>
                           </Link>
+                        ) : isContractor ? (
+                          <Button
+                            variant="default"
+                            className="w-full bg-green-600 hover:bg-green-700"
+                            onClick={() => handleHireRequest(seeker.id)}
+                            disabled={createHireRequestMutation.isPending}
+                          >
+                            <UserPlus className="w-4 h-4 ml-2" />
+                            درخواست جذب این نیرو
+                          </Button>
                         ) : (
-                          <Dialog open={showHireDialog && selectedSpecialist === specialist.id} onOpenChange={(open) => {
-                            if (!open) {
-                              setShowHireDialog(false);
-                              setSelectedSpecialist(null);
-                            }
-                          }}>
-                            <DialogTrigger asChild>
-                              <Button
-                                variant="default"
-                                className="w-full"
-                                onClick={() => {
-                                  setSelectedSpecialist(specialist.id);
-                                  setShowHireDialog(true);
-                                }}
-                              >
-                                <UserPlus className="w-4 h-4 ml-2" />
-                                درخواست جذب این نیرو
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>درخواست جذب نیروی متخصص</DialogTitle>
-                                <DialogDescription>
-                                  درخواست شما به ادمین ارسال می‌شود و پس از بررسی، با شما تماس گرفته خواهد شد.
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="space-y-4">
-                                <div>
-                                  <Label>کد نیروی متخصص</Label>
-                                  <Input
-                                    value={specialist.specialist_code || `SP-${specialist.id.slice(0, 8)}`}
-                                    disabled
-                                  />
-                                </div>
-                                <div>
-                                  <Label>پیام (اختیاری)</Label>
-                                  <Textarea
-                                    value={hireMessage}
-                                    onChange={(e) => setHireMessage(e.target.value)}
-                                    placeholder="توضیحات یا نیازمندی‌های خاص خود را بنویسید..."
-                                    rows={4}
-                                  />
-                                </div>
-                                <Button
-                                  onClick={handleHireRequest}
-                                  disabled={createHireRequestMutation.isPending}
-                                  className="w-full"
-                                >
-                                  {createHireRequestMutation.isPending ? 'در حال ارسال...' : 'ارسال درخواست'}
-                                </Button>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
+                          <Button variant="outline" className="w-full" disabled>
+                            فقط پیمانکاران می‌توانند درخواست جذب نیرو ثبت کنند
+                          </Button>
                         )}
                       </div>
                     </CardContent>
@@ -391,6 +340,48 @@ const SpecialistHiring = () => {
           </div>
         </div>
       </section>
+
+      {/* Hire Request Dialog */}
+      <Dialog open={showHireDialog} onOpenChange={setShowHireDialog}>
+        <DialogContent className="sm:max-w-[425px]" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>درخواست جذب نیرو</DialogTitle>
+            <DialogDescription>
+              درخواست شما برای بررسی به مدیر سایت ارسال خواهد شد. نیروی متخصص از این درخواست مطلع نخواهد شد.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="message">پیام (اختیاری)</Label>
+              <Textarea
+                id="message"
+                value={hireMessage}
+                onChange={(e) => setHireMessage(e.target.value)}
+                placeholder="در صورت نیاز، پیام یا توضیحات خود را وارد کنید..."
+                rows={4}
+              />
+            </div>
+          </div>
+          <div className="flex gap-2 justify-end">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowHireDialog(false);
+                setSelectedJobSeeker(null);
+                setHireMessage('');
+              }}
+            >
+              انصراف
+            </Button>
+            <Button
+              onClick={handleSubmitHireRequest}
+              disabled={createHireRequestMutation.isPending}
+            >
+              {createHireRequestMutation.isPending ? 'در حال ثبت...' : 'ثبت درخواست'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Footer />
     </div>
