@@ -1850,6 +1850,7 @@ class SpecialistProfile(models.Model):
     province = models.CharField(max_length=100, help_text="استان محل زندگی")
     city = models.CharField(max_length=100, help_text="شهر")
     address = models.TextField(help_text="آدرس محل زندگی")
+    postal_code = models.CharField(max_length=20, blank=True, help_text="کد پستی")
     
     # Personal information
     birth_date = models.DateField(help_text="تاریخ تولد")

@@ -7,13 +7,14 @@ import {
   Briefcase, Star, AlertCircle, Plus, Edit, Trash2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { useGetSpecialistProfile } from '@/hooks/useSpecialist';
 
 const SpecialistDashboard = () => {
   const { user, notifications, isSpecialist } = useAuth();
+  const navigate = useNavigate();
   const { data: profileData, isLoading } = useGetSpecialistProfile();
   
   const profile = profileData as { results?: Array<{
@@ -29,6 +30,13 @@ const SpecialistDashboard = () => {
   const myProfile = profile?.results?.[0];
   const hasProfile = !!myProfile;
   const isApproved = myProfile?.is_approved || false;
+  const profileLink = hasProfile ? '/specialist-profile' : '/specialist-onboarding';
+
+  React.useEffect(() => {
+    if (!isLoading && !hasProfile) {
+      navigate('/specialist-onboarding', { replace: true });
+    }
+  }, [isLoading, hasProfile, navigate]);
 
   if (isLoading) {
     return (
@@ -123,7 +131,7 @@ const SpecialistDashboard = () => {
                 </div>
                 <div className="flex gap-2">
                   <Button asChild variant="default">
-                    <Link to="/specialist-profile">
+                    <Link to={profileLink}>
                       <Edit className="h-4 w-4 ml-2" />
                       ویرایش پروفایل
                     </Link>
@@ -146,7 +154,7 @@ const SpecialistDashboard = () => {
               </CardHeader>
               <CardContent>
                 <Button asChild variant="default" size="lg" className="w-full sm:w-auto">
-                  <Link to="/specialist-profile">
+                  <Link to="/specialist-onboarding">
                     <Plus className="h-4 w-4 ml-2" />
                     ثبت پروفایل کاریابی
                   </Link>
@@ -158,7 +166,7 @@ const SpecialistDashboard = () => {
           {/* Quick Actions */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <Card className="hover:shadow-lg transition-shadow cursor-pointer">
-              <Link to="/specialist-profile">
+                  <Link to={profileLink}>
                 <CardHeader>
                   <div className="flex items-center gap-3">
                     <FileText className="h-8 w-8 text-blue-600" />

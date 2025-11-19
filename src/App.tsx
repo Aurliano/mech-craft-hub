@@ -41,6 +41,7 @@ import ServicesPage from "./pages/ServicesPage";
 import SpecialistRegister from "./pages/SpecialistRegister";
 import SpecialistDashboard from "./pages/SpecialistDashboard";
 import SpecialistProfileForm from "./pages/SpecialistProfileForm";
+import SpecialistOnboarding from "./pages/SpecialistOnboarding";
 import SpecialistHiring from "./pages/SpecialistHiring";
 import AdminSpecialistManagement from "./pages/AdminSpecialistManagement";
 import Blog from "./pages/Blog";
@@ -114,6 +115,11 @@ const App = () => (
               <Route path="/specialist-dashboard" element={
                 <ProtectedRoute allowedRoles={['specialist']}>
                   <SpecialistDashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/specialist-onboarding" element={
+                <ProtectedRoute allowedRoles={['specialist']}>
+                  <SpecialistOnboarding />
                 </ProtectedRoute>
               } />
               <Route path="/specialist-profile" element={

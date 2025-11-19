@@ -1238,7 +1238,7 @@ class SpecialistProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = SpecialistProfile
         fields = [
-            'id', 'user', 'province', 'city', 'address', 'birth_date', 'national_id',
+            'id', 'user', 'province', 'city', 'address', 'postal_code', 'birth_date', 'national_id',
             'education', 'field_of_study', 'specializations', 'specialization_services',
             'skills', 'work_experience', 'resume_file', 'description',
             'is_approved', 'specialist_code', 'reviewed_by', 'reviewed_at', 'admin_notes',
@@ -1256,7 +1256,7 @@ class SpecialistProfileCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = SpecialistProfile
         fields = [
-            'province', 'city', 'address', 'birth_date', 'national_id',
+            'province', 'city', 'address', 'postal_code', 'birth_date', 'national_id',
             'education', 'field_of_study', 'specializations', 'specialization_services',
             'skills', 'work_experience', 'resume_file', 'description'
         ]
@@ -1271,6 +1271,12 @@ class SpecialistProfileCreateSerializer(serializers.ModelSerializer):
         """Validate skills (max 10)"""
         if len(value) > 10:
             raise serializers.ValidationError("حداکثر 10 توانمندی می‌توانید ثبت کنید")
+        return value
+
+    def validate_postal_code(self, value):
+        """Validate postal code (optional but must be 10 digits if provided)"""
+        if value and (not value.isdigit() or len(value) not in (5, 10)):
+            raise serializers.ValidationError("کد پستی باید 5 یا 10 رقم باشد")
         return value
     
     def validate_work_experience(self, value):

@@ -19,15 +19,7 @@ import { uploadUserFile } from '@/lib/api';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown } from 'lucide-react';
 import { searchSkills, getSkillsForScope, type Skill } from '@/data/skills';
-
-// Iranian provinces
-const provinces = [
-  'تهران', 'اصفهان', 'فارس', 'خراسان رضوی', 'آذربایجان شرقی', 'مازندران',
-  'گیلان', 'کرمان', 'خوزستان', 'سیستان و بلوچستان', 'کردستان', 'لرستان',
-  'همدان', 'یزد', 'کرمانشاه', 'چهارمحال و بختیاری', 'قزوین', 'زنجان',
-  'اردبیل', 'آذربایجان غربی', 'کهگیلویه و بویراحمد', 'ایلام', 'بوشهر',
-  'هرمزگان', 'سمنان', 'قم', 'گلستان', 'البرز', 'خراسان شمالی', 'خراسان جنوبی'
-];
+import iranProvinces from '@/data/provinces';
 
 const SpecialistProfileForm = () => {
   const { user } = useAuth();
@@ -49,6 +41,7 @@ const SpecialistProfileForm = () => {
     birth_year: '',
     national_id: '',
     address: '',
+    postal_code: '',
     education: '',
     field_of_study: '',
     specializations: [] as string[],
@@ -110,6 +103,7 @@ const SpecialistProfileForm = () => {
           birth_year: String(jalaliDate.year),
           national_id: profile.national_id || '',
           address: profile.address || '',
+          postal_code: (profile as { postal_code?: string }).postal_code || '',
           education: profile.education || '',
           field_of_study: profile.field_of_study || '',
           specializations: profile.specializations?.map(s => s.id) || [],
@@ -400,12 +394,22 @@ const SpecialistProfileForm = () => {
       return;
     }
 
+    if (formData.postal_code && (!/^\d+$/.test(formData.postal_code) || ![5, 10].includes(formData.postal_code.length))) {
+      toast({
+        title: "خطا",
+        description: "کد پستی باید 5 یا 10 رقم باشد",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const profileData = myProfile as { results?: Array<{ id: string }> } | undefined;
       const submitData = {
         province: formData.province,
         city: formData.city,
         address: formData.address,
+        postal_code: formData.postal_code,
         birth_date: formData.birth_date,
         national_id: formData.national_id,
         education: formData.education,
@@ -592,6 +596,16 @@ const SpecialistProfileForm = () => {
                   placeholder="آدرس کامل"
                   rows={3}
                   required
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="postal_code">کد پستی (اختیاری)</Label>
+                <Input
+                  id="postal_code"
+                  value={formData.postal_code}
+                  onChange={(e) => handleInputChange('postal_code', e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  placeholder="کد پستی 10 رقمی"
                 />
               </div>
 
