@@ -52,7 +52,7 @@ from django.utils import timezone
 from django.utils.crypto import get_random_string
 from uuid import uuid4
 import logging
-import requests
+import requests  # type: ignore
 import hmac
 import hashlib
 from .utils.turnstile import (
@@ -3863,6 +3863,7 @@ def get_ai_analytics(request):
 def get_ai_interactions(request):
     """Get AI interactions with pagination"""
     from .models import AIInteractionLog
+    from django.core.paginator import Paginator
     
     try:
         page = int(request.GET.get('page', 1))
@@ -4095,7 +4096,7 @@ def get_blog_comments(request, post_slug):
 @api_view(['POST'])
 @permission_classes([IsAdminUser])
 def upload_scientific_content(request):
-    """Upload scientific content (articles, books) to Liara S3"""
+    """Upload scientific content (articles, books, videos) to Liara S3"""
     from .file_managers import scientific_file_manager
     
     file = request.FILES.get('file')
@@ -4104,21 +4105,34 @@ def upload_scientific_content(request):
     
     # Get content type
     content_type = file.content_type or 'application/octet-stream'
+    is_video = content_type.startswith('video/')
     
     try:
         result = scientific_file_manager.upload_file(file, file.name, content_type)
         
         if result['success']:
-            # Do not expose direct file_url for private files
-            secure_download = f"/api/v1/user-files/download/?path={result['file_path']}"
-            return Response({
-                'message': 'فایل با موفقیت آپلود شد',
-                'file_url': None,
-                'file_path': result['file_path'],
-                'download_endpoint': secure_download,
-                'file_size': result['file_size'],
-                'storage_type': result['storage_type']
-            }, status=status.HTTP_201_CREATED)
+            # For videos, return the public URL; for other files, use secure download endpoint
+            if is_video and result.get('file_url'):
+                # Videos should be publicly accessible
+                return Response({
+                    'message': 'فایل با موفقیت آپلود شد',
+                    'file_url': result['file_url'],
+                    'video_url': result['file_url'],  # Also set video_url for videos
+                    'file_path': result['file_path'],
+                    'file_size': result['file_size'],
+                    'storage_type': result['storage_type']
+                }, status=status.HTTP_201_CREATED)
+            else:
+                # For non-video files, use secure download endpoint
+                secure_download = f"/api/v1/user-files/download/?path={result['file_path']}"
+                return Response({
+                    'message': 'فایل با موفقیت آپلود شد',
+                    'file_url': result.get('file_url'),  # Include URL if available
+                    'file_path': result['file_path'],
+                    'download_endpoint': secure_download,
+                    'file_size': result['file_size'],
+                    'storage_type': result['storage_type']
+                }, status=status.HTTP_201_CREATED)
         else:
             return Response({
                 'error': result['error']

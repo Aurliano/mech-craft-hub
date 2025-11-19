@@ -3,12 +3,12 @@
 Script to create sample blog posts via API calls
 """
 
-import requests
+import requests  # type: ignore
 import json
 import time
 
 # API base URL
-BASE_URL = "https://mech-craft-hub-main.liara.run/api/v1"
+BASE_URL = "https://saydata.ir/api/v1"
 
 # Sample posts data
 posts_data = [

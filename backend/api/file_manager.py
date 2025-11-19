@@ -9,12 +9,12 @@ import logging
 
 # Import boto3 with fallback
 try:
-    import boto3
-    from botocore.exceptions import ClientError
+    import boto3  # type: ignore
+    from botocore.exceptions import ClientError  # type: ignore
     BOTO3_AVAILABLE = True
 except ImportError:
     BOTO3_AVAILABLE = False
-    boto3 = None
+    boto3 = None  # type: ignore
     ClientError = Exception
 
 logger = logging.getLogger(__name__)

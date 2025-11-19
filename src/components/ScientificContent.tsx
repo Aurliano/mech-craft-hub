@@ -16,6 +16,8 @@ interface ScientificContentItem {
   view_count: number;
   download_count: number;
   file_url?: string;
+  video_url?: string;
+  download_url?: string;
 }
 
 const ScientificContent = () => {
@@ -154,15 +156,24 @@ const ScientificContent = () => {
                         </div>
                       </div>
                     </CardContent>
-                    {item.file_url ? (
-                      <Button asChild variant="outline" className="mt-4 w-full">
-                        <a href={item.file_url} target="_blank" rel="noopener noreferrer">دانلود/مشاهده</a>
-                      </Button>
-                    ) : (
-                      <Button disabled variant="outline" className="mt-4 w-full">
-                        لینک ناموجود
-                      </Button>
-                    )}
+                    {(() => {
+                      // Prioritize video_url for videos, then file_url, then download_url
+                      const url = item.content_type === 'video' 
+                        ? (item.video_url || item.file_url)
+                        : (item.file_url || item.download_url);
+                      
+                      return url ? (
+                        <Button asChild variant="outline" className="mt-4 w-full">
+                          <a href={url} target="_blank" rel="noopener noreferrer">
+                            {item.content_type === 'video' ? 'مشاهده ویدیو' : 'دانلود/مشاهده'}
+                          </a>
+                        </Button>
+                      ) : (
+                        <Button disabled variant="outline" className="mt-4 w-full">
+                          لینک ناموجود
+                        </Button>
+                      );
+                    })()}
                   </Card>
                 );
               })}

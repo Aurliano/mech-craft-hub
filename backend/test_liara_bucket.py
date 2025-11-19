@@ -16,8 +16,12 @@ sys.path.insert(0, str(Path(__file__).parent))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
-import boto3
-from botocore.exceptions import ClientError
+try:
+    import boto3  # type: ignore
+    from botocore.exceptions import ClientError  # type: ignore
+except ImportError:
+    print("ERROR: boto3 is not installed. Please install it: pip install boto3")
+    exit(1)
 from api.file_manager import file_manager
 
 def test_liara_connection():

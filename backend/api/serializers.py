@@ -890,6 +890,16 @@ class ScientificContentSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at', 'published_at', 'view_count', 'like_count']
     
     def get_file_url(self, obj):
+        """Get file URL, prioritizing video_url for videos"""
+        # For videos, use video_url if available
+        if obj.content_type == 'video' and obj.video_url:
+            return obj.video_url
+        
+        # For other content types, use download_url if available
+        if obj.download_url:
+            return obj.download_url
+        
+        # Fallback to generating URL from file_path
         from .file_managers import scientific_file_manager
         if obj.file_path:
             return scientific_file_manager.get_file_url(obj.file_path, is_public=True)
@@ -914,6 +924,16 @@ class ScientificContentListSerializer(serializers.ModelSerializer):
         ]
     
     def get_file_url(self, obj):
+        """Get file URL, prioritizing video_url for videos"""
+        # For videos, use video_url if available
+        if obj.content_type == 'video' and obj.video_url:
+            return obj.video_url
+        
+        # For other content types, use download_url if available
+        if obj.download_url:
+            return obj.download_url
+        
+        # Fallback to generating URL from file_path
         from .file_managers import scientific_file_manager
         if obj.file_path:
             return scientific_file_manager.get_file_url(obj.file_path, is_public=True)

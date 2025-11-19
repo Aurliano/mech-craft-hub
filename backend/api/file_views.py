@@ -103,22 +103,33 @@ def upload_content_file(request):
             raw_content = title
         content_text = str(raw_content)
 
-        # Trim download_url to avoid exceeding model limits (commonly 200)
-        safe_download_url = (upload_result['file_url'] or '')[:200]
+        # Determine content type from file or request
+        detected_content_type = request.data.get('content_type', 'book')
+        is_video = content_type.startswith('video/')
+        if is_video and detected_content_type != 'video':
+            detected_content_type = 'video'
+        
+        # Get file URL (URLField supports long URLs, no need to truncate)
+        file_url = upload_result.get('file_url') or ''
+        
+        # For videos, set video_url; for others, set download_url
+        video_url = file_url if is_video else None
+        download_url = file_url if not is_video else None
 
         content_data = {
             'title': title,
             'slug': slug,
             'excerpt': excerpt,
             'content': content_text,
-            'content_type': request.data.get('content_type', 'book'),
+            'content_type': detected_content_type,
             'category': request.data.get('category', 'general'),
             'status': request.data.get('status', 'published'),
             'author': request.user.id,
             'file_name': file_name,
             'file_type': content_type,
             'file_path': upload_result['file_path'],
-            'download_url': '',  # computed by serializer when needed
+            'download_url': download_url,
+            'video_url': video_url,
             'file_size': upload_result['file_size'],
             'is_public': request.data.get('is_public', True)
         }
@@ -162,8 +173,13 @@ def download_content_file(request, content_id):
         content.download_count += 1
         content.save(update_fields=['download_count'])
         
-        # دریافت URL فایل
-        file_url = scientific_file_manager.get_file_url(content.file_path, content.is_public)
+        # دریافت URL فایل - برای ویدیوها از video_url استفاده کنید
+        if content.content_type == 'video' and content.video_url:
+            file_url = content.video_url
+        elif content.download_url:
+            file_url = content.download_url
+        else:
+            file_url = scientific_file_manager.get_file_url(content.file_path, content.is_public)
         
         if not file_url:
             return Response({
@@ -172,6 +188,7 @@ def download_content_file(request, content_id):
         
         return Response({
             'download_url': file_url,
+            'video_url': file_url if content.content_type == 'video' else None,
             'file_name': content.file_name,
             'file_size': content.file_size
         })

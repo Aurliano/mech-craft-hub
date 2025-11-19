@@ -1,30 +1,56 @@
 import os
 import django
-import boto3
 import re
 import hashlib
+from django.conf import settings
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 django.setup()
 
 from api.models import ScientificContent, User
 
-# اطلاعات لیارا
-AWS_ACCESS_KEY_ID = 'n5emtge4ckg3bspk'
-AWS_SECRET_ACCESS_KEY = '9c599091-f43f-4db6-b1c5-483afaea0532'
-AWS_STORAGE_BUCKET_NAME = 'resources'
-AWS_S3_ENDPOINT_URL = 'https://storage.c2.liara.space'
+# Import boto3 with error handling
+try:
+    import boto3  # type: ignore
+    BOTO3_AVAILABLE = True
+except ImportError:
+    print("ERROR: boto3 is not installed. Please install it: pip install boto3")
+    BOTO3_AVAILABLE = False
+    boto3 = None  # type: ignore
+
+# اطلاعات لیارا از تنظیمات Django
+AWS_ACCESS_KEY_ID = getattr(settings, 'LIARA_ACCESS_KEY_ID', None) or getattr(settings, 'LIARA_ACCESS_KEY', None)
+AWS_SECRET_ACCESS_KEY = getattr(settings, 'LIARA_SECRET_ACCESS_KEY', None) or getattr(settings, 'LIARA_SECRET_KEY', None)
+AWS_STORAGE_BUCKET_NAME = getattr(settings, 'FILE_BUCKET_NAME', 'resources')
+AWS_S3_ENDPOINT_URL = getattr(settings, 'S3_ENDPOINT_URL', None) or getattr(settings, 'LIARA_ENDPOINT_URL', 'https://storage.c2.liara.space')
+
+# بررسی وجود credentials
+if not AWS_ACCESS_KEY_ID or not AWS_SECRET_ACCESS_KEY:
+    print("ERROR: Liara credentials not found in settings!")
+    print("Please set LIARA_ACCESS_KEY_ID and LIARA_SECRET_ACCESS_KEY in your environment or settings.")
+    exit(1)
+
+if not BOTO3_AVAILABLE:
+    print("ERROR: boto3 is required but not installed.")
+    exit(1)
 
 # کاربر ادمین (یا هر کاربر دیگری که برای owner لازم است)
 ADMIN_USER = User.objects.filter(is_superuser=True).first()
+if not ADMIN_USER:
+    print("ERROR: No admin user found. Please create a superuser first.")
+    exit(1)
 
 # تابع گرفتن فایل های موجود در باکت
-s3 = boto3.client(
-    's3',
-    endpoint_url=AWS_S3_ENDPOINT_URL,
-    aws_access_key_id=AWS_ACCESS_KEY_ID,
-    aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
-)
+try:
+    s3 = boto3.client(
+        's3',
+        endpoint_url=AWS_S3_ENDPOINT_URL,
+        aws_access_key_id=AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=AWS_SECRET_ACCESS_KEY,
+    )
+except Exception as e:
+    print(f"ERROR: Failed to create S3 client: {str(e)}")
+    exit(1)
 
 existing_files = set(ScientificContent.objects.values_list('file_name', flat=True))
 
@@ -76,6 +102,13 @@ for file_name in files:
     content_type = guess_type_from_filename(file_name)
     title = make_human_title_from_filename(file_name)
     slug = make_unique_slug_from_filename(file_name)
+    # Generate file URL
+    file_url = f'{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/{file_name}'
+    
+    # For videos, set video_url; for others, set download_url
+    video_url = file_url if content_type == 'video' else None
+    download_url = file_url if content_type != 'video' else None
+    
     sc = ScientificContent.objects.create(
         title=title,
         slug=slug,
@@ -87,7 +120,8 @@ for file_name in files:
         author=ADMIN_USER,
         file_name=file_name,
         file_path=file_name,
-        download_url=(f'{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/{file_name}')[:200]
+        download_url=download_url if download_url else None,
+        video_url=video_url if video_url else None,
     )
     print(f'Added: {file_name}')
     count_new += 1
