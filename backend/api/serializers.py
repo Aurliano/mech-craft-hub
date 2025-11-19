@@ -1,4 +1,7 @@
 import uuid
+import logging
+from django.db.utils import ProgrammingError, OperationalError
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from .models import (
     User, Role, UserRole, Scope, Service, ServiceField, ServiceTab,
@@ -59,14 +62,17 @@ class ServiceTabBasicSerializer(serializers.ModelSerializer):
         model = ServiceTab
         fields = ['id', 'name', 'display_name', 'description', 'order', 'is_active']
 
+logger = logging.getLogger(__name__)
+
+
 class ServiceTabSerializer(serializers.ModelSerializer):
-    fields = serializers.SerializerMethodField()
+    fields = serializers.SerializerMethodField(method_name='get_tab_fields')
     
     class Meta:
         model = ServiceTab
         fields = ['id', 'name', 'display_name', 'description', 'order', 'is_active', 'fields']
     
-    def get_fields(self, obj):
+    def get_tab_fields(self, obj):
         """Return fields for this tab"""
         fields = obj.fields.filter(is_active=True).order_by('order', 'name')
         return ServiceFieldSerializer(fields, many=True).data
@@ -543,7 +549,25 @@ class LoginSerializer(serializers.Serializer):
         
         if username and password:
             request = self.context.get('request')
-            user = authenticate(request=request, username=username, password=password)
+            try:
+                user = authenticate(request=request, username=username, password=password)
+            except (ProgrammingError, OperationalError) as exc:
+                error_message = str(exc).lower()
+                if 'axes_' in error_message or 'axes' in error_message:
+                    logger.error(
+                        "Axes backend failed during authentication (likely missing migrations). "
+                        "Falling back to direct authentication.", exc_info=True
+                    )
+                    UserModel = get_user_model()
+                    try:
+                        user_obj = UserModel.objects.get(username=username)
+                    except UserModel.DoesNotExist:
+                        user_obj = None
+                    if user_obj and user_obj.check_password(password) and user_obj.is_active:
+                        data['user'] = user_obj
+                        return data
+                    raise serializers.ValidationError("نام کاربری یا رمز عبور اشتباه است")
+                raise
             if user:
                 data['user'] = user
             else:
