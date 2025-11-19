@@ -6,6 +6,63 @@ from django.conf import settings
 from django.db import migrations, models
 
 
+def column_exists(schema_editor, table_name, column_name):
+    connection = schema_editor.connection
+    with connection.cursor() as cursor:
+        columns = connection.introspection.get_table_description(cursor, table_name)
+    column_names = {getattr(col, "name", col[0]) for col in columns}
+    return column_name in column_names
+
+
+def add_workshop_documents_field(apps, schema_editor):
+    Workshop = apps.get_model('api', 'Workshop')
+    table_name = Workshop._meta.db_table
+    column_name = 'documents'
+    if column_exists(schema_editor, table_name, column_name):
+        return
+    field = models.JSONField(default=dict, blank=True)
+    field.set_attributes_from_name(column_name)
+    schema_editor.add_field(Workshop, field)
+
+
+def add_workshop_is_approved_field(apps, schema_editor):
+    Workshop = apps.get_model('api', 'Workshop')
+    table_name = Workshop._meta.db_table
+    column_name = 'is_approved'
+    if column_exists(schema_editor, table_name, column_name):
+        return
+    field = models.BooleanField(default=False, help_text='Whether the workshop is approved by admin')
+    field.set_attributes_from_name(column_name)
+    schema_editor.add_field(Workshop, field)
+
+
+def add_workshop_workers_count_field(apps, schema_editor):
+    Workshop = apps.get_model('api', 'Workshop')
+    table_name = Workshop._meta.db_table
+    column_name = 'workers_count'
+    if column_exists(schema_editor, table_name, column_name):
+        return
+    field = models.IntegerField(default=0, blank=True, help_text='Number of formal workers')
+    field.set_attributes_from_name(column_name)
+    schema_editor.add_field(Workshop, field)
+
+
+def add_workshop_class_field(apps, schema_editor):
+    Workshop = apps.get_model('api', 'Workshop')
+    table_name = Workshop._meta.db_table
+    column_name = 'workshop_class'
+    if column_exists(schema_editor, table_name, column_name):
+        return
+    field = models.CharField(
+        max_length=10,
+        blank=True,
+        choices=[('A', 'Class A'), ('B', 'Class B'), ('C', 'Class C')],
+        help_text='Workshop classification (A, B, or C) - set by admin during approval',
+    )
+    field.set_attributes_from_name(column_name)
+    schema_editor.add_field(Workshop, field)
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -13,25 +70,53 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='workshop',
-            name='documents',
-            field=models.JSONField(blank=True, default=dict),
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.RunPython(add_workshop_documents_field, migrations.RunPython.noop),
+            ],
+            state_operations=[
+                migrations.AddField(
+                    model_name='workshop',
+                    name='documents',
+                    field=models.JSONField(blank=True, default=dict),
+                ),
+            ],
         ),
-        migrations.AddField(
-            model_name='workshop',
-            name='is_approved',
-            field=models.BooleanField(default=False, help_text='Whether the workshop is approved by admin'),
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.RunPython(add_workshop_is_approved_field, migrations.RunPython.noop),
+            ],
+            state_operations=[
+                migrations.AddField(
+                    model_name='workshop',
+                    name='is_approved',
+                    field=models.BooleanField(default=False, help_text='Whether the workshop is approved by admin'),
+                ),
+            ],
         ),
-        migrations.AddField(
-            model_name='workshop',
-            name='workers_count',
-            field=models.IntegerField(blank=True, default=0, help_text='Number of formal workers'),
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.RunPython(add_workshop_workers_count_field, migrations.RunPython.noop),
+            ],
+            state_operations=[
+                migrations.AddField(
+                    model_name='workshop',
+                    name='workers_count',
+                    field=models.IntegerField(blank=True, default=0, help_text='Number of formal workers'),
+                ),
+            ],
         ),
-        migrations.AddField(
-            model_name='workshop',
-            name='workshop_class',
-            field=models.CharField(blank=True, choices=[('A', 'Class A'), ('B', 'Class B'), ('C', 'Class C')], help_text='Workshop classification (A, B, or C) - set by admin during approval', max_length=10),
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.RunPython(add_workshop_class_field, migrations.RunPython.noop),
+            ],
+            state_operations=[
+                migrations.AddField(
+                    model_name='workshop',
+                    name='workshop_class',
+                    field=models.CharField(blank=True, choices=[('A', 'Class A'), ('B', 'Class B'), ('C', 'Class C')], help_text='Workshop classification (A, B, or C) - set by admin during approval', max_length=10),
+                ),
+            ],
         ),
         migrations.CreateModel(
             name='JobSeekerHireRequest',
