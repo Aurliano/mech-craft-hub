@@ -167,6 +167,10 @@ class RateLimitMiddleware(MiddlewareMixin):
         from django.core.cache import cache
         from django.http import JsonResponse
         
+        # Skip health checks to avoid throttling monitoring
+        if request.path in ['/api/health/', '/api/health']:
+            return None
+        
         # Get client IP
         client_ip = self.get_client_ip(request)
         
