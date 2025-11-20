@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Calendar, Clock, Eye, Heart, User, ArrowRight, Send } from 'lucide-react';
+import { Calendar, Clock, Eye, Heart, User, ArrowRight, Send, PlayCircle, Download, FileText, BookOpen } from 'lucide-react';
 import { getApiUrl } from '@/lib/api';
 import { toast } from '@/components/ui/use-toast';
 import Navbar from '@/components/Navbar';
@@ -18,6 +18,7 @@ interface BlogPost {
   slug: string;
   excerpt: string;
   content: string;
+  content_type?: string;
   category: string;
   author_name: string;
   featured_image?: string;
@@ -30,6 +31,11 @@ interface BlogPost {
   published_at: string;
   meta_description?: string;
   meta_keywords?: string;
+  video_url?: string;
+  download_url?: string;
+  file_url?: string;
+  file_name?: string;
+  file_size?: number;
 }
 
 interface BlogComment {
@@ -51,7 +57,7 @@ const BlogPostPage: React.FC = () => {
     content: ''
   });
 
-  const fetchPost = async () => {
+  const fetchPost = useCallback(async () => {
     if (!slug) return;
     
     try {
@@ -72,9 +78,9 @@ const BlogPostPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [slug]);
 
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     if (!slug) return;
     
     try {
@@ -86,7 +92,7 @@ const BlogPostPage: React.FC = () => {
     } catch (error) {
       console.error('Error fetching comments:', error);
     }
-  };
+  }, [slug]);
 
   const handleCommentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,7 +132,7 @@ const BlogPostPage: React.FC = () => {
   useEffect(() => {
     fetchPost();
     fetchComments();
-  }, [slug]);
+  }, [slug, fetchPost, fetchComments]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('fa-IR');
@@ -269,6 +275,118 @@ const BlogPostPage: React.FC = () => {
                   {post.content}
                 </div>
               </div>
+              
+              {/* Media Section - Video Player or Download Link */}
+              {(post.video_url || post.download_url || post.file_url) && (
+                <div className="mt-8 mb-6">
+                  {post.content_type === 'video' && post.video_url ? (
+                    <Card className="bg-gradient-to-br from-red-50 to-orange-50 border-red-200">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-xl">
+                          <PlayCircle className="h-6 w-6 text-red-600" />
+                          مشاهده ویدیو
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="w-full rounded-lg overflow-hidden bg-black">
+                          <video 
+                            controls 
+                            className="w-full h-auto max-h-[600px]"
+                            poster={post.featured_image}
+                          >
+                            <source src={post.video_url} type="video/mp4" />
+                            <source src={post.video_url} type="video/webm" />
+                            مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند.
+                            <a href={post.video_url} className="text-blue-500 underline">
+                              برای دانلود ویدیو اینجا کلیک کنید
+                            </a>
+                          </video>
+                        </div>
+                        <div className="mt-4 flex items-center justify-between">
+                          <p className="text-sm text-gray-600">
+                            {post.file_name && (
+                              <span className="flex items-center gap-2">
+                                <FileText className="h-4 w-4" />
+                                {post.file_name}
+                              </span>
+                            )}
+                          </p>
+                          {post.file_size && (
+                            <p className="text-sm text-gray-500">
+                              حجم: {(post.file_size / (1024 * 1024)).toFixed(2)} مگابایت
+                            </p>
+                          )}
+                        </div>
+                        <Button 
+                          asChild 
+                          variant="outline" 
+                          className="mt-4 w-full"
+                        >
+                          <a href={post.video_url} target="_blank" rel="noopener noreferrer" download>
+                            <Download className="h-4 w-4 ml-2" />
+                            دانلود ویدیو
+                          </a>
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ) : (post.download_url || post.file_url) ? (
+                    <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-xl">
+                          {post.content_type === 'book' ? (
+                            <BookOpen className="h-6 w-6 text-blue-600" />
+                          ) : (
+                            <Download className="h-6 w-6 text-blue-600" />
+                          )}
+                          {post.content_type === 'book' ? 'دانلود کتاب' : 'دانلود فایل'}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <p className="text-gray-700">
+                            {post.content_type === 'book' 
+                              ? 'می‌توانید این کتاب را دانلود کرده و مطالعه کنید.'
+                              : 'می‌توانید این فایل را دانلود کنید.'}
+                          </p>
+                          <div className="flex items-center justify-between p-4 bg-white rounded-lg border border-blue-200">
+                            <div className="flex items-center gap-3">
+                              {post.content_type === 'book' ? (
+                                <BookOpen className="h-8 w-8 text-blue-600" />
+                              ) : (
+                                <FileText className="h-8 w-8 text-blue-600" />
+                              )}
+                              <div>
+                                <p className="font-semibold text-gray-900">
+                                  {post.file_name || 'فایل ضمیمه'}
+                                </p>
+                                {post.file_size && (
+                                  <p className="text-sm text-gray-500">
+                                    حجم: {(post.file_size / (1024 * 1024)).toFixed(2)} مگابایت
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <Button 
+                              asChild 
+                              className="bg-blue-600 hover:bg-blue-700"
+                            >
+                              <a 
+                                href={post.download_url || post.file_url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                download
+                              >
+                                <Download className="h-4 w-4 ml-2" />
+                                دانلود
+                              </a>
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ) : null}
+                </div>
+              )}
               
               {post.source_url && (
                 <div className="mt-6 p-4 bg-blue-50 rounded-lg">
