@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Package, Search, Filter, Eye, Clock, DollarSign, FileText, CheckCircle, 
   User, Star, TrendingUp, Settings, Plus, MessageSquare, Calendar,
-  Factory, AlertCircle, CheckCircle2, XCircle, Timer, Users, Briefcase, UserPlus
+  Factory, AlertCircle, CheckCircle2, XCircle, Timer, Users, Briefcase, UserPlus, Bell
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -22,6 +22,7 @@ import {
 import { Link, useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
+import { cn } from '@/lib/utils';
 
 const ContractorDashboard = () => {
   const { user } = useAuth();
@@ -91,6 +92,14 @@ const ContractorDashboard = () => {
   const proposals: ProposalType[] = Array.isArray(contractorProposals) ? contractorProposals as ProposalType[] : [];
   const projects: ProjectType[] = Array.isArray(activeProjects) ? activeProjects as ProjectType[] : [];
   const workshopsData = Array.isArray(workshops) ? workshops : [];
+  const tabItems = [
+    { value: 'orders', label: 'سفارشات', icon: Package },
+    { value: 'proposals', label: 'پیشنهادات من', icon: FileText },
+    { value: 'projects', label: 'پروژه‌های فعال', icon: Briefcase },
+    { value: 'workshops', label: 'کارگاه‌های من', icon: Factory },
+    { value: 'workforce', label: 'جذب نیرو', icon: Users },
+    { value: 'notifications', label: 'اعلان‌ها', icon: Bell },
+  ];
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch = order.order_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -234,14 +243,42 @@ const ContractorDashboard = () => {
 
           {/* Main Content Tabs */}
           <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-1">
-              <TabsTrigger value="orders" className="text-xs sm:text-sm">سفارشات</TabsTrigger>
-              <TabsTrigger value="proposals" className="text-xs sm:text-sm">پیشنهادات من</TabsTrigger>
-              <TabsTrigger value="projects" className="text-xs sm:text-sm">پروژه‌های فعال</TabsTrigger>
-              <TabsTrigger value="workshops" className="text-xs sm:text-sm">کارگاه‌های من</TabsTrigger>
-              <TabsTrigger value="workforce" className="text-xs sm:text-sm">جذب نیرو</TabsTrigger>
-              <TabsTrigger value="notifications" className="text-xs sm:text-sm">اعلان‌ها</TabsTrigger>
-            </TabsList>
+            <div className="space-y-3">
+              <div className="-mx-4 px-4 sm:hidden">
+                <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-muted-foreground/30">
+                  {tabItems.map((tab) => {
+                    const Icon = tab.icon;
+                    const isActive = activeTab === tab.value;
+                    return (
+                      <button
+                        key={tab.value}
+                        onClick={() => handleTabChange(tab.value)}
+                        className={cn(
+                          "min-w-[110px] flex flex-col items-center justify-center rounded-2xl border px-4 py-3 text-xs transition-all duration-200",
+                          isActive
+                            ? "border-primary bg-primary/5 text-primary shadow-sm"
+                            : "border-border bg-white text-gray-600 hover:border-primary/40"
+                        )}
+                      >
+                        <Icon className={cn("h-5 w-5 mb-1", isActive ? "text-primary" : "text-gray-500")} />
+                        <span className="font-medium">{tab.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <TabsList className="hidden sm:grid w-full grid-cols-3 lg:grid-cols-6 gap-1 rounded-2xl bg-muted/60 p-1">
+                {tabItems.map((tab) => (
+                  <TabsTrigger
+                    key={tab.value}
+                    value={tab.value}
+                    className="text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow"
+                  >
+                    {tab.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
 
             {/* Orders Tab */}
             <TabsContent value="orders" className="space-y-6">

@@ -305,7 +305,31 @@ export const CAPABILITIES_WITH_MACHINES: Capability[] = [
         placeholder: 'ابعاد و دما (مثال: محفظه 1000x800x600mm، تا 1200°C)'
       }
     ]
-  }
+  },
+  {
+    id: 'wire_cut',
+    name: 'وایرکات',
+    machines: [
+      {
+        id: 'wire_machine',
+        name: 'وایر',
+        description: 'دستگاه وایر معمولی',
+        placeholder: 'ابعاد و دقت (مثال: میز 400x300mm، دقت ±0.01mm)'
+      },
+      {
+        id: 'wire_cnc',
+        name: 'وایر CNC',
+        description: 'دستگاه وایر کنترل عددی',
+        placeholder: 'ابعاد و دقت (مثال: میز 500x400mm، دقت ±0.005mm)'
+      },
+      {
+        id: 'super_drill',
+        name: 'سوپر دریل',
+        description: 'دستگاه سوپر دریل برای سوراخکاری دقیق',
+        placeholder: 'قطر و عمق سوراخ (مثال: قطر 0.3mm تا 3mm)'
+      }
+    ]
+  },
 ];
 
 export interface SelectedMachine {

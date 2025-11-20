@@ -284,56 +284,6 @@ const BlogPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="bg-white rounded-lg p-6 border border-indigo-100 shadow-sm mt-6">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <Search className="h-5 w-5 text-indigo-600" />
-                    امکانات جستجو و فیلتر:
-                  </h3>
-                  
-                  <ul className="space-y-2 text-gray-700">
-                    <li className="flex items-start gap-2">
-                      <span className="text-indigo-600 font-bold mt-1">•</span>
-                      <span><strong>جستجوی پیشرفته:</strong> جستجو در عنوان، محتوا و خلاصه مقالات</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-indigo-600 font-bold mt-1">•</span>
-                      <span><strong>فیلتر بر اساس نوع:</strong> فیلتر محتوا بر اساس مقاله، کتاب، نرم‌افزار یا ویدیو</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-indigo-600 font-bold mt-1">•</span>
-                      <span><strong>دسته‌بندی تخصصی:</strong> دسترسی به محتوا بر اساس رشته‌های مهندسی مختلف</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-indigo-600 font-bold mt-1">•</span>
-                      <span><strong>صفحه‌بندی هوشمند:</strong> نمایش محتوا به صورت صفحه‌بندی شده برای دسترسی آسان‌تر</span>
-                    </li>
-                  </ul>
-                </div>
-
-                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg p-6 text-white mt-6">
-                  <h3 className="text-xl font-semibold mb-3">💼 برای کارفرمایان:</h3>
-                  <p className="text-blue-50 leading-relaxed">
-                    این صفحه به شما کمک می‌کند تا با آخرین تحولات و پیشرفت‌های علمی در حوزه مهندسی آشنا شوید، 
-                    منابع معتبر برای پروژه‌های خود پیدا کنید و از محتوای آموزشی برای ارتقای سطح تیم خود استفاده نمایید. 
-                    همچنین می‌توانید محتوای تخصصی مورد نیاز پروژه‌های خود را در این بخش به اشتراک بگذارید.
-                  </p>
-                </div>
-
-                <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg p-6 text-white mt-4">
-                  <h3 className="text-xl font-semibold mb-3">👥 برای کاربران و دانشجویان:</h3>
-                  <p className="text-green-50 leading-relaxed">
-                    این صفحه یک منبع غنی از اطلاعات علمی و آموزشی است که می‌تواند در یادگیری، تحقیق و انجام پروژه‌های 
-                    دانشگاهی و شخصی به شما کمک کند. از مقالات تخصصی تا ویدیوهای آموزشی و کتاب‌های مرجع، همه در یک مکان 
-                    در دسترس شماست. همچنین می‌توانید محتوای مفید را دانلود کرده و به صورت آفلاین مطالعه کنید.
-                  </p>
-                </div>
-
-                <div className="text-center mt-6 pt-6 border-t border-gray-200">
-                  <p className="text-sm text-gray-500">
-                    💡 <strong>نکته:</strong> برای دسترسی به محتوای کامل هر مطلب، روی دکمه "مطالعه بیشتر" کلیک کنید. 
-                    ویدیوها به صورت آنلاین قابل پخش هستند و فایل‌ها و کتاب‌ها را می‌توانید مستقیماً دانلود کنید.
-                  </p>
-                </div>
               </div>
             </div>
           </CardContent>

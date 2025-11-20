@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Plus, X, Settings } from 'lucide-react';
 import { CAPABILITIES_WITH_MACHINES, SelectedMachine, MachineType } from '@/data/capabilitiesAndMachines';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 
 interface CapabilityMachineSelectorProps {
   selectedCapabilities: string[];
@@ -131,19 +132,32 @@ const CapabilityMachineSelector: React.FC<CapabilityMachineSelectorProps> = ({
           ابتدا توانمندی‌های کارگاه خود را انتخاب کنید. سپس دستگاه‌های مربوط به هر توانمندی را انتخاب می‌کنید.
         </p>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {CAPABILITIES_WITH_MACHINES.map((capability) => (
-            <div key={capability.id} className="flex items-center space-x-2 p-3 border rounded-lg hover:bg-gray-50">
-              <Checkbox
-                id={`capability_${capability.id}`}
-                checked={selectedCapabilities.includes(capability.id)}
-                onCheckedChange={(checked) => handleCapabilityToggle(capability.id, checked as boolean)}
-              />
-              <Label htmlFor={`capability_${capability.id}`} className="text-sm cursor-pointer flex-1">
-                {capability.name}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+          {CAPABILITIES_WITH_MACHINES.map((capability) => {
+            const isSelected = selectedCapabilities.includes(capability.id);
+            return (
+              <Label
+                key={capability.id}
+                htmlFor={`capability_${capability.id}`}
+                className={cn(
+                  "flex items-center gap-3 rounded-2xl border-2 p-4 cursor-pointer select-none text-right transition-all duration-200",
+                  isSelected
+                    ? "border-primary bg-primary/5 shadow-sm ring-1 ring-primary/20"
+                    : "border-border bg-background hover:border-primary/40"
+                )}
+              >
+                <Checkbox
+                  id={`capability_${capability.id}`}
+                  checked={isSelected}
+                  onCheckedChange={(checked) => handleCapabilityToggle(capability.id, checked as boolean)}
+                  className="h-5 w-5 rounded-md border-2 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                />
+                <span className="text-sm font-medium text-foreground flex-1 leading-relaxed">
+                  {capability.name}
+                </span>
               </Label>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

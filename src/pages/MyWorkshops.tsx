@@ -89,7 +89,8 @@ const MyWorkshops = () => {
     { id: 'tool_grinding', name: 'ابزار سازی' },
     { id: 'coating', name: 'پوشش دهی' },
     { id: 'molding', name: 'قالب سازی' },
-    { id: 'heat_treatment', name: 'عملیات حرارتی' }
+    { id: 'heat_treatment', name: 'عملیات حرارتی' },
+    { id: 'wire_cut', name: 'وایرکات' }
   ];
 
   // Iranian provinces
@@ -285,14 +286,14 @@ const MyWorkshops = () => {
                 ثبت کارگاه جدید
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
+            <DialogContent className="sm:max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto rounded-2xl p-0 sm:p-6">
+              <DialogHeader className="px-4 pt-4 sm:px-0">
                 <DialogTitle>ثبت کارگاه جدید</DialogTitle>
                 <DialogDescription>
                   اطلاعات کامل کارگاه خود را وارد کنید
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-6">
+              <div className="space-y-6 px-4 pb-4 sm:px-0">
                 {/* Basic Information */}
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold">اطلاعات پایه</h3>

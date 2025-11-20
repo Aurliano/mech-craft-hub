@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { useIsMobile } from "@/hooks/use-mobile";
 import UserDropdown from "@/components/UserDropdown";
 import InstallButton from "@/components/InstallButton";
 import { useCheckContractorManufacturingService } from "@/hooks/useAuth";
@@ -44,6 +43,33 @@ interface Service {
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [expandedServices, setExpandedServices] = useState<string[]>([]);
+  const headerRef = useRef<HTMLDivElement | null>(null);
+
+  useLayoutEffect(() => {
+    const updateNavbarOffset = () => {
+      if (!headerRef.current) return;
+      const height = headerRef.current.offsetHeight;
+      document.documentElement.style.setProperty("--navbar-offset", `${height}px`);
+    };
+
+    updateNavbarOffset();
+
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(() => updateNavbarOffset())
+        : null;
+
+    if (headerRef.current && resizeObserver) {
+      resizeObserver.observe(headerRef.current);
+    }
+
+    window.addEventListener("resize", updateNavbarOffset);
+
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", updateNavbarOffset);
+    };
+  }, []);
 
   // کنترل اسکرول body هنگام باز/بسته شدن منو موبایل
   useEffect(() => {
@@ -61,7 +87,6 @@ const Navbar = () => {
   
   // Use real authentication state
   const { isAuthenticated, user, logout, cartItems, notifications, stats, isContractor, isCustomer, isSpecialist } = useAuth();
-  const isMobile = useIsMobile();
   const { data: manufacturingCheck } = useCheckContractorManufacturingService();
   const userName = user?.username || "کاربر";
   const cartItemsCount = cartItems?.length || 0;
@@ -93,7 +118,7 @@ const Navbar = () => {
 
   return (
     <nav className="bg-background border-b border-border fixed top-0 left-0 right-0 z-50" dir="rtl">
-      <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8" dir="rtl">
+      <div ref={headerRef} className="max-w-full mx-auto px-4 sm:px-6 lg:px-8" dir="rtl">
         {/* Desktop Layout */}
         <div className="hidden lg:flex flex-col" dir="rtl">
           {/* Top Section: Logo/Site Name (right) and Auth buttons (left) */}
@@ -329,35 +354,36 @@ const Navbar = () => {
             <span className="sr-only">{isOpen ? "بستن منو" : "باز کردن منو"}</span>
           </button>
         </div>
+      </div>
 
-              {/* Mobile Menu - Fixed overlay with proper scrolling */}
-              {isOpen && (
-                <div className="lg:hidden fixed inset-0 z-50">
-                  {/* Backdrop */}
-                  <div 
-                    className="absolute inset-0 bg-black/50 backdrop-blur-sm" 
-                    onClick={() => setIsOpen(false)}
-                  />
-                  
-                  {/* Menu Panel */}
-                  <div className="absolute right-0 top-0 h-full w-4/5 max-w-sm bg-white shadow-2xl overflow-hidden" dir="rtl">
-                    {/* Header */}
-                    <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white sticky top-0 z-10">
-                      <div className="flex items-center gap-2">
-                        <img src={logo} alt="لوگو" className="h-8 w-auto" />
-                        <span className="font-bold text-sm">پلتفرم مهندسی سایدا</span>
-                      </div>
-                      <button
-                        onClick={() => setIsOpen(false)}
-                        className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-                        title="بستن منو"
-                      >
-                        <X className="h-5 w-5 text-gray-600" />
-                      </button>
-                    </div>
+      {/* Mobile Menu - Fixed overlay with proper scrolling */}
+      {isOpen && (
+        <div className="lg:hidden fixed inset-0 z-50">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm" 
+            onClick={() => setIsOpen(false)}
+          />
+          
+          {/* Menu Panel */}
+          <div className="absolute right-0 top-0 h-full w-4/5 max-w-sm bg-white shadow-2xl overflow-hidden" dir="rtl">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white sticky top-0 z-10">
+              <div className="flex items-center gap-2">
+                <img src={logo} alt="لوگو" className="h-8 w-auto" />
+                <span className="font-bold text-sm">پلتفرم مهندسی سایدا</span>
+              </div>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                title="بستن منو"
+              >
+                <X className="h-5 w-5 text-gray-600" />
+              </button>
+            </div>
 
-                    {/* Scrollable Content */}
-                    <div className="h-full overflow-y-auto overscroll-contain" style={{ height: 'calc(100vh - 80px)' }}>
+            {/* Scrollable Content */}
+            <div className="h-full overflow-y-auto overscroll-contain" style={{ height: 'calc(100vh - 80px)' }}>
                 {/* User Profile Section */}
                 {isAuthenticated ? (
                   <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-4 text-white">
@@ -657,7 +683,6 @@ const Navbar = () => {
             </div>
           </div>
         )}
-      </div>
     </nav>
   );
 };
