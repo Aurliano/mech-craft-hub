@@ -222,6 +222,123 @@ const BlogPage: React.FC = () => {
           </p>
         </div>
 
+        {/* Introduction Section */}
+        <Card className="mb-8 bg-gradient-to-br from-blue-50 via-white to-indigo-50 border-blue-200">
+          <CardContent className="p-8">
+            <div className="max-w-4xl mx-auto">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
+                📚 مرکز منابع علمی و آموزشی پلتفرم سایدا
+              </h2>
+              
+              <div className="prose prose-lg max-w-none text-gray-700 space-y-4 mb-6">
+                <p className="text-justify leading-relaxed">
+                  به <strong>صفحه مقالات و منابع علمی</strong> پلتفرم مهندسی سایدا خوش آمدید! این بخش یک کتابخانه جامع و تخصصی از محتوای علمی و آموزشی در حوزه‌های مختلف مهندسی است که برای <strong>کاربران</strong>، <strong>کارفرمایان</strong>، <strong>دانشجویان</strong> و <strong>متخصصان</strong> طراحی شده است.
+                </p>
+
+                <div className="bg-white rounded-lg p-6 border border-blue-100 shadow-sm">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-blue-600" />
+                    قابلیت‌های اصلی این صفحه:
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+                      <FileText className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h4 className="font-semibold text-gray-900 mb-1">مقالات تخصصی</h4>
+                        <p className="text-sm text-gray-600">
+                          دسترسی به مقالات علمی و تخصصی در زمینه‌های مکاترونیک، مکانیک، الکترونیک، کامپیوتر و سایر رشته‌های مهندسی
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg">
+                      <BookOpen className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h4 className="font-semibold text-gray-900 mb-1">کتاب‌های الکترونیکی</h4>
+                        <p className="text-sm text-gray-600">
+                          دانلود کتاب‌های تخصصی و مراجع علمی در قالب PDF و سایر فرمت‌های رایج
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3 p-3 bg-purple-50 rounded-lg">
+                      <Download className="h-5 w-5 text-purple-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h4 className="font-semibold text-gray-900 mb-1">نرم‌افزارهای کاربردی</h4>
+                        <p className="text-sm text-gray-600">
+                          دسترسی به نرم‌افزارها و ابزارهای کاربردی مهندسی با امکان دانلود مستقیم
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3 p-3 bg-red-50 rounded-lg">
+                      <PlayCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h4 className="font-semibold text-gray-900 mb-1">ویدیوهای آموزشی</h4>
+                        <p className="text-sm text-gray-600">
+                          تماشای آنلاین ویدیوهای آموزشی و تخصصی با کیفیت بالا و امکان دانلود
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-lg p-6 border border-indigo-100 shadow-sm mt-6">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Search className="h-5 w-5 text-indigo-600" />
+                    امکانات جستجو و فیلتر:
+                  </h3>
+                  
+                  <ul className="space-y-2 text-gray-700">
+                    <li className="flex items-start gap-2">
+                      <span className="text-indigo-600 font-bold mt-1">•</span>
+                      <span><strong>جستجوی پیشرفته:</strong> جستجو در عنوان، محتوا و خلاصه مقالات</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-indigo-600 font-bold mt-1">•</span>
+                      <span><strong>فیلتر بر اساس نوع:</strong> فیلتر محتوا بر اساس مقاله، کتاب، نرم‌افزار یا ویدیو</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-indigo-600 font-bold mt-1">•</span>
+                      <span><strong>دسته‌بندی تخصصی:</strong> دسترسی به محتوا بر اساس رشته‌های مهندسی مختلف</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-indigo-600 font-bold mt-1">•</span>
+                      <span><strong>صفحه‌بندی هوشمند:</strong> نمایش محتوا به صورت صفحه‌بندی شده برای دسترسی آسان‌تر</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg p-6 text-white mt-6">
+                  <h3 className="text-xl font-semibold mb-3">💼 برای کارفرمایان:</h3>
+                  <p className="text-blue-50 leading-relaxed">
+                    این صفحه به شما کمک می‌کند تا با آخرین تحولات و پیشرفت‌های علمی در حوزه مهندسی آشنا شوید، 
+                    منابع معتبر برای پروژه‌های خود پیدا کنید و از محتوای آموزشی برای ارتقای سطح تیم خود استفاده نمایید. 
+                    همچنین می‌توانید محتوای تخصصی مورد نیاز پروژه‌های خود را در این بخش به اشتراک بگذارید.
+                  </p>
+                </div>
+
+                <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg p-6 text-white mt-4">
+                  <h3 className="text-xl font-semibold mb-3">👥 برای کاربران و دانشجویان:</h3>
+                  <p className="text-green-50 leading-relaxed">
+                    این صفحه یک منبع غنی از اطلاعات علمی و آموزشی است که می‌تواند در یادگیری، تحقیق و انجام پروژه‌های 
+                    دانشگاهی و شخصی به شما کمک کند. از مقالات تخصصی تا ویدیوهای آموزشی و کتاب‌های مرجع، همه در یک مکان 
+                    در دسترس شماست. همچنین می‌توانید محتوای مفید را دانلود کرده و به صورت آفلاین مطالعه کنید.
+                  </p>
+                </div>
+
+                <div className="text-center mt-6 pt-6 border-t border-gray-200">
+                  <p className="text-sm text-gray-500">
+                    💡 <strong>نکته:</strong> برای دسترسی به محتوای کامل هر مطلب، روی دکمه "مطالعه بیشتر" کلیک کنید. 
+                    ویدیوها به صورت آنلاین قابل پخش هستند و فایل‌ها و کتاب‌ها را می‌توانید مستقیماً دانلود کنید.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar - Categories and Filters */}
           <div className="lg:col-span-1 space-y-6">
