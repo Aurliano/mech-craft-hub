@@ -110,11 +110,15 @@ def upload_content_file(request):
             detected_content_type = 'video'
         
         # Get file URL (URLField supports long URLs, no need to truncate)
-        file_url = upload_result.get('file_url') or ''
+        # Convert empty string to None to avoid URLField validation errors
+        file_url = upload_result.get('file_url') or None
+        if file_url == '':
+            file_url = None
         
         # For videos, set video_url; for others, set download_url
-        video_url = file_url if is_video else None
-        download_url = file_url if not is_video else None
+        # Only set URLs if they are not None/empty
+        video_url = file_url if (is_video and file_url) else None
+        download_url = file_url if (not is_video and file_url) else None
 
         content_data = {
             'title': title,
