@@ -6,6 +6,7 @@ from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 import logging
+from urllib.parse import quote
 
 # Import boto3 with fallback
 try:
@@ -66,11 +67,15 @@ class BaseFileManager:
             
             elif self.storage_type in ['s3', 'liara'] and self.s3_client:
                 if is_public and getattr(settings, 'FILE_PUBLIC_ACCESS', True):
+                    # URL-encode the path to handle spaces and special characters
+                    path_parts = file_path.split('/')
+                    encoded_parts = [quote(part, safe='') for part in path_parts]
+                    encoded_path = '/'.join(encoded_parts)
                     if self.storage_type == 'liara':
                         endpoint_url = getattr(settings, 'S3_ENDPOINT_URL', 'https://storage.c2.liara.space')
-                        return f"{endpoint_url}/{self.bucket_name}/{file_path}"
+                        return f"{endpoint_url}/{self.bucket_name}/{encoded_path}"
                     else:
-                        return f"https://{self.bucket_name}.{self.region}.amazonaws.com/{file_path}"
+                        return f"https://{self.bucket_name}.{self.region}.amazonaws.com/{encoded_path}"
                 else:
                     # Presigned URL for private files
                     return self.s3_client.generate_presigned_url(

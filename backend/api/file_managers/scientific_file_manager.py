@@ -4,6 +4,7 @@ from datetime import datetime
 from django.conf import settings
 from django.core.files.base import ContentFile
 import logging
+from urllib.parse import quote
 
 from .base_file_manager import BaseFileManager, boto3, BOTO3_AVAILABLE, ClientError
 
@@ -148,9 +149,13 @@ class ScientificFileManager(BaseFileManager):
                 logger.error(f"S3 upload failed - Code: {error_code}, Message: {error_message}")
                 raise Exception(f"S3 upload error: {error_code} - {error_message}")
             
-            # Generate public URL
+            # Generate public URL - URL-encode the path to handle spaces and special characters
             endpoint_url = getattr(settings, 'S3_ENDPOINT_URL', None) or getattr(settings, 'LIARA_ENDPOINT_URL', 'https://storage.c2.liara.space')
-            file_url = f"{endpoint_url}/{self.bucket_name}/{file_path}"
+            # URL-encode each path segment separately to preserve directory structure
+            path_parts = file_path.split('/')
+            encoded_parts = [quote(part, safe='') for part in path_parts]
+            encoded_path = '/'.join(encoded_parts)
+            file_url = f"{endpoint_url}/{self.bucket_name}/{encoded_path}"
             logger.info(f"Generated file URL: {file_url}")
             
             return {

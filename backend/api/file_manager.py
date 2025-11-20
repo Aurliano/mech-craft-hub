@@ -6,6 +6,7 @@ from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 import logging
+from urllib.parse import quote
 
 # Import boto3 with fallback
 try:
@@ -150,15 +151,19 @@ class FileManager:
                     logger.error(f"S3 upload failed - Code: {error_code}, Message: {error_message}")
                     raise Exception(f"S3 upload error: {error_code} - {error_message}")
                 
-                # تولید URL عمومی
+                # تولید URL عمومی - URL-encode the path to handle spaces and special characters
                 if getattr(settings, 'FILE_PUBLIC_ACCESS', True):
+                    # URL-encode each path segment separately to preserve directory structure
+                    path_parts = file_path.split('/')
+                    encoded_parts = [quote(part, safe='') for part in path_parts]
+                    encoded_path = '/'.join(encoded_parts)
                     if self.storage_type == 'liara':
                         # URL لیارا - استفاده از endpoint اصلی
                         endpoint_url = getattr(settings, 'S3_ENDPOINT_URL', None) or getattr(settings, 'LIARA_ENDPOINT_URL', 'https://storage.iran.liara.space')
-                        file_url = f"{endpoint_url}/{self.bucket_name}/{file_path}"
+                        file_url = f"{endpoint_url}/{self.bucket_name}/{encoded_path}"
                     else:
                         # URL AWS S3
-                        file_url = f"https://{self.bucket_name}.{self.region}.amazonaws.com/{file_path}"
+                        file_url = f"https://{self.bucket_name}.{self.region}.amazonaws.com/{encoded_path}"
                 else:
                     # برای فایل‌های خصوصی، URL موقت تولید کنید
                     file_url = self.s3_client.generate_presigned_url(
@@ -229,11 +234,15 @@ class FileManager:
             
             elif self.storage_type in ['s3', 'liara'] and self.s3_client:
                 if is_public and getattr(settings, 'FILE_PUBLIC_ACCESS', True):
+                    # URL-encode the path to handle spaces and special characters
+                    path_parts = file_path.split('/')
+                    encoded_parts = [quote(part, safe='') for part in path_parts]
+                    encoded_path = '/'.join(encoded_parts)
                     if self.storage_type == 'liara':
                         endpoint_url = getattr(settings, 'S3_ENDPOINT_URL', None) or getattr(settings, 'LIARA_ENDPOINT_URL', 'https://storage.iran.liara.space')
-                        return f"{endpoint_url}/{self.bucket_name}/{file_path}"
+                        return f"{endpoint_url}/{self.bucket_name}/{encoded_path}"
                     else:
-                        return f"https://{self.bucket_name}.{self.region}.amazonaws.com/{file_path}"
+                        return f"https://{self.bucket_name}.{self.region}.amazonaws.com/{encoded_path}"
                 else:
                     # URL موقت برای فایل‌های خصوصی
                     return self.s3_client.generate_presigned_url(
