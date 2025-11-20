@@ -3,10 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Calendar, Clock, Eye, Heart, User, ArrowRight, Send, PlayCircle, Download, FileText, BookOpen } from 'lucide-react';
+import { Calendar, Clock, Eye, Heart, User, ArrowRight, PlayCircle, Download, FileText, BookOpen } from 'lucide-react';
 import { getApiUrl } from '@/lib/api';
 import { toast } from '@/components/ui/use-toast';
 import Navbar from '@/components/Navbar';
@@ -38,24 +35,11 @@ interface BlogPost {
   file_size?: number;
 }
 
-interface BlogComment {
-  id: string;
-  author_name: string;
-  content: string;
-  created_at: string;
-}
 
 const BlogPostPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const [post, setPost] = useState<BlogPost | null>(null);
-  const [comments, setComments] = useState<BlogComment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSubmittingComment, setIsSubmittingComment] = useState(false);
-  const [commentForm, setCommentForm] = useState({
-    author_name: '',
-    author_email: '',
-    content: ''
-  });
 
   const fetchPost = useCallback(async () => {
     if (!slug) return;
@@ -80,59 +64,10 @@ const BlogPostPage: React.FC = () => {
     }
   }, [slug]);
 
-  const fetchComments = useCallback(async () => {
-    if (!slug) return;
-    
-    try {
-      const response = await fetch(getApiUrl(`/api/v1/blog/posts/${slug}/comments/`));
-      if (!response.ok) throw new Error('خطا در دریافت نظرات');
-      
-      const data = await response.json();
-      setComments(data);
-    } catch (error) {
-      console.error('Error fetching comments:', error);
-    }
-  }, [slug]);
-
-  const handleCommentSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!slug) return;
-
-    try {
-      setIsSubmittingComment(true);
-      const response = await fetch(getApiUrl(`/api/v1/blog/posts/${slug}/comments/create/`), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(commentForm)
-      });
-
-      if (!response.ok) throw new Error('خطا در ارسال نظر');
-      
-      const data = await response.json();
-      toast({
-        title: "موفق",
-        description: data.message,
-      });
-      
-      setCommentForm({ author_name: '', author_email: '', content: '' });
-    } catch (error) {
-      console.error('Error submitting comment:', error);
-      toast({
-        title: "خطا",
-        description: "خطا در ارسال نظر",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmittingComment(false);
-    }
-  };
 
   useEffect(() => {
     fetchPost();
-    fetchComments();
-  }, [slug, fetchPost, fetchComments]);
+  }, [fetchPost]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('fa-IR');
@@ -403,79 +338,8 @@ const BlogPostPage: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Comments Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-xl">نظرات ({comments.length})</CardTitle>
-            </CardHeader>
-            
-            <CardContent>
-              {/* Comment Form */}
-              <form onSubmit={handleCommentSubmit} className="mb-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <Input
-                    placeholder="نام شما"
-                    value={commentForm.author_name}
-                    onChange={(e) => setCommentForm(prev => ({ ...prev, author_name: e.target.value }))}
-                    required
-                  />
-                  <Input
-                    type="email"
-                    placeholder="ایمیل شما"
-                    value={commentForm.author_email}
-                    onChange={(e) => setCommentForm(prev => ({ ...prev, author_email: e.target.value }))}
-                    required
-                  />
-                </div>
-                
-                <Textarea
-                  placeholder="نظر خود را بنویسید..."
-                  value={commentForm.content}
-                  onChange={(e) => setCommentForm(prev => ({ ...prev, content: e.target.value }))}
-                  rows={4}
-                  required
-                  className="mb-4"
-                />
-                
-                <Button type="submit" disabled={isSubmittingComment}>
-                  {isSubmittingComment ? (
-                    <>
-                      <Send className="h-4 w-4 ml-2 animate-spin" />
-                      در حال ارسال...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4 ml-2" />
-                      ارسال نظر
-                    </>
-                  )}
-                </Button>
-              </form>
-
-              {/* Comments List */}
-              {comments.length > 0 ? (
-                <div className="space-y-4">
-                  {comments.map((comment) => (
-                    <div key={comment.id} className="border-l-4 border-blue-200 pl-4 py-2">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold text-gray-900">{comment.author_name}</h4>
-                        <span className="text-sm text-gray-500">
-                          {formatDate(comment.created_at)}
-                        </span>
-                      </div>
-                      <p className="text-gray-700">{comment.content}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <Alert>
-                  <AlertDescription>
-                    هنوز نظری برای این مقاله ثبت نشده است. اولین نفر باشید که نظر می‌دهد!
-                  </AlertDescription>
-                </Alert>
-              )}
-            </CardContent>
-          </Card>
+          {/* Comments Section - Temporarily disabled for ScientificContent */}
+          {/* TODO: Implement comments system for ScientificContent */}
         </div>
       </div>
       <Footer />
