@@ -10,8 +10,8 @@ const Contact = () => {
       icon: Phone,
       title: "تماس تلفنی",
       description: "برای مشاوره رایگان با ما تماس بگیرید",
-      info: "09373497128",
-      action: "tel:+989373497128"
+      info: "09006802142",
+      action: "tel:+989006802142"
     },
     {
       icon: Send,
@@ -24,8 +24,8 @@ const Contact = () => {
       icon: EitaaIcon,
       title: "ایتا",
       description: "پیام‌رسان داخلی برای ارتباط مستقیم با پشتیبان",
-      info: "saydatech_ir@",
-      action: "https://eitaa.com/saydatech_ir"
+      info: "saydatech@",
+      action: "https://eitaa.com/saydatech"
     },
     {
       icon: InstagramIcon,

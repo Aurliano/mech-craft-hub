@@ -202,7 +202,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Custom User Model
 AUTH_USER_MODEL = 'api.User'
 
-# CORS/CSRF for Vite dev server
+# CORS/CSRF for Vite dev server and mobile app
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:8080',
     'http://127.0.0.1:8080',
@@ -212,7 +212,15 @@ CORS_ALLOWED_ORIGINS = [
     'http://www.saydatech.ir',
     'https://saydatech.ir',
     'https://www.saydatech.ir',
+    # Mobile app origins (Expo/React Native)
+    'exp://localhost:8081',
+    'exp://192.168.*.*:8081',
+    'exp://10.*.*.*:8081',
+    'exp://172.*.*.*:8081',
 ]
+
+# Allow mobile app user agents
+CORS_ALLOW_ALL_ORIGINS = False  # Keep this False for security
 
 CORS_ALLOWED_HEADERS = [
     'accept',
@@ -224,6 +232,9 @@ CORS_ALLOWED_HEADERS = [
     'user-agent',
     'x-csrftoken',
     'x-requested-with',
+    # Mobile app headers
+    'x-app-version',
+    'x-platform',
 ]
 
 CORS_ALLOW_METHODS = [
