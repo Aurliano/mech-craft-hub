@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -11,12 +11,39 @@ import ServiceTabs from "@/components/ServiceTabs";
 import LoginPrompt from "@/components/LoginPrompt";
 import TermsAndConditions from "@/components/TermsAndConditions";
 import { User } from "lucide-react";
+import { getAllServices } from "@/lib/api";
 
 type FieldValue = string | number | boolean | string[] | File | null | Record<string, unknown>;
 
 const DrawingService = () => {
   const { isAuthenticated } = useAuth();
   const [acceptTerms, setAcceptTerms] = useState(false);
+  
+  // Resolve service id dynamically (type: drawing)
+  const [drawingServiceId, setDrawingServiceId] = useState<string | null>(null);
+  useEffect(() => {
+    (async () => {
+      try {
+        const services = await getAllServices();
+        const drawing = Array.isArray(services)
+          ? services.find((s: { type?: string; name?: string; id?: string }) => s.type === 'drawing')
+          : undefined;
+        
+        if (drawing?.id) {
+          setDrawingServiceId(drawing.id);
+        } else {
+          // Fallback: use the first available service
+          const firstService = Array.isArray(services) ? services[0] : undefined;
+          if (firstService?.id) {
+            console.warn('Drawing service not found, using first available service:', firstService);
+            setDrawingServiceId(firstService.id);
+          }
+        }
+      } catch {
+        setDrawingServiceId(null);
+      }
+    })();
+  }, []);
   
   // Use service order hook with tabFieldValues support
   const {
@@ -33,7 +60,7 @@ const DrawingService = () => {
     handleSubmit,
     isSubmitting,
     error
-  } = useServiceOrder('550e8400-e29b-41d4-a716-446655440004'); // Drawing service
+  } = useServiceOrder(drawingServiceId || ""); // Drawing service
 
   const handleFormSubmit = async () => {
     if (!acceptTerms) {
@@ -85,21 +112,28 @@ const DrawingService = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <ServiceTabs
-                serviceId="550e8400-e29b-41d4-a716-446655440004"
-                onFieldChange={(tabId, fieldKey, value) => updateTabField(tabId, fieldKey, value as FieldValue)}
-                fieldValues={tabFieldValues}
-                needsDocumentation={needsDocumentation}
-                onNeedsDocumentationChange={setNeedsDocumentation}
-                documentationOptions={documentationOptions}
-                onDocumentationOptionChange={(option, checked) => 
-                  setDocumentationOptions(prev => ({ ...prev, [option]: checked }))
-                }
-                notes={notes}
-                onNotesChange={setNotes}
-                onSubmit={handleFormSubmit}
-                isSubmitting={isSubmitting}
-              />
+              {drawingServiceId ? (
+                <ServiceTabs
+                  serviceId={drawingServiceId}
+                  onFieldChange={(tabId, fieldKey, value) => updateTabField(tabId, fieldKey, value as FieldValue)}
+                  fieldValues={tabFieldValues}
+                  needsDocumentation={needsDocumentation}
+                  onNeedsDocumentationChange={setNeedsDocumentation}
+                  documentationOptions={documentationOptions}
+                  onDocumentationOptionChange={(option, checked) => 
+                    setDocumentationOptions(prev => ({ ...prev, [option]: checked }))
+                  }
+                  notes={notes}
+                  onNotesChange={setNotes}
+                  onSubmit={handleFormSubmit}
+                  isSubmitting={isSubmitting}
+                />
+              ) : (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">در حال بارگذاری فرم...</p>
+                </div>
+              )}
               
               {/* Terms and Conditions */}
               <div className="mt-6">

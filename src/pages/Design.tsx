@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,11 +15,38 @@ import { useAuth } from "@/contexts/AuthContext";
 import { DynamicServiceForm } from "@/components/DynamicServiceForm";
 import LoginPrompt from "@/components/LoginPrompt";
 import TermsAndConditions from "@/components/TermsAndConditions";
+import { getAllServices } from "@/lib/api";
 // import DocumentationSection from "@/components/DocumentationSection";
 
 const Design = () => {
   // Use real authentication state
   const { isAuthenticated } = useAuth();
+  
+  // Resolve service id dynamically (type: design)
+  const [designServiceId, setDesignServiceId] = useState<string | null>(null);
+  useEffect(() => {
+    (async () => {
+      try {
+        const services = await getAllServices();
+        const design = Array.isArray(services)
+          ? services.find((s: { type?: string; name?: string; id?: string }) => s.type === 'design')
+          : undefined;
+        
+        if (design?.id) {
+          setDesignServiceId(design.id);
+        } else {
+          // Fallback: use the first available service
+          const firstService = Array.isArray(services) ? services[0] : undefined;
+          if (firstService?.id) {
+            console.warn('Design service not found, using first available service:', firstService);
+            setDesignServiceId(firstService.id);
+          }
+        }
+      } catch {
+        setDesignServiceId(null);
+      }
+    })();
+  }, []);
   
   // Use service order hook
   const {
@@ -36,7 +63,7 @@ const Design = () => {
     handleSubmit,
     isSubmitting,
     error
-  } = useServiceOrder('550e8400-e29b-41d4-a716-446655440002'); // Design service
+  } = useServiceOrder(designServiceId || ""); // Design service
 
   // Check if any documentation option is selected
   const hasAnyDocumentationSelected = () => {
@@ -143,21 +170,29 @@ const Design = () => {
         <p className="text-muted-foreground">اطلاعات پروژه خود را وارد کنید</p>
       </div>
 
-            <DynamicServiceForm
-              serviceId="550e8400-e29b-41d4-a716-446655440002"
-              formData={formData}
-              onFieldChange={(fieldKey, value) => updateField(fieldKey, value as unknown as string | number | boolean | string[] | File | null | Record<string, unknown>)}
-              needsDocumentation={needsDocumentation}
-              onNeedsDocumentationChange={setNeedsDocumentation}
-              documentationOptions={documentationOptions}
-              onDocumentationOptionChange={(option, checked) => 
-                setDocumentationOptions(prev => ({ ...prev, [option]: checked }))
-              }
-              notes={notes}
-              onNotesChange={setNotes}
-              onSubmit={handleFormSubmit}
-              isSubmitting={isSubmitting}
-            />
+            {designServiceId && (
+              <DynamicServiceForm
+                serviceId={designServiceId}
+                formData={formData}
+                onFieldChange={(fieldKey, value) => updateField(fieldKey, value as unknown as string | number | boolean | string[] | File | null | Record<string, unknown>)}
+                needsDocumentation={needsDocumentation}
+                onNeedsDocumentationChange={setNeedsDocumentation}
+                documentationOptions={documentationOptions}
+                onDocumentationOptionChange={(option, checked) => 
+                  setDocumentationOptions(prev => ({ ...prev, [option]: checked }))
+                }
+                notes={notes}
+                onNotesChange={setNotes}
+                onSubmit={handleFormSubmit}
+                isSubmitting={isSubmitting}
+              />
+            )}
+            {!designServiceId && (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">در حال بارگذاری فرم...</p>
+              </div>
+            )}
 
       {/* Terms and Conditions */}
       <div className="mt-6">

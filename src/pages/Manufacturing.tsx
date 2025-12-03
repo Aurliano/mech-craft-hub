@@ -27,7 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import SubmitButton from "@/components/SubmitButton";
 import { useServiceOrder } from "@/hooks/useServiceOrder";
@@ -36,7 +36,7 @@ import LoginPrompt from "@/components/LoginPrompt";
 import { DynamicServiceForm } from "@/components/DynamicServiceForm";
 import { useContractorWorkshops } from "@/hooks/useAuth";
 import TermsAndConditions from "@/components/TermsAndConditions";
-import { getPublicWorkshops } from "@/lib/api";
+import { getPublicWorkshops, getAllServices } from "@/lib/api";
 import MultiFileUpload from "@/components/MultiFileUpload";
 import { CAPABILITIES_WITH_MACHINES } from "@/data/capabilitiesAndMachines";
 // import DocumentationSection from "@/components/DocumentationSection";
@@ -134,6 +134,32 @@ const Manufacturing = () => {
   const [publicWorkshops, setPublicWorkshops] = useState<Workshop[]>([]);
   const [isLoadingPublicWorkshops, setIsLoadingPublicWorkshops] = useState(false);
   
+  // Resolve service id dynamically (type: manufacturing)
+  const [manufacturingServiceId, setManufacturingServiceId] = useState<string | null>(null);
+  useEffect(() => {
+    (async () => {
+      try {
+        const services = await getAllServices();
+        const manufacturing = Array.isArray(services)
+          ? services.find((s: { type?: string; name?: string; id?: string }) => s.type === 'manufacturing')
+          : undefined;
+        
+        if (manufacturing?.id) {
+          setManufacturingServiceId(manufacturing.id);
+        } else {
+          // Fallback: use the first available service
+          const firstService = Array.isArray(services) ? services[0] : undefined;
+          if (firstService?.id) {
+            console.warn('Manufacturing service not found, using first available service:', firstService);
+            setManufacturingServiceId(firstService.id);
+          }
+        }
+      } catch {
+        setManufacturingServiceId(null);
+      }
+    })();
+  }, []);
+  
   // Load public workshops on mount and when filter changes
   React.useEffect(() => {
     const loadPublicWorkshops = async () => {
@@ -170,7 +196,7 @@ const Manufacturing = () => {
     handleSubmit,
     isSubmitting,
     error
-  } = useServiceOrder('550e8400-e29b-41d4-a716-446655440003'); // Manufacturing service
+  } = useServiceOrder(manufacturingServiceId || ""); // Manufacturing service
 
   // Check if any documentation option is selected
   const hasAnyDocumentationSelected = () => {
@@ -656,21 +682,29 @@ const Manufacturing = () => {
               />
             </div>
 
-            <DynamicServiceForm
-              serviceId="550e8400-e29b-41d4-a716-446655440003"
-              formData={formData}
-              onFieldChange={updateField}
-              needsDocumentation={needsDocumentation}
-              onNeedsDocumentationChange={setNeedsDocumentation}
-              documentationOptions={documentationOptions}
-              onDocumentationOptionChange={(option, checked) => 
-                setDocumentationOptions(prev => ({ ...prev, [option]: checked }))
-              }
-              notes={notes}
-              onNotesChange={setNotes}
-              onSubmit={handleFormSubmit}
-              isSubmitting={isSubmitting}
-            />
+            {manufacturingServiceId && (
+              <DynamicServiceForm
+                serviceId={manufacturingServiceId}
+                formData={formData}
+                onFieldChange={updateField}
+                needsDocumentation={needsDocumentation}
+                onNeedsDocumentationChange={setNeedsDocumentation}
+                documentationOptions={documentationOptions}
+                onDocumentationOptionChange={(option, checked) => 
+                  setDocumentationOptions(prev => ({ ...prev, [option]: checked }))
+                }
+                notes={notes}
+                onNotesChange={setNotes}
+                onSubmit={handleFormSubmit}
+                isSubmitting={isSubmitting}
+              />
+            )}
+            {!manufacturingServiceId && (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">در حال بارگذاری فرم...</p>
+              </div>
+            )}
 
             {/* Material Cost Notice */}
             <Card className="mt-6">
