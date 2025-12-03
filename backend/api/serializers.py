@@ -73,7 +73,10 @@ class ServiceTabSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'display_name', 'description', 'order', 'is_active', 'fields']
     
     def get_tab_fields(self, obj):
-        """Return fields for this tab"""
+        """Return fields for this tab (only if tab is active)"""
+        # Only return fields if the tab is active
+        if not obj.is_active:
+            return []
         fields = obj.fields.all().order_by('order', 'name')
         return ServiceFieldSerializer(fields, many=True).data
 
