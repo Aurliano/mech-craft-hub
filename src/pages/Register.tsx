@@ -182,6 +182,17 @@ const Register = () => {
                     <Info className="h-4 w-4" />
                     <span>شماره همراه شما به عنوان نام کاربری استفاده خواهد شد</span>
                   </div>
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    نیاز به راهنمای گام‌به‌گام ثبت‌نام دارید؟{" "}
+                    <a
+                      href="https://saydatech.ir/blog/saydamoshtarian2"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline"
+                    >
+                      آموزش ویدیویی ثبت‌نام کاربران را ببینید
+                    </a>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">

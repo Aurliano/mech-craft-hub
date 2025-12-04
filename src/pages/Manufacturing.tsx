@@ -136,6 +136,7 @@ const Manufacturing = () => {
   
   // Resolve service id dynamically (type: manufacturing)
   const [manufacturingServiceId, setManufacturingServiceId] = useState<string | null>(null);
+  const [serviceError, setServiceError] = useState<string | null>(null);
   useEffect(() => {
     (async () => {
       try {
@@ -146,16 +147,17 @@ const Manufacturing = () => {
         
         if (manufacturing?.id) {
           setManufacturingServiceId(manufacturing.id);
+          setServiceError(null);
         } else {
-          // Fallback: use the first available service
-          const firstService = Array.isArray(services) ? services[0] : undefined;
-          if (firstService?.id) {
-            console.warn('Manufacturing service not found, using first available service:', firstService);
-            setManufacturingServiceId(firstService.id);
-          }
+          // Service type not found - fail gracefully
+          console.error('Manufacturing service not found in available services');
+          setManufacturingServiceId(null);
+          setServiceError('سرویس ساخت و تولید در سیستم یافت نشد. لطفاً با پشتیبانی تماس بگیرید.');
         }
-      } catch {
+      } catch (error) {
+        console.error('Error fetching services:', error);
         setManufacturingServiceId(null);
+        setServiceError('خطا در بارگذاری سرویس‌ها. لطفاً صفحه را رفرش کنید.');
       }
     })();
   }, []);
@@ -699,10 +701,18 @@ const Manufacturing = () => {
                 isSubmitting={isSubmitting}
               />
             )}
-            {!manufacturingServiceId && (
+            {!manufacturingServiceId && !serviceError && (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
                 <p className="text-muted-foreground">در حال بارگذاری فرم...</p>
+              </div>
+            )}
+            {serviceError && (
+              <div className="text-center py-8">
+                <div className="mb-4 p-4 bg-red-100 border border-red-300 text-red-700 rounded-md">
+                  <p className="font-semibold mb-2">خطا در بارگذاری سرویس</p>
+                  <p>{serviceError}</p>
+                </div>
               </div>
             )}
 

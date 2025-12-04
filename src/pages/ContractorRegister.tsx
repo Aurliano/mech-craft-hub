@@ -377,6 +377,18 @@ const ContractorRegister = () => {
                   </div>
                 )}
 
+                <div className="mt-2 text-xs text-muted-foreground">
+                  نیاز به راهنمای گام‌به‌گام ثبت‌نام و ثبت کارگاه دارید؟{" "}
+                  <a
+                    href="https://saydatech.ir/blog/sabt-nam-kargah"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary hover:underline"
+                  >
+                    آموزش ویدیویی ثبت‌نام پیمانکاران و کارگاه‌ها را ببینید
+                  </a>
+                </div>
+
                 {/* Turnstile Captcha - Temporarily disabled */}
                 {/* <TurnstileCaptcha 
                   onVerify={handleCaptchaVerify}
