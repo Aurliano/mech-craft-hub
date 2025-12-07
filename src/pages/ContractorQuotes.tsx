@@ -244,7 +244,9 @@ const ContractorQuotes = () => {
     setSelectedOrder(order);
     setQuoteForm(prev => ({
       ...prev,
-      order_item: itemId
+      order_item: itemId,
+      documentation_price: '',
+      documentation_days: ''
     }));
     setIsQuoteDialogOpen(true);
   };
@@ -794,53 +796,71 @@ const ContractorQuotes = () => {
               )}
 
               <form onSubmit={handleCreateQuote} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="price">قیمت پیشنهادی (تومان) *</Label>
-                    <Input
-                      id="price"
-                      type="number"
-                      value={quoteForm.price}
-                      onChange={(e) => setQuoteForm(prev => ({ ...prev, price: e.target.value }))}
-                      required
-                      placeholder="مبلغ پیشنهادی"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="delivery_days">زمان تحویل (روز) *</Label>
-                    <Input
-                      id="delivery_days"
-                      type="number"
-                      value={quoteForm.delivery_days}
-                      onChange={(e) => setQuoteForm(prev => ({ ...prev, delivery_days: e.target.value }))}
-                      required
-                      placeholder="تعداد روز"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="documentation_price">قیمت مستندات (تومان)</Label>
-                    <Input
-                      id="documentation_price"
-                      type="number"
-                      value={quoteForm.documentation_price}
-                      onChange={(e) => setQuoteForm(prev => ({ ...prev, documentation_price: e.target.value }))}
-                      placeholder="0"
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="documentation_days">زمان مستندات (روز)</Label>
-                    <Input
-                      id="documentation_days"
-                      type="number"
-                      value={quoteForm.documentation_days}
-                      onChange={(e) => setQuoteForm(prev => ({ ...prev, documentation_days: e.target.value }))}
-                      placeholder="0"
-                    />
-                  </div>
-                </div>
+                {/* Get selected item to check for documentation requirement */}
+                {(() => {
+                  const selectedItem = selectedOrder?.items.find(i => i.id === quoteForm.order_item);
+                  return (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="price">قیمت پیشنهادی (تومان) *</Label>
+                        <Input
+                          id="price"
+                          type="number"
+                          value={quoteForm.price}
+                          onChange={(e) => setQuoteForm(prev => ({ ...prev, price: e.target.value }))}
+                          required
+                          placeholder="مبلغ پیشنهادی"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="delivery_days">زمان تحویل (روز) *</Label>
+                        <Input
+                          id="delivery_days"
+                          type="number"
+                          value={quoteForm.delivery_days}
+                          onChange={(e) => setQuoteForm(prev => ({ ...prev, delivery_days: e.target.value }))}
+                          required
+                          placeholder="تعداد روز"
+                        />
+                      </div>
+                      
+                      {selectedItem?.needs_documentation && (
+                        <>
+                          <div className="col-span-full">
+                            <div className="flex items-center gap-2 mb-2">
+                              <FileText className="h-4 w-4 text-blue-600" />
+                              <span className="text-sm font-medium text-blue-800">
+                                این آیتم دارای درخواست مستندسازی است. لطفاً قیمت و زمان آن را جداگانه وارد کنید.
+                              </span>
+                            </div>
+                          </div>
+                          <div>
+                            <Label htmlFor="documentation_price">قیمت مستندات (تومان)</Label>
+                            <Input
+                              id="documentation_price"
+                              type="number"
+                              value={quoteForm.documentation_price}
+                              onChange={(e) => setQuoteForm(prev => ({ ...prev, documentation_price: e.target.value }))}
+                              placeholder="0"
+                            />
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="documentation_days">زمان مستندات (روز)</Label>
+                            <Input
+                              id="documentation_days"
+                              type="number"
+                              value={quoteForm.documentation_days}
+                              onChange={(e) => setQuoteForm(prev => ({ ...prev, documentation_days: e.target.value }))}
+                              placeholder="0"
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })()}
                 
                 <div>
                   <Label htmlFor="notes">یادداشت (اختیاری)</Label>

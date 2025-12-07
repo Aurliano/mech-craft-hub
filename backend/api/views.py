@@ -1,6 +1,7 @@
 from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 from rest_framework import viewsets, permissions, status, filters
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -871,6 +872,36 @@ class OrderViewSet(viewsets.ModelViewSet):
         if self.request.user.is_staff:
             return Order.objects.select_related('customer').all()
         return Order.objects.filter(customer=self.request.user).select_related('customer')
+
+    def perform_destroy(self, instance):
+        if instance.status != 'submitted':
+            raise PermissionDenied("فقط سفارش‌های ثبت شده قابل حذف هستند.")
+        instance.delete()
+
+    def perform_update(self, serializer):
+        instance = serializer.instance
+        if instance.status != 'submitted':
+            raise PermissionDenied("فقط سفارش‌های ثبت شده قابل ویرایش هستند.")
+        
+        order = serializer.save()
+        
+        # Notify contractors about order update
+        # This is a heavy operation if there are many contractors, so use it carefully
+        # ideally this should be a background task
+        try:
+            contractors = User.objects.filter(user_roles__role__name='contractor', user_roles__is_active=True)
+            for contractor in contractors:
+                # Avoid notifying the customer if they are also a contractor
+                if contractor != order.customer:
+                    create_notification(
+                        user=contractor,
+                        notification_type='order_status', # Reusing existing type or use 'system'
+                        title='بروزرسانی سفارش',
+                        message=f'سفارش شماره {order.order_number} ویرایش شد.',
+                        related_order=order
+                    )
+        except Exception as e:
+            logger.error(f"Error notifying contractors: {e}")
 
 
 class OrderItemViewSet(viewsets.ModelViewSet):
@@ -2727,9 +2758,10 @@ def create_notification(user, notification_type, title, message, related_order=N
 def get_contractor_orders(request):
     """Get orders available for contractor bidding"""
     # Get orders that are in pending or submitted status
+    # Exclude orders created by the current contractor
     orders = Order.objects.filter(
         status__in=['submitted', 'in_review']
-    ).prefetch_related('items__service').order_by('-created_at')
+    ).exclude(customer=request.user).prefetch_related('items__service').order_by('-created_at')
     
     return Response(OrderSerializer(orders, many=True).data)
 

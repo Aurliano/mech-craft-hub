@@ -87,7 +87,7 @@ const App = () => (
               <Route path="/password-reset-sms" element={<PasswordResetSMS />} />
               <Route path="/phone-verification" element={<PhoneVerification />} />
               
-              {/* Customer Routes - Only accessible by customers */}
+              {/* Customer Routes */}
               <Route path="/dashboard" element={
                 <ProtectedRoute allowedRoles={['customer']}>
                   <Dashboard />

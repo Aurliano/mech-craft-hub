@@ -115,15 +115,29 @@ const workshops: Workshop[] = [
   }
 ];
 
-const processes = [
-  { name: "تراشکاری", icon: Cog, description: "تراشکاری CNC ، Manual ، فرزکاری" },
-  { name: "فرزکاری", icon: Settings, description: "فرزکاری CNC سه محور ، چهار محور ، پنج محور " },
-  { name: "جوشکاری", icon: Zap, description: "جوشکاری TIG , MIG , SMAW " },
-  { name: "پوشش دهی", icon: Shield, description: "اجرای فرآیند های پوشش دهی با ضخامت و متریال درخواستی" },
-  { name: "سنگ زنی", icon: Layers, description: "اصلاح اعوجاج یا تغییر شکل‌های جزئی بعد از ماشین‌کاری" },
-  { name: "نمونه سازی", icon: Target, description: "ساخت نمونه اولیه محصولات با پرینتر سه بعدی" },
-  { name: "فرآیند های متالوژی", icon:Beaker, description: "آنالیز جنس مواد، اندازه گیری سختی، عملیات حرارتی و ..."}
-];
+// Icon mapping for capabilities
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const CAPABILITY_ICONS: Record<string, any> = {
+  'turning_milling': Cog,
+  'drilling_tapping': Settings,
+  'grinding': Layers,
+  'cutting': Target,
+  'sheet_metal': Factory,
+  'gear_cutting': Settings,
+  'welding': Zap,
+  'edm': Zap,
+  'tool_grinding': Wrench,
+  'coating': Shield,
+  'molding': Factory,
+  'heat_treatment': Beaker,
+  'wire_cut': Zap,
+};
+
+const processes = CAPABILITIES_WITH_MACHINES.map(cap => ({
+  name: cap.name,
+  icon: CAPABILITY_ICONS[cap.id] || Cog,
+  description: cap.machines.map(m => m.name).slice(0, 3).join('، ') + (cap.machines.length > 3 ? ' و ...' : '')
+}));
 
 const Manufacturing = () => {
   const { isAuthenticated } = useAuth();

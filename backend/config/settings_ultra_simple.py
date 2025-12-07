@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'drf_spectacular',
     'axes',  # For login lockout protection
-    'api',
+    'backend.api',
 ]
 
 MIDDLEWARE = [
@@ -49,19 +49,19 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    'api.middleware.CSRFExemptAPIMiddleware',  # Exempt API endpoints from CSRF (must be before CsrfViewMiddleware)
+    'backend.api.middleware.CSRFExemptAPIMiddleware',  # Exempt API endpoints from CSRF (must be before CsrfViewMiddleware)
     'django.middleware.csrf.CsrfViewMiddleware',
-    'api.middleware.CSRFProtectionMiddleware',  # Custom CSRF middleware
+    'backend.api.middleware.CSRFProtectionMiddleware',  # Custom CSRF middleware
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'api.middleware.JWTAuthenticationMiddleware',  # Custom JWT middleware
+    'backend.api.middleware.JWTAuthenticationMiddleware',  # Custom JWT middleware
     'axes.middleware.AxesMiddleware',  # Must be after AuthenticationMiddleware
-    'api.middleware.SecurityHeadersMiddleware',  # Security headers middleware
-    'api.middleware.RateLimitMiddleware',  # Rate limiting middleware
+    'backend.api.middleware.SecurityHeadersMiddleware',  # Security headers middleware
+    'backend.api.middleware.RateLimitMiddleware',  # Rate limiting middleware
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'config.urls'
+ROOT_URLCONF = 'backend.config.urls'
 
 TEMPLATES = [
     {

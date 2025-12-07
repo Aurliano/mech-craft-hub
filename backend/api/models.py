@@ -220,7 +220,9 @@ class OrderProposal(models.Model):
     order = models.ForeignKey('Order', on_delete=models.CASCADE, related_name='proposals')
     contractor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='proposals')
     price = models.DecimalField(max_digits=12, decimal_places=0, help_text="قیمت به تومان")
+    documentation_price = models.DecimalField(max_digits=12, decimal_places=0, default=0, help_text="قیمت مستندات به تومان")
     delivery_days = models.PositiveIntegerField(help_text="تعداد روز تحویل")
+    documentation_days = models.PositiveIntegerField(default=0, help_text="تعداد روز تحویل مستندات")
     description = models.TextField(help_text="توضیحات انجام پروژه")
     status = models.CharField(max_length=20, choices=PROPOSAL_STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -505,7 +507,30 @@ class Order(models.Model):
     def save(self, *args, **kwargs):
         if not self.order_number:
             # Generate unique order number
-            self.order_number = f"ORD-{timezone.now().strftime('%Y%m%d')}-{str(uuid.uuid4())[:8].upper()}"
+            import random
+            from django.db import IntegrityError, transaction
+            
+            # Try up to 5 times to generate a unique number
+            for _ in range(5):
+                try:
+                    # Generate simple 6-digit number
+                    new_number = f"ORD-{random.randint(100000, 999999)}"
+                    # Use a transaction to ensure uniqueness check is reliable
+                    # However, since we're in the save method, we might already be in a transaction
+                    # So we just check existence and rely on the database unique constraint
+                    if not Order.objects.filter(order_number=new_number).exists():
+                        self.order_number = new_number
+                        # If we have a number, we break out of the loop and try to save
+                        # If save fails due to race condition (IntegrityError), the caller needs to handle it
+                        # But we can try to be robust here
+                        break
+                except Exception:
+                    continue
+            
+            # Fallback to UUID if random generation fails after retries
+            if not self.order_number:
+                self.order_number = f"ORD-{timezone.now().strftime('%Y%m%d')}-{str(uuid.uuid4())[:8].upper()}"
+                
         super().save(*args, **kwargs)
 
 

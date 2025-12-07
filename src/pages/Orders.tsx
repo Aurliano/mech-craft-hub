@@ -4,11 +4,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Package, Search, Filter, Eye, Download, MessageCircle, ShoppingCart, CheckCircle } from 'lucide-react';
+import { Package, Search, Filter, Eye, Download, MessageCircle, ShoppingCart, CheckCircle, Trash2, Edit } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAddOrderToCart, useAcceptQuote, useDownloadInvoice } from '@/hooks/useAuth';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
+import { getApiUrl } from '@/lib/api';
 
 interface Order {
   id: string;
@@ -30,6 +31,7 @@ function toOrderArray(input: unknown): Order[] {
 }
 
 const Orders = () => {
+  const navigate = useNavigate();
   const { orders, isLoadingDashboard } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -38,6 +40,36 @@ const Orders = () => {
   const addToCartMutation = useAddOrderToCart();
   const acceptQuoteMutation = useAcceptQuote();
   const downloadInvoiceMutation = useDownloadInvoice();
+
+  const handleDelete = async (orderId: string) => {
+    if (!window.confirm('آیا از حذف این سفارش اطمینان دارید؟')) return;
+    try {
+        const response = await fetch(getApiUrl(`/api/v1/orders/${orderId}/`), {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            }
+        });
+        if (response.ok) {
+            window.location.reload();
+        } else {
+            console.error('Failed to delete order');
+        }
+    } catch (error) {
+        console.error('Error deleting order:', error);
+    }
+  };
+
+  const handleEdit = (orderId: string) => {
+    // Navigate to the edit route - assuming /orders/:orderId/edit will be created
+    // or reusing a form component. Since the edit route might not exist yet, 
+    // we can temporarily redirect to the support page or show a toast.
+    // For now, let's assume we want to route to the manufacturing page with the order loaded
+    // but that's complex. Let's just point to a placeholder.
+    // Actually, the bug report says: "Either define the missing route or adjust the navigation target to an existing page."
+    // Let's redirect to order details for now as a fallback edit behavior.
+    navigate(`/orders/${orderId}`);
+  };
 
   if (isLoadingDashboard) {
     return (
@@ -225,6 +257,29 @@ const Orders = () => {
                           مشاهده جزئیات
                         </Link>
                       </Button>
+                      
+                      {/* Edit/Delete - Only for submitted orders */}
+                      {order.status === 'submitted' && (
+                        <>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleEdit(order.id)}
+                          >
+                            <Edit className="h-4 w-4 ml-2" />
+                            ویرایش
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleDelete(order.id)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4 ml-2" />
+                            حذف
+                          </Button>
+                        </>
+                      )}
                       
                       {/* Add to Cart - Only for quoted orders */}
                       {order.status === 'quoted' && (
