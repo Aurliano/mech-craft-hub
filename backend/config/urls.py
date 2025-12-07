@@ -39,7 +39,12 @@ def home_view(request, path=None):
     if os.path.exists(frontend_path):
         with open(frontend_path, 'r', encoding='utf-8') as f:
             content = f.read()
-        return HttpResponse(content, content_type='text/html')
+        response = HttpResponse(content, content_type='text/html')
+        # Prevent caching for index.html so users always get the latest version
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+        return response
     else:
         # Fallback to API info if frontend not found
         return JsonResponse({
@@ -78,7 +83,10 @@ def asset_view(request, path):
             content_type = 'application/octet-stream'
         
         with open(asset_path, 'rb') as f:
-            return HttpResponse(f.read(), content_type=content_type)
+            response = HttpResponse(f.read(), content_type=content_type)
+            # Assets are hashed (e.g., index.1234.js), so we can cache them forever
+            response['Cache-Control'] = 'public, max-age=31536000, immutable'
+            return response
     return HttpResponse(status=404)
 
 def service_worker_view(request):
@@ -107,6 +115,19 @@ def manifest_view(request):
             content = f.read()
         response = HttpResponse(content, content_type='application/manifest+json; charset=utf-8')
         response['Cache-Control'] = 'public, max-age=31536000'
+        return response
+    return HttpResponse(status=404)
+
+def version_view(request):
+    """Serve version.json from public"""
+    version_path = os.path.join(settings.BASE_DIR.parent, 'public', 'version.json')
+    if not os.path.exists(version_path):
+        version_path = os.path.join(settings.BASE_DIR.parent, 'dist', 'version.json')
+    if os.path.exists(version_path):
+        with open(version_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        response = HttpResponse(content, content_type='application/json; charset=utf-8')
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
         return response
     return HttpResponse(status=404)
 
@@ -184,6 +205,7 @@ urlpatterns = [
     # PWA endpoints - MUST come before SPA fallback
     path('service-worker.js', service_worker_view, name='service_worker'),
     path('manifest.json', manifest_view, name='manifest'),
+    path('version.json', version_view, name='version'),
     path('pwa-debug.js', lambda r: pwa_debug_script_view(r, 'pwa-debug.js'), name='pwa_debug'),
     path('pwa-test.js', lambda r: pwa_debug_script_view(r, 'pwa-test.js'), name='pwa_test'),
     path('mime-test.js', lambda r: pwa_debug_script_view(r, 'mime-test.js'), name='mime_test'),
@@ -206,7 +228,7 @@ urlpatterns = [
     path('api/', include('api.urls')),
     
     # SPA fallback (exclude api/admin/static/media/assets/robots/sitemap/pwa files)
-    re_path(r'^(?!api/|admin/|static/|media/|assets/|icons/|favicon/|screenshots/|robots\.txt|sitemap\.xml|service-worker\.js|manifest\.json|pwa-debug\.js|pwa-test\.js|mime-test\.js).*$', home_view, name='spa_fallback'),
+    re_path(r'^(?!api/|admin/|static/|media/|assets/|icons/|favicon/|screenshots/|robots\.txt|sitemap\.xml|service-worker\.js|manifest\.json|version\.json|pwa-debug\.js|pwa-test\.js|mime-test\.js).*$', home_view, name='spa_fallback'),
 ]
 
 # Serve media subpaths explicitly

@@ -1,5 +1,5 @@
 // Service Worker for SaydaTech PWA
-const CACHE_NAME = 'saydatech-pwa-v6';
+const CACHE_NAME = 'saydatech-pwa-v7';
 const OFFLINE_CACHE_URLS = [
   '/',
   '/manifest.json'
@@ -60,6 +60,29 @@ self.addEventListener('fetch', (event) => {
     path.startsWith('/api/')
   ) {
     return; // Let the network handle it directly
+  }
+
+  // Network-first strategy for navigation requests (HTML) to ensure users get the latest version
+  if (event.request.mode === 'navigate' || path === '/') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+            return response;
+          }
+          // If response is not valid, try cache
+          return caches.match(event.request);
+        })
+        .catch(() => {
+          // Network failed, try cache
+          return caches.match(event.request);
+        })
+    );
+    return;
   }
 
   // Network-first strategy for JavaScript assets to ensure fresh code
