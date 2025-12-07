@@ -22,14 +22,14 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.conf import settings
 from django.conf.urls.static import static
-from backend.config.sitemaps import sitemaps
-from backend.config.seo_views import robots_txt
+from config.sitemaps import sitemaps
+from config.seo_views import robots_txt
 import os
 from django.views.static import serve as static_serve
 
 # Safe import for contractor check-manufacturing endpoint to prevent runtime issues
 try:
-    from backend.api.views import check_contractor_manufacturing_service as _check_contractor_manufacturing_service
+    from api.views import check_contractor_manufacturing_service as _check_contractor_manufacturing_service
 except Exception:
     _check_contractor_manufacturing_service = None
 
@@ -203,7 +203,7 @@ urlpatterns = [
     path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('api/', include('backend.api.urls')),
+    path('api/', include('api.urls')),
     
     # SPA fallback (exclude api/admin/static/media/assets/robots/sitemap/pwa files)
     re_path(r'^(?!api/|admin/|static/|media/|assets/|icons/|favicon/|screenshots/|robots\.txt|sitemap\.xml|service-worker\.js|manifest\.json|pwa-debug\.js|pwa-test\.js|mime-test\.js).*$', home_view, name='spa_fallback'),

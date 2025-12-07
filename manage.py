@@ -6,7 +6,14 @@ import sys
 
 def main():
     """Run administrative tasks."""
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.config.settings_ultra_simple')
+    # Add backend directory to sys.path so that 'api' and 'config' can be imported directly
+    # This mimics the Docker environment where PYTHONPATH=/app/backend
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    backend_path = os.path.join(BASE_DIR, 'backend')
+    if backend_path not in sys.path:
+        sys.path.append(backend_path)
+
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings_ultra_simple')
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:
