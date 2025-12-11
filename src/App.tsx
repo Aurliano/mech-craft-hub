@@ -39,6 +39,7 @@ import ContractorRatings from "./pages/ContractorRatings";
 import CustomerQuotes from "./pages/CustomerQuotes";
 import MyWorkshops from "./pages/MyWorkshops";
 import OrderDetails from "./pages/OrderDetails";
+import EditOrder from "./pages/EditOrder";
 import ServicesPage from "./pages/ServicesPage";
 import SpecialistRegister from "./pages/SpecialistRegister";
 import SpecialistDashboard from "./pages/SpecialistDashboard";
@@ -164,6 +165,11 @@ const App = () => (
               <Route path="/orders/:orderId" element={
                 <ProtectedRoute>
                   <OrderDetails />
+                </ProtectedRoute>
+              } />
+              <Route path="/orders/:orderId/edit" element={
+                <ProtectedRoute>
+                  <EditOrder />
                 </ProtectedRoute>
               } />
               

@@ -571,12 +571,9 @@ const ContractorQuotes = () => {
                                                 {item.field_values && item.field_values[field.field_key] && (
                                                   <div className="mt-2 p-2 bg-gray-50 rounded">
                                                     <span className="font-medium text-gray-700">مقدار وارد شده:</span>
-                                                    <p className="text-gray-900 mt-1">
-                                                      {typeof item.field_values[field.field_key] === 'object' 
-                                                        ? JSON.stringify(item.field_values[field.field_key], null, 2)
-                                                        : String(item.field_values[field.field_key])
-                                                      }
-                                                    </p>
+                                                    <div className="text-gray-900 mt-1">
+                                                      {renderFieldValue(item.field_values[field.field_key])}
+                                                    </div>
                                                   </div>
                                                 )}
                                               </div>
@@ -585,14 +582,12 @@ const ContractorQuotes = () => {
                                         </div>
                                       )}
                                       
-                                      {/* Raw Field Values (fallback) */}
+                                      {/* Field Values */}
                                       {item.field_values && Object.keys(item.field_values).length > 0 && (
                                         <div className="mt-4">
-                                          <span className="font-medium text-gray-600 mb-2 block">مشخصات پروژه (خام):</span>
-                                          <div className="p-2 bg-white rounded border">
-                                            <pre className="text-xs text-gray-700 whitespace-pre-wrap">
-                                              {JSON.stringify(item.field_values, null, 2)}
-                                            </pre>
+                                          <span className="font-medium text-gray-600 mb-2 block">مشخصات پروژه:</span>
+                                          <div className="bg-gray-50 p-4 rounded-lg">
+                                            {renderFieldValues(item.field_values)}
                                           </div>
                                         </div>
                                       )}

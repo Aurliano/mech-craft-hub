@@ -691,7 +691,9 @@ const Manufacturing = () => {
                 acceptedTypes={['.pdf', '.dwg', '.dxf', '.step', '.stp', '.iges', '.sldprt', '.sldasm', '.ipt', '.iam', '.jpg', '.jpeg', '.png']}
                 onFilesChange={(uploadedFiles) => {
                   // Convert to File objects for compatibility
-                  setFiles(uploadedFiles.map(f => f.file).filter(Boolean));
+                  const fileObjects = uploadedFiles.map(f => f.file).filter(Boolean);
+                  setFiles(fileObjects);
+                  updateField('order_files', fileObjects);
                 }}
                 uploadedFiles={[]}
                 contextId="manufacturing-order"
