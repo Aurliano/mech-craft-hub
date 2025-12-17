@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -12,11 +12,13 @@ import MultiFileUpload from './MultiFileUpload';
 import OrderPreview from './OrderPreview';
 import DocumentationSection from './DocumentationSection';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import PriceInput from './PriceInput';
 
 interface UploadedFile {
   id: string;
   file: File;
-  url: string;
+  url?: string;
+  file_path?: string;
   originalName: string;
   size: number;
   status: 'uploading' | 'completed' | 'error';
@@ -24,7 +26,7 @@ interface UploadedFile {
   error?: string;
 }
 
-type FieldType = 'text' | 'number' | 'file' | 'select' | 'multiselect' | 'checkbox' | 'date' | 'textarea';
+type FieldType = 'text' | 'number' | 'file' | 'select' | 'multiselect' | 'checkbox' | 'date' | 'textarea' | 'price';
 
 interface ValidationRules {
   min?: number;
@@ -59,6 +61,57 @@ interface DynamicServiceFormProps {
   onSubmit?: () => void;
   isSubmitting?: boolean;
 }
+
+// Internal component for handling text input with local state to prevent typing lag
+const DebouncedInput = ({ 
+  value, 
+  onChange, 
+  placeholder, 
+  className,
+  type = 'text',
+  rows
+}: { 
+  value: string | number; 
+  onChange: (val: string) => void; 
+  placeholder?: string; 
+  className?: string;
+  type?: 'text' | 'number' | 'textarea';
+  rows?: number;
+}) => {
+  const [localValue, setLocalValue] = useState(value);
+
+  useEffect(() => {
+    setLocalValue(value);
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const newVal = e.target.value;
+    setLocalValue(newVal);
+    onChange(newVal);
+  };
+
+  if (type === 'textarea') {
+    return (
+      <Textarea
+        value={localValue}
+        onChange={handleChange}
+        placeholder={placeholder}
+        className={className}
+        rows={rows}
+      />
+    );
+  }
+
+  return (
+    <Input
+      type={type}
+      value={localValue}
+      onChange={handleChange}
+      placeholder={placeholder}
+      className={className}
+    />
+  );
+};
 
 export function DynamicServiceForm({
   serviceId,
@@ -163,10 +216,12 @@ export function DynamicServiceForm({
       [fieldKey]: files
     }));
 
-    const fileUrls = files
+    // Fix: Use file_path if available (private files), otherwise url
+    const filePaths = files
       .filter(file => file.status === 'completed')
-      .map(file => file.url);
-    handleFieldChange(fieldKey, fileUrls);
+      .map(file => file.file_path || file.url);
+    
+    handleFieldChange(fieldKey, filePaths);
   };
 
   const handlePreview = () => {
@@ -215,10 +270,10 @@ export function DynamicServiceForm({
   if (showPreview) {
     return (
       <OrderPreview
-        serviceName="سرویس نقشه‌کشی"
+        serviceName="سرویس"
         fields={(normalizedFields as unknown as Array<{ id: string; name: string; field_key: string; type: 'text' | 'number' | 'file' | 'select' | 'multiselect' | 'checkbox' | 'date' | 'textarea'; options?: { value: string; label: string }[]; is_required: boolean; order: number; help_text?: string; }>)}
         fieldValues={formData}
-        uploadedFiles={uploadedFiles}
+        uploadedFiles={uploadedFiles as any}
         needsDocumentation={needsDocumentation}
         notes={notes}
         onConfirm={handleConfirmSubmit}
@@ -239,23 +294,17 @@ export function DynamicServiceForm({
       case 'text':
         return (
           <div className="space-y-1">
-            <Input
-              id={field.field_key}
+            <DebouncedInput
               value={stringValue}
-              onChange={(e) => handleFieldChange(field.field_key, e.target.value)}
+              onChange={(val) => handleFieldChange(field.field_key, val)}
               placeholder={field.help_text}
               className={hasError ? 'border-destructive' : isValid ? 'border-green-500' : ''}
+              type="text"
             />
             {hasError && (
               <div className="flex items-center gap-1 text-sm text-destructive">
                 <AlertCircle className="h-4 w-4" />
                 {validationErrors[field.field_key]}
-              </div>
-            )}
-            {isValid && (
-              <div className="flex items-center gap-1 text-sm text-green-600">
-                <CheckCircle2 className="h-4 w-4" />
-                صحیح
               </div>
             )}
           </div>
@@ -264,13 +313,12 @@ export function DynamicServiceForm({
       case 'number':
         return (
           <div className="space-y-1">
-            <Input
-              id={field.field_key}
-              type="number"
+            <DebouncedInput
               value={stringValue}
-              onChange={(e) => handleFieldChange(field.field_key, e.target.value)}
+              onChange={(val) => handleFieldChange(field.field_key, val)}
               placeholder={field.help_text}
               className={hasError ? 'border-destructive' : isValid ? 'border-green-500' : ''}
+              type="number"
             />
             {hasError && (
               <div className="flex items-center gap-1 text-sm text-destructive">
@@ -278,10 +326,23 @@ export function DynamicServiceForm({
                 {validationErrors[field.field_key]}
               </div>
             )}
-            {isValid && (
-              <div className="flex items-center gap-1 text-sm text-green-600">
-                <CheckCircle2 className="h-4 w-4" />
-                صحیح
+          </div>
+        );
+
+      case 'price':
+        return (
+          <div className="space-y-1">
+            <PriceInput
+               id={field.field_key}
+               value={stringValue}
+               onChange={(val) => handleFieldChange(field.field_key, val)}
+               placeholder={field.help_text}
+               className={hasError ? 'border-destructive' : isValid ? 'border-green-500' : ''}
+            />
+             {hasError && (
+              <div className="flex items-center gap-1 text-sm text-destructive">
+                <AlertCircle className="h-4 w-4" />
+                {validationErrors[field.field_key]}
               </div>
             )}
           </div>
@@ -290,24 +351,18 @@ export function DynamicServiceForm({
       case 'textarea':
         return (
           <div className="space-y-1">
-            <Textarea
-              id={field.field_key}
+            <DebouncedInput
               value={stringValue}
-              onChange={(e) => handleFieldChange(field.field_key, e.target.value)}
+              onChange={(val) => handleFieldChange(field.field_key, val)}
               placeholder={field.help_text}
               rows={3}
               className={hasError ? 'border-destructive' : isValid ? 'border-green-500' : ''}
+              type="textarea"
             />
             {hasError && (
               <div className="flex items-center gap-1 text-sm text-destructive">
                 <AlertCircle className="h-4 w-4" />
                 {validationErrors[field.field_key]}
-              </div>
-            )}
-            {isValid && (
-              <div className="flex items-center gap-1 text-sm text-green-600">
-                <CheckCircle2 className="h-4 w-4" />
-                صحیح
               </div>
             )}
           </div>
@@ -332,12 +387,6 @@ export function DynamicServiceForm({
               <div className="flex items-center gap-1 text-sm text-destructive">
                 <AlertCircle className="h-4 w-4" />
                 {validationErrors[field.field_key]}
-              </div>
-            )}
-            {isValid && (
-              <div className="flex items-center gap-1 text-sm text-green-600">
-                <CheckCircle2 className="h-4 w-4" />
-                صحیح
               </div>
             )}
           </div>
@@ -369,12 +418,6 @@ export function DynamicServiceForm({
               <div className="flex items-center gap-1 text-sm text-destructive">
                 <AlertCircle className="h-4 w-4" />
                 {validationErrors[field.field_key]}
-              </div>
-            )}
-            {isValid && (
-              <div className="flex items-center gap-1 text-sm text-green-600">
-                <CheckCircle2 className="h-4 w-4" />
-                صحیح
               </div>
             )}
           </div>
@@ -422,12 +465,6 @@ export function DynamicServiceForm({
                 {validationErrors[field.field_key]}
               </div>
             )}
-            {isValid && (
-              <div className="flex items-center gap-1 text-sm text-green-600">
-                <CheckCircle2 className="h-4 w-4" />
-                صحیح
-              </div>
-            )}
           </div>
         );
 
@@ -447,35 +484,23 @@ export function DynamicServiceForm({
                 {validationErrors[field.field_key]}
               </div>
             )}
-            {isValid && (
-              <div className="flex items-center gap-1 text-sm text-green-600">
-                <CheckCircle2 className="h-4 w-4" />
-                صحیح
-              </div>
-            )}
           </div>
         );
 
       default:
         return (
           <div className="space-y-1">
-            <Input
-              id={field.field_key}
+            <DebouncedInput
               value={stringValue}
-              onChange={(e) => handleFieldChange(field.field_key, e.target.value)}
+              onChange={(val) => handleFieldChange(field.field_key, val)}
               placeholder={field.help_text}
               className={hasError ? 'border-destructive' : isValid ? 'border-green-500' : ''}
+              type="text"
             />
             {hasError && (
               <div className="flex items-center gap-1 text-sm text-destructive">
                 <AlertCircle className="h-4 w-4" />
                 {validationErrors[field.field_key]}
-              </div>
-            )}
-            {isValid && (
-              <div className="flex items-center gap-1 text-sm text-green-600">
-                <CheckCircle2 className="h-4 w-4" />
-                صحیح
               </div>
             )}
           </div>

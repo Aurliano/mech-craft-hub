@@ -529,10 +529,11 @@ class Order(models.Model):
             
             # Fallback to UUID if random generation fails after retries
             if not self.order_number:
+                from django.utils import timezone
+                import uuid
                 self.order_number = f"ORD-{timezone.now().strftime('%Y%m%d')}-{str(uuid.uuid4())[:8].upper()}"
-                
-        super().save(*args, **kwargs)
 
+        super().save(*args, **kwargs)
 
 class OrderItem(models.Model):
     """Items in each order"""

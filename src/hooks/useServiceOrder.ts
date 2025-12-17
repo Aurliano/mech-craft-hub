@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useOrderSubmission } from './useOrderSubmission';
 
-type FieldValue = string | number | boolean | string[] | File | null | Record<string, unknown>;
+export type FieldValue = string | number | boolean | string[] | File | null | Record<string, unknown>;
 
 export function useServiceOrder(serviceId: string) {
   const [formData, setFormData] = useState<Record<string, FieldValue>>({});

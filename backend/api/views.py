@@ -874,7 +874,8 @@ class OrderViewSet(viewsets.ModelViewSet):
         return Order.objects.filter(customer=self.request.user).select_related('customer')
 
     def perform_destroy(self, instance):
-        if instance.status != 'submitted':
+        # Admin can delete any order, users can only delete submitted ones
+        if not self.request.user.is_staff and instance.status != 'submitted':
             raise PermissionDenied("فقط سفارش‌های ثبت شده قابل حذف هستند.")
         instance.delete()
 
@@ -921,6 +922,23 @@ class QuoteViewSet(viewsets.ModelViewSet):
     ordering_fields = ['created_at', 'price', 'delivery_days', 'status']
     ordering = ['-created_at']
     
+    def perform_update(self, serializer):
+        quote = serializer.save()
+        
+        # Notify customer about quote update
+        try:
+            order = quote.order_item.order
+            create_notification(
+                user=order.customer,
+                notification_type='quote_received',
+                title='پیشنهاد ویرایش شد',
+                message=f'پیمانکار {quote.contractor.username} پیشنهاد خود را برای سفارش {order.order_number} ویرایش کرد',
+                related_order=order,
+                related_quote=quote
+            )
+        except Exception as e:
+            logger.error(f"Error notifying customer about quote update: {e}")
+
     def get_queryset(self):
         # Users can see quotes for their orders or their own quotes
         if self.request.user.is_staff:
@@ -1871,7 +1889,11 @@ def create_order(request):
 @permission_classes([IsAuthenticated])
 def get_user_orders(request):
     """Get orders for the current user"""
-    orders = Order.objects.filter(customer=request.user).order_by('-created_at')
+    if request.user.is_staff:
+        # Admin sees all orders
+        orders = Order.objects.all().order_by('-created_at')
+    else:
+        orders = Order.objects.filter(customer=request.user).order_by('-created_at')
     return Response(OrderSerializer(orders, many=True).data)
 
 

@@ -6,10 +6,10 @@ import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native
 import { Card, CardHeader, CardTitle, CardContent, Button, Badge, Loading } from '@/components/ui';
 import { colors, typography, spacing } from '@/theme';
 import { useAuth } from '@/contexts/AuthContext';
-import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 
 export default function DashboardScreen() {
-  const navigation = useNavigation();
+  const router = useRouter();
   const { user, orders, cartItems, notifications, isLoadingDashboard, refetchDashboard } = useAuth();
   const [refreshing, setRefreshing] = React.useState(false);
 
@@ -29,6 +29,7 @@ export default function DashboardScreen() {
     <ScrollView
       style={styles.container}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+      contentContainerStyle={styles.content}
     >
       <View style={styles.header}>
         <Text style={styles.greeting}>سلام {user?.first_name || user?.username}!</Text>
@@ -42,7 +43,7 @@ export default function DashboardScreen() {
             <Text style={styles.statLabel}>سفارش‌ها</Text>
             <Button
               title="مشاهده همه"
-              onPress={() => navigation.navigate('Orders' as never)}
+              onPress={() => router.push('/(customer)/orders')}
               variant="ghost"
               size="sm"
               style={styles.statButton}
@@ -56,7 +57,7 @@ export default function DashboardScreen() {
             <Text style={styles.statLabel}>آیتم‌های سبد خرید</Text>
             <Button
               title="مشاهده سبد"
-              onPress={() => navigation.navigate('Cart' as never)}
+              onPress={() => router.push('/(customer)/cart')}
               variant="ghost"
               size="sm"
               style={styles.statButton}
@@ -97,7 +98,7 @@ export default function DashboardScreen() {
           {orders.length > 0 && (
             <Button
               title="مشاهده همه سفارش‌ها"
-              onPress={() => navigation.navigate('Orders' as never)}
+              onPress={() => router.push('/(customer)/orders')}
               variant="outline"
               fullWidth
               style={styles.moreButton}
@@ -114,9 +115,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  content: {
+    paddingBottom: spacing.xl,
+  },
   header: {
     padding: spacing.lg,
+    paddingTop: spacing['2xl'],
     backgroundColor: colors.primary,
+    borderBottomLeftRadius: 25,
+    borderBottomRightRadius: 25,
+    marginBottom: spacing.lg,
   },
   greeting: {
     fontSize: typography.fontSize['2xl'],

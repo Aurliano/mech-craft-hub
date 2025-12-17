@@ -8,10 +8,10 @@ import { colors, typography, spacing } from '@/theme';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { getOrderById, Order } from '@/lib/api';
-import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 
 export default function OrdersScreen() {
-  const navigation = useNavigation();
+  const router = useRouter();
   const { orders, isLoadingDashboard } = useAuth();
 
   const getStatusColor = (status: string) => {
@@ -30,8 +30,8 @@ export default function OrdersScreen() {
   const renderOrder = ({ item }: { item: Order }) => (
     <TouchableOpacity
       onPress={() => {
-        // Navigate to order details
-        navigation.navigate('OrderDetails' as never, { orderId: item.id } as never);
+        // Navigate to order details - TODO: create order details page
+        // router.push(`/(customer)/orders/${item.id}`);
       }}
     >
       <Card style={styles.orderCard}>

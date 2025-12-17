@@ -2,14 +2,14 @@
  * Register screen
  */
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent } from '@/components/ui';
 import { colors, typography, spacing } from '@/theme';
 import { useCustomerRegister } from '@/hooks/useAuth';
-import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 
 export default function RegisterScreen() {
-  const navigation = useNavigation();
+  const router = useRouter();
   const registerMutation = useCustomerRegister();
 
   const [formData, setFormData] = useState({
@@ -45,7 +45,7 @@ export default function RegisterScreen() {
         last_name: formData.lastName,
       });
       // Navigate to login or phone verification
-      navigation.navigate('Login' as never);
+      router.push('/(auth)/login');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطا در ثبت نام');
     }
@@ -57,6 +57,13 @@ export default function RegisterScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.header}>
+          <Image
+            source={require('@/assets/logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </View>
         <Card style={styles.card}>
           <CardHeader>
             <CardTitle>
@@ -116,7 +123,7 @@ export default function RegisterScreen() {
             />
             <Button
               title="ورود"
-              onPress={() => navigation.navigate('Login' as never)}
+              onPress={() => router.push('/(auth)/login')}
               variant="outline"
               fullWidth
               style={styles.button}
@@ -137,8 +144,18 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: spacing.lg,
   },
+  header: {
+    alignItems: 'center',
+    paddingTop: spacing['3xl'],
+    paddingBottom: spacing.xl,
+  },
+  logo: {
+    width: 100,
+    height: 100,
+  },
   card: {
     width: '100%',
+    marginTop: spacing.lg,
   },
   title: {
     fontSize: typography.fontSize['2xl'],

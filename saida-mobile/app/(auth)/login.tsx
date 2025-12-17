@@ -2,15 +2,15 @@
  * Login screen
  */
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { Button, Input, Card, CardHeader, CardTitle, CardContent, Loading } from '@/components/ui';
 import { colors, typography, spacing } from '@/theme';
 import { useLogin } from '@/hooks/useAuth';
-import { useNavigation } from '@react-navigation/native';
+import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginScreen() {
-  const navigation = useNavigation();
+  const router = useRouter();
   const { refetchUser } = useAuth();
   const loginMutation = useLogin();
 
@@ -40,6 +40,13 @@ export default function LoginScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.header}>
+          <Image
+            source={require('@/assets/logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </View>
         <Card style={styles.card}>
           <CardHeader>
             <CardTitle>
@@ -72,14 +79,14 @@ export default function LoginScreen() {
             />
             <Button
               title="ثبت نام"
-              onPress={() => navigation.navigate('Register' as never)}
+              onPress={() => router.push('/(auth)/register')}
               variant="outline"
               fullWidth
               style={styles.button}
             />
             <Button
               title="بازگشت"
-              onPress={() => navigation.goBack()}
+              onPress={() => router.back()}
               variant="ghost"
               fullWidth
             />
@@ -97,11 +104,20 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
     padding: spacing.lg,
+  },
+  header: {
+    alignItems: 'center',
+    paddingTop: spacing['3xl'],
+    paddingBottom: spacing.xl,
+  },
+  logo: {
+    width: 100,
+    height: 100,
   },
   card: {
     width: '100%',
+    marginTop: spacing.lg,
   },
   title: {
     fontSize: typography.fontSize['2xl'],

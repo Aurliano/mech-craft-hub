@@ -5,14 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
-  Package, Clock, DollarSign, User, Calendar, FileText, 
+  Package, Clock, User, Calendar, FileText, 
   Eye, MessageCircle, Download, CheckCircle, XCircle, 
-  AlertCircle, Star, Truck, Award, Settings
+  AlertCircle, Award, Settings, Truck
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGetOrderById, useGetQuotesByOrder } from '@/hooks/useAuth';
 import { Link, useParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
+import { getPersianLabel } from '@/lib/persianMapping';
 
 interface OrderItem {
   id: string;
@@ -117,38 +118,39 @@ const OrderDetails = () => {
     );
   };
 
-  const getItemStatusBadge = (status: string) => {
-    const statusMap = {
-      'submitted': { label: 'ارسال شده', variant: 'default' as const, icon: Clock },
-      'quoted': { label: 'پیشنهاد دریافت شده', variant: 'secondary' as const, icon: MessageCircle },
-      'accepted': { label: 'تایید شده', variant: 'default' as const, icon: CheckCircle },
-      'in_progress': { label: 'در حال انجام', variant: 'secondary' as const, icon: Package },
-      'delivered': { label: 'تحویل داده شده', variant: 'default' as const, icon: Truck },
-      'completed': { label: 'تکمیل شده', variant: 'default' as const, icon: Award },
-    };
-
-    const statusInfo = statusMap[status as keyof typeof statusMap] || statusMap.submitted;
-    const Icon = statusInfo.icon;
-
-    return (
-      <Badge variant={statusInfo.variant} className="flex items-center gap-1">
-        <Icon className="h-3 w-3" />
-        {statusInfo.label}
-      </Badge>
-    );
-  };
-
-  const formatFieldValue = (value: unknown): string => {
+  const formatFieldValue = (value: unknown): React.ReactNode => {
     if (value === null || value === undefined) return 'تعریف نشده';
     if (typeof value === 'boolean') return value ? 'بله' : 'خیر';
+    
+    if (typeof value === 'string' && (value.startsWith('http') || value.startsWith('/media'))) {
+        const fileName = value.split('/').pop() || 'دانلود فایل';
+        return (
+            <a href={value} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-1">
+                <Download className="h-4 w-4" />
+                {fileName}
+            </a>
+        );
+    }
+    
+    if (Array.isArray(value)) {
+        return (
+            <div className="flex flex-col gap-1">
+                {value.map((v, i) => (
+                    <div key={i}>{formatFieldValue(v)}</div>
+                ))}
+            </div>
+        );
+    }
+
     if (typeof value === 'object') return JSON.stringify(value);
+    
     return String(value);
   };
 
   const renderFieldValues = (fieldValues: Record<string, unknown>) => {
     return Object.entries(fieldValues).map(([key, value]) => (
-      <div key={key} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
-        <span className="font-medium text-gray-700">{key}:</span>
+      <div key={key} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-b-0">
+        <span className="font-medium text-gray-700">{getPersianLabel(key)}:</span>
         <span className="text-gray-900">{formatFieldValue(value)}</span>
       </div>
     ));
@@ -156,22 +158,8 @@ const OrderDetails = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50" dir="rtl">
-        <Navbar />
-        <div className="container mx-auto py-8 px-4">
-          <div className="max-w-4xl mx-auto space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[...Array(6)].map((_, i) => (
-                <Card key={i} className="animate-pulse">
-                  <CardContent className="p-6">
-                    <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
-                    <div className="h-8 bg-muted rounded w-1/2"></div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center" dir="rtl">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -200,19 +188,20 @@ const OrderDetails = () => {
       <div className="container mx-auto py-8 px-4">
         <div className="max-w-6xl mx-auto space-y-6">
           {/* Header */}
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-200">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">جزئیات سفارش</h1>
-              <p className="text-gray-600">شماره سفارش: {order.order_number}</p>
+              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                 جزئیات سفارش <span className="text-primary">{order.order_number}</span>
+              </h1>
             </div>
             <div className="flex gap-2">
-              <Button asChild variant="outline">
+              <Button asChild variant="outline" size="sm">
                 <Link to="/orders">
                   <Eye className="h-4 w-4 ml-2" />
-                  بازگشت به سفارشات
+                  بازگشت
                 </Link>
               </Button>
-              <Button asChild variant="outline">
+              <Button asChild variant="outline" size="sm">
                 <Link to="/support">
                   <MessageCircle className="h-4 w-4 ml-2" />
                   پشتیبانی
@@ -222,55 +211,47 @@ const OrderDetails = () => {
           </div>
 
           {/* Order Status Card */}
-          <Card>
-            <CardHeader>
+          <Card className="shadow-md border-t-4 border-t-primary">
+            <CardHeader className="bg-gray-50/50 pb-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <Package className="h-6 w-6 text-blue-600" />
+                  <Package className="h-6 w-6 text-primary" />
                   <div>
-                    <CardTitle>وضعیت سفارش</CardTitle>
-                    <CardDescription>اطلاعات کلی سفارش</CardDescription>
+                    <CardTitle className="text-lg">وضعیت کلی</CardTitle>
                   </div>
                 </div>
                 {getStatusBadge(order.status)}
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <Calendar className="h-5 w-5 text-blue-600" />
+                  <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
+                    <Calendar className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">تاریخ ایجاد</p>
-                    <p className="font-semibold">{new Date(order.created_at).toLocaleDateString('fa-IR')}</p>
+                    <p className="text-xs text-gray-500">تاریخ ایجاد</p>
+                    <p className="font-semibold text-sm">{new Date(order.created_at).toLocaleDateString('fa-IR')}</p>
                   </div>
                 </div>
+                
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <DollarSign className="h-5 w-5 text-green-600" />
+                  <div className="p-2 bg-purple-50 rounded-lg text-purple-600">
+                    <User className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">مبلغ کل</p>
-                    <p className="font-semibold">{order.total_amount?.toLocaleString('fa-IR') || 'تعریف نشده'} تومان</p>
+                    <p className="text-xs text-gray-500">مشتری</p>
+                    <p className="font-semibold text-sm">{order.customer.first_name} {order.customer.last_name || order.customer.username}</p>
                   </div>
                 </div>
+
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-100 rounded-lg">
-                    <User className="h-5 w-5 text-purple-600" />
+                   <div className="p-2 bg-orange-50 rounded-lg text-orange-600">
+                    <Package className="h-5 w-5" />
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-600">مشتری</p>
-                    <p className="font-semibold">{order.customer.first_name} {order.customer.last_name}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-orange-100 rounded-lg">
-                    <Package className="h-5 w-5 text-orange-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">تعداد آیتم</p>
-                    <p className="font-semibold">{order.items.length}</p>
+                   <div>
+                    <p className="text-xs text-gray-500">تعداد آیتم</p>
+                    <p className="font-semibold text-sm">{order.items.length}</p>
                   </div>
                 </div>
               </div>
@@ -279,209 +260,162 @@ const OrderDetails = () => {
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="details" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                جزئیات سفارش
+            <TabsList className="grid w-full grid-cols-3 bg-white border border-gray-200 p-1 rounded-lg">
+              <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+                <FileText className="h-4 w-4 ml-2" />
+                جزئیات فنی (فاکتور)
               </TabsTrigger>
-              <TabsTrigger value="quotes" className="flex items-center gap-2">
-                <MessageCircle className="h-4 w-4" />
+              <TabsTrigger value="quotes" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+                <MessageCircle className="h-4 w-4 ml-2" />
                 پیشنهادات ({quotes.length})
               </TabsTrigger>
-              <TabsTrigger value="notes" className="flex items-center gap-2">
-                <Settings className="h-4 w-4" />
+              <TabsTrigger value="notes" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+                <Settings className="h-4 w-4 ml-2" />
                 یادداشت‌ها
               </TabsTrigger>
             </TabsList>
 
-            {/* Order Details Tab */}
-            <TabsContent value="details" className="space-y-6">
+            {/* Order Details Tab (Invoice Style) */}
+            <TabsContent value="details" className="space-y-6 mt-6">
               {order.items.map((item, index) => (
-                <Card key={item.id} className="hover:shadow-md transition-shadow">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-100 rounded-lg">
-                          <Package className="h-5 w-5 text-blue-600" />
-                        </div>
-                        <div>
-                          <CardTitle>آیتم {index + 1}: {item.service.name}</CardTitle>
-                          <CardDescription>{item.service.description}</CardDescription>
-                        </div>
-                      </div>
-                      {getItemStatusBadge(item.status)}
+                <Card key={item.id} className="overflow-hidden border border-gray-300 shadow-sm print:shadow-none">
+                  <div className="bg-gray-100 p-4 border-b border-gray-300 flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                        <span className="bg-primary text-white text-xs font-bold px-2 py-1 rounded">
+                            ردیف {index + 1}
+                        </span>
+                        <h3 className="font-bold text-gray-800">{item.service.name}</h3>
                     </div>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {/* Service Details */}
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        <FileText className="h-4 w-4" />
-                        جزئیات سرویس
-                      </h4>
-                      <div className="bg-gray-50 p-4 rounded-lg">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <p className="text-sm text-gray-600">نام سرویس:</p>
-                            <p className="font-medium">{item.service.name}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-600">توضیحات:</p>
-                            <p className="font-medium">{item.service.description}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-600">نیاز به مستندات:</p>
-                            <Badge variant={item.needs_documentation ? 'default' : 'secondary'}>
-                              {item.needs_documentation ? 'بله' : 'خیر'}
-                            </Badge>
-                          </div>
-                          {item.price && (
-                            <div>
-                              <p className="text-sm text-gray-600">قیمت:</p>
-                              <p className="font-medium">{item.price.toLocaleString('fa-IR')} تومان</p>
-                            </div>
-                          )}
-                          {item.estimated_delivery && (
-                            <div>
-                              <p className="text-sm text-gray-600">تاریخ تحویل پیشنهادی:</p>
-                              <p className="font-medium">{new Date(item.estimated_delivery).toLocaleDateString('fa-IR')}</p>
-                            </div>
-                          )}
-                          {item.assigned_contractor && (
-                            <div>
-                              <p className="text-sm text-gray-600">پیمانکار:</p>
-                              <p className="font-medium">{item.assigned_contractor.username}</p>
-                            </div>
-                          )}
+                    {/* Hide price here as it depends on quote */}
+                  </div>
+                  
+                  <CardContent className="p-0">
+                    <div className="grid grid-cols-1 divide-y divide-gray-200">
+                        {/* Service Description */}
+                        <div className="p-4 bg-white">
+                             <p className="text-sm text-gray-600 mb-1 font-medium">توضیحات سرویس:</p>
+                             <p className="text-gray-800 text-sm leading-relaxed">{item.service.description}</p>
                         </div>
-                      </div>
+
+                        {/* Technical Specs */}
+                        <div className="p-4 bg-white">
+                            <h4 className="font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
+                                <Settings className="h-4 w-4 text-primary" />
+                                مشخصات فنی و فایل‌ها
+                            </h4>
+                            <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                {renderFieldValues(item.field_values)}
+                            </div>
+                        </div>
+
+                        {/* Documentation Requirements */}
+                        {item.needs_documentation && (
+                            <div className="p-4 bg-white">
+                                <h4 className="font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
+                                    <FileText className="h-4 w-4 text-primary" />
+                                    مستندات درخواستی
+                                </h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                    {Object.entries(order.documentation_options || {}).map(([key, value]) => (
+                                        value && (
+                                            <div key={key} className="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-2 rounded border border-blue-100 text-sm">
+                                                <CheckCircle className="h-4 w-4" />
+                                                <span>{getPersianLabel(key)}</span>
+                                            </div>
+                                        )
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
-
-                    {/* Field Values */}
-                    {Object.keys(item.field_values).length > 0 && (
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                          <Settings className="h-4 w-4" />
-                          فیلدهای پر شده
-                        </h4>
-                        <div className="bg-gray-50 p-4 rounded-lg">
-                          {renderFieldValues(item.field_values)}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Documentation Options */}
-                    {item.needs_documentation && Object.keys(order.documentation_options).length > 0 && (
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                          <FileText className="h-4 w-4" />
-                          گزینه‌های مستندات
-                        </h4>
-                        <div className="bg-gray-50 p-4 rounded-lg">
-                          {Object.entries(order.documentation_options).map(([key, value]) => (
-                            <div key={key} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
-                              <span className="font-medium text-gray-700">{key}:</span>
-                              <Badge variant={value ? 'default' : 'secondary'}>
-                                {value ? 'بله' : 'خیر'}
-                              </Badge>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
               ))}
             </TabsContent>
 
             {/* Quotes Tab */}
-            <TabsContent value="quotes" className="space-y-4">
+            <TabsContent value="quotes" className="space-y-4 mt-6">
               {quotes.length > 0 ? (
                 quotes.map((quote) => (
-                  <Card key={quote.id} className="hover:shadow-md transition-shadow">
-                    <CardHeader>
+                  <Card key={quote.id} className="hover:shadow-md transition-shadow border-l-4 border-l-blue-500">
+                    <CardHeader className="bg-gray-50/50">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                            {quote.contractor.profile_image ? (
-                              <img 
-                                src={quote.contractor.profile_image} 
-                                alt={quote.contractor.username}
-                                className="w-10 h-10 rounded-full"
-                              />
-                            ) : (
-                              <User className="h-5 w-5 text-gray-500" />
-                            )}
+                          <div className="w-10 h-10 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm">
+                            <User className="h-5 w-5 text-gray-500" />
                           </div>
                           <div>
-                            <CardTitle>{quote.contractor.username}</CardTitle>
-                            <CardDescription>
+                            <CardTitle className="text-base">{quote.contractor.username}</CardTitle>
+                            <CardDescription className="text-xs">
                               {new Date(quote.created_at).toLocaleDateString('fa-IR')}
                             </CardDescription>
                           </div>
                         </div>
-                        <Badge variant={quote.status === 'accepted' ? 'default' : 'secondary'}>
-                          {quote.status === 'accepted' ? 'تایید شده' : 'در انتظار بررسی'}
-                        </Badge>
+                        {/* Status Badge */}
+                         {/* TODO: Add logic to show Accepted/Rejected here */}
                       </div>
                     </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div>
-                          <p className="text-sm text-gray-600">قیمت پروژه:</p>
-                          <p className="font-semibold">{quote.price.toLocaleString('fa-IR')} تومان</p>
+                    <CardContent className="pt-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                        <div className="bg-white p-3 rounded border border-gray-100">
+                          <p className="text-xs text-gray-500 mb-1">قیمت پیشنهادی پروژه</p>
+                          <p className="font-bold text-green-600 text-lg">{quote.price.toLocaleString('fa-IR')} <span className="text-xs font-normal text-gray-500">تومان</span></p>
                         </div>
-                        <div>
-                          <p className="text-sm text-gray-600">قیمت مستندات:</p>
-                          <p className="font-semibold">{quote.documentation_price.toLocaleString('fa-IR')} تومان</p>
+                        <div className="bg-white p-3 rounded border border-gray-100">
+                          <p className="text-xs text-gray-500 mb-1">زمان تحویل</p>
+                          <p className="font-bold text-gray-800">{quote.delivery_days} <span className="text-xs font-normal text-gray-500">روز</span></p>
                         </div>
-                        <div>
-                          <p className="text-sm text-gray-600">زمان تحویل:</p>
-                          <p className="font-semibold">{quote.delivery_days} روز</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">زمان مستندات:</p>
-                          <p className="font-semibold">{quote.documentation_days} روز</p>
-                        </div>
+                         {quote.documentation_price > 0 && (
+                            <div className="bg-white p-3 rounded border border-gray-100">
+                              <p className="text-xs text-gray-500 mb-1">هزینه مستندات</p>
+                              <p className="font-bold text-blue-600">{quote.documentation_price.toLocaleString('fa-IR')} <span className="text-xs font-normal text-gray-500">تومان</span></p>
+                            </div>
+                         )}
                       </div>
+                      
                       {quote.notes && (
-                        <div className="mt-4">
-                          <p className="text-sm text-gray-600 mb-2">یادداشت پیمانکار:</p>
-                          <div className="bg-gray-50 p-3 rounded-lg">
-                            <p className="text-gray-700">{quote.notes}</p>
-                          </div>
+                        <div className="bg-gray-50 p-4 rounded-lg text-sm text-gray-700 mb-4 border border-gray-100">
+                           <span className="font-bold block mb-1">توضیحات پیمانکار:</span>
+                           {quote.notes}
                         </div>
                       )}
+
+                      {/* Actions for Customer */}
+                      <div className="flex gap-2 justify-end mt-4 pt-4 border-t border-gray-100">
+                          <Button variant="default" className="bg-green-600 hover:bg-green-700">
+                             قبول پیشنهاد
+                          </Button>
+                          <Button variant="outline" className="text-red-600 hover:bg-red-50 border-red-200">
+                             رد پیشنهاد
+                          </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 ))
               ) : (
-                <Card>
-                  <CardContent className="p-12 text-center">
-                    <MessageCircle className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">پیشنهادی یافت نشد</h3>
-                    <p className="text-gray-600">
-                      هنوز پیشنهادی برای این سفارش دریافت نشده است
-                    </p>
-                  </CardContent>
-                </Card>
+                <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-300">
+                  <MessageCircle className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                  <h3 className="text-lg font-medium text-gray-900">هنوز پیشنهادی دریافت نشده است</h3>
+                  <p className="text-gray-500 text-sm mt-1">
+                    به محض دریافت پیشنهاد از پیمانکاران، در این بخش نمایش داده خواهد شد.
+                  </p>
+                </div>
               )}
             </TabsContent>
 
             {/* Notes Tab */}
-            <TabsContent value="notes" className="space-y-4">
+            <TabsContent value="notes" className="space-y-4 mt-6">
               <Card>
                 <CardHeader>
-                  <CardTitle>یادداشت‌های سفارش</CardTitle>
-                  <CardDescription>اطلاعات اضافی و یادداشت‌های مربوط به سفارش</CardDescription>
+                  <CardTitle>یادداشت‌های شما</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {order.notes ? (
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <p className="text-gray-700 whitespace-pre-wrap">{order.notes}</p>
+                    <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-100 text-yellow-900">
+                      {order.notes}
                     </div>
                   ) : (
-                    <p className="text-gray-500 text-center py-8">یادداشتی برای این سفارش ثبت نشده است</p>
+                    <p className="text-gray-500 text-center py-8">یادداشتی ثبت نشده است</p>
                   )}
                 </CardContent>
               </Card>
