@@ -1,6 +1,11 @@
 # Multi-stage build optimized for Liara
 FROM python:3.11-slim as builder
 
+# Prevent interactive prompts during build
+ARG DEBIAN_FRONTEND=noninteractive
+# Suppress pip root user warning
+ENV PIP_ROOT_USER_ACTION=ignore
+
 # Install system dependencies for building
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -18,6 +23,9 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 # Production stage
 FROM python:3.11-slim
+
+# Prevent interactive prompts during build
+ARG DEBIAN_FRONTEND=noninteractive
 
 # Install runtime dependencies only
 RUN apt-get update && apt-get install -y \

@@ -44,7 +44,7 @@ const Orders = () => {
   const handleDelete = async (orderId: string) => {
     if (!window.confirm('آیا از حذف این سفارش اطمینان دارید؟')) return;
     try {
-        const response = await fetch(getApiUrl(`/api/v1/orders/${orderId}/`), {
+        const response = await fetch(getApiUrl(`/v1/orders/${orderId}/`), {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('access_token')}`
@@ -68,7 +68,7 @@ const Orders = () => {
     // but that's complex. Let's just point to a placeholder.
     // Actually, the bug report says: "Either define the missing route or adjust the navigation target to an existing page."
     // Let's redirect to order details for now as a fallback edit behavior.
-    navigate(`/orders/${orderId}`);
+    navigate(`/orders/${orderId}/edit`);
   };
 
   if (isLoadingDashboard) {
@@ -235,7 +235,10 @@ const Orders = () => {
                         <div>
                           <span className="font-medium">مبلغ کل:</span>
                           <p className={getStatusColor(order.status)}>
-                            {order.total_amount ? `${order.total_amount.toLocaleString()} تومان` : 'در انتظار قیمت‌گذاری'}
+                            {order.total_amount && order.status !== 'submitted' && order.status !== 'draft' 
+                              ? `${order.total_amount.toLocaleString()} تومان` 
+                              : 'محاسبه نشده'
+                            }
                           </p>
                         </div>
                         <div>

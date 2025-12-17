@@ -7,13 +7,14 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Package, Clock, User, Calendar, FileText, 
   Eye, MessageCircle, Download, CheckCircle, XCircle, 
-  AlertCircle, Award, Settings, Truck
+  AlertCircle, Award, Settings, Truck, Edit, Trash2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGetOrderById, useGetQuotesByOrder } from '@/hooks/useAuth';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { getPersianLabel } from '@/lib/persianMapping';
+import { getApiUrl } from '@/lib/api';
 
 interface OrderItem {
   id: string;
@@ -69,6 +70,7 @@ interface Order {
 
 const OrderDetails = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { orderId } = useParams<{ orderId: string }>();
   const [order, setOrder] = useState<Order | null>(null);
   const [quotes, setQuotes] = useState<Quote[]>([]);
@@ -156,6 +158,27 @@ const OrderDetails = () => {
     ));
   };
 
+  const handleDelete = async () => {
+    if (!orderId || !window.confirm('آیا از حذف این سفارش اطمینان دارید؟')) return;
+    try {
+        const response = await fetch(getApiUrl(`/v1/orders/${orderId}/`), {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+            }
+        });
+        if (response.ok) {
+            navigate('/orders');
+        } else {
+            console.error('Failed to delete order');
+            alert('حذف سفارش با خطا مواجه شد');
+        }
+    } catch (error) {
+        console.error('Error deleting order:', error);
+        alert('خطا در ارتباط با سرور');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center" dir="rtl">
@@ -195,6 +218,23 @@ const OrderDetails = () => {
               </h1>
             </div>
             <div className="flex gap-2">
+              {order.status === 'submitted' && (
+                <>
+                  <Button variant="outline" size="sm" onClick={() => navigate(`/orders/${order.id}/edit`)}>
+                    <Edit className="h-4 w-4 ml-2" />
+                    ویرایش
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleDelete}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4 ml-2" />
+                    حذف
+                  </Button>
+                </>
+              )}
               <Button asChild variant="outline" size="sm">
                 <Link to="/orders">
                   <Eye className="h-4 w-4 ml-2" />
