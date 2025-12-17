@@ -145,11 +145,17 @@ const ContractorQuotes = () => {
     if (typeof value === 'boolean') return value ? 'بله' : 'خیر';
     
     if (typeof value === 'string') {
-        if (value.startsWith('http') || value.startsWith('/media')) {
+        if (value.startsWith('http') || value.startsWith('/media') || value.startsWith('user-uploads/') || value.includes('uploads/')) {
             const fileName = value.split('/').pop() || 'دانلود فایل';
+            let fileUrl = value;
+            if (value.startsWith('user-uploads/')) {
+                fileUrl = `/media/${value}`;
+            } else if (!value.startsWith('http') && !value.startsWith('/')) {
+                fileUrl = `/${value}`;
+            }
             return (
                 <a 
-                    href={value} 
+                    href={fileUrl} 
                     target="_blank" 
                     rel="noreferrer" 
                     className="flex items-center gap-1 text-blue-600 hover:underline bg-blue-50 px-2 py-1 rounded border border-blue-100 w-fit"
@@ -428,25 +434,27 @@ const ContractorQuotes = () => {
                       />
                   </div>
 
-                  {/* Show Documentation fields if needed (we can check selectedOrder.items... but for now simple) */}
-                  <div className="border-t pt-4 mt-2">
-                      <p className="text-sm font-medium mb-2 text-gray-700">بخش مستندات (اختیاری)</p>
-                      <div className="grid grid-cols-2 gap-4">
-                          <PriceInput 
-                              label="هزینه مستندات" 
-                              value={quoteForm.documentation_price} 
-                              onChange={(val) => setQuoteForm(prev => ({...prev, documentation_price: val}))} 
-                          />
-                          <div className="space-y-2">
-                              <Label>زمان مستندات (روز)</Label>
-                              <Input 
-                                  type="number" 
-                                  value={quoteForm.documentation_days} 
-                                  onChange={(e) => setQuoteForm(prev => ({...prev, documentation_days: e.target.value}))}
+                  {/* Show Documentation fields if needed */}
+                  {selectedOrder?.items.find(i => i.id === quoteForm.order_item)?.needs_documentation && (
+                      <div className="border-t pt-4 mt-2">
+                          <p className="text-sm font-medium mb-2 text-gray-700">بخش مستندات (درخواستی مشتری)</p>
+                          <div className="grid grid-cols-2 gap-4">
+                              <PriceInput 
+                                  label="هزینه مستندات" 
+                                  value={quoteForm.documentation_price} 
+                                  onChange={(val) => setQuoteForm(prev => ({...prev, documentation_price: val}))} 
                               />
+                              <div className="space-y-2">
+                                  <Label>زمان مستندات (روز)</Label>
+                                  <Input 
+                                      type="number" 
+                                      value={quoteForm.documentation_days} 
+                                      onChange={(e) => setQuoteForm(prev => ({...prev, documentation_days: e.target.value}))}
+                                  />
+                              </div>
                           </div>
                       </div>
-                  </div>
+                  )}
 
                   <div className="space-y-2">
                       <Label>توضیحات / یادداشت</Label>

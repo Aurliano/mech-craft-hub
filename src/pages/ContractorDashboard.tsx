@@ -10,7 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Package, Search, Filter, Eye, Clock, DollarSign, FileText, CheckCircle, 
   User, Star, TrendingUp, Settings, Plus, MessageSquare, Calendar,
-  Factory, AlertCircle, CheckCircle2, XCircle, Timer, Users, Briefcase, UserPlus, Bell
+  Factory, AlertCircle, CheckCircle2, XCircle, Timer, Users, Briefcase, UserPlus, Bell,
+  Download, ChevronUp, ChevronDown
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -23,16 +24,19 @@ import { Link, useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { cn } from '@/lib/utils';
+import PriceInput from '@/components/PriceInput';
+import { getPersianLabel } from '@/lib/persianMapping';
 
 const ContractorDashboard = () => {
   const { user } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedOrder, setSelectedOrder] = useState<{ id: string; order_number: string; items?: { id: string }[] } | null>(null);
+  const [selectedOrder, setSelectedOrder] = useState<{ id: string; order_number: string; items?: { id: string; needs_documentation?: boolean; field_values: any }[] } | null>(null);
   const [showQuoteForm, setShowQuoteForm] = useState(false);
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'orders');
-  
+  const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+
   // Quote form state
   const [quoteData, setQuoteData] = useState({
     price: '',
@@ -41,6 +45,52 @@ const ContractorDashboard = () => {
     documentation_days: '',
     notes: ''
   });
+
+  const toggleOrderDetails = (orderId: string) => {
+    setExpandedOrders(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(orderId)) newSet.delete(orderId);
+      else newSet.add(orderId);
+      return newSet;
+    });
+  };
+
+  // Improved Render Field Value with Download Links
+  const renderFieldValue = (value: unknown): React.ReactNode => {
+    if (value === null || value === undefined) return 'تعریف نشده';
+    if (typeof value === 'boolean') return value ? 'بله' : 'خیر';
+    
+    if (typeof value === 'string') {
+        if (value.startsWith('http') || value.startsWith('/media') || value.startsWith('user-uploads/') || value.includes('uploads/')) {
+            const fileName = value.split('/').pop() || 'دانلود فایل';
+            let fileUrl = value;
+            if (value.startsWith('user-uploads/')) {
+                fileUrl = `/media/${value}`;
+            } else if (!value.startsWith('http') && !value.startsWith('/')) {
+                fileUrl = `/${value}`;
+            }
+            return (
+                <a 
+                    href={fileUrl} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="flex items-center gap-1 text-blue-600 hover:underline bg-blue-50 px-2 py-1 rounded border border-blue-100 w-fit"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <Download className="h-4 w-4" />
+                    {fileName}
+                </a>
+            );
+        }
+        return value;
+    }
+    if (Array.isArray(value)) {
+        return <div className="flex flex-col gap-1">{value.map((v, i) => <div key={i}>{renderFieldValue(v)}</div>)}</div>;
+    }
+    if (typeof value === 'object') return JSON.stringify(value);
+    return String(value);
+  };
+
   
   // API Hooks
   const { data: contractorOrders, isLoading: isLoadingOrders } = useContractorOrders();
@@ -83,7 +133,15 @@ const ContractorDashboard = () => {
   }
 
   // Filter orders that need quotes (pending status)
-  type OrderType = { id: string; order_number: string; notes?: string; status: string; created_at: string; items?: Array<{ id: string }> };
+  type OrderType = { 
+      id: string; 
+      order_number: string; 
+      notes?: string; 
+      status: string; 
+      created_at: string; 
+      items?: Array<{ id: string; service?: { name: string; description?: string }; field_values: any; needs_documentation?: boolean }>;
+      documentation_options?: Record<string, boolean>;
+  };
   type ProposalType = { id: string; order_item?: { order?: { order_number: string } }; status: string; price?: number; created_at: string };
   type ProjectType = { id: string; title: string; order_number: string; days_left: number };
   type WorkshopType = { id: string; name: string; address: string; description?: string; is_active?: boolean };
@@ -348,11 +406,56 @@ const ContractorDashboard = () => {
                               <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 ml-2" />
                               ثبت پیشنهاد
                             </Button>
-                            <Button variant="ghost" size="sm" className="w-full sm:w-auto">
-                              <Eye className="h-3 w-3 sm:h-4 sm:w-4 ml-2" />
-                              مشاهده جزئیات
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="w-full sm:w-auto"
+                                onClick={() => toggleOrderDetails(order.id)}
+                            >
+                              {expandedOrders.has(order.id) ? <ChevronUp className="h-3 w-3 sm:h-4 sm:w-4 ml-2" /> : <Eye className="h-3 w-3 sm:h-4 sm:w-4 ml-2" />}
+                              {expandedOrders.has(order.id) ? 'بستن جزئیات' : 'مشاهده جزئیات'}
                             </Button>
                           </div>
+
+                          {expandedOrders.has(order.id) && (
+                              <div className="mt-4 pt-4 border-t border-gray-100">
+                                  {/* Order Files / Documentation Options */}
+                                  {order.documentation_options && Object.keys(order.documentation_options).length > 0 && (
+                                      <div className="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-lg">
+                                          <h4 className="font-bold text-blue-800 mb-2 flex items-center gap-2 text-sm">
+                                              <FileText className="h-4 w-4" /> مستندات درخواستی:
+                                          </h4>
+                                          <div className="flex flex-wrap gap-2">
+                                              {Object.entries(order.documentation_options).map(([k, v]) => v && (
+                                                  <Badge key={k} variant="secondary" className="bg-white text-blue-700">{getPersianLabel(k)}</Badge>
+                                              ))}
+                                          </div>
+                                      </div>
+                                  )}
+
+                                  <div className="space-y-4">
+                                      {order.items?.map((item, idx) => (
+                                          <div key={item.id} className="bg-gray-50 p-4 rounded border border-gray-100">
+                                              <div className="flex items-center gap-2 mb-3">
+                                                  <Badge className="bg-gray-800">آیتم {idx + 1}</Badge>
+                                                  <h3 className="font-bold text-sm sm:text-base">{item.service?.name}</h3>
+                                              </div>
+                                              <h4 className="font-bold text-gray-700 mb-3 text-sm flex items-center gap-2">
+                                                  <Settings className="h-4 w-4" /> مشخصات فنی:
+                                              </h4>
+                                              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                                                  {item.field_values && Object.entries(item.field_values).map(([key, value]) => (
+                                                      <div key={key} className="flex flex-col border-b border-gray-200 pb-2 last:border-0">
+                                                          <span className="text-xs text-gray-500 mb-1">{getPersianLabel(key)}</span>
+                                                          <span className="text-sm font-medium">{renderFieldValue(value)}</span>
+                                                      </div>
+                                                  ))}
+                                              </div>
+                                          </div>
+                                      ))}
+                                  </div>
+                              </div>
+                          )}
                         </CardContent>
                       </Card>
                     ))}
@@ -603,16 +706,12 @@ const ContractorDashboard = () => {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="price">قیمت (تومان)</Label>
-                        <Input
-                          id="price"
-                          type="number"
+                      <PriceInput
+                          label="قیمت پیشنهادی (تومان)"
                           value={quoteData.price}
-                          onChange={(e) => setQuoteData({...quoteData, price: e.target.value})}
-                          placeholder="قیمت پیشنهادی"
-                        />
-                      </div>
+                          onChange={(val) => setQuoteData({...quoteData, price: val})}
+                          required
+                      />
                       <div>
                         <Label htmlFor="delivery_days">زمان تحویل (روز)</Label>
                         <Input
@@ -625,28 +724,29 @@ const ContractorDashboard = () => {
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="documentation_price">قیمت مستندسازی (تومان)</Label>
-                        <Input
-                          id="documentation_price"
-                          type="number"
-                          value={quoteData.documentation_price}
-                          onChange={(e) => setQuoteData({...quoteData, documentation_price: e.target.value})}
-                          placeholder="قیمت مستندسازی"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="documentation_days">زمان مستندسازی (روز)</Label>
-                        <Input
-                          id="documentation_days"
-                          type="number"
-                          value={quoteData.documentation_days}
-                          onChange={(e) => setQuoteData({...quoteData, documentation_days: e.target.value})}
-                          placeholder="تعداد روز"
-                        />
-                      </div>
-                    </div>
+                    {/* Conditional Documentation Fields */}
+                    {selectedOrder.items?.[0]?.needs_documentation && (
+                        <div className="border-t pt-4 mt-2">
+                            <p className="text-sm font-medium mb-2 text-gray-700">بخش مستندات (درخواستی مشتری)</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <PriceInput
+                                    label="هزینه مستندات"
+                                    value={quoteData.documentation_price}
+                                    onChange={(val) => setQuoteData({...quoteData, documentation_price: val})}
+                                />
+                                <div>
+                                    <Label htmlFor="documentation_days">زمان مستندات (روز)</Label>
+                                    <Input
+                                        id="documentation_days"
+                                        type="number"
+                                        value={quoteData.documentation_days}
+                                        onChange={(e) => setQuoteData({...quoteData, documentation_days: e.target.value})}
+                                        placeholder="تعداد روز"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
                     
                     <div>
                       <Label htmlFor="notes">یادداشت</Label>
