@@ -3,8 +3,20 @@ Security middleware for Django
 """
 from django.utils.deprecation import MiddlewareMixin
 import logging
+from django.http import JsonResponse
 
 logger = logging.getLogger(__name__)
+
+class HealthCheckMiddleware(MiddlewareMixin):
+    """
+    Simple middleware to handle health checks early in the stack
+    to bypass any DB-dependent middleware like Axes.
+    """
+    def process_request(self, request):
+        if request.path in ['/api/health/', '/api/health']:
+            return JsonResponse({'status': 'ok'})
+        return None
+
 
 class CSRFExemptAPIMiddleware(MiddlewareMixin):
     """
