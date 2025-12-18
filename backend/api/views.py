@@ -938,7 +938,7 @@ class QuoteViewSet(viewsets.ModelViewSet):
             )
         except Exception as e:
             logger.error(f"Error notifying customer about quote update: {e}")
-
+    
     def get_queryset(self):
         # Users can see quotes for their orders or their own quotes
         if self.request.user.is_staff:
@@ -1893,7 +1893,7 @@ def get_user_orders(request):
         # Admin sees all orders
         orders = Order.objects.all().order_by('-created_at')
     else:
-        orders = Order.objects.filter(customer=request.user).order_by('-created_at')
+    orders = Order.objects.filter(customer=request.user).order_by('-created_at')
     return Response(OrderSerializer(orders, many=True).data)
 
 

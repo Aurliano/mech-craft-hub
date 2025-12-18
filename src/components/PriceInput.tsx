@@ -19,10 +19,11 @@ export const formatPrice = (value: string | number): string => {
 };
 
 export const unformatPrice = (value: string): string => {
-  // Convert Persian digits to English digits and remove commas
-  return value
-    .replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString())
-    .replace(/,/g, '');
+  if (!value) return '';
+  // Convert Persian digits to English digits
+  const v = value.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d).toString());
+  // Remove all non-digit characters
+  return v.replace(/\D/g, '');
 };
 
 const PriceInput: React.FC<PriceInputProps> = ({

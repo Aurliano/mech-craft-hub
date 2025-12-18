@@ -13,7 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useGetOrderById, useGetQuotesByOrder } from '@/hooks/useAuth';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
-import { getPersianLabel } from '@/lib/persianMapping';
+import { getPersianLabel, getPersianValue } from '@/lib/persianMapping';
 import { getApiUrl } from '@/lib/api';
 
 interface OrderItem {
@@ -146,16 +146,28 @@ const OrderDetails = () => {
 
     if (typeof value === 'object') return JSON.stringify(value);
     
-    return String(value);
+    // Use Persian value mapping for strings/booleans
+    return getPersianValue(value as string | boolean);
   };
 
-  const renderFieldValues = (fieldValues: Record<string, unknown>) => {
-    return Object.entries(fieldValues).map(([key, value]) => (
-      <div key={key} className="flex justify-between items-center py-3 border-b border-gray-100 last:border-b-0">
-        <span className="font-medium text-gray-700">{getPersianLabel(key)}:</span>
-        <span className="text-gray-900">{formatFieldValue(value)}</span>
-      </div>
-    ));
+  const renderFieldValues = (fieldValues: Record<string, unknown>, needsDocumentation: boolean) => {
+    // Add logic to include all relevant invoice fields
+    const allFields = { ...fieldValues };
+    
+    return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
+            {Object.entries(allFields).map(([key, value]) => (
+                <div key={key} className="flex justify-between items-center py-3 border-b border-gray-100">
+                    <span className="font-medium text-gray-600 text-sm">{getPersianLabel(key)}:</span>
+                    <span className="text-gray-900 text-sm font-semibold">{formatFieldValue(value)}</span>
+                </div>
+            ))}
+            <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                <span className="font-medium text-gray-600 text-sm">نیاز به مستندات:</span>
+                <span className="text-gray-900 text-sm font-semibold">{getPersianValue(needsDocumentation)}</span>
+            </div>
+        </div>
+    );
   };
 
   const handleDelete = async () => {
@@ -344,29 +356,43 @@ const OrderDetails = () => {
                                 مشخصات فنی و فایل‌ها
                             </h4>
                             <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                                {renderFieldValues(item.field_values)}
+                                {renderFieldValues(item.field_values, item.needs_documentation)}
                             </div>
                         </div>
 
                         {/* Documentation Requirements */}
-                        {item.needs_documentation && (
-                            <div className="p-4 bg-white">
-                                <h4 className="font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
-                                    <FileText className="h-4 w-4 text-primary" />
-                                    مستندات درخواستی
-                                </h4>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                                    {Object.entries(order.documentation_options || {}).map(([key, value]) => (
-                                        value && (
-                                            <div key={key} className="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-2 rounded border border-blue-100 text-sm">
-                                                <CheckCircle className="h-4 w-4" />
-                                                <span>{getPersianLabel(key)}</span>
-                                            </div>
-                                        )
-                                    ))}
+                        <div className="p-4 bg-white">
+                            <h4 className="font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
+                                <FileText className="h-4 w-4 text-primary" />
+                                مستندات و یادداشت‌ها
+                            </h4>
+                            <div className="space-y-4">
+                                <div>
+                                    <p className="text-xs text-gray-500 mb-2">گزینه‌های مستندات:</p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {Object.entries(order.documentation_options || {}).some(([_, v]) => v) ? (
+                                            Object.entries(order.documentation_options || {}).map(([key, value]) => (
+                                                value && (
+                                                    <div key={key} className="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-2 rounded border border-blue-100 text-xs">
+                                                        <CheckCircle className="h-3 w-3" />
+                                                        <span>{getPersianLabel(key)}</span>
+                                                    </div>
+                                                )
+                                            ))
+                                        ) : (
+                                            <span className="text-sm text-gray-400">موردی انتخاب نشده است</span>
+                                        )}
+                                    </div>
+                                </div>
+                                
+                                <div className="bg-gray-50 p-3 rounded border border-gray-100">
+                                    <p className="text-xs text-gray-500 mb-1">یادداشت مستندات:</p>
+                                    <p className="text-sm text-gray-800">
+                                        {getPersianValue(item.field_values.documentationNotes as string)}
+                                    </p>
                                 </div>
                             </div>
-                        )}
+                        </div>
                     </div>
                   </CardContent>
                 </Card>

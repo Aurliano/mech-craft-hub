@@ -21,7 +21,7 @@ import { useCreateQuote } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import PriceInput from '@/components/PriceInput';
-import { getPersianLabel } from '@/lib/persianMapping';
+import { getPersianLabel, getPersianValue } from '@/lib/persianMapping';
 
 // ... (Interfaces remain similar, ensuring correct structure)
 interface Service {
@@ -172,7 +172,9 @@ const ContractorQuotes = () => {
         return <div className="flex flex-col gap-1">{value.map((v, i) => <div key={i}>{renderFieldValue(v)}</div>)}</div>;
     }
     if (typeof value === 'object') return JSON.stringify(value);
-    return String(value);
+    
+    // Use Persian value mapping for strings/booleans
+    return getPersianValue(value as string | boolean);
   };
 
   const openQuoteDialog = (order: Order, itemId: string, existingQuote?: Quote) => {
@@ -302,7 +304,7 @@ const ContractorQuotes = () => {
                   {expandedOrders.has(order.id) && (
                       <CardContent className="pt-4">
                           {/* Order Files / Documentation Options */}
-                          {order.documentation_options && Object.keys(order.documentation_options).length > 0 && (
+                          {(order.documentation_options && Object.entries(order.documentation_options).some(([_, v]) => v)) ? (
                               <div className="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-lg">
                                   <h4 className="font-bold text-blue-800 mb-2 flex items-center gap-2">
                                       <FileText className="h-4 w-4" /> مستندات درخواستی:
@@ -312,6 +314,10 @@ const ContractorQuotes = () => {
                                           <Badge key={k} variant="secondary" className="bg-white text-blue-700">{getPersianLabel(k)}</Badge>
                                       ))}
                                   </div>
+                              </div>
+                          ) : (
+                              <div className="mb-6 p-4 bg-gray-50 border border-gray-100 rounded-lg">
+                                  <p className="text-sm text-gray-500">بدون مستندات درخواستی</p>
                               </div>
                           )}
 

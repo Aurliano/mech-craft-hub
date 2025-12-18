@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MessageCircle, X, Send, Bot, User, Loader2, Download, CheckCircle, Smartphone } from 'lucide-react';
+import logo from "@/assets/logo.png";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -181,7 +182,7 @@ export default function SupportWidget({ className = '' }: SupportWidgetProps) {
 
   if (!isOpen) {
     return (
-      <div className={`fixed bottom-6 right-6 z-50 ${className}`}>
+      <div className={`fixed bottom-6 left-6 z-50 ${className}`}>
         <div className="relative">
           <Button
             onClick={toggleWidget}
@@ -202,12 +203,14 @@ export default function SupportWidget({ className = '' }: SupportWidgetProps) {
   }
 
   return (
-    <div className={`fixed bottom-6 right-6 z-50 ${className}`}>
+    <div className={`fixed bottom-6 left-6 z-50 ${className}`}>
       <Card className="w-80 sm:w-96 max-h-[calc(100vh-3rem)] shadow-2xl border-0 bg-white">
         <CardHeader className="pb-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Bot className="h-5 w-5" />
+              <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center overflow-hidden">
+                <img src={logo} alt="S" className="w-full h-full object-contain" />
+              </div>
               <CardTitle className="text-sm font-semibold">پشتیبان سایدا</CardTitle>
             </div>
             <div className="flex items-center gap-1">
@@ -266,7 +269,11 @@ export default function SupportWidget({ className = '' }: SupportWidgetProps) {
                         }`}
                       >
                         <div className="flex items-start gap-2">
-                          {message.type === 'ai' && <Bot className="h-4 w-4 mt-0.5 flex-shrink-0" />}
+                          {message.type === 'ai' && (
+                            <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center overflow-hidden flex-shrink-0 mt-0.5 border border-blue-100">
+                                <img src={logo} alt="S" className="w-full h-full object-contain" />
+                            </div>
+                          )}
                           {message.type === 'user' && <User className="h-4 w-4 mt-0.5 flex-shrink-0" />}
                           <div className="flex-1">
                             <div className="text-sm whitespace-pre-line">{message.content}</div>

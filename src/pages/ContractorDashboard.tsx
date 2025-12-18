@@ -25,7 +25,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { cn } from '@/lib/utils';
 import PriceInput from '@/components/PriceInput';
-import { getPersianLabel } from '@/lib/persianMapping';
+import { getPersianLabel, getPersianValue } from '@/lib/persianMapping';
 
 const ContractorDashboard = () => {
   const { user } = useAuth();
@@ -36,9 +36,13 @@ const ContractorDashboard = () => {
   const [showQuoteForm, setShowQuoteForm] = useState(false);
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'orders');
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+  const [isQuoteDialogOpen, setIsQuoteDialogOpen] = useState(false);
+  const [editingQuoteId, setEditingQuoteId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Quote form state
   const [quoteData, setQuoteData] = useState({
+    order_item: '', // Added order_item to state
     price: '',
     documentation_price: '',
     delivery_days: '',
@@ -54,6 +58,47 @@ const ContractorDashboard = () => {
       return newSet;
     });
   };
+
+  const openQuoteDialog = (order: { id: string; order_number: string; items?: any[] }, itemId: string, existingQuote?: any) => {
+    setSelectedOrder(order as any);
+    if (existingQuote) {
+        setEditingQuoteId(existingQuote.id);
+        setQuoteData({
+            order_item: itemId,
+            price: String(existingQuote.price),
+            documentation_price: String(existingQuote.documentation_price || 0),
+            delivery_days: String(existingQuote.delivery_days),
+            documentation_days: String(existingQuote.documentation_days || 0),
+            notes: existingQuote.notes || ''
+        });
+    } else {
+        setEditingQuoteId(null);
+        setQuoteData({
+            order_item: itemId,
+            price: '',
+            documentation_price: '',
+            delivery_days: '',
+            documentation_days: '',
+            notes: ''
+        });
+    }
+    setIsQuoteDialogOpen(true);
+  };
+
+  const handleDeleteQuote = async (quoteId: string) => {
+      if(!confirm('آیا از حذف این پیشنهاد اطمینان دارید؟')) return;
+      try {
+          const res = await fetch(getApiUrl(`/api/v1/quotes/${quoteId}/`), {
+              method: 'DELETE',
+              headers: { 'Authorization': `Bearer ${localStorage.getItem('access_token')}` }
+          });
+          if(res.ok) {
+              // Invalidate queries or refetch
+              window.location.reload(); // Simple reload for now, or better: useQueryClient to invalidate
+          }
+      } catch(e) { console.error(e); }
+  };
+
 
   // Improved Render Field Value with Download Links
   const renderFieldValue = (value: unknown): React.ReactNode => {
@@ -88,7 +133,9 @@ const ContractorDashboard = () => {
         return <div className="flex flex-col gap-1">{value.map((v, i) => <div key={i}>{renderFieldValue(v)}</div>)}</div>;
     }
     if (typeof value === 'object') return JSON.stringify(value);
-    return String(value);
+    
+    // Use Persian value mapping for strings/booleans
+    return getPersianValue(value as string | boolean);
   };
 
   
@@ -184,29 +231,61 @@ const ContractorDashboard = () => {
   };
 
   const handleCreateQuote = async () => {
-    if (!selectedOrder) return;
+    // Basic validation
+    if (!quoteData.price || !quoteData.delivery_days) {
+      alert('لطفاً قیمت و زمان تحویل را وارد کنید.');
+      return;
+    }
 
     try {
-      await createProposalMutation.mutateAsync({
-        order_item: selectedOrder.items?.[0]?.id || selectedOrder.id,
+      const payload: any = {
+        order_item: quoteData.order_item || selectedOrder?.items?.[0]?.id || selectedOrder?.id,
         price: parseFloat(quoteData.price),
         documentation_price: parseFloat(quoteData.documentation_price) || 0,
         delivery_days: parseInt(quoteData.delivery_days),
         documentation_days: parseInt(quoteData.documentation_days) || 0,
         notes: quoteData.notes
+      };
+
+      let url = '/api/v1/contractor/proposals/create/';
+      let method = 'POST';
+
+      if (editingQuoteId) {
+          url = `/api/v1/quotes/${editingQuoteId}/`;
+          method = 'PATCH';
+      }
+
+      const response = await fetch(getApiUrl(url), {
+          method: method,
+          headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+          },
+          body: JSON.stringify(payload)
       });
       
-      setShowQuoteForm(false);
+      if (!response.ok) {
+          throw new Error('خطا در ثبت پیشنهاد');
+      }
+
+      setIsQuoteDialogOpen(false);
       setSelectedOrder(null);
+      setEditingQuoteId(null);
       setQuoteData({
+        order_item: '',
         price: '',
         documentation_price: '',
         delivery_days: '',
         documentation_days: '',
         notes: ''
       });
+      
+      // Refresh data (ideally use react-query invalidation)
+      window.location.reload();
+
     } catch (error) {
       console.error('Error creating proposal:', error);
+      alert('خطا در ثبت پیشنهاد');
     }
   };
 
@@ -399,8 +478,12 @@ const ContractorDashboard = () => {
                               size="sm"
                               className="w-full sm:w-auto"
                               onClick={() => {
-                                setSelectedOrder(order);
-                                setShowQuoteForm(true);
+                                // For 'available' orders in dashboard, we usually propose for the first item or handle multi-item differently.
+                                // Here we assume single item or first item for simplicity in the main list view, 
+                                // or better: open dialog and let them pick item if multiple? 
+                                // Actually the dashboard list shows orders. We should probably open for the first item if exists.
+                                const itemId = order.items?.[0]?.id || order.id; // Fallback
+                                openQuoteDialog(order, itemId);
                               }}
                             >
                               <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 ml-2" />
@@ -420,7 +503,7 @@ const ContractorDashboard = () => {
                           {expandedOrders.has(order.id) && (
                               <div className="mt-4 pt-4 border-t border-gray-100">
                                   {/* Order Files / Documentation Options */}
-                                  {order.documentation_options && Object.keys(order.documentation_options).length > 0 && (
+                                  {(order.documentation_options && Object.entries(order.documentation_options).some(([_, v]) => v)) ? (
                                       <div className="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-lg">
                                           <h4 className="font-bold text-blue-800 mb-2 flex items-center gap-2 text-sm">
                                               <FileText className="h-4 w-4" /> مستندات درخواستی:
@@ -430,6 +513,10 @@ const ContractorDashboard = () => {
                                                   <Badge key={k} variant="secondary" className="bg-white text-blue-700">{getPersianLabel(k)}</Badge>
                                               ))}
                                           </div>
+                                      </div>
+                                  ) : (
+                                      <div className="mb-6 p-4 bg-gray-50 border border-gray-100 rounded-lg">
+                                          <p className="text-xs text-gray-500">بدون مستندات درخواستی</p>
                                       </div>
                                   )}
 
@@ -493,6 +580,41 @@ const ContractorDashboard = () => {
                               <Button variant="outline" size="sm" className="w-full sm:w-auto">
                                 <Eye className="h-3 w-3 sm:h-4 sm:w-4 ml-2" />
                                 مشاهده
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="w-full sm:w-auto"
+                                onClick={() => {
+                                    // Try to find the full order object from contractorOrders
+                                    const fullOrder = orders.find(o => o.order_number === proposal.order_item?.order?.order_number);
+                                    if (fullOrder) {
+                                        // Need to find the specific item ID
+                                        const itemId = proposal.order_item?.id; // This comes from quote.order_item.id (QuoteSerializer)
+                                        // But QuoteSerializer returns structure { id, service: {}, order: {} } for order_item.
+                                        // We need to match this ID with items in fullOrder.
+                                        // Wait, QuoteSerializer's order_item.id IS the item ID.
+                                        if (itemId) {
+                                            openQuoteDialog(fullOrder, String(itemId), proposal);
+                                        } else {
+                                            alert('اطلاعات آیتم سفارش یافت نشد.');
+                                        }
+                                    } else {
+                                        alert('اطلاعات کامل سفارش یافت نشد (ممکن است سفارش بسته شده باشد).');
+                                    }
+                                }}
+                              >
+                                <Settings className="h-3 w-3 sm:h-4 sm:w-4 ml-2" />
+                                ویرایش
+                              </Button>
+                              <Button 
+                                variant="destructive" 
+                                size="sm" 
+                                className="w-full sm:w-auto"
+                                onClick={() => handleDeleteQuote(proposal.id)}
+                              >
+                                <XCircle className="h-3 w-3 sm:h-4 sm:w-4 ml-2" />
+                                حذف
                               </Button>
                               {proposal.status === 'accepted' && (
                                 <Button variant="default" size="sm" className="w-full sm:w-auto">
@@ -697,11 +819,11 @@ const ContractorDashboard = () => {
           </Tabs>
 
           {/* Quote Form Modal */}
-          {showQuoteForm && selectedOrder && (
+          {isQuoteDialogOpen && selectedOrder && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
               <Card className="w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
                 <CardHeader>
-                  <CardTitle>ثبت پیشنهاد برای سفارش {selectedOrder.order_number}</CardTitle>
+                  <CardTitle>{editingQuoteId ? 'ویرایش پیشنهاد' : `ثبت پیشنهاد برای سفارش ${selectedOrder.order_number}`}</CardTitle>
                     <CardDescription>لطفا جزئیات پیشنهاد خود را وارد کنید</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -771,7 +893,7 @@ const ContractorDashboard = () => {
                       <Button 
                         variant="outline"
                         onClick={() => {
-                          setShowQuoteForm(false);
+                          setIsQuoteDialogOpen(false);
                           setSelectedOrder(null);
                         }}
                         className="w-full sm:w-auto"
