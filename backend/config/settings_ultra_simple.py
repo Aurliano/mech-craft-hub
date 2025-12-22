@@ -98,28 +98,28 @@ if DATABASE_URL:
     }
 else:
     # Fallback to individual environment variables or SQLite
-    USE_SQLITE = os.getenv('USE_SQLITE') == '1'
-    if USE_SQLITE:
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.sqlite3',
-                'NAME': BASE_DIR / 'db.sqlite3',
+USE_SQLITE = os.getenv('USE_SQLITE') == '1'
+if USE_SQLITE:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('POSTGRES_DB', 'postgres'),
+            'USER': os.getenv('POSTGRES_USER', 'root'),
+            'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
+            'HOST': os.getenv('POSTGRES_HOST', 'sayda-db'),
+            'PORT': os.getenv('POSTGRES_PORT', '5432'),
+            'OPTIONS': {
+                'connect_timeout': int(os.getenv('POSTGRES_CONNECT_TIMEOUT', '10')),
             }
         }
-    else:
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.postgresql',
-                'NAME': os.getenv('POSTGRES_DB', 'postgres'),
-                'USER': os.getenv('POSTGRES_USER', 'root'),
-                'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
-                'HOST': os.getenv('POSTGRES_HOST', 'sayda-db'),
-                'PORT': os.getenv('POSTGRES_PORT', '5432'),
-                'OPTIONS': {
-                    'connect_timeout': int(os.getenv('POSTGRES_CONNECT_TIMEOUT', '10')),
-                }
-            }
-        }
+    }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [

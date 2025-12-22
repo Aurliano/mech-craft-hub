@@ -39,7 +39,7 @@ const ContractorDashboard = () => {
   const [isQuoteDialogOpen, setIsQuoteDialogOpen] = useState(false);
   const [editingQuoteId, setEditingQuoteId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
+  
   // Quote form state
   const [quoteData, setQuoteData] = useState({
     order_item: '', // Added order_item to state
@@ -833,7 +833,7 @@ const ContractorDashboard = () => {
                           value={quoteData.price}
                           onChange={(val) => setQuoteData({...quoteData, price: val})}
                           required
-                      />
+                        />
                       <div>
                         <Label htmlFor="delivery_days">زمان تحویل (روز)</Label>
                         <Input
@@ -850,23 +850,23 @@ const ContractorDashboard = () => {
                     {selectedOrder.items?.[0]?.needs_documentation && (
                         <div className="border-t pt-4 mt-2">
                             <p className="text-sm font-medium mb-2 text-gray-700">بخش مستندات (درخواستی مشتری)</p>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <PriceInput
                                     label="هزینه مستندات"
-                                    value={quoteData.documentation_price}
+                          value={quoteData.documentation_price}
                                     onChange={(val) => setQuoteData({...quoteData, documentation_price: val})}
-                                />
-                                <div>
+                        />
+                      <div>
                                     <Label htmlFor="documentation_days">زمان مستندات (روز)</Label>
-                                    <Input
-                                        id="documentation_days"
-                                        type="number"
-                                        value={quoteData.documentation_days}
-                                        onChange={(e) => setQuoteData({...quoteData, documentation_days: e.target.value})}
-                                        placeholder="تعداد روز"
-                                    />
-                                </div>
-                            </div>
+                        <Input
+                          id="documentation_days"
+                          type="number"
+                          value={quoteData.documentation_days}
+                          onChange={(e) => setQuoteData({...quoteData, documentation_days: e.target.value})}
+                          placeholder="تعداد روز"
+                        />
+                      </div>
+                    </div>
                         </div>
                     )}
                     
