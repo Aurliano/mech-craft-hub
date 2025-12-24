@@ -26,17 +26,17 @@ const ContractorRegister = () => {
   const { mutateAsync: requestVerification, isPending: isVerifying } = usePhoneVerificationRequest();
   const { mutateAsync: registerWithCaptcha, isPending: isCaptchaPending, error: registerCaptchaError } = useRegisterWithCaptcha();
   const { isAuthenticated } = useAuth();
-  
+
   // Get scopes and services
   const { data: scopes } = useScopes();
   const [selectedScopeId, setSelectedScopeId] = useState<string>("");
   const { data: services } = useServices(selectedScopeId || undefined);
-  
+
   // Reset selected services when scope changes
   React.useEffect(() => {
     setSelectedServices([]);
   }, [selectedScopeId]);
-  
+
   const [phone, setPhone] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -50,7 +50,7 @@ const ContractorRegister = () => {
   const [showPhoneVerification, setShowPhoneVerification] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [isCaptchaVerified, setIsCaptchaVerified] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({});
+  const [validationErrors, setValidationErrors] = useState<{ [key: string]: string }>({});
 
 
   // Get Turnstile site key from environment
@@ -94,22 +94,26 @@ const ContractorRegister = () => {
 
     // Since Turnstile is disabled, always use regular registration
     await register(userData);
-    
+
     // After successful registration, redirect to phone verification with proper navigation
     navigateToPhoneVerification(phone, 'register', navigate);
   };
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    
+
     // Clear previous validation errors
     setValidationErrors({});
-    
+
     // Validate form fields
-    const errors: {[key: string]: string} = {};
-    
+    const errors: { [key: string]: string } = {};
+
     if (password !== confirm) {
-      errors.confirmPassword = "رمزهای عبور مطابقت ندارند";
+      if (password.trim() === confirm.trim()) {
+        errors.confirmPassword = "رمزها یکسان هستند اما فاصله اضافی دارند (لطفا دقت کنید)";
+      } else {
+        errors.confirmPassword = "رمزهای عبور مطابقت ندارند";
+      }
     }
     if (!acceptTerms) {
       errors.acceptTerms = "لطفا قوانین و شرایط را بپذیرید";
@@ -142,18 +146,18 @@ const ContractorRegister = () => {
         errors.password = passwordValidation.errors.join('، ');
       }
     }
-    
+
     // Validate captcha
     if (turnstileSiteKey && !turnstileToken) {
       errors.captcha = "لطفا کپچا را تایید کنید";
     }
-    
+
     // If there are validation errors, show them and return
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
       return;
     }
-    
+
     try {
       await performRegistration();
     } catch (err) {
@@ -167,14 +171,14 @@ const ContractorRegister = () => {
 
   // Redirect after successful phone verification
   React.useEffect(() => {
-    if (isAuthenticated && showPhoneVerification) { 
+    if (isAuthenticated && showPhoneVerification) {
       navigate("/contractor-dashboard");
     }
   }, [isAuthenticated, showPhoneVerification, navigate]);
 
   const handleServiceToggle = (serviceId: string) => {
-    setSelectedServices(prev => 
-      prev.includes(serviceId) 
+    setSelectedServices(prev =>
+      prev.includes(serviceId)
         ? prev.filter(id => id !== serviceId)
         : [...prev, serviceId]
     );
@@ -213,13 +217,13 @@ const ContractorRegister = () => {
               <form className="space-y-4" onSubmit={onSubmit}>
                 <div className="space-y-2">
                   <Label htmlFor="phone">شماره همراه *</Label>
-                  <Input 
-                    id="phone" 
-                    value={phone} 
-                    onChange={(e) => setPhone(e.target.value)} 
+                  <Input
+                    id="phone"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
                     className={`text-right ${validationErrors.phone ? 'border-red-500' : ''}`}
-                    placeholder="09123456789" 
-                    required 
+                    placeholder="09123456789"
+                    required
                   />
                   {validationErrors.phone && (
                     <p className="text-xs text-red-500">{validationErrors.phone}</p>
@@ -229,12 +233,12 @@ const ContractorRegister = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="firstName">نام *</Label>
-                    <Input 
-                      id="firstName" 
-                      value={firstName} 
-                      onChange={(e) => setFirstName(e.target.value)} 
+                    <Input
+                      id="firstName"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
                       className={`text-right ${validationErrors.firstName ? 'border-red-500' : ''}`}
-                      required 
+                      required
                     />
                     {validationErrors.firstName && (
                       <p className="text-xs text-red-500">{validationErrors.firstName}</p>
@@ -242,12 +246,12 @@ const ContractorRegister = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="lastName">نام خانوادگی *</Label>
-                    <Input 
-                      id="lastName" 
-                      value={lastName} 
-                      onChange={(e) => setLastName(e.target.value)} 
+                    <Input
+                      id="lastName"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
                       className={`text-right ${validationErrors.lastName ? 'border-red-500' : ''}`}
-                      required 
+                      required
                     />
                     {validationErrors.lastName && (
                       <p className="text-xs text-red-500">{validationErrors.lastName}</p>
@@ -256,13 +260,13 @@ const ContractorRegister = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">ایمیل *</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    value={email} 
-                    onChange={(e) => setEmail(e.target.value)} 
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className={`text-right ${validationErrors.email ? 'border-red-500' : ''}`}
-                    required 
+                    required
                   />
                   {validationErrors.email && (
                     <p className="text-xs text-red-500">{validationErrors.email}</p>
@@ -271,14 +275,14 @@ const ContractorRegister = () => {
                 <div className="space-y-2">
                   <Label htmlFor="password">رمز عبور *</Label>
                   <div className="relative">
-                    <Input 
-                      id="password" 
+                    <Input
+                      id="password"
                       type={showPassword ? "text" : "password"}
-                      value={password} 
-                      onChange={(e) => setPassword(e.target.value)} 
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
                       className={`text-right pr-10 ${validationErrors.password ? 'border-red-500' : ''}`}
-                      required 
-                      minLength={8} 
+                      required
+                      minLength={8}
                     />
                     <Button
                       type="button"
@@ -302,14 +306,14 @@ const ContractorRegister = () => {
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">تکرار رمز عبور *</Label>
                   <div className="relative">
-                    <Input 
-                      id="confirmPassword" 
-                      type={showConfirmPassword ? "text" : "password"} 
-                      value={confirm} 
-                      onChange={(e) => setConfirm(e.target.value)} 
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirm}
+                      onChange={(e) => setConfirm(e.target.value)}
                       className={`text-right pr-10 ${validationErrors.confirmPassword ? 'border-red-500' : ''}`}
-                      required 
-                      minLength={8} 
+                      required
+                      minLength={8}
                     />
                     <Button
                       type="button"
@@ -398,10 +402,10 @@ const ContractorRegister = () => {
                 {/* Honeypot field - hidden from users */}
                 <div style={{ display: 'none' }}>
                   <Label htmlFor="website">Website</Label>
-                  <Input 
+                  <Input
                     id="website"
-                    name="website" 
-                    type="text" 
+                    name="website"
+                    type="text"
                     tabIndex={-1}
                     autoComplete="off"
                   />
@@ -416,24 +420,44 @@ const ContractorRegister = () => {
 
                 {password !== confirm && confirm ? (
                   <Alert variant="destructive">
-                    <AlertDescription>رمزهای عبور مطابقت ندارند</AlertDescription>
+                    <AlertDescription>
+                      {password.trim() === confirm.trim()
+                        ? "رمزها یکسان هستند اما فاصله اضافی دارند (لطفا دقت کنید)"
+                        : "رمزهای عبور مطابقت ندارند"}
+                    </AlertDescription>
                   </Alert>
                 ) : null}
 
-                <ErrorDisplay 
-                  error={error || registerCaptchaError} 
+                <ErrorDisplay
+                  error={error || registerCaptchaError}
                   onRetry={() => window.location.reload()}
                 />
 
-                <Button 
-                  className="w-full" 
-                  variant="hero" 
-                  type="submit" 
+                {/* Custom error messages */}
+                {(error || registerCaptchaError) && (
+                  <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription>
+                      {error?.message?.includes('username already exists') ||
+                        error?.message?.includes('نام کاربری قبلاً استفاده شده') ?
+                        'این شماره همراه قبلاً ثبت شده است. لطفاً وارد شوید یا از شماره دیگری استفاده کنید.' :
+                        error?.message?.includes('email already exists') ||
+                          error?.message?.includes('ایمیل قبلاً استفاده شده') ?
+                          'این ایمیل قبلاً ثبت شده است. لطفاً از ایمیل دیگری استفاده کنید.' :
+                          error?.message || 'خطایی رخ داده است. لطفاً دوباره تلاش کنید.'}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                <Button
+                  className="w-full"
+                  variant="hero"
+                  type="submit"
                   disabled={isPending || isVerifying || isCaptchaPending || !acceptTerms}
                 >
                   {isPending || isVerifying || isCaptchaPending ? "در حال ثبت‌نام..." : "ثبت نام پیمانکار"}
                 </Button>
-                
+
                 <div className="text-center">
                   <span className="text-sm text-muted-foreground">
                     قبلاً حساب کاربری دارید؟{" "}
