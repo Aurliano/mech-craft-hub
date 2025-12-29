@@ -1,4 +1,3 @@
-```typescript
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -24,12 +23,12 @@ type Step = 1 | 2 | 3 | 4 | 5 | 6;
 const Register = () => {
     const navigate = useNavigate();
     const { isAuthenticated } = useAuth();
-    
+
     // Mutations
     const customerRegister = useCustomerRegister();
     const contractorRegister = useContractorRegister();
     const specialistRegister = useSpecialistRegister();
-    
+
     // Contractor Data
     const { data: scopes } = useScopes();
     const [selectedScopeId, setSelectedScopeId] = useState<string>("");
@@ -38,7 +37,7 @@ const Register = () => {
     // State
     const [step, setStep] = useState<Step>(1);
     const [role, setRole] = useState<Role>('customer');
-    
+
     // Form Data
     const [formData, setFormData] = useState({
         phone: '',
@@ -100,7 +99,7 @@ const Register = () => {
             if (!formData.lastName.trim()) newErrors.lastName = "نام خانوادگی الزامی است";
             if (!formData.nationalCode.trim()) newErrors.nationalCode = "کد ملی الزامی است";
             if (formData.nationalCode && !/^\d{10}$/.test(formData.nationalCode)) {
-                 newErrors.nationalCode = "کد ملی باید ۱۰ رقم باشد";
+                newErrors.nationalCode = "کد ملی باید ۱۰ رقم باشد";
             }
         }
 
@@ -108,7 +107,7 @@ const Register = () => {
             if (!formData.phone.trim()) newErrors.phone = "شماره همراه الزامی است";
             if (!formData.email.trim()) newErrors.email = "ایمیل الزامی است";
             else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "فرمت ایمیل صحیح نیست";
-             if (!formData.address.trim()) newErrors.address = "آدرس الزامی است";
+            if (!formData.address.trim()) newErrors.address = "آدرس الزامی است";
         }
 
         if (currentStep === 4) { // Security
@@ -136,19 +135,19 @@ const Register = () => {
         if (!validateStep(step)) return;
 
         let next = step + 1;
-        
+
         // Skip professional step for non-contractors
         if (step === 4 && role !== 'contractor') {
             next = 6;
         }
-        
+
         setStep(next as Step);
     };
 
     const prevStep = () => {
         let prev = step - 1;
-         // Skip professional step for non-contractors
-         if (step === 6 && role !== 'contractor') {
+        // Skip professional step for non-contractors
+        if (step === 6 && role !== 'contractor') {
             prev = 4;
         }
         setStep(prev as Step);
@@ -184,14 +183,14 @@ const Register = () => {
                 payload.selected_services = formData.selectedServices;
                 await contractorRegister.mutateAsync(payload);
             }
-            
+
             navigateToPhoneVerification(formData.phone, 'register', navigate);
 
         } catch (error) {
             console.error(error);
         }
     };
-    
+
     const isPending = customerRegister.isPending || contractorRegister.isPending || specialistRegister.isPending;
     const error = customerRegister.error || contractorRegister.error || specialistRegister.error;
 
@@ -201,12 +200,12 @@ const Register = () => {
             <div className="hidden lg:flex w-[40%] bg-slate-900 relative items-center justify-center p-12 text-white overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-900/50 to-slate-900/50 z-10" />
                 <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-10 z-0" />
-                
+
                 <div className="relative z-20 max-w-md space-y-8">
                     <div className="space-y-4">
                         <div className="inline-flex items-center rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-sm text-blue-300">
-                             <span className="flex h-2 w-2 rounded-full bg-blue-400 mr-2 animate-pulse"></span>
-                             سامانه هوشمند
+                            <span className="flex h-2 w-2 rounded-full bg-blue-400 mr-2 animate-pulse"></span>
+                            سامانه هوشمند
                         </div>
                         <h1 className="text-4xl font-bold leading-tight tracking-tight">
                             به <span className="text-blue-400">مِک کرفت هاب</span> خوش آمدید
@@ -234,62 +233,62 @@ const Register = () => {
             {/* Left Side: Form (100% on mobile, 60% on desktop) */}
             <div className="flex-1 flex flex-col h-screen overflow-y-auto">
                 <div className="p-4 sm:p-8 flex items-center justify-between">
-                     <Link to="/" className="flex items-center gap-2 font-bold text-xl text-slate-900">
+                    <Link to="/" className="flex items-center gap-2 font-bold text-xl text-slate-900">
                         <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">MK</div>
                         <span className="hidden sm:inline">MechCraft Hub</span>
-                     </Link>
-                     <div className="text-sm text-muted-foreground">
+                    </Link>
+                    <div className="text-sm text-muted-foreground">
                         حساب کاربری دارید؟ <Link to="/login" className="text-blue-600 font-semibold hover:underline">وارد شوید</Link>
-                     </div>
+                    </div>
                 </div>
 
                 <div className="flex-1 flex items-center justify-center px-4 sm:px-12 lg:px-24">
                     <div className="w-full max-w-lg space-y-8">
-                        
+
                         <div className="space-y-2 text-center sm:text-right">
-                             <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+                            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
                                 {step === 1 ? 'انتخاب نقش کاربری' : 'تکمیل ثبت نام'}
-                             </h2>
-                             <p className="text-slate-500">
-                                {step === 1 ? 'برای شروع، نوع حساب کاربری خود را انتخاب کنید' : 
-                                 `مرحله ${ step } از ${ role === 'contractor' ? 5 : 4 } - ${ role === 'customer' ? 'مشتری' : role === 'contractor' ? 'پیمانکار' : 'متخصص' } `}
-                             </p>
+                            </h2>
+                            <p className="text-slate-500">
+                                {step === 1 ? 'برای شروع، نوع حساب کاربری خود را انتخاب کنید' :
+                                    `مرحله ${step} از ${role === 'contractor' ? 5 : 4} - ${role === 'customer' ? 'مشتری' : role === 'contractor' ? 'پیمانکار' : 'متخصص'}`}
+                            </p>
                         </div>
 
                         {/* Progress Bar */}
                         {step > 1 && (
                             <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                                <div 
-                                    className="bg-blue-600 h-full transition-all duration-500 ease-in-out" 
-                                    style={{ width: `${ ((step - 1) / (role === 'contractor' ? 5 : 4)) * 100 }% ` }}
+                                <div
+                                    className="bg-blue-600 h-full transition-all duration-500 ease-in-out"
+                                    style={{ width: `${((step - 1) / (role === 'contractor' ? 5 : 4)) * 100}%` }}
                                 />
                             </div>
                         )}
 
                         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                             {/* Step 1: Role Selection */}
+                            {/* Step 1: Role Selection */}
                             {step === 1 && (
                                 <div className="space-y-6">
                                     <div className="grid gap-4">
-                                        <RoleOption 
+                                        <RoleOption
                                             id="customer"
-                                            selected={role === 'customer'} 
+                                            selected={role === 'customer'}
                                             onClick={() => setRole('customer')}
                                             icon={<User />}
                                             title="مشتری"
                                             desc="برای ثبت سفارش و درخواست خدمات"
                                         />
-                                        <RoleOption 
+                                        <RoleOption
                                             id="contractor"
-                                            selected={role === 'contractor'} 
+                                            selected={role === 'contractor'}
                                             onClick={() => setRole('contractor')}
                                             icon={<Briefcase />}
                                             title="پیمانکار"
                                             desc="برای مدیریت پروژه‌ها و کارگاه‌ها"
                                         />
-                                        <RoleOption 
+                                        <RoleOption
                                             id="specialist"
-                                            selected={role === 'specialist'} 
+                                            selected={role === 'specialist'}
                                             onClick={() => setRole('specialist')}
                                             icon={<HardHat />}
                                             title="متخصص"
@@ -303,36 +302,36 @@ const Register = () => {
                                 </div>
                             )}
 
-                             {/* Step 2: Identity Info */}
+                            {/* Step 2: Identity Info */}
                             {step === 2 && (
                                 <div className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <Label>نام</Label>
-                                            <Input 
-                                                value={formData.firstName} 
-                                                onChange={(e) => handleInputChange('firstName', e.target.value)} 
-                                                className={`h - 11 ${ errors.firstName ? 'border-red-500' : '' } `}
+                                            <Input
+                                                value={formData.firstName}
+                                                onChange={(e) => handleInputChange('firstName', e.target.value)}
+                                                className={`h-11 ${errors.firstName ? 'border-red-500' : ''}`}
                                             />
                                             {errors.firstName && <span className="text-xs text-red-500">{errors.firstName}</span>}
                                         </div>
                                         <div className="space-y-2">
                                             <Label>نام خانوادگی</Label>
-                                            <Input 
-                                                value={formData.lastName} 
+                                            <Input
+                                                value={formData.lastName}
                                                 onChange={(e) => handleInputChange('lastName', e.target.value)}
-                                                className={`h - 11 ${ errors.lastName ? 'border-red-500' : '' } `}
+                                                className={`h-11 ${errors.lastName ? 'border-red-500' : ''}`}
                                             />
                                             {errors.lastName && <span className="text-xs text-red-500">{errors.lastName}</span>}
                                         </div>
                                     </div>
                                     <div className="space-y-2">
                                         <Label>کد ملی</Label>
-                                        <Input 
+                                        <Input
                                             type="number"
-                                            value={formData.nationalCode} 
+                                            value={formData.nationalCode}
                                             onChange={(e) => handleInputChange('nationalCode', e.target.value)}
-                                            className={`h - 11 ${ errors.nationalCode ? 'border-red-500' : '' } `}
+                                            className={`h-11 ${errors.nationalCode ? 'border-red-500' : ''}`}
                                             dir="ltr"
                                             placeholder="XXXXXXXXXX"
                                         />
@@ -341,48 +340,48 @@ const Register = () => {
                                 </div>
                             )}
 
-                             {/* Step 3: Contact Info */}
-                             {step === 3 && (
+                            {/* Step 3: Contact Info */}
+                            {step === 3 && (
                                 <div className="space-y-4">
                                     <div className="space-y-2">
                                         <Label>شماره همراه</Label>
-                                        <Input 
-                                            
+                                        <Input
+
                                             type="tel"
-                                            value={formData.phone} 
+                                            value={formData.phone}
                                             onChange={(e) => handleInputChange('phone', e.target.value)}
-                                            className={`h - 11 text - left ${ errors.phone ? 'border-red-500' : '' } `}
+                                            className={`h-11 text-left ${errors.phone ? 'border-red-500' : ''}`}
                                             dir="ltr"
                                             placeholder="0912..."
                                         />
-                                         {errors.phone && <span className="text-xs text-red-500">{errors.phone}</span>}
+                                        {errors.phone && <span className="text-xs text-red-500">{errors.phone}</span>}
                                     </div>
                                     <div className="space-y-2">
                                         <Label>ایمیل</Label>
-                                        <Input 
+                                        <Input
                                             type="email"
-                                            value={formData.email} 
+                                            value={formData.email}
                                             onChange={(e) => handleInputChange('email', e.target.value)}
-                                            className={`h - 11 text - left ${ errors.email ? 'border-red-500' : '' } `}
+                                            className={`h-11 text-left ${errors.email ? 'border-red-500' : ''}`}
                                             dir="ltr"
                                             placeholder="example@mail.com"
                                         />
-                                         {errors.email && <span className="text-xs text-red-500">{errors.email}</span>}
+                                        {errors.email && <span className="text-xs text-red-500">{errors.email}</span>}
                                     </div>
-                                     <div className="grid grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <Label>استان</Label>
-                                            <Input 
+                                            <Input
                                                 className="h-11"
-                                                value={formData.province} 
+                                                value={formData.province}
                                                 onChange={(e) => handleInputChange('province', e.target.value)}
                                             />
                                         </div>
                                         <div className="space-y-2">
                                             <Label>شهر</Label>
-                                            <Input 
+                                            <Input
                                                 className="h-11"
-                                                value={formData.city} 
+                                                value={formData.city}
                                                 onChange={(e) => handleInputChange('city', e.target.value)}
                                             />
                                         </div>
@@ -391,20 +390,20 @@ const Register = () => {
                                         <Label>آدرس دقیق</Label>
                                         <div className="relative">
                                             <MapPin className="absolute right-3 top-3.5 h-4 w-4 text-gray-400" />
-                                            <Input 
-                                                className={`h - 11 pr - 10 ${ errors.address ? 'border-red-500' : '' } `}
-                                                value={formData.address} 
+                                            <Input
+                                                className={`h-11 pr-10 ${errors.address ? 'border-red-500' : ''}`}
+                                                value={formData.address}
                                                 onChange={(e) => handleInputChange('address', e.target.value)}
                                             />
                                         </div>
-                                         {errors.address && <span className="text-xs text-red-500">{errors.address}</span>}
+                                        {errors.address && <span className="text-xs text-red-500">{errors.address}</span>}
                                     </div>
                                     <div className="space-y-2">
                                         <Label>کد پستی</Label>
-                                        <Input 
+                                        <Input
                                             type="number"
                                             className="h-11"
-                                            value={formData.postalCode} 
+                                            value={formData.postalCode}
                                             onChange={(e) => handleInputChange('postalCode', e.target.value)}
                                             dir="ltr"
                                         />
@@ -412,20 +411,20 @@ const Register = () => {
                                 </div>
                             )}
 
-                             {/* Step 4: Security */}
+                            {/* Step 4: Security */}
                             {step === 4 && (
                                 <div className="space-y-4">
                                     <div className="space-y-2">
                                         <Label>رمز عبور</Label>
                                         <div className="relative">
-                                            <Input 
+                                            <Input
                                                 type={showPassword ? 'text' : 'password'}
-                                                value={formData.password} 
+                                                value={formData.password}
                                                 onChange={(e) => handleInputChange('password', e.target.value)}
-                                                className={`h - 11 text - left pr - 10 ${ errors.password ? 'border-red-500' : '' } `}
+                                                className={`h-11 text-left pr-10 ${errors.password ? 'border-red-500' : ''}`}
                                                 dir="ltr"
                                             />
-                                            <button 
+                                            <button
                                                 type="button"
                                                 onClick={() => setShowPassword(!showPassword)}
                                                 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
@@ -439,14 +438,14 @@ const Register = () => {
                                     <div className="space-y-2">
                                         <Label>تکرار رمز عبور</Label>
                                         <div className="relative">
-                                            <Input 
+                                            <Input
                                                 type={showConfirmPassword ? 'text' : 'password'}
-                                                value={formData.confirmPassword} 
+                                                value={formData.confirmPassword}
                                                 onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                                                className={`h - 11 text - left pr - 10 ${ errors.confirmPassword ? 'border-red-500' : '' } `}
+                                                className={`h-11 text-left pr-10 ${errors.confirmPassword ? 'border-red-500' : ''}`}
                                                 dir="ltr"
                                             />
-                                            <button 
+                                            <button
                                                 type="button"
                                                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                                                 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
@@ -459,13 +458,13 @@ const Register = () => {
                                 </div>
                             )}
 
-                             {/* Step 5: Professional Info */}
+                            {/* Step 5: Professional Info */}
                             {step === 5 && role === 'contractor' && (
                                 <div className="space-y-4">
                                     <div className="space-y-2">
                                         <Label>زمینه فعالیت</Label>
                                         <Select value={selectedScopeId} onValueChange={setSelectedScopeId}>
-                                            <SelectTrigger className={`h - 11 ${ errors.scope ? 'border-red-500' : '' } `}>
+                                            <SelectTrigger className={`h-11 ${errors.scope ? 'border-red-500' : ''}`}>
                                                 <SelectValue placeholder="انتخاب کنید" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -476,20 +475,20 @@ const Register = () => {
                                         </Select>
                                         {errors.scope && <span className="text-xs text-red-500">{errors.scope}</span>}
                                     </div>
-                                    
+
                                     {selectedScopeId && services && (
                                         <div className="space-y-2">
                                             <Label>خدمات قابل ارائه</Label>
-                                            <div className={`grid grid - cols - 1 gap - 2 max - h - 60 overflow - y - auto border rounded - md p - 3 ${ errors.services ? 'border-red-500' : '' } `}>
+                                            <div className={`grid grid-cols-1 gap-2 max-h-60 overflow-y-auto border rounded-md p-3 ${errors.services ? 'border-red-500' : ''}`}>
                                                 {services.map((service) => (
                                                     <div key={service.id} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded">
-                                                        <Checkbox 
+                                                        <Checkbox
                                                             id={service.id}
                                                             checked={formData.selectedServices.includes(service.id)}
                                                             onCheckedChange={(checked) => {
                                                                 setFormData(prev => ({
                                                                     ...prev,
-                                                                    selectedServices: checked 
+                                                                    selectedServices: checked
                                                                         ? [...prev.selectedServices, service.id]
                                                                         : prev.selectedServices.filter(id => id !== service.id)
                                                                 }));
@@ -505,7 +504,7 @@ const Register = () => {
                                 </div>
                             )}
 
-                             {/* Step 6: Review */}
+                            {/* Step 6: Review */}
                             {step === 6 && (
                                 <div className="space-y-6">
                                     <Alert className="bg-blue-50/50 border-blue-200">
@@ -542,11 +541,11 @@ const Register = () => {
 
                         </div>
 
-                         {/* Navigation Footer */}
-                         {step > 1 && (
+                        {/* Navigation Footer */}
+                        {step > 1 && (
                             <div className="flex items-center gap-4 pt-8">
-                                <Button 
-                                    variant="outline" 
+                                <Button
+                                    variant="outline"
                                     onClick={prevStep}
                                     className="h-12 px-6"
                                 >
@@ -554,7 +553,7 @@ const Register = () => {
                                 </Button>
 
                                 {step === 6 ? (
-                                    <Button 
+                                    <Button
                                         onClick={handleSubmit}
                                         disabled={isPending || !acceptTerms}
                                         className="h-12 flex-1 text-lg bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-600/20"
@@ -563,7 +562,7 @@ const Register = () => {
                                         <CheckCircle className="mr-2 w-5 h-5" />
                                     </Button>
                                 ) : (
-                                    <Button 
+                                    <Button
                                         onClick={nextStep}
                                         className="h-12 flex-1 text-lg bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-600/20"
                                     >
@@ -572,7 +571,7 @@ const Register = () => {
                                     </Button>
                                 )}
                             </div>
-                         )}
+                        )}
 
                     </div>
                 </div>
@@ -583,25 +582,24 @@ const Register = () => {
 
 // UI Components
 const RoleOption = ({ id, selected, onClick, icon, title, desc }: any) => (
-    <div 
+    <div
         onClick={onClick}
         className={`
-            relative flex items - center gap - 4 p - 4 rounded - xl cursor - pointer transition - all duration - 200 border - 2
-            ${
-  selected
-    ? 'border-blue-600 bg-blue-50/50 shadow-md ring-1 ring-blue-600/20'
-    : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50'
-}
-`}
+            relative flex items-center gap-4 p-4 rounded-xl cursor-pointer transition-all duration-200 border-2
+            ${selected
+                ? 'border-blue-600 bg-blue-50/50 shadow-md ring-1 ring-blue-600/20'
+                : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50'
+            }
+        `}
     >
         <div className={`
-w - 12 h - 12 rounded - full flex items - center justify - center transition - colors
-            ${ selected ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'bg-white text-slate-500 border border-slate-200' }
-`}>
+            w-12 h-12 rounded-full flex items-center justify-center transition-colors
+            ${selected ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'bg-white text-slate-500 border border-slate-200'}
+        `}>
             {React.cloneElement(icon, { size: 24 })}
         </div>
         <div className="flex-1">
-            <h3 className={`font - bold text - lg ${ selected ? 'text-blue-700' : 'text-slate-700' } `}>{title}</h3>
+            <h3 className={`font-bold text-lg ${selected ? 'text-blue-700' : 'text-slate-700'}`}>{title}</h3>
             <p className="text-sm text-slate-500">{desc}</p>
         </div>
         {selected && <CheckCircle className="text-blue-600 w-6 h-6 animate-in zoom-in duration-300" />}
@@ -609,4 +607,3 @@ w - 12 h - 12 rounded - full flex items - center justify - center transition - c
 );
 
 export default Register;
-```
