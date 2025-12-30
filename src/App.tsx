@@ -57,6 +57,7 @@ import AdminWorkshopManagement from "./pages/AdminWorkshopManagement";
 import NotFound from "./pages/NotFound";
 import JobMarket from "./pages/JobMarket";
 import JobSeekerRegistration from "./pages/JobSeekerRegistration";
+import TestPayment from "./pages/TestPayment";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -185,6 +186,9 @@ const App = () => (
               <Route path="/blog" element={<BlogPage />} />
               <Route path="/blog/:slug" element={<BlogPostPage />} />
               <Route path="/job-market" element={<JobMarket />} />
+              
+              {/* Test Pages */}
+              <Route path="/test-payment" element={<TestPayment />} />
               
               {/* Admin Routes */}
               <Route path="/admin/dashboard" element={
