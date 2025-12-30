@@ -1893,7 +1893,7 @@ def get_user_orders(request):
         # Admin sees all orders
         orders = Order.objects.all().order_by('-created_at')
     else:
-        orders = Order.objects.filter(customer=request.user).order_by('-created_at')
+            orders = Order.objects.filter(customer=request.user).order_by('-created_at')
     return Response(OrderSerializer(orders, many=True).data)
 
 

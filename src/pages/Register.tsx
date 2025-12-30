@@ -16,6 +16,7 @@ import ErrorDisplay from "@/components/ErrorDisplay";
 import { validatePassword } from "@/lib/passwordValidation";
 import { refreshCSRFToken } from "@/lib/csrfProtection";
 import { navigateToPhoneVerification } from "@/lib/navigation";
+import logo from "@/assets/logo.png";
 
 type Role = 'customer' | 'contractor' | 'specialist';
 type Step = 1 | 2 | 3 | 4 | 5 | 6;
@@ -208,10 +209,10 @@ const Register = () => {
                             سامانه هوشمند
                         </div>
                         <h1 className="text-4xl font-bold leading-tight tracking-tight">
-                            به <span className="text-blue-400">مِک کرفت هاب</span> خوش آمدید
+                            به <span className="text-blue-400">پلتفرم مهندسی سایدا</span> خوش آمدید
                         </h1>
                         <p className="text-lg text-slate-300/90 leading-relaxed">
-                            پلتفرم تخصصی برای تعامل مشتریان، پیمانکاران و متخصصین صنعت ساخت و تولید.
+                            پلتفرم تخصصی برای تعامل مشتریان، پیمانکاران و متخصصین صنایع.
                         </p>
                     </div>
 
@@ -234,8 +235,8 @@ const Register = () => {
             <div className="flex-1 flex flex-col h-screen overflow-y-auto">
                 <div className="p-4 sm:p-8 flex items-center justify-between">
                     <Link to="/" className="flex items-center gap-2 font-bold text-xl text-slate-900">
-                        <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white">MK</div>
-                        <span className="hidden sm:inline">MechCraft Hub</span>
+                        <img src={logo} alt="لوگو" className="h-8 w-auto flex-shrink-0" />
+                        <span className="hidden sm:inline">پلتفرم مهندسی سایدا</span>
                     </Link>
                     <div className="text-sm text-muted-foreground">
                         حساب کاربری دارید؟ <Link to="/login" className="text-blue-600 font-semibold hover:underline">وارد شوید</Link>
