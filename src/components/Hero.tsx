@@ -46,7 +46,7 @@ const Hero = () => {
           </h1>
           
           <p className="text-base sm:text-lg md:text-xl text-primary-foreground/90 mb-6 sm:mb-8 leading-relaxed">
-            با استفاده از جدیدترین تکنولوژی‌ها و نرم‌افزارهای مهندسی، پروژه‌های شما را با بالاترین کیفیت انجام می‌دهیم
+            ثبت رایگان پروژه‌های مهندسی و اتصال به شبکه گسترده کارگاه‌ها و متخصصان با پرداخت امن دو مرحله‌ای همراه با پشتیبانی 24 ساعته.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 mb-8 sm:mb-12 justify-center">

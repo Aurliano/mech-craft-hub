@@ -196,7 +196,7 @@ const Register = () => {
     const error = customerRegister.error || contractorRegister.error || specialistRegister.error;
 
     return (
-        <div className="flex min-h-screen bg-white" dir="rtl">
+        <div className="flex h-screen bg-white overflow-hidden" dir="rtl">
             {/* Right Side: Visual/Branding (Hidden on mobile, 40% width on desktop) */}
             <div className="hidden lg:flex w-[40%] bg-slate-900 relative items-center justify-center p-12 text-white overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-900/50 to-slate-900/50 z-10" />
@@ -232,8 +232,8 @@ const Register = () => {
             </div>
 
             {/* Left Side: Form (100% on mobile, 60% on desktop) */}
-            <div className="flex-1 flex flex-col h-screen overflow-y-auto">
-                <div className="p-4 sm:p-8 flex items-center justify-between">
+            <div className="flex-1 flex flex-col h-full overflow-y-auto">
+                <div className="p-4 sm:p-6 flex items-center justify-between flex-shrink-0">
                     <Link to="/" className="flex items-center gap-2 font-bold text-xl text-slate-900">
                         <img src={logo} alt="لوگو" className="h-8 w-auto flex-shrink-0" />
                         <span className="hidden sm:inline">پلتفرم مهندسی سایدا</span>
