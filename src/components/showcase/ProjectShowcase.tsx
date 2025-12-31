@@ -5,7 +5,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 
 const ProjectShowcase: React.FC = () => {
     return (
-        <section className="w-full py-16 bg-slate-50 dark:bg-slate-950" dir="rtl">
+        <section className="w-full py-16 bg-[#F8F9FC]" dir="rtl">
             <div className="container px-4 md:px-6 mx-auto">
                 <div className="text-center mb-12 space-y-4">
                     <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
@@ -16,13 +16,15 @@ const ProjectShowcase: React.FC = () => {
                     </p>
                 </div>
 
-                <div className="relative px-4 sm:px-12">
+                <div className="relative px-4 sm:px-12" dir="ltr">
                     <Carousel
                         opts={{
                             align: "start",
                             loop: false,
+                            direction: 'rtl',
                         }}
                         className="w-full"
+                        dir="rtl"
                     >
                         <CarouselContent className="-ml-2 md:-ml-4">
                             {mockProjects.map((project) => (

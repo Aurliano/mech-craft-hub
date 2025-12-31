@@ -16,7 +16,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
     const [isExpanded, setIsExpanded] = useState(false);
 
     return (
-        <Card className="w-full max-w-2xl mx-auto overflow-hidden border-0 shadow-lg group hover:shadow-xl transition-all duration-300 bg-white dark:bg-slate-900 rounded-3xl" dir="rtl">
+        <Card className="w-full max-w-2xl mx-auto overflow-hidden border-0 shadow-lg group hover:shadow-xl transition-all duration-300 bg-white rounded-3xl" dir="rtl">
             {/* Header - Gradient */}
             <div className={`h-24 relative overflow-hidden bg-gradient-to-l from-blue-700 to-blue-500`}>
                 <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-20" />
@@ -93,7 +93,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
                         <TabsList className="w-full grid grid-cols-3 mb-6 bg-slate-100/80 p-1">
                             <TabsTrigger value="description" className="text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">توضیحات پروژه</TabsTrigger>
                             <TabsTrigger value="phases" className="text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">مراحل انجام</TabsTrigger>
-                            <TabsTrigger value="proposal" className="text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">پروپوزال</TabsTrigger>
+                            <TabsTrigger value="proposal" className="text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">پیشنهاد پیمانکار</TabsTrigger>
                         </TabsList>
 
                         <TabsContent value="description" className="mt-0 min-h-[100px]">
