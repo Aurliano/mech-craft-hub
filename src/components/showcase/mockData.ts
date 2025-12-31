@@ -1,0 +1,113 @@
+import { Project } from './types';
+
+export const mockProjects: Project[] = [
+    {
+        id: '1023',
+        title: 'سیستم اتوماسیون اداری',
+        status: 'completed',
+        client: {
+            id: 'u1',
+            name: 'نوید رضایی',
+            avatar: 'https://i.pravatar.cc/150?u=u1',
+            role: 'client',
+        },
+        contractor: {
+            id: 'c1',
+            name: 'علی مرادی',
+            avatar: 'https://i.pravatar.cc/150?u=c1',
+            role: 'contractor',
+            badge: 'B',
+        },
+        description: 'طراحی و پیاده‌سازی سیستم یکپارچه اتوماسیون اداری با قابلیت مدیریت مکاتبات، بایگانی اسناد و تعریف گردش کار. این سیستم باعث افزایش ۳۰ درصدی بهره‌وری در سازمان شده است.',
+        phases: [
+            { id: 'p1', name: 'فاز اول: تحلیل نیازمندی‌ها', completed: true },
+            { id: 'p2', name: 'فاز دوم: طراحی دیتابیس', completed: true },
+            { id: 'p3', name: 'فاز سوم: پیاده‌سازی و تست', completed: true },
+        ],
+        contractorProposal: 'با توجه به نیازهای شما، پیشنهاد می‌شود از معماری میکروسرویس برای مقیاس‌پذیری بهتر استفاده شود. تکنولوژی‌های پیشنهادی: React برای فرانت‌اند و Node.js برای بک‌‌اند.',
+        clientReview: {
+            userId: 'u1',
+            text: 'عالی و حرفه‌ای. همه چیز دقیق و موقع تحویل شد.',
+            rating: 5,
+            date: '2023-10-15',
+        },
+        media: [
+            { id: 'm1', type: 'image', url: 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=800&auto=format&fit=crop&q=60', thumbnail: 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=200&auto=format&fit=crop&q=60' },
+            { id: 'm2', type: 'image', url: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=800&auto=format&fit=crop&q=60', thumbnail: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=200&auto=format&fit=crop&q=60' },
+            { id: 'm3', type: 'image', url: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=800&auto=format&fit=crop&q=60', thumbnail: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=200&auto=format&fit=crop&q=60' },
+            { id: 'm4', type: 'image', url: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&auto=format&fit=crop&q=60', thumbnail: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=200&auto=format&fit=crop&q=60' },
+            { id: 'm5', type: 'image', url: 'https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=800&auto=format&fit=crop&q=60', thumbnail: 'https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=200&auto=format&fit=crop&q=60' },
+        ],
+    },
+    {
+        id: '987',
+        title: 'طراحی اپلیکیشن فروشگاهی',
+        status: 'in_progress',
+        client: {
+            id: 'u2',
+            name: 'دینا احمدی',
+            avatar: 'https://i.pravatar.cc/150?u=u2',
+            role: 'client',
+        },
+        contractor: {
+            id: 'c2',
+            name: 'رضا کاظمی',
+            avatar: 'https://i.pravatar.cc/150?u=c2',
+            role: 'contractor',
+            badge: 'A',
+        },
+        description: 'طراحی و توسعه اپلیکیشن فروشگاهی با قابلیت پرداخت آنلاین، مدیریت موجودی و پنل ادمین پیشرفته. هدف اصلی ایجاد تجربه کاربری روان برای خرید آسان است.',
+        phases: [
+            { id: 'p1', name: 'فاز اول: وایرفریم و UI/UX', completed: true },
+            { id: 'p2', name: 'فاز دوم: توسعه MVP', completed: false },
+            { id: 'p3', name: 'فاز سوم: انتشار نسخه نهایی', completed: false },
+        ],
+        contractorProposal: 'برای این پروژه از Flutter استفاده می‌کنیم تا خروجی همزمان برای iOS و Android داشته باشیم. تمرکز اصلی روی سرعت و پرفورمنس خواهد بود.',
+        clientReview: {
+            userId: 'u2',
+            text: 'طراحی بسیار تمیز و حرفه‌ای. از کارهاتون خیلی راضی‌ام.',
+            rating: 5,
+            date: '2023-11-02',
+        },
+        media: [
+            { id: 'm21', type: 'image', url: 'https://images.unsplash.com/photo-1512486130939-2c4f79935e4f?w=800&auto=format&fit=crop&q=60', thumbnail: 'https://images.unsplash.com/photo-1512486130939-2c4f79935e4f?w=200&auto=format&fit=crop&q=60' },
+            { id: 'm22', type: 'image', url: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=800&auto=format&fit=crop&q=60', thumbnail: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=200&auto=format&fit=crop&q=60' },
+            { id: 'm23', type: 'image', url: 'https://images.unsplash.com/photo-1555421689-491a97ff2040?w=800&auto=format&fit=crop&q=60', thumbnail: 'https://images.unsplash.com/photo-1555421689-491a97ff2040?w=200&auto=format&fit=crop&q=60' },
+        ],
+    },
+    {
+        id: '1045',
+        title: 'بهینه‌سازی خط تولید',
+        status: 'completed',
+        client: {
+            id: 'u3',
+            name: 'شرکت فولاد',
+            avatar: 'https://i.pravatar.cc/150?u=u3',
+            role: 'client',
+        },
+        contractor: {
+            id: 'c3',
+            name: 'مهندس اکبری',
+            avatar: 'https://i.pravatar.cc/150?u=c3',
+            role: 'contractor',
+            badge: 'A',
+        },
+        description: 'آنالیز و بهینه‌سازی فرآیند تولید قطعات فلزی با هدف کاهش ضایعات و افزایش سرعت تولید. شامل شبیه‌سازی فرآیند و ارائه راهکارهای عملیاتی.',
+        phases: [
+            { id: 'p1', name: 'بازدید و جمع‌آوری داده', completed: true },
+            { id: 'p2', name: 'شبیه‌سازی و آنالیز', completed: true },
+            { id: 'p3', name: 'اجرای اصلاحات', completed: true },
+        ],
+        contractorProposal: 'استفاده از متدولوژی Lean Six Sigma برای شناسایی گلوگاه‌ها و حذف اتلاف‌ها.',
+        clientReview: {
+            userId: 'u3',
+            text: 'نتایج فراتر از انتظار بود. کاهش ۱۵ درصدی در هزینه‌ها داشتیم.',
+            rating: 4,
+            date: '2023-12-01',
+        },
+        media: [
+            { id: 'm31', type: 'image', url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&auto=format&fit=crop&q=60', thumbnail: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=200&auto=format&fit=crop&q=60' },
+            { id: 'm32', type: 'image', url: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=800&auto=format&fit=crop&q=60', thumbnail: 'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=200&auto=format&fit=crop&q=60' },
+        ],
+    },
+];

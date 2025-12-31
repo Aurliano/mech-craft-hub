@@ -7,6 +7,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, ArrowLeft } from "lucide-react";
+import ProjectShowcase from "@/components/showcase/ProjectShowcase";
 
 const Index = () => {
   return (
@@ -14,7 +15,9 @@ const Index = () => {
       <Navbar />
       <Hero />
       <ScientificContent />
-      
+
+      <ProjectShowcase />
+
       {/* Specialist Hiring Preview Section */}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
@@ -24,7 +27,7 @@ const Index = () => {
               به شبکه گسترده نیروهای متخصص ما متصل شوید و بهترین استعدادها را برای پروژه‌های خود پیدا کنید
             </p>
           </div>
-          
+
           <Card className="max-w-2xl mx-auto">
             <CardHeader>
               <div className="flex items-center justify-center gap-3 mb-4">
@@ -71,7 +74,7 @@ const Index = () => {
           </Card>
         </div>
       </section>
-      
+
       <Contact />
       <Footer />
     </div>

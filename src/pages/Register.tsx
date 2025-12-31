@@ -67,6 +67,14 @@ const Register = () => {
         }
     }, [isAuthenticated, navigate]);
 
+    // Remove body padding for full screen layout
+    useEffect(() => {
+        document.body.style.paddingTop = '0';
+        return () => {
+            document.body.style.paddingTop = '';
+        };
+    }, []);
+
     // Initialize CSRF
     useEffect(() => {
         refreshCSRFToken().catch(console.error);
