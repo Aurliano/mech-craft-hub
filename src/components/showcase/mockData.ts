@@ -31,6 +31,12 @@ export const mockProjects: Project[] = [
             rating: 5,
             date: '2023-10-15',
         },
+        contractorReview: {
+            userId: 'c1',
+            text: 'همکاری با ایشان بسیار لذت‌بخش بود. تعاملات شفاف و پرداخت‌ها به موقع انجام شد.',
+            rating: 5,
+            date: '2023-10-16',
+        },
         media: [
             { id: 'm1', type: 'image', url: 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=800&auto=format&fit=crop&q=60', thumbnail: 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?w=200&auto=format&fit=crop&q=60' },
             { id: 'm2', type: 'image', url: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=800&auto=format&fit=crop&q=60', thumbnail: 'https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=200&auto=format&fit=crop&q=60' },
@@ -69,6 +75,12 @@ export const mockProjects: Project[] = [
             rating: 5,
             date: '2023-11-02',
         },
+        contractorReview: {
+            userId: 'c2',
+            text: 'پروژه چالش‌برانگیز و جذابی بود. از اعتماد شما سپاسگزارم.',
+            rating: 5,
+            date: '2023-11-03',
+        },
         media: [
             { id: 'm21', type: 'image', url: 'https://images.unsplash.com/photo-1512486130939-2c4f79935e4f?w=800&auto=format&fit=crop&q=60', thumbnail: 'https://images.unsplash.com/photo-1512486130939-2c4f79935e4f?w=200&auto=format&fit=crop&q=60' },
             { id: 'm22', type: 'image', url: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=800&auto=format&fit=crop&q=60', thumbnail: 'https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=200&auto=format&fit=crop&q=60' },
@@ -104,6 +116,12 @@ export const mockProjects: Project[] = [
             text: 'نتایج فراتر از انتظار بود. کاهش ۱۵ درصدی در هزینه‌ها داشتیم.',
             rating: 4,
             date: '2023-12-01',
+        },
+        contractorReview: {
+            userId: 'c3',
+            text: 'امیدوارم در فازهای بعدی توسعه خط تولید نیز افتخار همکاری داشته باشم.',
+            rating: 5,
+            date: '2023-12-02',
         },
         media: [
             { id: 'm31', type: 'image', url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800&auto=format&fit=crop&q=60', thumbnail: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=200&auto=format&fit=crop&q=60' },
