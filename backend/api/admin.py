@@ -1,12 +1,16 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.contrib.admin.utils import get_deleted_objects
+from django.db import connection
+import json
+import os
 from .models import (
     User, Role, Permission, UserRole, Scope, Service, ServiceField, ServiceTab, 
     ContractorService, Workshop, WorkshopService, Cart, CartItem,
     Order, OrderItem, Quote, OrderStatusLog, Payment,
     TicketCategory, Ticket, TicketParticipant, TicketMessage, TicketAttachment,
     MediaFile, Review, PasswordResetToken, PhoneVerificationCode, Notification,
-    TurnstileAttempt
+    TurnstileAttempt, OrderProposal
 )
 
 
@@ -23,6 +27,158 @@ class CustomUserAdmin(UserAdmin):
         ('Verification', {'fields': ('is_email_verified', 'is_phone_verified')}),
         ('Profile', {'fields': ('phone', 'profile_image')}),
     )
+    
+    def get_deleted_objects(self, objs, request):
+        # #region agent log
+        try:
+            log_path = r'c:\mech-craft-hub-main\.cursor\debug.log'
+            with open(log_path, 'a', encoding='utf-8') as f:
+                log_entry = {
+                    'id': f'log_{int(__import__("time").time() * 1000)}',
+                    'timestamp': int(__import__("time").time() * 1000),
+                    'location': 'admin.py:get_deleted_objects:entry',
+                    'message': 'User deletion started',
+                    'data': {'user_count': len(objs), 'user_ids': [str(u.id) for u in objs]},
+                    'sessionId': 'debug-session',
+                    'runId': 'run1',
+                    'hypothesisId': 'A'
+                }
+                f.write(json.dumps(log_entry, ensure_ascii=False) + '\n')
+        except Exception:
+            pass
+        # #endregion
+        
+        # #region agent log
+        try:
+            # Check database schema for order_proposals table
+            with connection.cursor() as cursor:
+                cursor.execute("""
+                    SELECT column_name, data_type 
+                    FROM information_schema.columns 
+                    WHERE table_name = 'order_proposals'
+                    ORDER BY ordinal_position
+                """)
+                columns = {row[0]: row[1] for row in cursor.fetchall()}
+                
+                # Check migration status
+                cursor.execute("""
+                    SELECT app, name, applied 
+                    FROM django_migrations 
+                    WHERE app = 'api' AND name LIKE '%orderproposal%'
+                    ORDER BY applied DESC
+                """)
+                migrations = [{'app': row[0], 'name': row[1], 'applied': str(row[2])} for row in cursor.fetchall()]
+                
+                log_path = r'c:\mech-craft-hub-main\.cursor\debug.log'
+                with open(log_path, 'a', encoding='utf-8') as f:
+                    log_entry = {
+                        'id': f'log_{int(__import__("time").time() * 1000)}',
+                        'timestamp': int(__import__("time").time() * 1000),
+                        'location': 'admin.py:get_deleted_objects:schema_check',
+                        'message': 'Database schema for order_proposals',
+                        'data': {
+                            'columns': list(columns.keys()), 
+                            'has_documentation_price': 'documentation_price' in columns,
+                            'migrations': migrations
+                        },
+                        'sessionId': 'debug-session',
+                        'runId': 'run1',
+                        'hypothesisId': 'A'
+                    }
+                    f.write(json.dumps(log_entry, ensure_ascii=False) + '\n')
+        except Exception as e:
+            try:
+                log_path = r'c:\mech-craft-hub-main\.cursor\debug.log'
+                with open(log_path, 'a', encoding='utf-8') as f:
+                    log_entry = {
+                        'id': f'log_{int(__import__("time").time() * 1000)}',
+                        'timestamp': int(__import__("time").time() * 1000),
+                        'location': 'admin.py:get_deleted_objects:schema_check_error',
+                        'message': 'Error checking schema',
+                        'data': {'error': str(e)},
+                        'sessionId': 'debug-session',
+                        'runId': 'run1',
+                        'hypothesisId': 'A'
+                    }
+                    f.write(json.dumps(log_entry, ensure_ascii=False) + '\n')
+            except Exception:
+                pass
+        # #endregion
+        
+        # #region agent log
+        try:
+            # Check OrderProposal model fields
+            from django.db import models
+            order_proposal_fields = [f.name for f in OrderProposal._meta.get_fields() if hasattr(f, 'name')]
+            log_path = r'c:\mech-craft-hub-main\.cursor\debug.log'
+            with open(log_path, 'a', encoding='utf-8') as f:
+                log_entry = {
+                    'id': f'log_{int(__import__("time").time() * 1000)}',
+                    'timestamp': int(__import__("time").time() * 1000),
+                    'location': 'admin.py:get_deleted_objects:model_fields',
+                    'message': 'OrderProposal model fields',
+                    'data': {'model_fields': order_proposal_fields, 'has_documentation_price': 'documentation_price' in order_proposal_fields},
+                    'sessionId': 'debug-session',
+                    'runId': 'run1',
+                    'hypothesisId': 'B'
+                }
+                f.write(json.dumps(log_entry, ensure_ascii=False) + '\n')
+        except Exception as e:
+            try:
+                log_path = r'c:\mech-craft-hub-main\.cursor\debug.log'
+                with open(log_path, 'a', encoding='utf-8') as f:
+                    log_entry = {
+                        'id': f'log_{int(__import__("time").time() * 1000)}',
+                        'timestamp': int(__import__("time").time() * 1000),
+                        'location': 'admin.py:get_deleted_objects:model_fields_error',
+                        'message': 'Error checking model fields',
+                        'data': {'error': str(e)},
+                        'sessionId': 'debug-session',
+                        'runId': 'run1',
+                        'hypothesisId': 'B'
+                    }
+                    f.write(json.dumps(log_entry, ensure_ascii=False) + '\n')
+            except Exception:
+                pass
+        # #endregion
+        
+        try:
+            # #region agent log
+            log_path = r'c:\mech-craft-hub-main\.cursor\debug.log'
+            with open(log_path, 'a', encoding='utf-8') as f:
+                log_entry = {
+                    'id': f'log_{int(__import__("time").time() * 1000)}',
+                    'timestamp': int(__import__("time").time() * 1000),
+                    'location': 'admin.py:get_deleted_objects:before_collect',
+                    'message': 'Before calling get_deleted_objects',
+                    'data': {},
+                    'sessionId': 'debug-session',
+                    'runId': 'run1',
+                    'hypothesisId': 'C'
+                }
+                f.write(json.dumps(log_entry, ensure_ascii=False) + '\n')
+            # #endregion
+            return get_deleted_objects(objs, request, self.admin_site)
+        except Exception as e:
+            # #region agent log
+            try:
+                log_path = r'c:\mech-craft-hub-main\.cursor\debug.log'
+                with open(log_path, 'a', encoding='utf-8') as f:
+                    log_entry = {
+                        'id': f'log_{int(__import__("time").time() * 1000)}',
+                        'timestamp': int(__import__("time").time() * 1000),
+                        'location': 'admin.py:get_deleted_objects:error',
+                        'message': 'Error in get_deleted_objects',
+                        'data': {'error_type': type(e).__name__, 'error_message': str(e)},
+                        'sessionId': 'debug-session',
+                        'runId': 'run1',
+                        'hypothesisId': 'C'
+                    }
+                    f.write(json.dumps(log_entry, ensure_ascii=False) + '\n')
+            except Exception:
+                pass
+            # #endregion
+            raise
 
 
 @admin.register(Role)

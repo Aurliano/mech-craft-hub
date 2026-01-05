@@ -4,7 +4,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { cn } from '@/lib/utils';
 import { Star, CheckCircle2, MessageCircle, Play } from 'lucide-react';
 
@@ -82,7 +83,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
 
                 {/* Tabs for Details - Flex container to fill space but keep it compact */}
                 <div className="p-3 min-h-0 flex-1 flex flex-col">
-                    <Tabs defaultValue="description" className="w-full flex flex-col h-full">
+                    <Tabs defaultValue="description" className="w-full flex flex-col h-full" dir="rtl">
                         <TabsList className="w-full grid grid-cols-3 mb-2 bg-slate-100/80 p-0.5 h-8 shrink-0">
                             <TabsTrigger value="description" className="text-[11px] h-7 px-1 data-[state=active]:bg-white data-[state=active]:shadow-sm">توضیحات</TabsTrigger>
                             <TabsTrigger value="phases" className="text-[11px] h-7 px-1 data-[state=active]:bg-white data-[state=active]:shadow-sm">مراحل</TabsTrigger>
@@ -92,13 +93,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
                         {/* Scrollable Content Area with max height */}
                         <div className="flex-1 relative min-h-[85px] overflow-y-auto pr-1 pl-1 scrollbar-thin scrollbar-thumb-slate-200">
                             <TabsContent value="description" className="mt-0 absolute inset-0 text-right">
-                                <p className="text-xs leading-5 text-slate-600 text-justify">
+                                <p className="text-xs leading-5 text-slate-600 text-right" dir="rtl">
                                     {project.description}
                                 </p>
                             </TabsContent>
 
                             <TabsContent value="phases" className="mt-0 absolute inset-0 text-right">
-                                <div className="space-y-2">
+                                <div className="space-y-2 text-right" dir="rtl">
                                     {project.phases.map((phase) => (
                                         <div key={phase.id} className="flex items-center gap-2 text-xs">
                                             <div className={cn(
@@ -116,7 +117,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
                             </TabsContent>
 
                             <TabsContent value="proposal" className="mt-0 absolute inset-0 text-right">
-                                <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-xs text-slate-600 leading-relaxed text-justify">
+                                <div className="bg-slate-50 p-2 rounded-lg border border-slate-100 text-xs text-slate-600 leading-relaxed text-right" dir="rtl">
                                     {project.contractorProposal}
                                 </div>
                             </TabsContent>
@@ -126,7 +127,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
 
                 {/* Reviews & Media Section - Compact */}
                 <div className="px-3 pb-3 shrink-0 space-y-2.5 bg-white">
-                    <div className="border-t pt-2.5">
+                    <div className="border-t pt-2.5 space-y-2">
                         {/* Client Review */}
                         {project.clientReview && (
                             <div className="bg-blue-50/50 rounded-lg p-2 border border-blue-100 flex gap-2 items-start" dir="rtl">
@@ -142,8 +143,30 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
                                             ))}
                                         </div>
                                     </div>
-                                    <p className="text-[11px] text-slate-600 leading-relaxed line-clamp-2">
+                                    <p className="text-[11px] text-slate-600 leading-relaxed line-clamp-2 text-right" dir="rtl">
                                         "{project.clientReview.text}"
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Contractor Review */}
+                        {project.contractorReview && (
+                            <div className="bg-slate-50 rounded-lg p-2 border border-slate-100 flex gap-2 items-start" dir="rtl">
+                                <div className="space-y-0.5 w-full text-right">
+                                    <div className="flex justify-between items-center">
+                                        <div className="flex items-center gap-1.5">
+                                            <MessageCircle className="w-3 h-3 text-slate-500" />
+                                            <span className="text-[11px] font-bold text-slate-700">نظر پیمانکار</span>
+                                        </div>
+                                        <div className="flex text-amber-400 text-[9px] gap-0.5">
+                                            {[...Array(5)].map((_, i) => (
+                                                <Star key={i} className={cn("w-2 h-2", i < project.contractorReview!.rating ? "fill-current" : "text-slate-300")} />
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <p className="text-[11px] text-slate-600 leading-relaxed line-clamp-2 text-right" dir="rtl">
+                                        "{project.contractorReview.text}"
                                     </p>
                                 </div>
                             </div>
@@ -155,7 +178,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
                         {project.media.slice(0, 4).map((item, idx) => (
                             <Dialog key={item.id}>
                                 <DialogTrigger asChild>
-                                    <div className="relative aspect-video sm:aspect-square rounded-md overflow-hidden cursor-pointer group bg-slate-100 ring-1 ring-slate-100 hover:ring-blue-400 transition-all">
+                                    <button className="relative aspect-video sm:aspect-square rounded-md overflow-hidden cursor-pointer group bg-slate-100 ring-1 ring-slate-100 hover:ring-blue-400 transition-all outline-none p-0 w-full">
                                         <img src={item.thumbnail} alt="media" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
 
                                         {/* Overlay for Video */}
@@ -173,14 +196,20 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
                                                 +{project.media.length - 3}
                                             </div>
                                         )}
-                                    </div>
+                                    </button>
                                 </DialogTrigger>
                                 <DialogContent className="max-w-4xl p-0 overflow-hidden bg-transparent border-0 shadow-none">
-                                    <div className="flex items-center justify-center">
+                                    <VisuallyHidden>
+                                        <DialogTitle>نمایش رسانه پروژه</DialogTitle>
+                                        <DialogDescription>
+                                            نمایش تصویر یا ویدیو مربوط به پروژه {project.title}
+                                        </DialogDescription>
+                                    </VisuallyHidden>
+                                    <div className="flex items-center justify-center w-full h-full">
                                         {item.type === 'image' ? (
-                                            <img src={item.url} alt="Full view" className="max-h-[80vh] rounded-lg shadow-2xl" />
+                                            <img src={item.url} alt="Full view" className="max-w-full max-h-[80vh] rounded-lg shadow-2xl object-contain min-w-[300px]" />
                                         ) : (
-                                            <video src={item.url} controls className="max-h-[80vh] rounded-lg shadow-2xl" />
+                                            <video src={item.url} controls className="max-w-full max-h-[80vh] rounded-lg shadow-2xl min-w-[300px]" />
                                         )}
                                     </div>
                                 </DialogContent>
