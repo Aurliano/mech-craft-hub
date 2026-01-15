@@ -1,8 +1,10 @@
 import { Project } from './types';
+import logo from "@/assets/logo.png";
+
 
 export const mockProjects: Project[] = [
     {
-        id: 'kanoair-001',
+        id: 'conveyor-001',
         title: 'طراحی و نقشه کشی کانوایر',
         status: 'completed',
         client: {
@@ -14,7 +16,7 @@ export const mockProjects: Project[] = [
         contractor: {
             id: 'sayda-engineering',
             name: 'گروه مهندسی سایدا',
-            avatar: 'https://i.pravatar.cc/150?u=sayda-engineering',
+            avatar: 'logo',
             role: 'contractor',
             badge: 'A',
         },
@@ -44,6 +46,8 @@ export const mockProjects: Project[] = [
             { id: 'kanoair-4', type: 'image', url: '/images/kanoair/conveyor-4.jpg', thumbnail: '/images/kanoair/conveyor-4-thumb.jpg' },
             { id: 'kanoair-5', type: 'image', url: '/images/kanoair/conveyor-5.jpg', thumbnail: '/images/kanoair/conveyor-5-thumb.jpg' },
             { id: 'kanoair-6', type: 'image', url: '/images/kanoair/conveyor-6.jpg', thumbnail: '/images/kanoair/conveyor-6-thumb.jpg' },
+            { id: 'kanoair-7', type: 'video', url: '/images/kanoair/conveyor-7.mp4', thumbnail: '/images/kanoair/conveyor-7-thumb.mp4' },
+
         ],
     },
 ];
