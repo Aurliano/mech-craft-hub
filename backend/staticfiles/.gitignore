@@ -1,9 +1,0 @@
-# Ignore PWA files in staticfiles
-icons/
-screenshots/
-service-worker.js
-manifest.json
-web.config
-pwa-debug.js
-pwa-test.js
-mime-test.js
