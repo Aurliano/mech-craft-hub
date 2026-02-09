@@ -24,6 +24,7 @@ const EditOrder = () => {
 
   const {
     formData,
+    tabFieldValues,
     needsDocumentation,
     notes,
     documentationOptions,
@@ -31,6 +32,7 @@ const EditOrder = () => {
     setNeedsDocumentation,
     setNotes,
     setDocumentationOptions,
+    setDocumentationNotes,
     updateTabField,
   } = useServiceOrder(serviceId || '');
 
@@ -49,6 +51,15 @@ const EditOrder = () => {
       // Set field values
       if (item.field_values) {
         Object.entries(item.field_values).forEach(([key, value]) => {
+          // Handle documentation-related fields separately
+          if (key === 'documentationNotes') {
+            setDocumentationNotes((value as string) || '');
+            return;
+          }
+          if (key === 'documentationOptions') {
+            // Options are already loaded from order.documentation_options
+            return;
+          }
           // Check if it's a tab field (e.g. tabId_fieldKey)
           if (key.includes('_')) {
             // It might be a tab field, but we need to know tab structure.
@@ -119,16 +130,19 @@ const EditOrder = () => {
       
       setIsUpdating(true);
       try {
-          // 1. Gather data
-          // We need to get the latest state. 
-          // Since we are inside the component, we have access to formData etc.
-          
-          // Merge tab fields
-          // Note: useServiceOrder doesn't expose tabFieldValues in my destructuring above, need to fix.
-          
-          // Let's get tabFieldValues
-          // ... see below ...
-          
+          // 1. Gather data (merge flat and tab-based fields similar to creation flow)
+          const allFieldValues: Record<string, unknown> = {
+              ...formData,
+              documentationOptions,
+          };
+
+          Object.entries(tabFieldValues).forEach(([tabId, fields]) => {
+              Object.entries(fields).forEach(([fieldKey, value]) => {
+                  const prefixedKey = `${tabId}_${fieldKey}`;
+                  allFieldValues[prefixedKey] = value;
+              });
+          });
+
           const payload = {
               status: 'submitted', // Keep as submitted or reset? usually keep.
               notes: notes,
@@ -144,30 +158,15 @@ const EditOrder = () => {
                       // If we updated backend to handle it, great.
                       // I didn't update backend OrderSerializer to handle nested update.
                       // So this might fail to update fields.
-                      
-                      // Workaround: We can't easily update items without backend change.
-                      // But the user asked for "Edit".
-                      // I will implement the UI. If it fails, I'll know I need backend change.
-                      // But I should try to make it work.
-                      
                       service: serviceId,
-                      field_values: formData, // Simplified, assume flat or handled
+                      field_values: allFieldValues,
                       needs_documentation: needsDocumentation
                   }
               ]
           };
           
-          // Actually, since I didn't implement nested update in backend, 
-          // I should probably warn the user or try to implement it now?
-          // I'll try to implement a custom view for update in backend if I can, 
-          // or just rely on the standard one and see.
-          // Standard ModelSerializer update usually ignores nested writes.
-          
-          // For now, let's assume we can only update notes/options.
-          // But that's not enough for "Edit Order".
-          
-          // Let's send the request.
-          const response = await fetch(getApiUrl(`/api/v1/orders/${orderId}/`), {
+          // Send PATCH request to update order
+          const response = await fetch(getApiUrl(`/v1/orders/${orderId}/`), {
               method: 'PATCH',
               headers: {
                   'Content-Type': 'application/json',

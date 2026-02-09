@@ -1897,23 +1897,98 @@ def get_user_orders(request):
     return Response(OrderSerializer(orders, many=True).data)
 
 
-@api_view(["GET"])
+@api_view(["GET", "PATCH", "DELETE"])
 @permission_classes([IsAuthenticated])
 def get_order_by_id(request, order_id):
-    """Get specific order by ID"""
+    """
+    Get, update or delete a specific order by ID.
+    
+    - GET:    بازگرداندن جزئیات سفارش
+    - PATCH:  ویرایش سفارش (فقط برای مشتری و زمانی که وضعیت سفارش submitted است)
+    - DELETE: حذف سفارش (فقط برای مشتری و زمانی که وضعیت سفارش submitted است؛ ادمین برای همه)
+    """
     try:
-        # Allow both customers and contractors to view orders
-        if hasattr(request.user, 'role') and request.user.role.name == 'contractor':
-            # Contractors can view orders they have quotes for
+        # --- GET: existing behaviour (with contractor support) ---
+        if request.method == "GET":
+            # Allow both customers and contractors to view orders
+            if hasattr(request.user, 'role') and getattr(getattr(request.user, 'role', None), 'name', None) == 'contractor':
+                # Contractors can view orders they have quotes for
+                order = Order.objects.get(id=order_id)
+                from .models import Quote
+                if not Quote.objects.filter(order_item__order=order, contractor=request.user).exists():
+                    return Response({'detail': 'شما دسترسی به این سفارش ندارید'}, status=status.HTTP_403_FORBIDDEN)
+            else:
+                # Customers can view their own orders
+                order = Order.objects.get(id=order_id, customer=request.user)
+            return Response(OrderSerializer(order).data)
+
+        # For PATCH / DELETE we only allow owner or staff; contractors نباید بتوانند ویرایش/حذف کنند
+        if request.user.is_staff:
             order = Order.objects.get(id=order_id)
-            # Check if contractor has any quotes for this order
-            from .models import Quote
-            if not Quote.objects.filter(order_item__order=order, contractor=request.user).exists():
-                return Response({'detail': 'شما دسترسی به این سفارش ندارید'}, status=status.HTTP_403_FORBIDDEN)
         else:
-            # Customers can view their own orders
             order = Order.objects.get(id=order_id, customer=request.user)
-        return Response(OrderSerializer(order).data)
+
+        # --- PATCH: update order (notes, documentation_options, items' field_values, needs_documentation) ---
+        if request.method == "PATCH":
+            # Non-staff users can only edit submitted orders
+            if (not request.user.is_staff) and order.status != 'submitted':
+                return Response(
+                    {'detail': 'فقط سفارش‌های در حالت ثبت شده (submitted) قابل ویرایش هستند.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            data = request.data
+
+            # Update simple fields
+            if 'notes' in data:
+                order.notes = data.get('notes') or ''
+            if 'documentation_options' in data and isinstance(data.get('documentation_options'), dict):
+                order.documentation_options = data.get('documentation_options') or {}
+
+            # Update nested items if provided
+            items_data = data.get('items', [])
+            if isinstance(items_data, list) and items_data:
+                for item_data in items_data:
+                    item_id = item_data.get('id')
+                    if not item_id:
+                        return Response({'detail': 'شناسه آیتم سفارش (id) الزامی است.'},
+                                        status=status.HTTP_400_BAD_REQUEST)
+                    try:
+                        order_item = order.items.get(id=item_id)
+                    except OrderItem.DoesNotExist:
+                        return Response(
+                            {'detail': f'آیتمی با شناسه {item_id} برای این سفارش یافت نشد.'},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+
+                    # field_values
+                    if 'field_values' in item_data and isinstance(item_data.get('field_values'), dict):
+                        order_item.field_values = item_data.get('field_values') or {}
+
+                    # needs_documentation
+                    if 'needs_documentation' in item_data:
+                        order_item.needs_documentation = bool(item_data.get('needs_documentation'))
+
+                    order_item.save()
+
+            order.save()
+            return Response(OrderSerializer(order).data)
+
+        # --- DELETE: delete order ---
+        if request.method == "DELETE":
+            # Admin can delete any order, users can only delete submitted ones
+            if (not request.user.is_staff) and order.status != 'submitted':
+                return Response(
+                    {'detail': 'فقط سفارش‌های در حالت ثبت شده (submitted) قابل حذف هستند.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            order.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        # Should not reach here
+        return Response({'detail': 'متد پشتیبانی نمی‌شود.'}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
     except Order.DoesNotExist:
         return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
 
