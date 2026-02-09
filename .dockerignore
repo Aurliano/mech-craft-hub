@@ -85,6 +85,11 @@ README.md
 *.md
 docs/
 
+# Local documentation and non-runtime assets (not needed in container)
+DANESHBONYAN_PACKAGE/
+Conveyor/
+saida-mobile/
+
 # Large media files (keep only essential ones)
 backend/media/uploads/*.pdf
 backend/media/uploads/*.stp
