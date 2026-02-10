@@ -1864,6 +1864,7 @@ def create_order(request):
         # Create order items
         items_data = data.get('items', [])
         total_amount = 0
+        manufacturing_service_ids = set()
         for item_data in items_data:
             service = Service.objects.get(id=item_data['service'])
             order_item = OrderItem.objects.create(
@@ -1875,10 +1876,46 @@ def create_order(request):
             # Use service base_price as initial price (will be updated when quote is accepted)
             if service.base_price:
                 total_amount += float(service.base_price)
+            # Track manufacturing services for contractor SMS notifications
+            if getattr(service, 'type', None) == 'manufacturing':
+                manufacturing_service_ids.add(service.id)
         
         # Calculate total amount from service base prices
         order.total_amount = total_amount
         order.save()
+
+        # Notify relevant manufacturing contractors via SMS if order includes manufacturing services
+        try:
+            if manufacturing_service_ids:
+                from .services.sms_service import sms_service
+                from django.conf import settings
+
+                template_id = getattr(settings, 'SMS_TEMPLATE_ID_MANUFACTURING_ORDER', None)
+
+                contractors = User.objects.filter(
+                    contractor_services__service__id__in=manufacturing_service_ids,
+                    contractor_services__is_active=True,
+                    is_active=True
+                ).distinct()
+
+                for contractor in contractors:
+                    # Skip contractors without phone number
+                    if not getattr(contractor, 'phone', None):
+                        continue
+
+                    # Build contractor full name for template variable #CONTRACTOR#
+                    first_name = (contractor.first_name or '').strip()
+                    last_name = (contractor.last_name or '').strip()
+                    full_name = f"{first_name} {last_name}".strip() or contractor.username
+
+                    sms_service.send_new_manufacturing_order_notification(
+                        contractor.phone,
+                        full_name,
+                        template_id
+                    )
+        except Exception as e:
+            # Do not block order creation if SMS sending fails
+            logger.error(f"Error sending manufacturing order SMS notifications: {str(e)}")
         
         return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
     except Exception as e:
@@ -3309,6 +3346,9 @@ def approve_workshop(request, workshop_id):
     if workshop_class and workshop_class not in ['A', 'B', 'C']:
         return Response({'error': 'کلاس کارگاه باید A، B یا C باشد'}, status=status.HTTP_400_BAD_REQUEST)
     
+    # Capture previous approval state (for SMS notification)
+    was_approved = getattr(workshop, 'is_approved', False) if 'is_approved' in existing_columns else False
+    
     # Update workshop
     if 'is_approved' in existing_columns:
         if is_approved is not None:
@@ -3325,6 +3365,28 @@ def approve_workshop(request, workshop_id):
         pass
     
     workshop.save()
+    
+    # Send SMS to workshop owner when it transitions to approved
+    try:
+        if 'is_approved' in existing_columns:
+            now_approved = getattr(workshop, 'is_approved', False)
+            if now_approved and not was_approved:
+                owner = getattr(workshop, 'owner', None)
+                if owner and getattr(owner, 'phone', None):
+                    from .services.sms_service import sms_service
+                    from django.conf import settings
+                    
+                    template_id = getattr(settings, 'SMS_TEMPLATE_ID_APPROVE_WORKSHOP', None)
+                    workshop_name = workshop.name
+                    
+                    sms_service.send_workshop_approval_notification(
+                        owner.phone,
+                        workshop_name,
+                        template_id
+                    )
+    except Exception as e:
+        # Do not block approval if SMS sending fails
+        logger.error(f"Error sending workshop approval SMS: {str(e)}")
     
     # Return updated workshop data
     workshop_data = {

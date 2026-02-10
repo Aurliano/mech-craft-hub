@@ -561,9 +561,11 @@ SMS_SENDER = os.getenv('SMS_SENDER')
 if not SMS_SENDER:
     logger.warning("SMS_SENDER is not set in environment variables")
 
-# Template IDs for verification and password reset
+# Template IDs for verification, password reset, and notifications
 SMS_TEMPLATE_ID_VERIFICATION = os.getenv('SMS_TEMPLATE_ID_VERIFICATION', None)
 SMS_TEMPLATE_ID_PASSWORD_RESET = os.getenv('SMS_TEMPLATE_ID_PASSWORD_RESET', None)
+SMS_TEMPLATE_ID_MANUFACTURING_ORDER = os.getenv('SMS_TEMPLATE_ID_MANUFACTURING_ORDER', None)
+SMS_TEMPLATE_ID_APPROVE_WORKSHOP = os.getenv('SMS_TEMPLATE_ID_APPROVE_WORKSHOP', None)
 
 # SMS API Configuration
 SMS_API_TIMEOUT = int(os.getenv('SMS_API_TIMEOUT', '30'))  # 30 seconds default timeout

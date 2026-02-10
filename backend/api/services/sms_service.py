@@ -393,6 +393,346 @@ class SMSService:
                 'message': 'خطا در ارتباط با سرویس پیامک'
             }
     
+    def send_new_manufacturing_order_notification(self, phone: str, contractor_name: str, template_id: int = None) -> Dict[str, Any]:
+        """
+        Send SMS notification to contractors about a new manufacturing order.
+        
+        Args:
+            phone: Contractor phone number
+            contractor_name: Contractor full name to be injected into template
+            template_id: Template ID from SMS.ir panel (optional, falls back to regular SMS if not provided)
+        """
+        if not self.api_key:
+            logger.error("SMS_KEY not configured")
+            return {
+                'success': False,
+                'error': 'SMS service not configured',
+                'message': 'سرویس پیامک پیکربندی نشده است'
+            }
+        
+        try:
+            formatted_phone = self._format_phone_number(phone)
+            
+            if template_id:
+                return self._send_manufacturing_order_template(formatted_phone, contractor_name, template_id)
+            else:
+                return self._send_manufacturing_order_regular(formatted_phone, contractor_name)
+                
+        except Exception as e:
+            logger.error(f"Error sending manufacturing order notification SMS: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e),
+                'message': 'خطا در ارسال پیامک'
+            }
+    
+    def _send_manufacturing_order_template(self, phone: str, contractor_name: str, template_id: int) -> Dict[str, Any]:
+        """Send manufacturing order notification using SMS.ir verify endpoint with template."""
+        url = f"{self.base_url}/send/verify"
+        
+        # Convert template_id to int
+        try:
+            template_id = int(template_id)
+        except (ValueError, TypeError):
+            logger.error(f"Invalid manufacturing order template_id: {template_id}")
+            return {
+                'success': False,
+                'error': 'Invalid template ID',
+                'message': 'شناسه قالب نامعتبر است'
+            }
+        
+        # NOTE: Template text is managed in SMS.ir panel.
+        # It should contain a variable named #CONTRACTOR# which will be filled below.
+        payload = {
+            "mobile": phone,
+            "templateId": template_id,
+            "parameters": [
+                {
+                    "name": "CONTRACTOR",
+                    "value": contractor_name
+                }
+            ]
+        }
+        
+        try:
+            response = requests.post(
+                url,
+                data=json.dumps(payload),
+                headers=self._get_headers(),
+                timeout=self.timeout
+            )
+            
+            # Log response for debugging
+            logger.debug(f"SMS.ir manufacturing order verify response: status={response.status_code}, url={url}, body={response.text[:200]}")
+            
+            try:
+                response_data = response.json()
+            except ValueError as e:
+                logger.error(f"SMS.ir manufacturing order response not JSON: status={response.status_code}, text={response.text[:500]}, error={str(e)}")
+                return {
+                    'success': False,
+                    'error': f'Invalid response from SMS service (status {response.status_code})',
+                    'message': 'خطا در دریافت پاسخ از سرویس پیامک'
+                }
+            
+            if response.status_code == 200 and response_data.get('status') == 1:
+                logger.info(f"Manufacturing order notification SMS sent successfully to {phone}")
+                return {
+                    'success': True,
+                    'message_id': response_data.get('data', {}).get('messageId'),
+                    'cost': response_data.get('data', {}).get('cost'),
+                    'message': 'پیامک با موفقیت ارسال شد'
+                }
+            else:
+                logger.error(f"SMS.ir manufacturing order API error: {response_data}")
+                return {
+                    'success': False,
+                    'error': response_data.get('message', 'Unknown error'),
+                    'message': 'خطا در ارسال پیامک'
+                }
+                
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Request error sending manufacturing order SMS: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e),
+                'message': 'خطا در ارتباط با سرویس پیامک'
+            }
+    
+    def _send_manufacturing_order_regular(self, phone: str, contractor_name: str) -> Dict[str, Any]:
+        """Send manufacturing order notification using regular send endpoint (without template)."""
+        url = f"{self.base_url}/send"
+        
+        # Build message text matching business requirement
+        message = (
+            f"سلام {contractor_name} عزیز،\n"
+            "سفارش جدیدی در سایت برای شما ثبت شده است. شما میتوانید با ورود به پنل کاربری،جزئیات سفارشات را مشاهده کرده و پیشنهاد قیمتی خود را ارائه نمایید.\n"
+            "پلتفرم مهندسی سایدا\n"
+            "https://saydatech.ir\n"
+            "لغو 11"
+        )
+        
+        line = getattr(settings, 'SMS_SENDER', '')
+        
+        payload = {
+            "mobile": phone,
+            "message": message,
+            "lineNumber": line,
+            "sendDateTime": None
+        }
+        
+        try:
+            response = requests.post(
+                url,
+                data=json.dumps(payload),
+                headers=self._get_headers(),
+                timeout=self.timeout
+            )
+            
+            # Log response for debugging
+            logger.debug(f"SMS.ir manufacturing order send response: status={response.status_code}, url={url}, body={response.text[:200]}")
+            
+            try:
+                response_data = response.json()
+            except ValueError as e:
+                logger.error(f"SMS.ir manufacturing order send response not JSON: status={response.status_code}, text={response.text[:500]}, error={str(e)}")
+                return {
+                    'success': False,
+                    'error': f'Invalid response from SMS service (status {response.status_code})',
+                    'message': 'خطا در دریافت پاسخ از سرویس پیامک'
+                }
+            
+            if response.status_code == 200 and response_data.get('status') == 1:
+                logger.info(f"Manufacturing order notification SMS sent successfully to {phone}")
+                return {
+                    'success': True,
+                    'message_id': response_data.get('data', {}).get('messageId'),
+                    'cost': response_data.get('data', {}).get('cost'),
+                    'message': 'پیامک با موفقیت ارسال شد'
+                }
+            else:
+                logger.error(f"SMS.ir manufacturing order API error: {response_data}")
+                return {
+                    'success': False,
+                    'error': response_data.get('message', 'Unknown error'),
+                    'message': 'خطا در ارسال پیامک'
+                }
+                
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Request error sending manufacturing order SMS: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e),
+                'message': 'خطا در ارتباط با سرویس پیامک'
+            }
+    
+    def send_workshop_approval_notification(self, phone: str, workshop_name: str, template_id: int = None) -> Dict[str, Any]:
+        """
+        Send SMS notification to workshop owner after admin approval.
+        
+        Args:
+            phone: Owner phone number
+            workshop_name: Workshop name to be injected into template (#WORKSHOP#)
+            template_id: Template ID from SMS.ir panel (optional, falls back to regular SMS if not provided)
+        """
+        if not self.api_key:
+            logger.error("SMS_KEY not configured")
+            return {
+                'success': False,
+                'error': 'SMS service not configured',
+                'message': 'سرویس پیامک پیکربندی نشده است'
+            }
+        
+        try:
+            formatted_phone = self._format_phone_number(phone)
+            
+            if template_id:
+                return self._send_workshop_approval_template(formatted_phone, workshop_name, template_id)
+            else:
+                return self._send_workshop_approval_regular(formatted_phone, workshop_name)
+                
+        except Exception as e:
+            logger.error(f"Error sending workshop approval SMS: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e),
+                'message': 'خطا در ارسال پیامک'
+            }
+    
+    def _send_workshop_approval_template(self, phone: str, workshop_name: str, template_id: int) -> Dict[str, Any]:
+        """Send workshop approval notification using SMS.ir verify endpoint with template."""
+        url = f"{self.base_url}/send/verify"
+        
+        # Convert template_id to int
+        try:
+            template_id = int(template_id)
+        except (ValueError, TypeError):
+            logger.error(f"Invalid workshop approval template_id: {template_id}")
+            return {
+                'success': False,
+                'error': 'Invalid template ID',
+                'message': 'شناسه قالب نامعتبر است'
+            }
+        
+        # Template in SMS.ir should define variable #WORKSHOP#
+        payload = {
+            "mobile": phone,
+            "templateId": template_id,
+            "parameters": [
+                {
+                    "name": "WORKSHOP",
+                    "value": workshop_name
+                }
+            ]
+        }
+        
+        try:
+            response = requests.post(
+                url,
+                data=json.dumps(payload),
+                headers=self._get_headers(),
+                timeout=self.timeout
+            )
+            
+            logger.debug(f"SMS.ir workshop approval verify response: status={response.status_code}, url={url}, body={response.text[:200]}")
+            
+            try:
+                response_data = response.json()
+            except ValueError as e:
+                logger.error(f"SMS.ir workshop approval response not JSON: status={response.status_code}, text={response.text[:500]}, error={str(e)}")
+                return {
+                    'success': False,
+                    'error': f'Invalid response from SMS service (status {response.status_code})',
+                    'message': 'خطا در دریافت پاسخ از سرویس پیامک'
+                }
+            
+            if response.status_code == 200 and response_data.get('status') == 1:
+                logger.info(f"Workshop approval SMS sent successfully to {phone}")
+                return {
+                    'success': True,
+                    'message_id': response_data.get('data', {}).get('messageId'),
+                    'cost': response_data.get('data', {}).get('cost'),
+                    'message': 'پیامک با موفقیت ارسال شد'
+                }
+            else:
+                logger.error(f"SMS.ir workshop approval API error: {response_data}")
+                return {
+                    'success': False,
+                    'error': response_data.get('message', 'Unknown error'),
+                    'message': 'خطا در ارسال پیامک'
+                }
+                
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Request error sending workshop approval SMS: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e),
+                'message': 'خطا در ارتباط با سرویس پیامک'
+            }
+    
+    def _send_workshop_approval_regular(self, phone: str, workshop_name: str) -> Dict[str, Any]:
+        """Send workshop approval notification using regular send endpoint (without template)."""
+        url = f"{self.base_url}/send"
+        
+        message = (
+            "پلتفرم مهندسی سایدا\n\n"
+            "همراه گرامی؛ به شبکه همکاران خوش آمدید.\n"
+            f"درخواست شما برای ثبت کارگاه {workshop_name} مورد تایید قرار گرفت."
+        )
+        
+        line = getattr(settings, 'SMS_SENDER', '')
+        
+        payload = {
+            "mobile": phone,
+            "message": message,
+            "lineNumber": line,
+            "sendDateTime": None
+        }
+        
+        try:
+            response = requests.post(
+                url,
+                data=json.dumps(payload),
+                headers=self._get_headers(),
+                timeout=self.timeout
+            )
+            
+            logger.debug(f"SMS.ir workshop approval send response: status={response.status_code}, url={url}, body={response.text[:200]}")
+            
+            try:
+                response_data = response.json()
+            except ValueError as e:
+                logger.error(f"SMS.ir workshop approval send response not JSON: status={response.status_code}, text={response.text[:500]}, error={str(e)}")
+                return {
+                    'success': False,
+                    'error': f'Invalid response from SMS service (status {response.status_code})',
+                    'message': 'خطا در دریافت پاسخ از سرویس پیامک'
+                }
+            
+            if response.status_code == 200 and response_data.get('status') == 1:
+                logger.info(f"Workshop approval SMS sent successfully to {phone}")
+                return {
+                    'success': True,
+                    'message_id': response_data.get('data', {}).get('messageId'),
+                    'cost': response_data.get('data', {}).get('cost'),
+                    'message': 'پیامک با موفقیت ارسال شد'
+                }
+            else:
+                logger.error(f"SMS.ir workshop approval API error: {response_data}")
+                return {
+                    'success': False,
+                    'error': response_data.get('message', 'Unknown error'),
+                    'message': 'خطا در ارسال پیامک'
+                }
+                
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Request error sending workshop approval SMS: {str(e)}")
+            return {
+                'success': False,
+                'error': str(e),
+                'message': 'خطا در ارتباط با سرویس پیامک'
+            }
+    
     def get_credit(self) -> Dict[str, Any]:
         """Get SMS credit balance"""
         if not self.api_key:
