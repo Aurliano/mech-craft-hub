@@ -441,8 +441,8 @@ else:
     }
 
 # Authentication backends
+# NOTE: axes backend removed temporarily because it was blocking API logins.
 AUTHENTICATION_BACKENDS = [
-    'axes.backends.AxesStandaloneBackend',  # Must be first
     'django.contrib.auth.backends.ModelBackend',
 ]
 
