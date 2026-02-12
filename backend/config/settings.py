@@ -447,8 +447,10 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # django-axes Configuration - Enhanced Security
-AXES_ENABLED = True  # Enable axes for production
-AXES_FAILURE_LIMIT = 5  # Lock after 5 failed attempts
+# NOTE: Temporarily disabled because it was aggressively locking out API logins.
+# DRF already has strict throttling on the login endpoint.
+AXES_ENABLED = False  # Disable axes globally for now to restore login
+AXES_FAILURE_LIMIT = 5  # Lock after 5 failed attempts (when re-enabled)
 AXES_COOLOFF_TIME = 1  # 1 hour lockout
 AXES_LOCKOUT_TEMPLATE = 'axes/lockout.html'
 AXES_VERBOSE = True
