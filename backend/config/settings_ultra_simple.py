@@ -247,15 +247,15 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
-# Authentication backends - Axes must be first
+# Authentication backends
+# NOTE: axes backend removed temporarily because it was blocking API logins.
 AUTHENTICATION_BACKENDS = [
-    'axes.backends.AxesStandaloneBackend',  # Must be first
     'django.contrib.auth.backends.ModelBackend',
 ]
 
-# django-axes Configuration - Enhanced Security
-AXES_ENABLED = True  # Enable axes for production
-AXES_FAILURE_LIMIT = 5  # Lock after 5 failed attempts
+# django-axes Configuration - temporarily disabled to restore logins
+AXES_ENABLED = False
+AXES_FAILURE_LIMIT = 5  # When re-enabled
 AXES_COOLOFF_TIME = 1  # 1 hour lockout
 AXES_LOCKOUT_TEMPLATE = 'axes/lockout.html'
 AXES_VERBOSE = True
