@@ -1899,15 +1899,23 @@ def create_order(request):
                 ).distinct()
 
                 for contractor in contractors:
-                    # Skip contractors without phone number
-                    if not getattr(contractor, 'phone', None):
-                        continue
-
                     # Build contractor full name for template variable #CONTRACTOR#
                     first_name = (contractor.first_name or '').strip()
                     last_name = (contractor.last_name or '').strip()
                     full_name = f"{first_name} {last_name}".strip() or contractor.username
 
+                    # In-app notification for contractor (browser/PWA)
+                    create_notification(
+                        user=contractor,
+                        notification_type='order_status',
+                        title='سفارش جدید ساخت و تولید',
+                        message='سفارش جدیدی در سایت ثبت شده است. با ورود به پنل جزئیات را ببینید و پیشنهاد قیمتی ارسال کنید.',
+                        related_order=order
+                    )
+
+                    # SMS: skip if no phone
+                    if not getattr(contractor, 'phone', None):
+                        continue
                     sms_service.send_new_manufacturing_order_notification(
                         contractor.phone,
                         full_name,
@@ -2848,9 +2856,15 @@ def download_invoice(request, order_id):
 @api_view(["GET"])
 @permission_classes([IsAuthenticated])
 def get_user_notifications(request):
-    """Get notifications for the current user"""
-    notifications = Notification.objects.filter(user=request.user).order_by('-created_at')
-    return Response(NotificationSerializer(notifications, many=True).data)
+    """Get notifications for the current user (optional ?limit= for bell dropdown)."""
+    qs = Notification.objects.filter(user=request.user).order_by('-created_at')
+    try:
+        limit = request.query_params.get('limit')
+        if limit is not None:
+            qs = qs[: max(1, min(100, int(limit)))]
+    except (ValueError, TypeError):
+        pass
+    return Response(NotificationSerializer(qs, many=True).data)
 
 
 @api_view(["PATCH"])
@@ -3366,27 +3380,36 @@ def approve_workshop(request, workshop_id):
     
     workshop.save()
     
-    # Send SMS to workshop owner when it transitions to approved
+    # Notify workshop owner (in-app + SMS) when it transitions to approved
     try:
         if 'is_approved' in existing_columns:
             now_approved = getattr(workshop, 'is_approved', False)
             if now_approved and not was_approved:
                 owner = getattr(workshop, 'owner', None)
-                if owner and getattr(owner, 'phone', None):
-                    from .services.sms_service import sms_service
-                    from django.conf import settings
-                    
-                    template_id = getattr(settings, 'SMS_TEMPLATE_ID_APPROVE_WORKSHOP', None)
+                if owner:
                     workshop_name = workshop.name
-                    
-                    sms_service.send_workshop_approval_notification(
-                        owner.phone,
-                        workshop_name,
-                        template_id
+                    # In-app notification for owner (browser/PWA)
+                    create_notification(
+                        user=owner,
+                        notification_type='system',
+                        title='تایید کارگاه',
+                        message=f'درخواست شما برای ثبت کارگاه «{workshop_name}» مورد تایید قرار گرفت. به شبکه همکاران خوش آمدید.',
+                        related_order=None,
+                        related_quote=None
                     )
+                    # SMS
+                    if getattr(owner, 'phone', None):
+                        from .services.sms_service import sms_service
+                        from django.conf import settings
+                        template_id = getattr(settings, 'SMS_TEMPLATE_ID_APPROVE_WORKSHOP', None)
+                        sms_service.send_workshop_approval_notification(
+                            owner.phone,
+                            workshop_name,
+                            template_id
+                        )
     except Exception as e:
-        # Do not block approval if SMS sending fails
-        logger.error(f"Error sending workshop approval SMS: {str(e)}")
+        # Do not block approval if notification/SMS sending fails
+        logger.error(f"Error sending workshop approval notification/SMS: {str(e)}")
     
     # Return updated workshop data
     workshop_data = {

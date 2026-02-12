@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -12,6 +12,9 @@ import { Bell, CheckCircle, DollarSign, Package, AlertCircle } from 'lucide-reac
 import { Link } from 'react-router-dom';
 import { getApiUrl } from '@/lib/api';
 
+const BROWSER_NOTIFICATION_ASKED_KEY = 'saydatech_notification_permission_asked';
+const NOTIFICATION_POLL_INTERVAL_MS = 30000;
+
 interface Notification {
   id: string;
   type: string;
@@ -21,37 +24,80 @@ interface Notification {
   created_at: string;
 }
 
+function requestNotificationPermissionOnce(): void {
+  if (typeof window === 'undefined' || !('Notification' in window)) return;
+  if (Notification.permission !== 'default') return;
+  if (sessionStorage.getItem(BROWSER_NOTIFICATION_ASKED_KEY) === '1') return;
+  sessionStorage.setItem(BROWSER_NOTIFICATION_ASKED_KEY, '1');
+  Notification.requestPermission().catch(() => {});
+}
+
+function showBrowserNotification(title: string, body: string): void {
+  if (typeof window === 'undefined' || !('Notification' in window)) return;
+  if (Notification.permission !== 'granted') return;
+  try {
+    const n = new Notification(title, {
+      body,
+      icon: '/favicon/web-app-manifest-192x192.png',
+      dir: 'rtl',
+      tag: 'saydatech-notification',
+    });
+    n.onclick = () => {
+      window.focus();
+      n.close();
+    };
+    setTimeout(() => n.close(), 8000);
+  } catch {
+    // ignore
+  }
+}
+
 const NotificationBell: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-
-  useEffect(() => {
-    fetchNotifications();
-    // Poll for new notifications every 30 seconds
-    const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
-  }, []);
+  const knownNotificationIds = useRef<Set<string>>(new Set());
+  const isFirstFetch = useRef(true);
 
   const fetchNotifications = async () => {
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
     try {
       setIsLoading(true);
       const response = await fetch(getApiUrl('/api/v1/notifications/?limit=5'), {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` }
       });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setNotifications(data);
+      if (!response.ok) return;
+      const data: Notification[] = await response.json();
+      const currentIds = new Set(data.map((n) => n.id));
+
+      if (isFirstFetch.current) {
+        isFirstFetch.current = false;
+        knownNotificationIds.current = currentIds;
+      } else {
+        data.forEach((n) => {
+          if (!knownNotificationIds.current.has(n.id) && !n.is_read) {
+            showBrowserNotification(n.title, n.message);
+          }
+        });
+        knownNotificationIds.current = currentIds;
       }
+      setNotifications(data);
     } catch (error) {
       console.error('Error fetching notifications:', error);
     } finally {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (localStorage.getItem('access_token')) {
+      requestNotificationPermissionOnce();
+      fetchNotifications();
+    }
+    const interval = setInterval(fetchNotifications, NOTIFICATION_POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, []);
 
   const markAsRead = async (notificationId: string) => {
     try {
@@ -134,6 +180,18 @@ const NotificationBell: React.FC = () => {
   };
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
+  const canRequestNotification =
+    typeof window !== 'undefined' &&
+    'Notification' in window &&
+    (Notification.permission === 'default' || Notification.permission === 'denied');
+
+  const handleRequestNotificationPermission = () => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().then(() => {
+        sessionStorage.removeItem(BROWSER_NOTIFICATION_ASKED_KEY);
+      });
+    }
+  };
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
@@ -222,7 +280,13 @@ const NotificationBell: React.FC = () => {
         </div>
         
         <DropdownMenuSeparator />
-        
+        {canRequestNotification && (
+          <DropdownMenuItem onClick={handleRequestNotificationPermission}>
+            <div className="flex items-center justify-center w-full p-2 text-sm text-amber-600">
+              دریافت اعلان در مرورگر
+            </div>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem asChild>
           <Link to="/notifications" className="w-full">
             <div className="flex items-center justify-center w-full p-2 text-sm text-blue-600">
