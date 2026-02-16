@@ -239,7 +239,7 @@ class ServiceFieldAdmin(admin.ModelAdmin):
 @admin.register(ContractorService)
 class ContractorServiceAdmin(admin.ModelAdmin):
     list_display = ('contractor', 'service', 'is_active', 'added_at', 'added_by')
-    list_filter = ('is_active', 'added_at', 'service__scope')
+    list_filter = ('is_active', 'added_at')
     search_fields = ('contractor__username', 'service__name')
     raw_id_fields = ('contractor', 'service', 'added_by')
 
@@ -250,13 +250,155 @@ class WorkshopAdmin(admin.ModelAdmin):
     list_filter = ('is_active', 'created_at')
     search_fields = ('name', 'owner__username', 'address')
     raw_id_fields = ('owner',)
+    actions = ['transfer_workshops_to_contractor']
+    
+    @admin.action(description='انتقال کارگاه‌های انتخاب شده به پیمانکار')
+    def transfer_workshops_to_contractor(self, request, queryset):
+        """Admin action to transfer selected workshops to a contractor"""
+        from django.contrib import messages
+        from django.shortcuts import render, redirect
+        
+        if 'apply' in request.POST:
+            contractor_id = request.POST.get('contractor')
+            if not contractor_id:
+                messages.error(request, 'لطفاً پیمانکار را انتخاب کنید.')
+                return redirect(request.get_full_path())
+            
+            try:
+                from .models import User, Role
+                contractor = User.objects.get(id=contractor_id)
+                
+                # بررسی اینکه کاربر واقعاً پیمانکار است
+                is_contractor = contractor.user_roles.filter(role__name='contractor', is_active=True).exists()
+                if not is_contractor:
+                    messages.error(request, f'کاربر {contractor.username} پیمانکار نیست.')
+                    return redirect(request.get_full_path())
+                
+                # انتقال کارگاه‌ها
+                transferred_count = 0
+                for workshop in queryset:
+                    old_owner = workshop.owner
+                    workshop.owner = contractor
+                    workshop.save()
+                    transferred_count += 1
+                    self.log_change(request, workshop, f'Owner changed from {old_owner.username} to {contractor.username}')
+                
+                messages.success(request, f'{transferred_count} کارگاه با موفقیت به {contractor.username} ({contractor.get_full_name() or contractor.email}) منتقل شد.')
+                return redirect('admin:api_workshop_changelist')
+            except User.DoesNotExist:
+                messages.error(request, 'پیمانکار انتخاب شده یافت نشد.')
+                return redirect(request.get_full_path())
+            except Exception as e:
+                messages.error(request, f'خطا در انتقال: {str(e)}')
+                return redirect(request.get_full_path())
+        
+        # نمایش فرم انتخاب پیمانکار
+        from .models import User, Role
+        contractors = User.objects.filter(
+            user_roles__role__name='contractor',
+            user_roles__is_active=True
+        ).distinct().order_by('username')
+        
+        context = {
+            'title': 'انتقال کارگاه‌ها به پیمانکار',
+            'workshops': queryset,
+            'contractors': contractors,
+            'opts': self.model._meta,
+            'action_checkbox_name': admin.helpers.ACTION_CHECKBOX_NAME,
+        }
+        
+        return render(request, 'admin/transfer_workshops.html', context)
+    
+    def get_urls(self):
+        """Add custom admin view for transferring admin's workshops"""
+        from django.urls import path
+        urls = super().get_urls()
+        custom_urls = [
+            path('transfer-my-workshops/', self.admin_site.admin_view(self.transfer_my_workshops_view), 
+                 name='api_workshop_transfer_my_workshops'),
+        ]
+        return custom_urls + urls
+    
+    def transfer_my_workshops_view(self, request):
+        """Custom admin view to transfer workshops owned by current admin user"""
+        from django.contrib import messages
+        from django.shortcuts import render, redirect
+        from .models import User, Workshop
+        
+        if request.method == 'POST':
+            # Process transfers
+            transferred_count = 0
+            errors = []
+            
+            for key, value in request.POST.items():
+                if key.startswith('workshop_') and value:
+                    workshop_id = key.replace('workshop_', '')
+                    contractor_id = value
+                    
+                    try:
+                        workshop = Workshop.objects.get(id=workshop_id, owner=request.user)
+                        contractor = User.objects.get(id=contractor_id)
+                        
+                        # بررسی اینکه کاربر واقعاً پیمانکار است
+                        is_contractor = contractor.user_roles.filter(role__name='contractor', is_active=True).exists()
+                        if not is_contractor:
+                            errors.append(f'کاربر {contractor.username} پیمانکار نیست.')
+                            continue
+                        
+                        old_owner = workshop.owner
+                        workshop.owner = contractor
+                        workshop.save()
+                        transferred_count += 1
+                        self.log_change(request, workshop, f'Owner changed from {old_owner.username} to {contractor.username}')
+                    except Workshop.DoesNotExist:
+                        errors.append(f'کارگاه با ID {workshop_id} یافت نشد یا متعلق به شما نیست.')
+                    except User.DoesNotExist:
+                        errors.append(f'پیمانکار با ID {contractor_id} یافت نشد.')
+                    except Exception as e:
+                        errors.append(f'خطا در انتقال کارگاه {workshop_id}: {str(e)}')
+            
+            if transferred_count > 0:
+                messages.success(request, f'{transferred_count} کارگاه با موفقیت منتقل شد.')
+            if errors:
+                for error in errors:
+                    messages.error(request, error)
+            
+            return redirect('admin:api_workshop_transfer_my_workshops')
+        
+        # نمایش لیست کارگاه‌های متعلق به ادمین فعلی
+        my_workshops = Workshop.objects.filter(owner=request.user).order_by('-created_at')
+        contractors = User.objects.filter(
+            user_roles__role__name='contractor',
+            user_roles__is_active=True
+        ).distinct().order_by('username')
+        
+        context = {
+            **self.admin_site.each_context(request),
+            'title': 'انتقال کارگاه‌های من به پیمانکاران',
+            'workshops': my_workshops,
+            'contractors': contractors,
+            'opts': self.model._meta,
+            'has_view_permission': self.has_view_permission(request, None),
+        }
+        
+        return render(request, 'admin/transfer_my_workshops.html', context)
+    
+    def changelist_view(self, request, extra_context=None):
+        """Add custom link to transfer admin's workshops"""
+        extra_context = extra_context or {}
+        # Count workshops owned by current admin
+        my_workshops_count = Workshop.objects.filter(owner=request.user).count()
+        extra_context['my_workshops_count'] = my_workshops_count
+        extra_context['transfer_my_workshops_url'] = 'admin:api_workshop_transfer_my_workshops'
+        return super().changelist_view(request, extra_context)
 
 
 @admin.register(WorkshopService)
 class WorkshopServiceAdmin(admin.ModelAdmin):
     list_display = ('workshop', 'service', 'is_active')
-    list_filter = ('is_active', 'service__scope')
+    list_filter = ('is_active',)
     search_fields = ('workshop__name', 'service__name')
+    raw_id_fields = ('workshop', 'service')
 
 
 @admin.register(Cart)

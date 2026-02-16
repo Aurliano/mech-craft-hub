@@ -1,0 +1,13 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls static %}
+
+{% block object-tools-items %}
+    {{ block.super }}
+    {% if my_workshops_count > 0 %}
+    <li>
+        <a href="{% url 'admin:api_workshop_transfer_my_workshops' %}" class="addlink" style="background: #417690;">
+            📤 انتقال کارگاه‌های من ({{ my_workshops_count }})
+        </a>
+    </li>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,139 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static %}
+
+{% block title %}انتقال کارگاه‌های من به پیمانکاران{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+    &rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+    &rsaquo; <a href="{% url 'admin:api_workshop_changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+    &rsaquo; انتقال کارگاه‌های من
+</div>
+{% endblock %}
+
+{% block content %}
+<h1>انتقال کارگاه‌های من به پیمانکاران</h1>
+
+{% if workshops %}
+<p class="info">شما <strong>{{ workshops|length }}</strong> کارگاه دارید که می‌توانید آن‌ها را به پیمانکاران منتقل کنید.</p>
+
+<form method="post" action="">
+    {% csrf_token %}
+    
+    <div class="module">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f5f5f5;">
+                    <th style="padding: 10px; border: 1px solid #ddd; text-align: right;">نام کارگاه</th>
+                    <th style="padding: 10px; border: 1px solid #ddd; text-align: right;">کد</th>
+                    <th style="padding: 10px; border: 1px solid #ddd; text-align: right;">آدرس</th>
+                    <th style="padding: 10px; border: 1px solid #ddd; text-align: right;">وضعیت</th>
+                    <th style="padding: 10px; border: 1px solid #ddd; text-align: right;">انتقال به پیمانکار</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for workshop in workshops %}
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd;">
+                        <strong>{{ workshop.name }}</strong>
+                    </td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">{{ workshop.code }}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">{{ workshop.address|truncatewords:5 }}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">
+                        {% if workshop.is_approved %}
+                            <span style="color: green;">✓ تایید شده</span>
+                        {% else %}
+                            <span style="color: orange;">در انتظار تایید</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 10px; border: 1px solid #ddd;">
+                        <select name="workshop_{{ workshop.id }}" style="width: 100%; padding: 5px;">
+                            <option value="">-- انتخاب پیمانکار --</option>
+                            {% for contractor in contractors %}
+                            <option value="{{ contractor.id }}">
+                                {{ contractor.username }}
+                                {% if contractor.get_full_name %} - {{ contractor.get_full_name }}{% endif %}
+                                {% if contractor.email %} ({{ contractor.email }}){% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="submit-row">
+        <input type="submit" value="انتقال کارگاه‌های انتخاب شده" class="default" />
+        <a href="{% url 'admin:api_workshop_changelist' %}" class="button">بازگشت به لیست کارگاه‌ها</a>
+    </div>
+</form>
+
+{% else %}
+<div class="module">
+    <p>شما هیچ کارگاهی ندارید که نیاز به انتقال داشته باشد.</p>
+    <p><a href="{% url 'admin:api_workshop_changelist' %}">بازگشت به لیست کارگاه‌ها</a></p>
+</div>
+{% endif %}
+
+<style>
+.module {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+.info {
+    background: #e8f4f8;
+    border: 1px solid #bee5eb;
+    border-radius: 4px;
+    padding: 15px;
+    margin-bottom: 20px;
+    color: #0c5460;
+}
+table {
+    margin-top: 10px;
+}
+table th {
+    font-weight: bold;
+    background: #f5f5f5;
+}
+table tr:hover {
+    background: #f9f9f9;
+}
+.submit-row {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 15px;
+    text-align: right;
+    margin-top: 20px;
+}
+.submit-row input[type="submit"] {
+    background: #417690;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 10px;
+}
+.submit-row input[type="submit"]:hover {
+    background: #205067;
+}
+.submit-row .button {
+    display: inline-block;
+    padding: 10px 20px;
+    background: #ba2121;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+}
+.submit-row .button:hover {
+    background: #a41515;
+}
+</style>
+{% endblock %}
