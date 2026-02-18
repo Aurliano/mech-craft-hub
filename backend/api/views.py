@@ -19,7 +19,8 @@ from .models import (
     PasswordResetToken, PhoneVerificationCode, Payment, Notification, OrderStatusLog,
     ScientificContent, OrderProposal, MaterialEstimate, OrderStatus, MaterialEstimation,
     DeliveryFile, JobSeeker, WorkRequest, JobMatch, WorkContract,
-    SpecialistProfile, SpecialistHireRequest, JobSeekerHireRequest
+    SpecialistProfile, SpecialistHireRequest, JobSeekerHireRequest,
+    Conversation, ConversationParticipant, DirectMessage
 )
 from .pagination import StandardResultsSetPagination
 from .exceptions import (
@@ -43,7 +44,8 @@ from .serializers import (
     JobMatchSerializer, JobMatchCreateSerializer, WorkContractSerializer, WorkContractCreateSerializer,
     SpecialistProfileSerializer, SpecialistProfileCreateSerializer, SpecialistProfilePublicSerializer,
     SpecialistHireRequestSerializer, SpecialistHireRequestCreateSerializer,
-    JobSeekerHireRequestSerializer, JobSeekerHireRequestCreateSerializer
+    JobSeekerHireRequestSerializer, JobSeekerHireRequestCreateSerializer,
+    UserPublicProfileSerializer, DirectMessageSerializer, ConversationSerializer
 )
 import os
 import random
@@ -3581,6 +3583,110 @@ def approve_specialist_profile(request, specialist_id):
         'message': 'پروفایل نیروی متخصص با موفقیت به‌روزرسانی شد',
         'specialist': serializer.data
     })
+
+
+# --- User Profile & Direct Messaging ---
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_public_users(request):
+    """List users for profile search (public info only). Excludes current user."""
+    search = request.GET.get('search', '').strip()
+    queryset = User.objects.exclude(id=request.user.id).filter(is_active=True)
+    if search:
+        queryset = queryset.filter(
+            models.Q(username__icontains=search) |
+            models.Q(first_name__icontains=search) |
+            models.Q(last_name__icontains=search)
+        )
+    queryset = queryset.order_by('username')[:50]
+    return Response(UserPublicProfileSerializer(queryset, many=True).data)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_user_public_profile(request, user_id):
+    """Get public profile of a user by ID"""
+    try:
+        user = User.objects.get(id=user_id, is_active=True)
+    except User.DoesNotExist:
+        return Response({'error': 'کاربر یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+    if user.id == request.user.id:
+        return Response({'error': 'برای مشاهده پروفایل خود از صفحه پروفایل استفاده کنید'}, status=status.HTTP_400_BAD_REQUEST)
+    return Response(UserPublicProfileSerializer(user).data)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_conversations(request):
+    """List current user's conversations"""
+    convs = Conversation.objects.filter(participants=request.user).order_by('-updated_at')
+    return Response(ConversationSerializer(convs, many=True, context={'request': request}).data)
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
+def get_or_create_conversation(request, user_id):
+    """Get or create a conversation with a specific user"""
+    try:
+        other_user = User.objects.get(id=user_id, is_active=True)
+    except User.DoesNotExist:
+        return Response({'error': 'کاربر یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+    if other_user.id == request.user.id:
+        return Response({'error': 'نمی‌توانید با خودتان چت کنید'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Find existing conversation
+    user_convs = Conversation.objects.filter(participants=request.user)
+    conv = user_convs.filter(participants=other_user).first()
+    if conv:
+        return Response(ConversationSerializer(conv, context={'request': request}).data)
+
+    # Create new conversation
+    conv = Conversation.objects.create()
+    ConversationParticipant.objects.create(conversation=conv, user=request.user)
+    ConversationParticipant.objects.create(conversation=conv, user=other_user)
+    return Response(ConversationSerializer(conv, context={'request': request}).data, status=status.HTTP_201_CREATED)
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def get_conversation_messages(request, conversation_id):
+    """List messages in a conversation"""
+    try:
+        conv = Conversation.objects.get(id=conversation_id, participants=request.user)
+    except Conversation.DoesNotExist:
+        return Response({'error': 'مکالمه یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+    messages = conv.messages.order_by('created_at')
+    return Response(DirectMessageSerializer(messages, many=True).data)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def send_direct_message(request, conversation_id):
+    """Send a message in a conversation"""
+    try:
+        conv = Conversation.objects.get(id=conversation_id, participants=request.user)
+    except Conversation.DoesNotExist:
+        return Response({'error': 'مکالمه یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+    content = (request.data.get('content') or '').strip()
+    if not content:
+        return Response({'error': 'متن پیام نمی‌تواند خالی باشد'}, status=status.HTTP_400_BAD_REQUEST)
+    msg = DirectMessage.objects.create(conversation=conv, sender=request.user, content=content)
+    conv.updated_at = timezone.now()
+    conv.save(update_fields=['updated_at'])
+    return Response(DirectMessageSerializer(msg).data, status=status.HTTP_201_CREATED)
+
+
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
+def mark_messages_read(request, conversation_id):
+    """Mark messages in a conversation as read"""
+    try:
+        conv = Conversation.objects.get(id=conversation_id, participants=request.user)
+    except Conversation.DoesNotExist:
+        return Response({'error': 'مکالمه یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+    conv.messages.filter(is_read=False).exclude(sender=request.user).update(is_read=True)
+    return Response({'message': 'ok'})
 
 
 # Turnstile Statistics and Admin

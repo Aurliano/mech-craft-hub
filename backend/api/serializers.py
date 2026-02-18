@@ -10,7 +10,8 @@ from .models import (
     ContentFilterLog, Review, Notification, SupportFeedback, BlogPost, BlogComment, ScientificContent,
     OrderProposal, MaterialEstimate, OrderStatus, Payment, MaterialEstimation, OrderStatusLog,
     DeliveryFile, JobSeeker, WorkRequest, JobMatch, WorkContract,
-    SpecialistProfile, SpecialistHireRequest, JobSeekerHireRequest
+    SpecialistProfile, SpecialistHireRequest, JobSeekerHireRequest,
+    Conversation, DirectMessage
 )
 
 
@@ -1426,3 +1427,61 @@ class JobSeekerHireRequestCreateSerializer(serializers.ModelSerializer):
         """Create hire request for authenticated user"""
         validated_data['requester'] = self.context['request'].user
         return super().create(validated_data)
+
+
+# --- User Profile & Messaging ---
+
+class UserPublicProfileSerializer(serializers.ModelSerializer):
+    """Public user profile - no sensitive data (email, phone)"""
+    role = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'first_name', 'last_name', 'profile_image', 'created_at', 'role']
+    
+    def get_role(self, obj):
+        ur = obj.user_roles.filter(is_active=True).select_related('role').first()
+        if ur and ur.role:
+            return {'name': ur.role.name, 'display_name': ur.role.display_name}
+        return None
+
+
+class DirectMessageSerializer(serializers.ModelSerializer):
+    sender_name = serializers.CharField(source='sender.username', read_only=True)
+    sender_id = serializers.UUIDField(source='sender.id', read_only=True)
+    
+    class Meta:
+        model = DirectMessage
+        fields = ['id', 'conversation', 'sender', 'sender_id', 'sender_name', 'content', 'created_at', 'is_read']
+        read_only_fields = ['id', 'sender', 'created_at']
+
+
+class ConversationSerializer(serializers.ModelSerializer):
+    other_user = serializers.SerializerMethodField()
+    last_message = serializers.SerializerMethodField()
+    unread_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Conversation
+        fields = ['id', 'other_user', 'last_message', 'unread_count', 'created_at', 'updated_at']
+    
+    def get_other_user(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user:
+            return None
+        other = obj.participants.exclude(id=request.user.id).first()
+        if other:
+            return UserPublicProfileSerializer(other).data
+        return None
+    
+    def get_last_message(self, obj):
+        last = obj.messages.order_by('-created_at').first()
+        if last:
+            return DirectMessageSerializer(last).data
+        return None
+    
+    def get_unread_count(self, obj):
+        request = self.context.get('request')
+        if not request or not request.user:
+            return 0
+        return obj.messages.filter(is_read=False).exclude(sender=request.user).count()

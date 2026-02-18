@@ -43,6 +43,10 @@ from .views import (
     get_all_workshops_for_admin, approve_workshop,
     # Admin specialist management endpoints
     approve_specialist_profile,
+    # User profile & messaging
+    get_public_users, get_user_public_profile,
+    get_conversations, get_or_create_conversation,
+    get_conversation_messages, send_direct_message, mark_messages_read,
     # Ticket endpoints
     create_ticket, create_ticket_message,
     # Captcha endpoints (Turnstile only)
@@ -186,6 +190,15 @@ urlpatterns = [
     
     # Public Job Seeker Endpoint
     path('v1/public/job-seekers/', get_public_job_seekers, name='get_public_job_seekers'),
+    
+    # User profile & direct messaging
+    path('v1/users/search/', get_public_users, name='get_public_users'),
+    path('v1/users/<uuid:user_id>/profile/', get_user_public_profile, name='get_user_public_profile'),
+    path('v1/conversations/', get_conversations, name='get_conversations'),
+    path('v1/conversations/with/<uuid:user_id>/', get_or_create_conversation, name='get_or_create_conversation'),
+    path('v1/conversations/<uuid:conversation_id>/messages/', get_conversation_messages, name='get_conversation_messages'),
+    path('v1/conversations/<uuid:conversation_id>/send/', send_direct_message, name='send_direct_message'),
+    path('v1/conversations/<uuid:conversation_id>/read/', mark_messages_read, name='mark_messages_read'),
     
     # Job Seeker Hire Request Endpoint
     path('v1/job-seekers/hire-request/', create_job_seeker_hire_request, name='create_job_seeker_hire_request'),

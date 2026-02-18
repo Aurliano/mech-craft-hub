@@ -58,6 +58,8 @@ import NotFound from "./pages/NotFound";
 import JobMarket from "./pages/JobMarket";
 import JobSeekerRegistration from "./pages/JobSeekerRegistration";
 import TestPayment from "./pages/TestPayment";
+import Messages from "./pages/Messages";
+import UserProfileView from "./pages/UserProfileView";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -221,6 +223,18 @@ const App = () => (
               <Route path="/job-seeker/register" element={
                 <ProtectedRoute allowedRoles={['customer']}>
                   <JobSeekerRegistration />
+                </ProtectedRoute>
+              } />
+              
+              {/* User profile & messaging */}
+              <Route path="/messages" element={
+                <ProtectedRoute>
+                  <Messages />
+                </ProtectedRoute>
+              } />
+              <Route path="/users/:id" element={
+                <ProtectedRoute>
+                  <UserProfileView />
                 </ProtectedRoute>
               } />
               

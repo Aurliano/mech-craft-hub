@@ -2020,3 +2020,56 @@ class JobSeekerHireRequest(models.Model):
         return f"درخواست {self.requester.username} برای نیروی کاریابی {self.job_seeker.id}"
 
 
+class Conversation(models.Model):
+    """Private conversation between two users"""
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    participants = models.ManyToManyField(User, through='ConversationParticipant', related_name='conversations')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        db_table = 'conversations'
+        ordering = ['-updated_at']
+        indexes = [
+            models.Index(fields=['updated_at']),
+        ]
+    
+    def __str__(self):
+        return f"Conversation {self.id}"
+
+
+class ConversationParticipant(models.Model):
+    """Links users to conversations"""
+    
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='participant_links')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='conversation_participations')
+    joined_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'conversation_participants'
+        unique_together = ('conversation', 'user')
+
+
+class DirectMessage(models.Model):
+    """Direct message between users in a conversation"""
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_direct_messages')
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+    
+    class Meta:
+        db_table = 'direct_messages'
+        ordering = ['created_at']
+        indexes = [
+            models.Index(fields=['conversation']),
+            models.Index(fields=['sender']),
+            models.Index(fields=['created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.sender.username} -> {self.conversation_id}"
+

@@ -86,6 +86,13 @@ const UserDropdown: React.FC<UserDropdownProps> = ({
           </Link>
         </DropdownMenuItem>
         
+        <DropdownMenuItem asChild>
+          <Link to="/messages">
+            <MessageSquare className="mr-2 h-4 w-4" />
+            <span>پیام‌ها</span>
+          </Link>
+        </DropdownMenuItem>
+        
         {/* Role-specific items */}
         {isCustomer && (
           <>

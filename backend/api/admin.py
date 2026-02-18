@@ -10,7 +10,8 @@ from .models import (
     Order, OrderItem, Quote, OrderStatusLog, Payment,
     TicketCategory, Ticket, TicketParticipant, TicketMessage, TicketAttachment,
     MediaFile, Review, PasswordResetToken, PhoneVerificationCode, Notification,
-    TurnstileAttempt, OrderProposal
+    TurnstileAttempt, OrderProposal,
+    Conversation, DirectMessage
 )
 
 
@@ -574,3 +575,24 @@ class TurnstileAttemptAdmin(admin.ModelAdmin):
     def has_change_permission(self, request, obj=None):
         """Prevent editing of Turnstile attempts"""
         return False
+
+
+@admin.register(Conversation)
+class ConversationAdmin(admin.ModelAdmin):
+    list_display = ('id', 'created_at', 'updated_at')
+    list_filter = ('created_at',)
+    filter_horizontal = ('participants',)
+    readonly_fields = ('id', 'created_at', 'updated_at')
+
+
+@admin.register(DirectMessage)
+class DirectMessageAdmin(admin.ModelAdmin):
+    list_display = ('id', 'conversation', 'sender', 'content_short', 'created_at', 'is_read')
+    list_filter = ('is_read', 'created_at')
+    search_fields = ('content', 'sender__username')
+    raw_id_fields = ('conversation', 'sender')
+    readonly_fields = ('id', 'created_at')
+
+    def content_short(self, obj):
+        return (obj.content[:50] + '...') if len(obj.content) > 50 else obj.content
+    content_short.short_description = 'متن'

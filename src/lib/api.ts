@@ -1660,6 +1660,78 @@ export async function reviewContentViolation(violationId: string, isFalsePositiv
   }
 }
 
+// ============================================
+// User Profile & Direct Messaging API
+// ============================================
+
+export interface UserPublicProfile {
+  id: string;
+  username: string;
+  first_name?: string;
+  last_name?: string;
+  profile_image?: string | null;
+  created_at?: string;
+  role?: { name: string; display_name: string } | null;
+}
+
+export interface DirectMessageType {
+  id: string;
+  conversation: string;
+  sender: string;
+  sender_id: string;
+  sender_name: string;
+  content: string;
+  created_at: string;
+  is_read: boolean;
+}
+
+export interface ConversationType {
+  id: string;
+  other_user: UserPublicProfile | null;
+  last_message: DirectMessageType | null;
+  unread_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getPublicUsers(search?: string): Promise<UserPublicProfile[]> {
+  const url = search
+    ? `/v1/users/search/?search=${encodeURIComponent(search)}`
+    : '/v1/users/search/';
+  return fetchJson<UserPublicProfile[]>(url);
+}
+
+export async function getUserPublicProfile(userId: string): Promise<UserPublicProfile> {
+  return fetchJson<UserPublicProfile>(`/v1/users/${userId}/profile/`);
+}
+
+export async function getConversations(): Promise<ConversationType[]> {
+  return fetchJson<ConversationType[]>('/v1/conversations/');
+}
+
+export async function getOrCreateConversation(userId: string): Promise<ConversationType> {
+  return fetchJson<ConversationType>(`/v1/conversations/with/${userId}/`, {
+    method: 'POST',
+  });
+}
+
+export async function getConversationMessages(conversationId: string): Promise<DirectMessageType[]> {
+  return fetchJson<DirectMessageType[]>(`/v1/conversations/${conversationId}/messages/`);
+}
+
+export async function sendDirectMessage(conversationId: string, content: string): Promise<DirectMessageType> {
+  return fetchJson<DirectMessageType>(`/v1/conversations/${conversationId}/send/`, {
+    method: 'POST',
+    body: JSON.stringify({ content }),
+  });
+}
+
+export async function markMessagesRead(conversationId: string): Promise<void> {
+  return fetchJson(`/v1/conversations/${conversationId}/read/`, {
+    method: 'PATCH',
+  });
+}
+
 // Missing functions that are referenced in api object
 export async function changePasswordRequest(data: { old_password: string; new_password: string }) {
   try {
@@ -2120,6 +2192,15 @@ export const api = {
   getSpecialistHireRequests,
   approveSpecialistProfile,
   getAllSpecialistsForAdmin,
+  
+  // User profile & messaging
+  getPublicUsers,
+  getUserPublicProfile,
+  getConversations,
+  getOrCreateConversation,
+  getConversationMessages,
+  sendDirectMessage,
+  markMessagesRead,
   
   // Utility functions
   getAccessToken,
