@@ -581,7 +581,6 @@ class TurnstileAttemptAdmin(admin.ModelAdmin):
 class ConversationAdmin(admin.ModelAdmin):
     list_display = ('id', 'created_at', 'updated_at')
     list_filter = ('created_at',)
-    filter_horizontal = ('participants',)
     readonly_fields = ('id', 'created_at', 'updated_at')
 
 
