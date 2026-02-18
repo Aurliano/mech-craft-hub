@@ -3620,7 +3620,10 @@ def get_user_public_profile(request, user_id):
 @permission_classes([IsAuthenticated])
 def get_conversations(request):
     """List current user's conversations"""
-    convs = Conversation.objects.filter(participants=request.user).order_by('-updated_at')
+    # Get conversations where user is a participant
+    user_participations = ConversationParticipant.objects.filter(user=request.user).select_related('conversation')
+    conv_ids = [cp.conversation_id for cp in user_participations]
+    convs = Conversation.objects.filter(id__in=conv_ids).order_by('-updated_at')
     return Response(ConversationSerializer(convs, many=True, context={'request': request}).data)
 
 
@@ -3635,10 +3638,17 @@ def get_or_create_conversation(request, user_id):
     if other_user.id == request.user.id:
         return Response({'error': 'نمی‌توانید با خودتان چت کنید'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Find existing conversation
-    user_convs = Conversation.objects.filter(participants=request.user)
-    conv = user_convs.filter(participants=other_user).first()
-    if conv:
+    # Find existing conversation using ConversationParticipant
+    # Get all conversations where current user is a participant
+    user_conv_ids = ConversationParticipant.objects.filter(user=request.user).values_list('conversation_id', flat=True)
+    # Find conversations that also have the other user as participant
+    other_user_participations = ConversationParticipant.objects.filter(
+        user=other_user,
+        conversation_id__in=user_conv_ids
+    ).select_related('conversation')
+    
+    if other_user_participations.exists():
+        conv = other_user_participations.first().conversation
         return Response(ConversationSerializer(conv, context={'request': request}).data)
 
     # Create new conversation
@@ -3652,8 +3662,11 @@ def get_or_create_conversation(request, user_id):
 @permission_classes([IsAuthenticated])
 def get_conversation_messages(request, conversation_id):
     """List messages in a conversation"""
+    # Check if user is a participant
+    if not ConversationParticipant.objects.filter(conversation_id=conversation_id, user=request.user).exists():
+        return Response({'error': 'مکالمه یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
     try:
-        conv = Conversation.objects.get(id=conversation_id, participants=request.user)
+        conv = Conversation.objects.get(id=conversation_id)
     except Conversation.DoesNotExist:
         return Response({'error': 'مکالمه یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
     messages = conv.messages.order_by('created_at')
@@ -3664,8 +3677,11 @@ def get_conversation_messages(request, conversation_id):
 @permission_classes([IsAuthenticated])
 def send_direct_message(request, conversation_id):
     """Send a message in a conversation"""
+    # Check if user is a participant
+    if not ConversationParticipant.objects.filter(conversation_id=conversation_id, user=request.user).exists():
+        return Response({'error': 'مکالمه یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
     try:
-        conv = Conversation.objects.get(id=conversation_id, participants=request.user)
+        conv = Conversation.objects.get(id=conversation_id)
     except Conversation.DoesNotExist:
         return Response({'error': 'مکالمه یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
     content = (request.data.get('content') or '').strip()
@@ -3681,8 +3697,11 @@ def send_direct_message(request, conversation_id):
 @permission_classes([IsAuthenticated])
 def mark_messages_read(request, conversation_id):
     """Mark messages in a conversation as read"""
+    # Check if user is a participant
+    if not ConversationParticipant.objects.filter(conversation_id=conversation_id, user=request.user).exists():
+        return Response({'error': 'مکالمه یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
     try:
-        conv = Conversation.objects.get(id=conversation_id, participants=request.user)
+        conv = Conversation.objects.get(id=conversation_id)
     except Conversation.DoesNotExist:
         return Response({'error': 'مکالمه یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
     conv.messages.filter(is_read=False).exclude(sender=request.user).update(is_read=True)

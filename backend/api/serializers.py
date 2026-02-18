@@ -1469,9 +1469,13 @@ class ConversationSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if not request or not request.user:
             return None
-        other = obj.participants.exclude(id=request.user.id).first()
-        if other:
-            return UserPublicProfileSerializer(other).data
+        # Get other participant using ConversationParticipant
+        from .models import ConversationParticipant
+        other_participant = ConversationParticipant.objects.filter(
+            conversation=obj
+        ).exclude(user=request.user).select_related('user').first()
+        if other_participant and other_participant.user:
+            return UserPublicProfileSerializer(other_participant.user).data
         return None
     
     def get_last_message(self, obj):
