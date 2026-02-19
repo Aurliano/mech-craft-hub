@@ -1672,6 +1672,26 @@ export interface UserPublicProfile {
   profile_image?: string | null;
   created_at?: string;
   role?: { name: string; display_name: string } | null;
+  display_id?: string;
+  average_rating?: number | null;
+  total_completed_projects?: number;
+  organization?: string;
+  resume_url?: string | null;
+  workshops?: Array<{
+    id: string;
+    code: string;
+    name: string;
+    workshop_class?: string;
+    machines: unknown[];
+    machines_count: number;
+  }>;
+  specialist_profile?: {
+    id: string;
+    province: string;
+    city: string;
+    education: string;
+    skills: unknown[];
+  } | null;
 }
 
 export interface DirectMessageType {
@@ -1680,6 +1700,7 @@ export interface DirectMessageType {
   sender: string;
   sender_id: string;
   sender_name: string;
+  sender_display_name?: string;
   content: string;
   created_at: string;
   is_read: boolean;
@@ -1728,7 +1749,69 @@ export async function sendDirectMessage(conversationId: string, content: string)
 
 export async function markMessagesRead(conversationId: string): Promise<void> {
   return fetchJson(`/v1/conversations/${conversationId}/read/`, {
-    method: 'PATCH',
+    method: 'POST',
+  });
+}
+
+export async function uploadUserAvatar(file: File): Promise<{ message: string; profile_image: string }> {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  const token = getAccessToken();
+  const headers: Record<string, string> = {
+    'X-CSRFToken': getCSRFToken() || '',
+  };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(getApiUrl('/v1/users/profile/avatar/'), {
+    method: 'POST',
+    headers,
+    body: formData,
+    credentials: 'include',
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(parseErrorResponse(errorText, 'خطا در آپلود آواتار'));
+  }
+
+  return res.json();
+}
+
+export async function deleteUserAvatar(): Promise<{ message: string }> {
+  return fetchJson<{ message: string }>('/v1/users/profile/avatar/delete/', {
+    method: 'DELETE',
+  });
+}
+
+export async function uploadUserResume(file: File): Promise<{ message: string; resume_file: string }> {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  const token = getAccessToken();
+  const headers: Record<string, string> = {
+    'X-CSRFToken': getCSRFToken() || '',
+  };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(getApiUrl('/v1/users/profile/resume/'), {
+    method: 'POST',
+    headers,
+    body: formData,
+    credentials: 'include',
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(parseErrorResponse(errorText, 'خطا در آپلود رزومه'));
+  }
+
+  return res.json();
+}
+
+export async function deleteUserResume(): Promise<{ message: string }> {
+  return fetchJson<{ message: string }>('/v1/users/profile/resume/delete/', {
+    method: 'DELETE',
   });
 }
 
@@ -2201,7 +2284,11 @@ export const api = {
   getConversationMessages,
   sendDirectMessage,
   markMessagesRead,
-  
+  uploadUserAvatar,
+  deleteUserAvatar,
+  uploadUserResume,
+  deleteUserResume,
+
   // Utility functions
   getAccessToken,
   setTokens,

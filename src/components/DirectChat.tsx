@@ -82,7 +82,7 @@ const DirectChat: React.FC<DirectChatProps> = ({
               >
                 <Avatar className="w-8 h-8 shrink-0">
                   <AvatarFallback>
-                    {message.sender_name.charAt(0).toUpperCase()}
+                    {(message.sender_display_name || message.sender_name).charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
 
@@ -94,7 +94,9 @@ const DirectChat: React.FC<DirectChatProps> = ({
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium text-sm">{message.sender_name}</span>
+                    <span className="font-medium text-sm">
+                      {message.sender_display_name || message.sender_name}
+                    </span>
                     <span className="text-xs opacity-70">
                       {new Date(message.created_at).toLocaleString('fa-IR')}
                     </span>

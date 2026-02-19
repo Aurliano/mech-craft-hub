@@ -1434,26 +1434,124 @@ class JobSeekerHireRequestCreateSerializer(serializers.ModelSerializer):
 class UserPublicProfileSerializer(serializers.ModelSerializer):
     """Public user profile - no sensitive data (email, phone)"""
     role = serializers.SerializerMethodField()
+    display_id = serializers.SerializerMethodField()
+    average_rating = serializers.SerializerMethodField()
+    total_completed_projects = serializers.SerializerMethodField()
+    organization = serializers.CharField(read_only=True)
+    resume_url = serializers.SerializerMethodField()
+    workshops = serializers.SerializerMethodField()
+    specialist_profile = serializers.SerializerMethodField()
     
     class Meta:
         model = User
-        fields = ['id', 'username', 'first_name', 'last_name', 'profile_image', 'created_at', 'role']
+        fields = [
+            'id', 'username', 'first_name', 'last_name', 'profile_image', 
+            'created_at', 'role', 'display_id', 'average_rating', 
+            'total_completed_projects', 'organization', 'resume_url', 
+            'workshops', 'specialist_profile'
+        ]
     
     def get_role(self, obj):
         ur = obj.user_roles.filter(is_active=True).select_related('role').first()
         if ur and ur.role:
             return {'name': ur.role.name, 'display_name': ur.role.display_name}
         return None
+    
+    def get_display_id(self, obj):
+        """Generate a hash-based ID from name and email"""
+        import hashlib
+        name = f"{obj.first_name or ''} {obj.last_name or ''}".strip() or obj.username
+        email = obj.email or ''
+        combined = f"{name}:{email}".encode('utf-8')
+        hash_obj = hashlib.sha256(combined)
+        return hash_obj.hexdigest()[:16]  # Return first 16 characters
+    
+    def get_average_rating(self, obj):
+        """Calculate average rating from approved reviews"""
+        from django.db.models import Avg
+        from .models import Review
+        reviews = Review.objects.filter(
+            contractor=obj,
+            is_approved=True
+        ).aggregate(
+            avg_rating=Avg('rating')
+        )
+        avg = reviews.get('avg_rating')
+        return round(avg, 2) if avg else None
+    
+    def get_total_completed_projects(self, obj):
+        """Count completed order items"""
+        from .models import OrderItem
+        return OrderItem.objects.filter(
+            assigned_contractor=obj,
+            status='completed'
+        ).count()
+    
+    def get_resume_url(self, obj):
+        """Return resume file URL if exists"""
+        if obj.resume_file:
+            # Assuming resume_file stores a URL or path
+            # Adjust based on your file storage implementation
+            return obj.resume_file
+        return None
+    
+    def get_workshops(self, obj):
+        """Get workshops for Contractor role"""
+        from .models import Workshop
+        ur = obj.user_roles.filter(is_active=True).select_related('role').first()
+        if ur and ur.role and ur.role.name == 'contractor':
+            workshops = Workshop.objects.filter(owner=obj, is_active=True)
+            return [
+                {
+                    'id': str(w.id),
+                    'code': w.code,
+                    'name': w.name,
+                    'workshop_class': w.workshop_class,
+                    'machines': w.machines[:3] if w.machines else [],  # Preview first 3 machines
+                    'machines_count': len(w.machines) if w.machines else 0,
+                }
+                for w in workshops
+            ]
+        return []
+    
+    def get_specialist_profile(self, obj):
+        """Get specialist profile if user is a Specialist"""
+        from .models import SpecialistProfile
+        ur = obj.user_roles.filter(is_active=True).select_related('role').first()
+        if ur and ur.role and ur.role.name == 'specialist':
+            try:
+                profile = obj.specialist_profile
+                return {
+                    'id': str(profile.id),
+                    'province': profile.province,
+                    'city': profile.city,
+                    'education': profile.education,
+                    'skills': profile.skills if hasattr(profile, 'skills') else [],
+                }
+            except SpecialistProfile.DoesNotExist:
+                return None
+        return None
 
 
 class DirectMessageSerializer(serializers.ModelSerializer):
-    sender_name = serializers.CharField(source='sender.username', read_only=True)
+    sender_name = serializers.SerializerMethodField()
+    sender_display_name = serializers.SerializerMethodField()
     sender_id = serializers.UUIDField(source='sender.id', read_only=True)
     
     class Meta:
         model = DirectMessage
-        fields = ['id', 'conversation', 'sender', 'sender_id', 'sender_name', 'content', 'created_at', 'is_read']
+        fields = ['id', 'conversation', 'sender', 'sender_id', 'sender_name', 'sender_display_name', 'content', 'created_at', 'is_read']
         read_only_fields = ['id', 'sender', 'created_at']
+    
+    def get_sender_name(self, obj):
+        """Return username for backward compatibility"""
+        return obj.sender.username
+    
+    def get_sender_display_name(self, obj):
+        """Return full name (first_name + last_name) or username as fallback"""
+        if obj.sender.first_name or obj.sender.last_name:
+            return f"{obj.sender.first_name or ''} {obj.sender.last_name or ''}".strip()
+        return obj.sender.username
 
 
 class ConversationSerializer(serializers.ModelSerializer):

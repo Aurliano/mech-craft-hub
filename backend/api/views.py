@@ -1,4 +1,4 @@
-from rest_framework.decorators import api_view, permission_classes, action
+from rest_framework.decorators import api_view, permission_classes, action, parser_classes
 from rest_framework.response import Response
 from rest_framework import viewsets, permissions, status, filters
 from rest_framework.exceptions import PermissionDenied
@@ -3614,6 +3614,151 @@ def get_user_public_profile(request, user_id):
     if user.id == request.user.id:
         return Response({'error': 'برای مشاهده پروفایل خود از صفحه پروفایل استفاده کنید'}, status=status.HTTP_400_BAD_REQUEST)
     return Response(UserPublicProfileSerializer(user).data)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser])
+def upload_user_avatar(request):
+    """Upload or update user avatar"""
+    from .file_managers import user_file_manager
+    
+    file = request.FILES.get('file')
+    if not file:
+        return Response({'error': 'فایل الزامی است'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Validate file type (images only)
+    allowed_types = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+    if file.content_type not in allowed_types:
+        return Response({'error': 'فقط فایل‌های تصویری مجاز هستند'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Check file size (max 5MB)
+    max_size = 5 * 1024 * 1024  # 5MB
+    if file.size > max_size:
+        return Response({'error': 'حجم فایل نباید بیشتر از 5 مگابایت باشد'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        # Delete old avatar if exists
+        if request.user.profile_image:
+            # Optionally delete old file from storage
+            pass
+        
+        # Upload new avatar
+        result = user_file_manager.upload_file(
+            file,
+            f'avatar_{request.user.id}_{file.name}',
+            file.content_type,
+            user_id=request.user.id,
+            order_id=None
+        )
+        
+        if result['success']:
+            # Update user profile_image
+            request.user.profile_image = result['file_path']
+            request.user.save()
+            
+            return Response({
+                'message': 'آواتار با موفقیت آپلود شد',
+                'profile_image': request.user.profile_image
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                'error': result.get('error', 'خطا در آپلود فایل')
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+    except Exception as e:
+        logger.error(f"Error uploading avatar: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def delete_user_avatar(request):
+    """Delete user avatar"""
+    try:
+        if request.user.profile_image:
+            # Optionally delete file from storage
+            request.user.profile_image = None
+            request.user.save()
+            return Response({'message': 'آواتار با موفقیت حذف شد'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'آواتاری برای حذف وجود ندارد'}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        logger.error(f"Error deleting avatar: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser])
+def upload_user_resume(request):
+    """Upload or update user resume"""
+    from .file_managers import user_file_manager
+    
+    file = request.FILES.get('file')
+    if not file:
+        return Response({'error': 'فایل الزامی است'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Validate file type (PDF, DOC, DOCX)
+    allowed_types = ['application/pdf', 'application/msword', 
+                     'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+    if file.content_type not in allowed_types:
+        return Response({'error': 'فقط فایل‌های PDF و Word مجاز هستند'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Check file size (max 10MB)
+    max_size = 10 * 1024 * 1024  # 10MB
+    if file.size > max_size:
+        return Response({'error': 'حجم فایل نباید بیشتر از 10 مگابایت باشد'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    try:
+        # Delete old resume if exists
+        if request.user.resume_file:
+            # Optionally delete old file from storage
+            pass
+        
+        # Upload new resume
+        result = user_file_manager.upload_file(
+            file,
+            f'resume_{request.user.id}_{file.name}',
+            file.content_type,
+            user_id=request.user.id,
+            order_id=None
+        )
+        
+        if result['success']:
+            # Update user resume_file
+            request.user.resume_file = result['file_path']
+            request.user.save()
+            
+            return Response({
+                'message': 'رزومه با موفقیت آپلود شد',
+                'resume_file': request.user.resume_file
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                'error': result.get('error', 'خطا در آپلود فایل')
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+    except Exception as e:
+        logger.error(f"Error uploading resume: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
+def delete_user_resume(request):
+    """Delete user resume"""
+    try:
+        if request.user.resume_file:
+            # Optionally delete file from storage
+            request.user.resume_file = ''
+            request.user.save()
+            return Response({'message': 'رزومه با موفقیت حذف شد'}, status=status.HTTP_200_OK)
+        else:
+            return Response({'error': 'رزومه‌ای برای حذف وجود ندارد'}, status=status.HTTP_400_BAD_REQUEST)
+    except Exception as e:
+        logger.error(f"Error deleting resume: {str(e)}")
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 @api_view(["GET"])

@@ -45,6 +45,8 @@ from .views import (
     approve_specialist_profile,
     # User profile & messaging
     get_public_users, get_user_public_profile,
+    upload_user_avatar, delete_user_avatar,
+    upload_user_resume, delete_user_resume,
     get_conversations, get_or_create_conversation,
     get_conversation_messages, send_direct_message, mark_messages_read,
     # Ticket endpoints
@@ -194,6 +196,10 @@ urlpatterns = [
     # User profile & direct messaging
     path('v1/users/search/', get_public_users, name='get_public_users'),
     path('v1/users/<uuid:user_id>/profile/', get_user_public_profile, name='get_user_public_profile'),
+    path('v1/users/profile/avatar/', upload_user_avatar, name='upload_user_avatar'),
+    path('v1/users/profile/avatar/delete/', delete_user_avatar, name='delete_user_avatar'),
+    path('v1/users/profile/resume/', upload_user_resume, name='upload_user_resume'),
+    path('v1/users/profile/resume/delete/', delete_user_resume, name='delete_user_resume'),
     path('v1/conversations/', get_conversations, name='get_conversations'),
     path('v1/conversations/with/<uuid:user_id>/', get_or_create_conversation, name='get_or_create_conversation'),
     path('v1/conversations/<uuid:conversation_id>/messages/', get_conversation_messages, name='get_conversation_messages'),

@@ -219,14 +219,20 @@ const Messages = () => {
                           }`}
                           onClick={() => handleSelectConversation(conv)}
                         >
-                          <Avatar className="h-10 w-10">
-                            {other?.profile_image && (
-                              <AvatarImage src={other.profile_image} />
-                            )}
-                            <AvatarFallback>
-                              {(other?.first_name?.[0] || other?.username?.[0] || '?').toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
+                          <Link
+                            to={`/users/${other?.id}`}
+                            onClick={(e) => e.stopPropagation()}
+                            className="shrink-0"
+                          >
+                            <Avatar className="h-10 w-10 cursor-pointer hover:ring-2 hover:ring-primary transition-all">
+                              {other?.profile_image && (
+                                <AvatarImage src={other.profile_image} />
+                              )}
+                              <AvatarFallback>
+                                {(other?.first_name?.[0] || other?.username?.[0] || '?').toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                          </Link>
                           <div className="flex-1 min-w-0">
                             <p className="font-medium truncate">
                               {other?.first_name || other?.last_name || other?.username || 'کاربر'}

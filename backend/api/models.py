@@ -19,6 +19,8 @@ class User(AbstractUser):
     is_email_verified = models.BooleanField(default=False)
     is_phone_verified = models.BooleanField(default=False)
     profile_image = models.URLField(blank=True, null=True)
+    organization = models.CharField(max_length=200, blank=True, help_text="سازمان یا شرکت (برای مشتریان)")
+    resume_file = models.CharField(max_length=500, blank=True, help_text="مسیر فایل رزومه")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
