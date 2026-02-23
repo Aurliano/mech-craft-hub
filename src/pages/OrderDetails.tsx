@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import {
   Package, Clock, User, Calendar, FileText,
-  Eye, MessageCircle, Download, CheckCircle, XCircle,
+  Eye, MessageCircle, CheckCircle, XCircle,
   AlertCircle, Award, Settings, Truck, Edit, Trash2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -24,6 +24,7 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { getPersianLabel, getPersianValue } from '@/lib/persianMapping';
 import { getApiUrl } from '@/lib/api';
+import { normalizeFilePaths, renderFileFieldValue } from '@/lib/fieldDisplay';
 
 interface OrderItem {
   id: string;
@@ -148,16 +149,11 @@ const OrderDetails = () => {
 
     if (typeof value === 'boolean') return value ? 'بله' : 'خیر';
 
+    // Handle file fields (single or multiple) - show all files with download links
+    const filePaths = normalizeFilePaths(value);
+    if (filePaths.length > 0) return renderFileFieldValue(value);
+
     if (typeof value === 'string') {
-      if (value.startsWith('http') || value.startsWith('/media')) {
-        const fileName = value.split('/').pop() || 'دانلود فایل';
-        return (
-          <a href={value} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-1">
-            <Download className="h-4 w-4" />
-            {fileName}
-          </a>
-        );
-      }
       // Check for common boolean strings from checkbox inputs
       if (value.toLowerCase() === 'on') return 'بله';
       if (value.toLowerCase() === 'off') return 'خیر';

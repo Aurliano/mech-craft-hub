@@ -12,7 +12,7 @@ import {
   Package, Search, Filter, Eye, Clock, DollarSign, FileText, CheckCircle, 
   User, Star, TrendingUp, Settings, Plus, MessageSquare, Calendar,
   Factory, AlertCircle, CheckCircle2, XCircle, Timer, Users, Briefcase, UserPlus, Bell,
-  Download, ChevronUp, ChevronDown
+  ChevronUp, ChevronDown
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -27,6 +27,7 @@ import Footer from '@/components/Footer';
 import { cn } from '@/lib/utils';
 import PriceInput from '@/components/PriceInput';
 import { getPersianLabel, getPersianValue } from '@/lib/persianMapping';
+import { normalizeFilePaths, renderFileFieldValue } from '@/lib/fieldDisplay';
 
 const ContractorDashboard = () => {
   const { user } = useAuth();
@@ -101,41 +102,27 @@ const ContractorDashboard = () => {
   };
 
 
-  // Improved Render Field Value with Download Links
+  // Improved Render Field Value with Download Links - supports multiple files
   const renderFieldValue = (value: unknown): React.ReactNode => {
     if (value === null || value === undefined) return 'تعریف نشده';
     if (typeof value === 'boolean') return value ? 'بله' : 'خیر';
-    
-    if (typeof value === 'string') {
-        if (value.startsWith('http') || value.startsWith('/media') || value.startsWith('user-uploads/') || value.includes('uploads/')) {
-            const fileName = value.split('/').pop() || 'دانلود فایل';
-            let fileUrl = value;
-            if (value.startsWith('user-uploads/')) {
-                fileUrl = `/media/${value}`;
-            } else if (!value.startsWith('http') && !value.startsWith('/')) {
-                fileUrl = `/${value}`;
-            }
-            return (
-                <a 
-                    href={fileUrl} 
-                    target="_blank" 
-                    rel="noreferrer" 
-                    className="flex items-center gap-1 text-blue-600 hover:underline bg-blue-50 px-2 py-1 rounded border border-blue-100 w-fit"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <Download className="h-4 w-4" />
-                    {fileName}
-                </a>
-            );
-        }
-        return value;
+
+    // Handle file fields (single or multiple) - show all files with download links
+    const filePaths = normalizeFilePaths(value);
+    if (filePaths.length > 0) {
+      return (
+        <div onClick={(e) => e.stopPropagation()}>
+          {renderFileFieldValue(value)}
+        </div>
+      );
     }
+
+    if (typeof value === 'string') return value;
     if (Array.isArray(value)) {
-        return <div className="flex flex-col gap-1">{value.map((v, i) => <div key={i}>{renderFieldValue(v)}</div>)}</div>;
+      return <div className="flex flex-col gap-1">{value.map((v, i) => <div key={i}>{renderFieldValue(v)}</div>)}</div>;
     }
     if (typeof value === 'object') return JSON.stringify(value);
-    
-    // Use Persian value mapping for strings/booleans
+
     return getPersianValue(value as string | boolean);
   };
 
