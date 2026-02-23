@@ -1,16 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Mail, Phone, Calendar, Shield, Key, Bell, Camera, Save, Edit } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { User, Mail, Phone, Calendar, Shield, Key, Bell, Camera, Save, Edit, FileText, Building2, Trash2, Upload } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import Navbar from '@/components/Navbar';
+import { api, getApiUrl } from '@/lib/api';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from '@/hooks/use-toast';
 
 const Profile = () => {
   const { user, isLoadingDashboard } = useAuth();
+  const queryClient = useQueryClient();
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const resumeInputRef = useRef<HTMLInputElement>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     username: user?.username || '',
@@ -18,7 +25,118 @@ const Profile = () => {
     phone: user?.phone || '',
     first_name: user?.first_name || '',
     last_name: user?.last_name || '',
+    organization: (user as unknown as Record<string, unknown>)?.organization as string || '',
   });
+  const [avatarLoading, setAvatarLoading] = useState(false);
+  const [resumeLoading, setResumeLoading] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
+
+  const profileImage = (user as unknown as Record<string, unknown>)?.profile_image as string | undefined;
+  const resumeFile = (user as unknown as Record<string, unknown>)?.resume_file as string | undefined;
+
+  useEffect(() => {
+    setFormData({
+      username: user?.username || '',
+      email: user?.email || '',
+      phone: user?.phone || '',
+      first_name: user?.first_name || '',
+      last_name: user?.last_name || '',
+      organization: (user as unknown as Record<string, unknown>)?.organization as string || '',
+    });
+  }, [user]);
+
+  const invalidateMe = () => queryClient.invalidateQueries({ queryKey: ['me'] });
+
+  const handleSave = async () => {
+    setSaveLoading(true);
+    try {
+      await api.updateMyProfile({
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        organization: formData.organization,
+      });
+      invalidateMe();
+      toast({ title: 'ذخیره شد', description: 'تغییرات پروفایل ذخیره شد.' });
+      setIsEditing(false);
+    } catch (err) {
+      console.error(err);
+      toast({ title: 'خطا', description: 'ذخیره تغییرات انجام نشد.', variant: 'destructive' });
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setFormData({
+      username: user?.username || '',
+      email: user?.email || '',
+      phone: user?.phone || '',
+      first_name: user?.first_name || '',
+      last_name: user?.last_name || '',
+      organization: (user as unknown as Record<string, unknown>)?.organization as string || '',
+    });
+    setIsEditing(false);
+  };
+
+  const onAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file || !file.type.startsWith('image/')) return;
+    setAvatarLoading(true);
+    try {
+      await api.uploadUserAvatar(file);
+      invalidateMe();
+      toast({ title: 'آواتار به‌روز شد' });
+    } catch (err) {
+      toast({ title: 'خطا', description: 'آپلود آواتار انجام نشد.', variant: 'destructive' });
+    } finally {
+      setAvatarLoading(false);
+    }
+  };
+
+  const onDeleteAvatar = async () => {
+    setAvatarLoading(true);
+    try {
+      await api.deleteUserAvatar();
+      invalidateMe();
+      toast({ title: 'آواتار حذف شد' });
+    } catch (err) {
+      toast({ title: 'خطا', variant: 'destructive' });
+    } finally {
+      setAvatarLoading(false);
+    }
+  };
+
+  const onResumeChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setResumeLoading(true);
+    try {
+      await api.uploadUserResume(file);
+      invalidateMe();
+      toast({ title: 'رزومه به‌روز شد' });
+    } catch (err) {
+      toast({ title: 'خطا', description: 'آپلود رزومه انجام نشد.', variant: 'destructive' });
+    } finally {
+      setResumeLoading(false);
+    }
+  };
+
+  const onDeleteResume = async () => {
+    setResumeLoading(true);
+    try {
+      await api.deleteUserResume();
+      invalidateMe();
+      toast({ title: 'رزومه حذف شد' });
+    } catch (err) {
+      toast({ title: 'خطا', variant: 'destructive' });
+    } finally {
+      setResumeLoading(false);
+    }
+  };
+
+  const resumeDownloadUrl = resumeFile ? getApiUrl('/v1/user-files/download/') + '?path=' + encodeURIComponent(resumeFile) : null;
 
   // Fields that might not exist on BasicUser type
   const createdAt = (user as unknown as Record<string, unknown>)?.created_at as string | undefined;
@@ -44,23 +162,6 @@ const Profile = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
-    // TODO: Implement save profile
-    console.log('Save profile:', formData);
-    setIsEditing(false);
-  };
-
-  const handleCancel = () => {
-    setFormData({
-      username: user?.username || '',
-      email: user?.email || '',
-      phone: user?.phone || '',
-      first_name: user?.first_name || '',
-      last_name: user?.last_name || '',
-    });
-    setIsEditing(false);
-  };
-
   return (
     <div className="min-h-screen bg-gray-50" dir="rtl">
       <Navbar />
@@ -82,9 +183,9 @@ const Profile = () => {
               <Button variant="outline" onClick={handleCancel}>
                 انصراف
               </Button>
-              <Button onClick={handleSave}>
+              <Button onClick={handleSave} disabled={saveLoading}>
                 <Save className="h-4 w-4 ml-2" />
-                ذخیره تغییرات
+                {saveLoading ? 'در حال ذخیره...' : 'ذخیره تغییرات'}
               </Button>
             </div>
           )}
@@ -109,19 +210,44 @@ const Profile = () => {
                 <CardDescription>اطلاعات اصلی حساب کاربری شما</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Profile Picture */}
+                {/* Profile Picture / Avatar */}
                 <div className="flex items-center gap-6">
                   <div className="relative">
-                    <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center">
-                      <User className="h-12 w-12 text-gray-400" />
+                    <Avatar className="w-24 h-24">
+                      {profileImage && <AvatarImage src={profileImage} alt="" />}
+                      <AvatarFallback className="text-2xl">
+                        {(user?.first_name?.[0] || user?.username?.[0] || '?').toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <input
+                      ref={avatarInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={onAvatarChange}
+                    />
+                    <div className="absolute -bottom-2 -left-2 flex gap-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={avatarLoading}
+                        onClick={() => avatarInputRef.current?.click()}
+                        title="تغییر آواتار"
+                      >
+                        <Camera className="h-4 w-4" />
+                      </Button>
+                      {profileImage && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={avatarLoading}
+                          onClick={onDeleteAvatar}
+                          title="حذف آواتار"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
-                    <Button
-                      size="sm"
-                      className="absolute -bottom-2 -left-2"
-                      variant="outline"
-                    >
-                      <Camera className="h-4 w-4" />
-                    </Button>
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold">{user?.username}</h3>
@@ -137,8 +263,9 @@ const Profile = () => {
                       id="username"
                       value={formData.username}
                       onChange={(e) => handleInputChange('username', e.target.value)}
-                      disabled={!isEditing}
+                      disabled
                     />
+                    <p className="text-xs text-muted-foreground">نام کاربری قابل تغییر نیست</p>
                   </div>
 
                   <div className="space-y-2">
@@ -150,7 +277,7 @@ const Profile = () => {
                         type="email"
                         value={formData.email}
                         onChange={(e) => handleInputChange('email', e.target.value)}
-                        disabled={!isEditing}
+                        disabled
                         className="pr-10"
                       />
                     </div>
@@ -158,11 +285,6 @@ const Profile = () => {
                       <Badge variant={isEmailVerified ? 'default' : 'secondary'}>
                         {isEmailVerified ? 'تایید شده' : 'تایید نشده'}
                       </Badge>
-                      {!isEmailVerified && (
-                        <Button variant="link" size="sm" className="p-0 h-auto">
-                          ارسال لینک تایید
-                        </Button>
-                      )}
                     </div>
                   </div>
 
@@ -174,7 +296,7 @@ const Profile = () => {
                         id="phone"
                         value={formData.phone}
                         onChange={(e) => handleInputChange('phone', e.target.value)}
-                        disabled={!isEditing}
+                        disabled
                         className="pr-10"
                       />
                     </div>
@@ -182,11 +304,6 @@ const Profile = () => {
                       <Badge variant={isPhoneVerified ? 'default' : 'secondary'}>
                         {isPhoneVerified ? 'تایید شده' : 'تایید نشده'}
                       </Badge>
-                      {!isPhoneVerified && (
-                        <Button variant="link" size="sm" className="p-0 h-auto">
-                          تایید شماره
-                        </Button>
-                      )}
                     </div>
                   </div>
 
@@ -210,6 +327,20 @@ const Profile = () => {
                     />
                   </div>
 
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="organization" className="flex items-center gap-2">
+                      <Building2 className="h-4 w-4" />
+                      سازمان / شرکت
+                    </Label>
+                    <Input
+                      id="organization"
+                      value={formData.organization}
+                      onChange={(e) => handleInputChange('organization', e.target.value)}
+                      disabled={!isEditing}
+                      placeholder="در صورت تمایل نام سازمان یا شرکت خود را وارد کنید"
+                    />
+                  </div>
+
                   <div className="space-y-2">
                     <Label>تاریخ عضویت</Label>
                     <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-md">
@@ -217,6 +348,63 @@ const Profile = () => {
                       <span className="text-sm text-gray-600">
                         {new Date(createdAt || '').toLocaleDateString('fa-IR')}
                       </span>
+                    </div>
+                  </div>
+
+                  {/* Resume */}
+                  <div className="space-y-2 md:col-span-2">
+                    <Label className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      رزومه
+                    </Label>
+                    <input
+                      ref={resumeInputRef}
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      className="hidden"
+                      onChange={onResumeChange}
+                    />
+                    <div className="flex flex-wrap items-center gap-2">
+                      {resumeFile ? (
+                        <>
+                          <a
+                            href={resumeDownloadUrl || '#'}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline text-sm"
+                          >
+                            دانلود رزومه
+                          </a>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={resumeLoading}
+                            onClick={() => resumeInputRef.current?.click()}
+                          >
+                            <Upload className="h-4 w-4 ml-1" />
+                            تغییر رزومه
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={resumeLoading}
+                            onClick={onDeleteResume}
+                          >
+                            <Trash2 className="h-4 w-4 ml-1" />
+                            حذف رزومه
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={resumeLoading}
+                          onClick={() => resumeInputRef.current?.click()}
+                        >
+                          <Upload className="h-4 w-4 ml-1" />
+                          آپلود رزومه (PDF یا Word)
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -33,7 +33,7 @@ class UserSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'phone', 'is_email_verified', 'is_phone_verified', 'roles', 'role', 'first_name', 'last_name']
+        fields = ['id', 'username', 'email', 'phone', 'is_email_verified', 'is_phone_verified', 'roles', 'role', 'first_name', 'last_name', 'profile_image', 'organization', 'resume_file', 'created_at']
         read_only_fields = ['id', 'is_email_verified', 'is_phone_verified']
 
     def get_role(self, obj):
@@ -1537,10 +1537,11 @@ class DirectMessageSerializer(serializers.ModelSerializer):
     sender_name = serializers.SerializerMethodField()
     sender_display_name = serializers.SerializerMethodField()
     sender_id = serializers.UUIDField(source='sender.id', read_only=True)
+    attachments = serializers.SerializerMethodField()
     
     class Meta:
         model = DirectMessage
-        fields = ['id', 'conversation', 'sender', 'sender_id', 'sender_name', 'sender_display_name', 'content', 'created_at', 'is_read']
+        fields = ['id', 'conversation', 'sender', 'sender_id', 'sender_name', 'sender_display_name', 'content', 'created_at', 'is_read', 'attachments']
         read_only_fields = ['id', 'sender', 'created_at']
     
     def get_sender_name(self, obj):
@@ -1552,6 +1553,23 @@ class DirectMessageSerializer(serializers.ModelSerializer):
         if obj.sender.first_name or obj.sender.last_name:
             return f"{obj.sender.first_name or ''} {obj.sender.last_name or ''}".strip()
         return obj.sender.username
+    
+    def get_attachments(self, obj):
+        """Return list of attachments with download path"""
+        request = self.context.get('request')
+        from .models import DirectMessageAttachment
+        attachments = DirectMessageAttachment.objects.filter(message=obj).order_by('created_at')
+        return [
+            {
+                'id': str(a.id),
+                'file_name': a.file_name,
+                'file_path': a.file_path,
+                'content_type': a.content_type,
+                'file_size': a.file_size,
+                'download_path': f"/api/v1/user-files/download/?path={a.file_path}" if request else None,
+            }
+            for a in attachments
+        ]
 
 
 class ConversationSerializer(serializers.ModelSerializer):

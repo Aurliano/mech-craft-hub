@@ -11,7 +11,7 @@ from .models import (
     TicketCategory, Ticket, TicketParticipant, TicketMessage, TicketAttachment,
     MediaFile, Review, PasswordResetToken, PhoneVerificationCode, Notification,
     TurnstileAttempt, OrderProposal,
-    Conversation, DirectMessage
+    Conversation, DirectMessage, DirectMessageAttachment
 )
 
 
@@ -595,3 +595,12 @@ class DirectMessageAdmin(admin.ModelAdmin):
     def content_short(self, obj):
         return (obj.content[:50] + '...') if len(obj.content) > 50 else obj.content
     content_short.short_description = 'متن'
+
+
+@admin.register(DirectMessageAttachment)
+class DirectMessageAttachmentAdmin(admin.ModelAdmin):
+    list_display = ('id', 'message', 'file_name', 'content_type', 'file_size', 'created_at')
+    list_filter = ('content_type', 'created_at')
+    search_fields = ('file_name',)
+    raw_id_fields = ('message',)
+    readonly_fields = ('id', 'created_at')

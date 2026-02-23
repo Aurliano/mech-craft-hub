@@ -2075,3 +2075,22 @@ class DirectMessage(models.Model):
     def __str__(self):
         return f"{self.sender.username} -> {self.conversation_id}"
 
+
+class DirectMessageAttachment(models.Model):
+    """File attachment for a direct message"""
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    message = models.ForeignKey(DirectMessage, on_delete=models.CASCADE, related_name='attachments')
+    file_path = models.CharField(max_length=500)
+    file_name = models.CharField(max_length=255)
+    content_type = models.CharField(max_length=100)
+    file_size = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'direct_message_attachments'
+        ordering = ['created_at']
+    
+    def __str__(self):
+        return f"{self.file_name} ({self.message_id})"
+

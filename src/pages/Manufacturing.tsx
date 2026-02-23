@@ -18,11 +18,13 @@ import {
   User,
   FileText,
   MapPin,
-  Star
+  Star,
+  MessageSquare
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Link } from "react-router-dom";
 import { useServiceOrder } from "@/hooks/useServiceOrder";
@@ -70,6 +72,8 @@ interface PublicWorkshop {
   capabilities?: string[];
   machines?: { name: string; precision?: string; quantity?: number; is_custom?: boolean }[];
   rating?: number;
+  owner_id?: string | null;
+  owner_display_name?: string | null;
 }
 
 const CLASS_INFO = {
@@ -375,6 +379,26 @@ const Manufacturing = () => {
                     {/* Right Side: CTA */}
                     <div className="lg:col-span-4 bg-gradient-to-br from-primary/5 to-secondary/5 p-6 flex flex-col justify-center items-center border-t lg:border-t-0 lg:border-r border-border">
                       <div className="text-center w-full">
+                        {workshop.owner_id && workshop.owner_display_name && (
+                          <div className="mb-4 p-3 bg-muted/50 rounded-lg">
+                            <span className="block text-sm text-muted-foreground mb-2">پیمانکار</span>
+                            <div className="flex flex-wrap items-center justify-center gap-2">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                              <Link
+                                to={`/users/${workshop.owner_id}`}
+                                className="font-medium text-primary hover:underline"
+                              >
+                                {workshop.owner_display_name}
+                              </Link>
+                              <Link to={`/messages?user=${workshop.owner_id}`}>
+                                <Button variant="outline" size="sm" className="gap-1">
+                                  <MessageSquare className="h-4 w-4" />
+                                  پیام
+                                </Button>
+                              </Link>
+                            </div>
+                          </div>
+                        )}
                         <div className="mb-6">
                           <span className="block text-sm text-muted-foreground mb-1">وضعیت</span>
                           <span className="inline-flex items-center gap-2 text-green-600 font-bold bg-green-50 px-4 py-2 rounded-full">
@@ -441,21 +465,62 @@ const Manufacturing = () => {
               {/* REMOVED STATIC FIELDS HERE AS REQUESTED */}
 
               {manufacturingServiceId && (
-                <DynamicServiceForm
-                  serviceId={manufacturingServiceId}
-                  formData={formData}
-                  onFieldChange={updateField}
-                  needsDocumentation={needsDocumentation}
-                  onNeedsDocumentationChange={setNeedsDocumentation}
-                  documentationOptions={documentationOptions}
-                  onDocumentationOptionChange={(option, checked) =>
-                    setDocumentationOptions(prev => ({ ...prev, [option]: checked }))
-                  }
-                  notes={notes}
-                  onNotesChange={setNotes}
-                  onSubmit={handleFormSubmit}
-                  isSubmitting={isSubmitting}
-                />
+                <>
+                  {/* فرآیندهای ساخت: همان لیست صفحه، قابل تیک زدن در فرم */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">فرآیندهای ساخت مورد نیاز</CardTitle>
+                      <CardDescription>
+                        فرآیندهایی که برای سفارش نیاز دارید را انتخاب کنید (همان فرآیندهای معرفی‌شده در این صفحه)
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                        {CAPABILITIES_WITH_MACHINES.map((cap) => {
+                          const selected = Array.isArray(formData.manufacturing_processes)
+                            ? (formData.manufacturing_processes as string[]).includes(cap.id)
+                            : false;
+                          return (
+                            <label
+                              key={cap.id}
+                              className="flex items-center gap-2 cursor-pointer rounded-md p-2 hover:bg-muted/50"
+                            >
+                              <Checkbox
+                                checked={selected}
+                                onCheckedChange={(checked) => {
+                                  const current = Array.isArray(formData.manufacturing_processes)
+                                    ? (formData.manufacturing_processes as string[])
+                                    : [];
+                                  const next = checked
+                                    ? [...current.filter((id) => id !== cap.id), cap.id]
+                                    : current.filter((id) => id !== cap.id);
+                                  updateField('manufacturing_processes', next);
+                                }}
+                              />
+                              <span className="text-sm font-medium">{cap.name}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <DynamicServiceForm
+                    serviceId={manufacturingServiceId}
+                    formData={formData}
+                    onFieldChange={updateField}
+                    needsDocumentation={needsDocumentation}
+                    onNeedsDocumentationChange={setNeedsDocumentation}
+                    documentationOptions={documentationOptions}
+                    onDocumentationOptionChange={(option, checked) =>
+                      setDocumentationOptions(prev => ({ ...prev, [option]: checked }))
+                    }
+                    notes={notes}
+                    onNotesChange={setNotes}
+                    onSubmit={handleFormSubmit}
+                    isSubmitting={isSubmitting}
+                    excludeFieldKeys={['manufacturing_processes']}
+                  />
+                </>
               )}
               {!manufacturingServiceId && !serviceError && (
                 <div className="text-center py-8">

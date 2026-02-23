@@ -1704,6 +1704,14 @@ export interface DirectMessageType {
   content: string;
   created_at: string;
   is_read: boolean;
+  attachments?: Array<{
+    id: string;
+    file_name: string;
+    file_path?: string;
+    content_type: string;
+    file_size: number;
+    download_path: string | null;
+  }>;
 }
 
 export interface ConversationType {
@@ -1740,7 +1748,30 @@ export async function getConversationMessages(conversationId: string): Promise<D
   return fetchJson<DirectMessageType[]>(`/v1/conversations/${conversationId}/messages/`);
 }
 
-export async function sendDirectMessage(conversationId: string, content: string): Promise<DirectMessageType> {
+export async function sendDirectMessage(conversationId: string, content: string, files?: File[]): Promise<DirectMessageType> {
+  const token = getAccessToken();
+  const headers: Record<string, string> = {
+    'X-CSRFToken': getCSRFToken() || '',
+  };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  if (files && files.length > 0) {
+    const formData = new FormData();
+    formData.append('content', content);
+    files.forEach((f) => formData.append('files', f));
+    const res = await fetch(getApiUrl(`/v1/conversations/${conversationId}/send/`), {
+      method: 'POST',
+      headers,
+      body: formData,
+      credentials: 'include',
+    });
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(parseErrorResponse(errorText, 'خطا در ارسال پیام'));
+    }
+    return res.json();
+  }
+
   return fetchJson<DirectMessageType>(`/v1/conversations/${conversationId}/send/`, {
     method: 'POST',
     body: JSON.stringify({ content }),
@@ -1812,6 +1843,13 @@ export async function uploadUserResume(file: File): Promise<{ message: string; r
 export async function deleteUserResume(): Promise<{ message: string }> {
   return fetchJson<{ message: string }>('/v1/users/profile/resume/delete/', {
     method: 'DELETE',
+  });
+}
+
+export async function updateMyProfile(data: { organization?: string; first_name?: string; last_name?: string }): Promise<unknown> {
+  return fetchJson<unknown>('/v1/auth/me/update/', {
+    method: 'PATCH',
+    body: JSON.stringify(data),
   });
 }
 
@@ -2288,6 +2326,7 @@ export const api = {
   deleteUserAvatar,
   uploadUserResume,
   deleteUserResume,
+  updateMyProfile,
 
   // Utility functions
   getAccessToken,

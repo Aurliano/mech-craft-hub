@@ -20,7 +20,7 @@ from .models import (
     ScientificContent, OrderProposal, MaterialEstimate, OrderStatus, MaterialEstimation,
     DeliveryFile, JobSeeker, WorkRequest, JobMatch, WorkContract,
     SpecialistProfile, SpecialistHireRequest, JobSeekerHireRequest,
-    Conversation, ConversationParticipant, DirectMessage
+    Conversation, ConversationParticipant, DirectMessage, DirectMessageAttachment
 )
 from .pagination import StandardResultsSetPagination
 from .exceptions import (
@@ -769,6 +769,22 @@ def logout(request):
 @permission_classes([IsAuthenticated])
 def me(request):
     return Response(UserSerializer(request.user).data)
+
+
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
+def update_my_profile(request):
+    """Update current user profile (organization, first_name, last_name)."""
+    user = request.user
+    data = request.data
+    if isinstance(data.get('organization'), str):
+        user.organization = data['organization'].strip()[:200]
+    if isinstance(data.get('first_name'), str):
+        user.first_name = data['first_name'].strip()[:150]
+    if isinstance(data.get('last_name'), str):
+        user.last_name = data['last_name'].strip()[:150]
+    user.save(update_fields=['organization', 'first_name', 'last_name', 'updated_at'])
+    return Response(UserSerializer(user).data)
 
 
 class IsAuthenticatedOrReadOnly(permissions.IsAuthenticatedOrReadOnly):
@@ -3050,7 +3066,7 @@ def get_public_workshops(request):
     
     # Build query safely - only use fields that exist
     try:
-        workshops = Workshop.objects.filter(is_active=True)
+        workshops = Workshop.objects.filter(is_active=True).select_related('owner')
         
         # Only filter by is_approved if column exists
         if 'is_approved' in existing_columns:
@@ -3062,7 +3078,7 @@ def get_public_workshops(request):
             workshops = workshops.filter(workshop_class=workshop_class)
         
         # Use only() to select only existing fields
-        select_fields = ['id', 'code', 'name', 'description', 'capabilities', 'machines']
+        select_fields = ['id', 'code', 'name', 'description', 'capabilities', 'machines', 'owner_id']
         if 'province' in existing_columns:
             select_fields.append('province')
         if 'city' in existing_columns:
@@ -3084,6 +3100,14 @@ def get_public_workshops(request):
                 'capabilities': workshop.capabilities or [],
                 'machines': workshop.machines or [],
             }
+            # Owner (contractor) for profile/message link
+            if hasattr(workshop, 'owner_id') and workshop.owner_id:
+                owner = workshop.owner
+                workshop_data['owner_id'] = str(workshop.owner_id)
+                workshop_data['owner_display_name'] = ((owner.first_name or '') + ' ' + (owner.last_name or '')).strip() or owner.username
+            else:
+                workshop_data['owner_id'] = None
+                workshop_data['owner_display_name'] = None
             
             # Add optional fields if they exist
             if 'province' in existing_columns:
@@ -3106,7 +3130,7 @@ def get_public_workshops(request):
         
         # Try fallback query with only basic fields
         try:
-            workshops = Workshop.objects.filter(is_active=True).only('id', 'code', 'name', 'description', 'capabilities', 'machines')
+            workshops = Workshop.objects.filter(is_active=True).select_related('owner').only('id', 'code', 'name', 'description', 'capabilities', 'machines', 'owner_id')
             workshops_data = []
             for workshop in workshops:
                 workshops_data.append({
@@ -3116,6 +3140,11 @@ def get_public_workshops(request):
                     'description': workshop.description or '',
                     'capabilities': workshop.capabilities or [],
                     'machines': workshop.machines or [],
+                    'owner_id': str(workshop.owner_id) if workshop.owner_id else None,
+                    'owner_display_name': (
+                        ((workshop.owner.first_name or '') + ' ' + (workshop.owner.last_name or '')).strip()
+                        or workshop.owner.username
+                    ) if workshop.owner_id and getattr(workshop, 'owner', None) else None,
                 })
             logger.info(f"Fallback query succeeded, returning {len(workshops_data)} workshops")
             return Response(workshops_data)
@@ -3820,22 +3849,69 @@ def get_conversation_messages(request, conversation_id):
 
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser, FormParser])
 def send_direct_message(request, conversation_id):
-    """Send a message in a conversation"""
-    # Check if user is a participant
+    """Send a message in a conversation. Accepts multipart: content (required or optional if files), and optional file attachments."""
+    import os
+    from .file_managers import user_file_manager
+    
+    # Allowed extensions for message attachments (images, PDF, archive, CAD, 3D)
+    ALLOWED_EXTENSIONS = {
+        '.jpg', '.jpeg', '.png', '.gif', '.webp',
+        '.pdf', '.zip', '.rar',
+        '.dwg', '.dxf', '.step', '.stp', '.iges', '.igs', '.stl', '.obj',
+    }
+    MAX_FILE_SIZE = 25 * 1024 * 1024  # 25MB
+    MAX_FILES_PER_MESSAGE = 5
+    
     if not ConversationParticipant.objects.filter(conversation_id=conversation_id, user=request.user).exists():
         return Response({'error': 'مکالمه یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
     try:
         conv = Conversation.objects.get(id=conversation_id)
     except Conversation.DoesNotExist:
         return Response({'error': 'مکالمه یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
-    content = (request.data.get('content') or '').strip()
-    if not content:
-        return Response({'error': 'متن پیام نمی‌تواند خالی باشد'}, status=status.HTTP_400_BAD_REQUEST)
-    msg = DirectMessage.objects.create(conversation=conv, sender=request.user, content=content)
+    
+    content = (request.data.get('content') or request.POST.get('content') or '').strip()
+    files = request.FILES.getlist('files') or request.FILES.getlist('file') or []
+    
+    if not content and not files:
+        return Response({'error': 'متن پیام یا حداقل یک پیوست الزامی است'}, status=status.HTTP_400_BAD_REQUEST)
+    if len(files) > MAX_FILES_PER_MESSAGE:
+        return Response({'error': f'حداکثر {MAX_FILES_PER_MESSAGE} فایل در هر پیام مجاز است'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    for f in files:
+        ext = os.path.splitext(getattr(f, 'name', ''))[1].lower()
+        if ext not in ALLOWED_EXTENSIONS:
+            return Response({'error': f'نوع فایل مجاز نیست: {ext}. مجاز: عکس، PDF، ZIP، RAR، فایل‌های CAD و مدل سه‌بعدی'}, status=status.HTTP_400_BAD_REQUEST)
+        if f.size > MAX_FILE_SIZE:
+            return Response({'error': f'حجم هر فایل حداکثر ۲۵ مگابایت باشد'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    msg = DirectMessage.objects.create(conversation=conv, sender=request.user, content=content or '(پیوست)')
+    
+    for f in files:
+        safe_name = os.path.basename(getattr(f, 'name', 'file'))[:200]
+        content_type = getattr(f, 'content_type', 'application/octet-stream')
+        result = user_file_manager.upload_file(
+            f,
+            f"msg_{conv.id}_{safe_name}",
+            content_type,
+            user_id=request.user.id,
+            order_id=None,
+        )
+        if result.get('success'):
+            DirectMessageAttachment.objects.create(
+                message=msg,
+                file_path=result['file_path'],
+                file_name=safe_name,
+                content_type=content_type,
+                file_size=result.get('file_size', 0),
+            )
+        else:
+            logger.warning(f"Message attachment upload failed: {result.get('error')}")
+    
     conv.updated_at = timezone.now()
     conv.save(update_fields=['updated_at'])
-    return Response(DirectMessageSerializer(msg).data, status=status.HTTP_201_CREATED)
+    return Response(DirectMessageSerializer(msg, context={'request': request}).data, status=status.HTTP_201_CREATED)
 
 
 @api_view(["PATCH"])
@@ -4881,12 +4957,15 @@ def download_user_private_file(request):
     if not any(abs_path.startswith(root + os.sep) or abs_path == root for root in allowed_roots):
         return Response({'error': 'Access to this path is not allowed'}, status=status.HTTP_403_FORBIDDEN)
 
-    # Authorization: admin OR owner if path starts with their user directory
+    # Authorization: admin OR owner if path starts with their user directory OR participant in conversation (message attachment)
     is_admin = request.user.is_staff or request.user.is_superuser
     if not is_admin:
         expected_user_prefix = os.path.abspath(os.path.join(settings.MEDIA_ROOT, 'user-uploads', 'users', str(request.user.id)))
         if not (abs_path.startswith(expected_user_prefix + os.sep) or abs_path == expected_user_prefix):
-            return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+            # Allow if this path is a direct message attachment and user is in the conversation
+            att = DirectMessageAttachment.objects.filter(file_path=normalized_rel_path).select_related('message').first()
+            if not att or not ConversationParticipant.objects.filter(conversation_id=att.message.conversation_id, user=request.user).exists():
+                return Response({'error': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
 
     # File existence
     if not os.path.exists(abs_path) or not os.path.isfile(abs_path):

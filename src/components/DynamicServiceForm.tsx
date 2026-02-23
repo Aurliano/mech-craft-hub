@@ -60,6 +60,8 @@ interface DynamicServiceFormProps {
   onNotesChange: (value: string) => void;
   onSubmit?: () => void;
   isSubmitting?: boolean;
+  /** Field keys to hide (e.g. when rendered elsewhere) */
+  excludeFieldKeys?: string[];
 }
 
 // Internal component for handling text input with local state to prevent typing lag
@@ -124,7 +126,8 @@ export function DynamicServiceForm({
   notes,
   onNotesChange,
   onSubmit,
-  isSubmitting = false
+  isSubmitting = false,
+  excludeFieldKeys = []
 }: DynamicServiceFormProps) {
   const { data: fields = [], isLoading, error } = useServiceFields(serviceId);
   const [uploadedFiles, setUploadedFiles] = useState<Record<string, UploadedFile[]>>({});
@@ -132,9 +135,10 @@ export function DynamicServiceForm({
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
 
-  // Coerce API fields to typed ServiceField[] for internal use
+  // Coerce API fields to typed ServiceField[] for internal use; optionally exclude some
+  const excludeSet = new Set(excludeFieldKeys);
   const normalizedFields: ServiceFieldModel[] = Array.isArray(fields)
-    ? (fields as unknown as ServiceFieldModel[])
+    ? (fields as unknown as ServiceFieldModel[]).filter((f) => !excludeSet.has(f.field_key))
     : [];
 
   // Validation functions
