@@ -1054,6 +1054,37 @@ export async function removeFromCart(cartItemId: string) {
 }
 
 // Payment Functions
+export interface OrderPaymentSummary {
+  order_id: string;
+  order_number: string;
+  has_manufacturing: boolean;
+  material: { total: number; is_paid: boolean };
+  project: {
+    total: number;
+    phase_amount: number;
+    phase_1: { amount: number; is_paid: boolean };
+    phase_2: { amount: number; is_paid: boolean };
+    phase_3: { amount: number; is_paid: boolean };
+    phase_4: { amount: number; is_paid: boolean };
+    progress_phase: number;
+  };
+  suggested_next_payment: string | null;
+  currency: string;
+}
+
+export async function getOrderPaymentSummary(orderId: string): Promise<OrderPaymentSummary> {
+  return fetchJson<OrderPaymentSummary>(`/v1/orders/${orderId}/payments/summary/`);
+}
+
+/** Initiate BitPay payment for project phase 1-4 (25% each). Returns redirect_url. */
+export async function initiatePaymentPhase(orderId: string, phase: 1 | 2 | 3 | 4): Promise<{ payment_id: string; redirect_url: string }> {
+  const data = await fetchJson<{ payment_id: string; redirect_url: string }>(
+    `/v1/orders/${orderId}/payments/phase/${phase}/`,
+    { method: 'POST', body: JSON.stringify({}) }
+  );
+  return { ...data, redirect_url: data.redirect_url || (data as { link?: string }).link };
+}
+
 export async function processPayment(orderId: string, paymentData: {
   amount: number;
   method: string;

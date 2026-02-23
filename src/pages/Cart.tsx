@@ -16,6 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useProcessPayment, useDownloadInvoice } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
+import { OrderPaymentPhases } from '@/components/OrderPaymentPhases';
 
 interface Order {
   status: string;
@@ -66,7 +67,9 @@ const Cart = () => {
   
   const quotedOrders = allOrders.filter(order => order.status === 'quoted');
   const acceptedOrders = allOrders.filter(order => order.status === 'accepted');
-  const inProgressOrders = allOrders.filter(order => order.status === 'in_progress');
+  const inProgressOrders = allOrders.filter(order =>
+    ['in_progress', 'project_paid'].includes(order.status)
+  );
   const completedOrders = allOrders.filter(order => order.status === 'completed');
 
   const getFilteredOrders = (orderList) => {
@@ -192,38 +195,15 @@ const Cart = () => {
     const getActionButtons = () => {
       switch (order.status) {
         case 'quoted':
-          return (
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => handleProcessPayment(order.id, order.total_amount, 'deposit')}
-                disabled={processPaymentMutation.isPending}
-              >
-                <CreditCard className="h-4 w-4 ml-2" />
-                پرداخت بیعانه (50%)
-              </Button>
-              <Button variant="outline" size="sm">
-                <Eye className="h-4 w-4 ml-2" />
-                مشاهده جزئیات
-              </Button>
-            </div>
-          );
         case 'accepted':
+        case 'project_paid':
           return (
             <div className="flex gap-2">
-              <Button 
-                variant="default" 
-                size="sm"
-                onClick={() => handleProcessPayment(order.id, order.total_amount, 'deposit')}
-                disabled={processPaymentMutation.isPending}
-              >
-                <CreditCard className="h-4 w-4 ml-2" />
-                پرداخت بیعانه
-              </Button>
-              <Button variant="outline" size="sm">
-                <Eye className="h-4 w-4 ml-2" />
-                مشاهده جزئیات
+              <Button variant="outline" size="sm" asChild>
+                <Link to={`/orders/${order.id}`}>
+                  <Eye className="h-4 w-4 ml-2" />
+                  مشاهده جزئیات
+                </Link>
               </Button>
             </div>
           );
@@ -316,25 +296,16 @@ const Cart = () => {
                 </div>
               )}
 
-              {/* نمایش اطلاعات پرداخت */}
-              {order.status === 'quoted' || order.status === 'accepted' ? (
-                <div className="bg-blue-50 p-3 rounded-lg mb-4">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="font-medium text-blue-800">مبلغ بیعانه:</span>
-                      <p className="text-blue-600 font-semibold">
-                        {calculateDepositAmount(order.total_amount).toLocaleString()} تومان
-                      </p>
-                    </div>
-                    <div>
-                      <span className="font-medium text-blue-800">مبلغ باقی‌مانده:</span>
-                      <p className="text-blue-600 font-semibold">
-                        {calculateRemainingAmount(order.total_amount).toLocaleString()} تومان
-                      </p>
-                    </div>
-                  </div>
+              {/* نمایش پرداخت ۴ مرحله‌ای (۲۵٪ در هر مرحله) */}
+              {(order.status === 'quoted' || order.status === 'accepted' || order.status === 'project_paid') && (
+                <div className="mb-4">
+                  <OrderPaymentPhases
+                    orderId={order.id}
+                    orderNumber={order.order_number}
+                    totalAmount={order.total_amount}
+                  />
                 </div>
-              ) : null}
+              )}
             </div>
             
             <div className="flex flex-col gap-2">

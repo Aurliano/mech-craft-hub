@@ -74,6 +74,7 @@ interface Order {
   notes: string;
   documentation_options: Record<string, boolean>;
   total_amount: number;
+  project_progress_phase?: number;
   created_at: string;
   customer: {
     id: string;
@@ -86,6 +87,7 @@ interface Order {
 
 const OrderDetails = () => {
   const { user } = useAuth();
+  const isStaff = (user as { is_staff?: boolean })?.is_staff === true;
   const navigate = useNavigate();
   const { orderId } = useParams<{ orderId: string }>();
   const [order, setOrder] = useState<Order | null>(null);
@@ -332,6 +334,50 @@ const OrderDetails = () => {
               </Button>
             </div>
           </div>
+
+          {/* Admin: ویرایش پیشرفت پروژه */}
+          {isStaff && order.status !== 'submitted' && order.status !== 'cancelled' && (
+            <Card className="shadow-md border-amber-200 bg-amber-50/30">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">ویرایش پیشرفت پروژه (ادمین)</CardTitle>
+                <CardDescription>پیشرفت پروژه را بر اساس مراحل انجام‌شده تنظیم کنید. پس از هر مرحله، پرداخت مرحله بعد برای مشتری فعال می‌شود.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-4">
+                  <label className="text-sm font-medium">مرحله پیشرفت:</label>
+                  <select
+                    value={order.project_progress_phase ?? 0}
+                    onChange={async (e) => {
+                      const val = parseInt(e.target.value, 10);
+                      try {
+                        const res = await fetch(getApiUrl(`/v1/orders/${order.id}/`), {
+                          method: 'PATCH',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+                          },
+                          body: JSON.stringify({ project_progress_phase: val }),
+                        });
+                        if (res.ok) {
+                          const updated = await res.json();
+                          setOrder(updated);
+                        }
+                      } catch (err) {
+                        console.error(err);
+                      }
+                    }}
+                    className="rounded border px-3 py-2"
+                  >
+                    <option value={0}>۰ - شروع نشده</option>
+                    <option value={1}>۱ - مرحله ۱ پرداخت شده</option>
+                    <option value={2}>۲ - مرحله ۲ پرداخت شده</option>
+                    <option value={3}>۳ - مرحله ۳ پرداخت شده</option>
+                    <option value={4}>۴ - همه مراحل پرداخت شده</option>
+                  </select>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Order Status Card */}
           <Card className="shadow-md border-t-4 border-t-primary">

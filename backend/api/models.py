@@ -312,6 +312,10 @@ class Payment(models.Model):
         ('material', 'پرداخت متریال'),
         ('project_advance', 'پیش پرداخت پروژه'),
         ('project_final', 'تسویه حساب پروژه'),
+        ('project_phase_1', 'مرحله ۱ (۲۵٪)'),
+        ('project_phase_2', 'مرحله ۲ (۲۵٪)'),
+        ('project_phase_3', 'مرحله ۳ (۲۵٪)'),
+        ('project_phase_4', 'مرحله ۴ (۲۵٪)'),
         ('shipping', 'هزینه ارسال'),
     ]
     
@@ -496,6 +500,10 @@ class Order(models.Model):
     total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     notes = models.TextField(blank=True)
     documentation_options = models.JSONField(default=dict, blank=True)
+    project_progress_phase = models.PositiveSmallIntegerField(
+        default=0,
+        help_text='پیشرفت پروژه: 0=شروع نشده، 1-4=مراحل پرداخت انجام شده (قابل ویرایش توسط ادمین)'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

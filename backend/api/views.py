@@ -111,7 +111,7 @@ def rial_to_toman(amount_rial: int) -> int:
 
 
 def compute_order_payment_summary(order: Order) -> dict:
-    """Compute material/project amounts (in Toman) and recommended payables."""
+    """Compute material/project amounts (in Toman) and recommended payables. 4-phase payment (25% each)."""
     # Material
     material_total = 0
     material_paid = False
@@ -122,7 +122,7 @@ def compute_order_payment_summary(order: Order) -> dict:
     except Exception:
         material_total = 0
 
-    # Project proposal
+    # Project proposal / total from accepted quote
     proposal_price = None
     try:
         accepted = order.proposals.filter(status='accepted').order_by('-created_at').first()
@@ -132,12 +132,27 @@ def compute_order_payment_summary(order: Order) -> dict:
         proposal_price = None
 
     project_total = int(float(order.total_amount)) if (order.total_amount and float(order.total_amount) > 0) else (proposal_price or 0)
-    advance_50 = int(project_total * 0.5) if project_total else 0
-    final_50 = project_total - advance_50 if project_total else 0
+    phase_amount = int(project_total * 0.25) if project_total else 0  # 25% per phase
 
-    # Suggested payable: require material before advance for manufacturing orders
+    # Which phases are paid: project_progress_phase=1 means phase 1 paid, =2 means phases 1&2 paid, etc.
+    progress_phase = getattr(order, 'project_progress_phase', 0) or 0
+    phases_paid = [progress_phase >= 1, progress_phase >= 2, progress_phase >= 3, progress_phase >= 4]
+    # Also check Payment records (for backward compat with project_advance/project_final)
+    for pt in ['project_phase_1', 'project_phase_2', 'project_phase_3', 'project_phase_4']:
+        idx = int(pt.split('_')[-1]) - 1
+        if 0 <= idx < 4 and order.payments.filter(payment_type=pt, status='paid').exists():
+            phases_paid[idx] = True
+
+    # suggested_next: which phase to pay next (1-4), or material first for manufacturing
     has_manufacturing = order.items.filter(service__type='manufacturing').exists()
-    suggested_next = 'material' if (has_manufacturing and not material_paid and material_total > 0) else ('project_advance' if project_total > 0 else None)
+    suggested_next = None
+    if has_manufacturing and not material_paid and material_total > 0:
+        suggested_next = 'material'
+    elif project_total > 0:
+        for i in range(4):
+            if not phases_paid[i]:
+                suggested_next = f'project_phase_{i + 1}'
+                break
 
     return {
         'order_id': str(order.id),
@@ -149,8 +164,12 @@ def compute_order_payment_summary(order: Order) -> dict:
         },
         'project': {
             'total': project_total,
-            'advance_50': advance_50,
-            'final_50': final_50,
+            'phase_amount': phase_amount,
+            'phase_1': {'amount': phase_amount, 'is_paid': phases_paid[0]},
+            'phase_2': {'amount': phase_amount, 'is_paid': phases_paid[1]},
+            'phase_3': {'amount': phase_amount, 'is_paid': phases_paid[2]},
+            'phase_4': {'amount': phase_amount, 'is_paid': phases_paid[3]},
+            'progress_phase': progress_phase,
         },
         'suggested_next_payment': suggested_next,
         'currency': 'TOMAN',
@@ -353,10 +372,83 @@ def initiate_payment_project_advance(request, order_id):
         return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
 
 
+def _initiate_phase_payment(request, order_id: str, phase: int) -> Response:
+    """Helper: Initiate payment for project phase 1-4 (25% each). Amount in Toman, sent to gateway as Rials (×10)."""
+    try:
+        order = Order.objects.get(id=order_id)
+        if order.customer != request.user and not request.user.is_staff:
+            return Response({'detail': 'دسترسی غیرمجاز'}, status=status.HTTP_403_FORBIDDEN)
+
+        summary = compute_order_payment_summary(order)
+        phase_key = f'phase_{phase}'
+        phase_data = summary['project'].get(phase_key, {})
+        amount = phase_data.get('amount', 0)
+        if phase_data.get('is_paid'):
+            return Response({'detail': f'مرحله {phase} قبلاً پرداخت شده است'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if amount <= 0:
+            return Response({'detail': 'مبلغ مرحله نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
+
+        payment_type = f'project_phase_{phase}'
+        from .serializers import ProcessPaymentSerializer
+        payment_data = {
+            'order': str(order_id),
+            'amount': amount,
+            'payment_type': payment_type,
+            'description': request.data.get('description', f'پرداخت مرحله {phase} پروژه (۲۵٪)'),
+        }
+        serializer = ProcessPaymentSerializer(data=payment_data)
+        serializer.is_valid(raise_exception=True)
+        data = serializer.validated_data
+
+        payment = Payment.objects.create(
+            order=order,
+            amount=data['amount'],
+            payment_type=payment_type,
+            status='pending'
+        )
+
+        # درگاه پرداخت مبلغ را به ریال می‌خواهد؛ قیمت تومان × 10
+        rial_amount = toman_to_rial(data['amount'])
+        nonce = get_random_string(24)
+        payload = {
+            'api': settings.BITPAY_API_KEY,
+            'amount': rial_amount,
+            'callback': settings.BITPAY_CALLBACK_URL,
+            'order_id': str(order.id),
+            'payer_desc': data.get('description', ''),
+            'nonce': nonce,
+        }
+
+        resp = requests.post(f"{settings.BITPAY_BASE_URL}/api/create", json=payload, timeout=20)
+        if resp.status_code != 200:
+            return Response({'detail': 'خطا در اتصال به درگاه پرداخت'}, status=status.HTTP_502_BAD_GATEWAY)
+        body = resp.json()
+        if not body.get('success'):
+            return Response({'detail': body.get('message', 'خطای درگاه پرداخت')}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({
+            'payment_id': str(payment.id),
+            'gateway': 'bitpay',
+            'redirect_url': body.get('link'),
+        })
+    except Order.DoesNotExist:
+        return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def initiate_payment_project_phase(request, order_id, phase: int):
+    """Initiate payment for project phase 1-4 (25% each)."""
+    if phase not in (1, 2, 3, 4):
+        return Response({'detail': 'شماره مرحله باید بین ۱ تا ۴ باشد'}, status=status.HTTP_400_BAD_REQUEST)
+    return _initiate_phase_payment(request, order_id, phase)
+
+
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def initiate_payment_project_final(request, order_id):
-    """Initiate payment for project final payment (50%)"""
+    """Initiate payment for project final payment (50%) - kept for backward compatibility"""
     try:
         order = Order.objects.get(id=order_id)
         if order.customer != request.user and not request.user.is_staff:
@@ -486,14 +578,28 @@ def bitpay_webhook(request):
                 order.status = 'material_paid'
                 order.save()
                 OrderStatus.objects.create(order=order, status='material_paid', description='پرداخت متریال تایید شد')
-            elif payment.payment_type == 'project_advance':
+            elif payment.payment_type in ('project_advance', 'project_phase_1'):
                 order.status = 'project_paid'
+                order.project_progress_phase = 1
                 order.save()
-                OrderStatus.objects.create(order=order, status='project_paid', description='پیش‌پرداخت پروژه تایید شد')
-            elif payment.payment_type == 'project_final':
+                OrderStatus.objects.create(order=order, status='project_paid', description='پرداخت مرحله ۱ تایید شد - ددلاین پروژه آغاز شد')
+                _notify_contractor_on_payment(order, payment)
+            elif payment.payment_type == 'project_phase_2':
+                order.project_progress_phase = 2
+                order.save()
+                OrderStatus.objects.create(order=order, status='project_paid', description='پرداخت مرحله ۲ تایید شد')
+                _notify_contractor_on_payment(order, payment)
+            elif payment.payment_type == 'project_phase_3':
+                order.project_progress_phase = 3
+                order.save()
+                OrderStatus.objects.create(order=order, status='project_paid', description='پرداخت مرحله ۳ تایید شد')
+                _notify_contractor_on_payment(order, payment)
+            elif payment.payment_type in ('project_final', 'project_phase_4'):
+                order.project_progress_phase = 4
                 order.status = 'shipping'
                 order.save()
                 OrderStatus.objects.create(order=order, status='shipping', description='تسویه نهایی تایید شد - ارسال در حال انجام')
+                _notify_contractor_on_payment(order, payment)
 
             return Response({'detail': 'پرداخت تایید شد'})
         else:
@@ -2008,6 +2114,12 @@ def get_order_by_id(request, order_id):
             if 'documentation_options' in data and isinstance(data.get('documentation_options'), dict):
                 order.documentation_options = data.get('documentation_options') or {}
 
+            # ادمین/مدیر می‌تواند پیشرفت پروژه را ویرایش کند
+            if request.user.is_staff and 'project_progress_phase' in data:
+                val = data.get('project_progress_phase')
+                if val is not None and 0 <= int(val) <= 4:
+                    order.project_progress_phase = int(val)
+
             # Update nested items if provided
             items_data = data.get('items', [])
             if isinstance(items_data, list) and items_data:
@@ -2916,6 +3028,26 @@ def create_notification(user, notification_type, title, message, related_order=N
         related_order=related_order,
         related_quote=related_quote
     )
+
+
+def _notify_contractor_on_payment(order, payment):
+    """اعلان به پیمانکار پس از پرداخت توسط سفارش‌دهنده"""
+    try:
+        contractor = None
+        for item in order.items.select_related('assigned_contractor'):
+            if item.assigned_contractor and item.assigned_contractor != order.customer:
+                contractor = item.assigned_contractor
+                break
+        if contractor:
+            create_notification(
+                user=contractor,
+                notification_type='payment_completed',
+                title='پرداخت سفارش انجام شد',
+                message=f'مشتری سفارش {order.order_number} را پرداخت کرد. ددلاین پروژه آغاز شده است.',
+                related_order=order
+            )
+    except Exception as e:
+        logger.warning('Failed to notify contractor on payment: %s', str(e))
 
 
 # Contractor-specific endpoints
