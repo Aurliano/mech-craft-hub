@@ -5,12 +5,21 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Package, Clock, User, Calendar, FileText,
   Eye, MessageCircle, Download, CheckCircle, XCircle,
   AlertCircle, Award, Settings, Truck, Edit, Trash2
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useGetOrderById, useGetQuotesByOrder } from '@/hooks/useAuth';
+import { useGetOrderById, useGetQuotesByOrder, useAcceptQuote, useRejectQuote, useAddOrderToCart } from '@/hooks/useAuth';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { getPersianLabel, getPersianValue } from '@/lib/persianMapping';
@@ -28,7 +37,7 @@ interface OrderItem {
     field_key: string;
     name: string;
     type: string;
-    options?: any;
+    options?: unknown;
   }>;
   needs_documentation: boolean;
   status: string;
@@ -87,6 +96,10 @@ const OrderDetails = () => {
   // API Hooks
   const { data: orderData, isLoading: isLoadingOrder } = useGetOrderById(orderId);
   const { data: quotesData, isLoading: isLoadingQuotes } = useGetQuotesByOrder(orderId);
+  const acceptQuoteMutation = useAcceptQuote();
+  const rejectQuoteMutation = useRejectQuote();
+  const addToCartMutation = useAddOrderToCart();
+  const [rejectDialogQuote, setRejectDialogQuote] = useState<Quote | null>(null);
 
   useEffect(() => {
     if (orderData) {
@@ -207,6 +220,29 @@ const OrderDetails = () => {
         </div>
       </div>
     );
+  };
+
+  const handleAcceptQuote = async (quoteId: string) => {
+    if (!order) return;
+    try {
+      await acceptQuoteMutation.mutateAsync(quoteId);
+      // پس از تایید، سفارش را به سبد خرید اضافه کن
+      await addToCartMutation.mutateAsync(order.id);
+    } catch (err) {
+      console.error('Error accepting quote:', err);
+      setError('خطا در تایید پیشنهاد');
+    }
+  };
+
+  const handleRejectQuote = async (quoteId: string) => {
+    try {
+      await rejectQuoteMutation.mutateAsync(quoteId);
+    } catch (err) {
+      console.error('Error rejecting quote:', err);
+      setError('خطا در رد پیشنهاد');
+    } finally {
+      setRejectDialogQuote(null);
+    }
   };
 
   const handleDelete = async () => {
@@ -456,8 +492,23 @@ const OrderDetails = () => {
                             </CardDescription>
                           </div>
                         </div>
-                        {/* Status Badge */}
-                        {/* TODO: Add logic to show Accepted/Rejected here */}
+                        <div className="flex items-center gap-2">
+                          {quote.status === 'pending' && (
+                            <Badge variant="secondary">در انتظار بررسی</Badge>
+                          )}
+                          {quote.status === 'accepted' && (
+                            <Badge className="bg-green-600">
+                              <CheckCircle className="h-3 w-3 ml-1" />
+                              پیشنهاد تایید شده
+                            </Badge>
+                          )}
+                          {quote.status === 'rejected' && (
+                            <Badge variant="destructive">
+                              <XCircle className="h-3 w-3 ml-1" />
+                              پیشنهاد رد شده
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent className="pt-6">
@@ -485,14 +536,38 @@ const OrderDetails = () => {
                         </div>
                       )}
 
-                      {/* Actions for Customer */}
+                      {/* Actions for Customer - only for pending quotes */}
                       <div className="flex gap-2 justify-end mt-4 pt-4 border-t border-gray-100">
-                        <Button variant="default" className="bg-green-600 hover:bg-green-700">
-                          قبول پیشنهاد
-                        </Button>
-                        <Button variant="outline" className="text-red-600 hover:bg-red-50 border-red-200">
-                          رد پیشنهاد
-                        </Button>
+                        {quote.status === 'pending' && (
+                          <>
+                            <Button
+                              variant="default"
+                              className="bg-green-600 hover:bg-green-700"
+                              onClick={() => handleAcceptQuote(quote.id)}
+                              disabled={acceptQuoteMutation.isPending}
+                            >
+                              <CheckCircle className="h-4 w-4 ml-2" />
+                              {acceptQuoteMutation.isPending ? 'در حال تایید...' : 'تایید پیشنهاد'}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              className="text-red-600 hover:bg-red-50 border-red-200"
+                              onClick={() => setRejectDialogQuote(quote)}
+                              disabled={rejectQuoteMutation.isPending}
+                            >
+                              <XCircle className="h-4 w-4 ml-2" />
+                              رد پیشنهاد
+                            </Button>
+                          </>
+                        )}
+                        {quote.status === 'accepted' && (
+                          <Button asChild variant="outline" size="sm">
+                            <Link to="/cart">
+                              <Package className="h-4 w-4 ml-2" />
+                              مشاهده سبد خرید و پرداخت
+                            </Link>
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -526,6 +601,31 @@ const OrderDetails = () => {
               </Card>
             </TabsContent>
           </Tabs>
+
+          {/* Reject Proposal Confirmation Dialog */}
+          <AlertDialog open={!!rejectDialogQuote} onOpenChange={(open) => !open && setRejectDialogQuote(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>رد پیشنهاد</AlertDialogTitle>
+                <AlertDialogDescription>
+                  آیا از رد کردن این پیشنهاد مطمئن هستید؟
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="gap-2 sm:gap-0">
+                <AlertDialogCancel>خیر</AlertDialogCancel>
+                <Button
+                  variant="destructive"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (rejectDialogQuote) handleRejectQuote(rejectDialogQuote.id);
+                  }}
+                  disabled={rejectQuoteMutation.isPending}
+                >
+                  {rejectQuoteMutation.isPending ? 'در حال رد...' : 'بله، رد کن'}
+                </Button>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
     </div>

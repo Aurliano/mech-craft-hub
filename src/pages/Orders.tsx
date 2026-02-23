@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Package, Search, Filter, Eye, Download, MessageCircle, ShoppingCart, CheckCircle, Trash2, Edit } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAddOrderToCart, useAcceptQuote, useDownloadInvoice } from '@/hooks/useAuth';
+import { useAddOrderToCart, useDownloadInvoice } from '@/hooks/useAuth';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { getApiUrl } from '@/lib/api';
@@ -38,7 +38,6 @@ const Orders = () => {
   
   // Order management hooks
   const addToCartMutation = useAddOrderToCart();
-  const acceptQuoteMutation = useAcceptQuote();
   const downloadInvoiceMutation = useDownloadInvoice();
 
   const handleDelete = async (orderId: string) => {
@@ -58,6 +57,10 @@ const Orders = () => {
     } catch (error) {
         console.error('Error deleting order:', error);
     }
+  };
+
+  const handleAddToCart = (orderId: string) => {
+    addToCartMutation.mutate(orderId);
   };
 
   const handleEdit = (orderId: string) => {
@@ -129,24 +132,6 @@ const Orders = () => {
       'refunded': 'text-red-600',
     };
     return colorMap[status as keyof typeof colorMap] || 'text-gray-600';
-  };
-
-  const handleAddToCart = async (orderId: string) => {
-    try {
-      await addToCartMutation.mutateAsync(orderId);
-      // Show success message or redirect
-    } catch (error) {
-      console.error('Error adding to cart:', error);
-    }
-  };
-
-  const handleAcceptQuote = async (quoteId: string) => {
-    try {
-      await acceptQuoteMutation.mutateAsync(quoteId);
-      // Show success message
-    } catch (error) {
-      console.error('Error accepting quote:', error);
-    }
   };
 
   const handleDownloadInvoice = async (orderId: string) => {
@@ -284,7 +269,7 @@ const Orders = () => {
                         </>
                       )}
                       
-                      {/* Add to Cart - Only for quoted orders */}
+                      {/* Add to Cart - Only for quoted orders (پیشنهاد قبول شده) */}
                       {order.status === 'quoted' && (
                         <Button 
                           variant="outline" 
@@ -294,19 +279,6 @@ const Orders = () => {
                         >
                           <ShoppingCart className="h-4 w-4 ml-2" />
                           {addToCartMutation.isPending ? 'در حال اضافه کردن...' : 'اضافه به سبد خرید'}
-                        </Button>
-                      )}
-                      
-                      {/* Accept Quote - Only for quoted orders */}
-                      {order.status === 'quoted' && (
-                        <Button 
-                          variant="default" 
-                          size="sm"
-                          onClick={() => handleAcceptQuote(order.id)}
-                          disabled={acceptQuoteMutation.isPending}
-                        >
-                          <CheckCircle className="h-4 w-4 ml-2" />
-                          {acceptQuoteMutation.isPending ? 'در حال تایید...' : 'تایید پیشنهاد'}
                         </Button>
                       )}
                       

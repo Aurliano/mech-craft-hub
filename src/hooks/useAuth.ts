@@ -330,6 +330,7 @@ export function useAcceptQuote() {
     mutationFn: acceptQuote,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['quotes'] });
+      qc.invalidateQueries({ queryKey: ['order'] });
       qc.invalidateQueries({ queryKey: ['userOrders'] });
       qc.invalidateQueries({ queryKey: ['userCart'] });
       qc.invalidateQueries({ queryKey: ['contractorOrders'] });
@@ -345,6 +346,7 @@ export function useRejectQuote() {
     mutationFn: rejectQuote,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['quotes'] });
+      qc.invalidateQueries({ queryKey: ['order'] });
       qc.invalidateQueries({ queryKey: ['userOrders'] });
       qc.invalidateQueries({ queryKey: ['contractorOrders'] });
       qc.invalidateQueries({ queryKey: ['contractorProposals'] });

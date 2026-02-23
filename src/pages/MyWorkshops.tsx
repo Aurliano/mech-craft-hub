@@ -90,7 +90,8 @@ const MyWorkshops = () => {
     { id: 'coating', name: 'پوشش دهی' },
     { id: 'molding', name: 'قالب سازی' },
     { id: 'heat_treatment', name: 'عملیات حرارتی' },
-    { id: 'wire_cut', name: 'وایرکات' }
+    { id: 'wire_cut', name: 'وایرکات' },
+    { id: 'pressing', name: 'پرس کاری' }
   ];
 
   // Iranian provinces

@@ -52,6 +52,7 @@ const CAPABILITY_ICONS: Record<string, any> = {
   'molding': Factory,
   'heat_treatment': Beaker,
   'wire_cut': Zap,
+  'pressing': Gauge,
 };
 
 

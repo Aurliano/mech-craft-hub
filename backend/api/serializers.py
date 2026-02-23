@@ -140,14 +140,31 @@ class CartSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at']
 
 
+class OrderItemQuoteSerializer(serializers.ModelSerializer):
+    """Minimal quote data for embedding in order items"""
+    contractor = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Quote
+        fields = ['id', 'contractor', 'price', 'documentation_price', 'delivery_days', 'documentation_days', 'notes', 'status', 'created_at', 'expires_at']
+
+    def get_contractor(self, obj):
+        return {
+            'id': str(obj.contractor.id),
+            'username': obj.contractor.username,
+            'profile_image': getattr(obj.contractor, 'profile_image', None),
+        }
+
+
 class OrderItemSerializer(serializers.ModelSerializer):
     service = serializers.SerializerMethodField()
     service_fields = serializers.SerializerMethodField()
     field_values_by_tab = serializers.SerializerMethodField()
-    
+    quotes = serializers.SerializerMethodField()
+
     class Meta:
         model = OrderItem
-        fields = ['id', 'order', 'service', 'service_fields', 'assigned_contractor', 'status', 'price', 'estimated_delivery', 'actual_delivery', 'field_values', 'field_values_by_tab', 'needs_documentation', 'created_at', 'updated_at']
+        fields = ['id', 'order', 'service', 'service_fields', 'assigned_contractor', 'status', 'price', 'estimated_delivery', 'actual_delivery', 'field_values', 'field_values_by_tab', 'needs_documentation', 'quotes', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
     
     def get_service(self, obj):
@@ -216,6 +233,11 @@ class OrderItemSerializer(serializers.ModelSerializer):
         else:
             # Service without tabs - return as is
             return {'general': obj.field_values}
+
+    def get_quotes(self, obj):
+        from .models import Quote
+        quotes = Quote.objects.filter(order_item=obj).select_related('contractor').order_by('-created_at')
+        return OrderItemQuoteSerializer(quotes, many=True).data
 
 
 class OrderSerializer(serializers.ModelSerializer):

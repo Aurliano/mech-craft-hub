@@ -533,6 +533,7 @@ class Command(BaseCommand):
                     {'value': 'grinding', 'label': 'سنگ زنی'},
                     {'value': 'prototyping', 'label': 'نمونه سازی'},
                     {'value': 'metallurgy', 'label': 'فرآیندهای متالوژی'},
+                    {'value': 'pressing', 'label': 'پرس کاری'},
                 ],
                 'is_required': True,
                 'order': 2,

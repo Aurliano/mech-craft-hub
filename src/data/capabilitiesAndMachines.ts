@@ -330,6 +330,42 @@ export const CAPABILITIES_WITH_MACHINES: Capability[] = [
       }
     ]
   },
+  {
+    id: 'pressing',
+    name: 'پرس کاری',
+    machines: [
+      {
+        id: 'manual_press',
+        name: 'پرس دستی',
+        description: 'پرس دستی برای عملیات پرس کاری',
+        placeholder: 'نیرو و ابعاد (مثال: نیرو 50 تن، میز 500x400mm)'
+      },
+      {
+        id: 'mechanical_press',
+        name: 'پرس مکانیکی (ضربه‌ای)',
+        description: 'پرس مکانیکی ضربه‌ای',
+        placeholder: 'نیرو و تعداد ضربه (مثال: نیرو 100 تن، ضربه در دقیقه)'
+      },
+      {
+        id: 'hydraulic_press',
+        name: 'پرس هیدرولیکی',
+        description: 'پرس هیدرولیکی',
+        placeholder: 'نیرو و ابعاد (مثال: نیرو 200 تن، میز 1000x800mm)'
+      },
+      {
+        id: 'pneumatic_press',
+        name: 'پرس پنوماتیکی',
+        description: 'پرس پنوماتیکی',
+        placeholder: 'نیرو و فشار کاری (مثال: نیرو 20 تن، فشار 6 بار)'
+      },
+      {
+        id: 'hydro_pneumatic_press',
+        name: 'پرس هیدرو پنوماتیکی',
+        description: 'پرس هیدرو پنوماتیکی',
+        placeholder: 'نیرو و مشخصات (مثال: نیرو 80 تن، ترکیب هیدرولیک و پنوماتیک)'
+      }
+    ]
+  },
 ];
 
 export interface SelectedMachine {

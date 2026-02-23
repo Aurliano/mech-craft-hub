@@ -1032,14 +1032,9 @@ export async function addToCart(data: {
 
 export async function addOrderToCart(orderId: string) {
   try {
-    return await fetchJson<unknown>('/v1/cart-items/', {
+    return await fetchJson<unknown>('/v1/cart/add-order/', {
       method: 'POST',
-      body: JSON.stringify({ 
-        order: orderId,
-        service: '', // Will be filled by backend
-        field_values: {},
-        needs_documentation: false
-      }),
+      body: JSON.stringify({ order: orderId }),
     });
   } catch (error) {
     console.error('Error adding order to cart:', error);
