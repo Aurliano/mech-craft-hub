@@ -25,6 +25,7 @@ import Navbar from '@/components/Navbar';
 import { getPersianLabel, getPersianValue } from '@/lib/persianMapping';
 import { getApiUrl } from '@/lib/api';
 import { normalizeFilePaths, renderFileFieldValue } from '@/lib/fieldDisplay';
+import { CAPABILITIES_WITH_MACHINES } from '@/data/capabilitiesAndMachines';
 
 interface OrderItem {
   id: string;
@@ -186,7 +187,7 @@ const OrderDetails = () => {
     const allFields = { ...field_values };
 
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
         {Object.entries(allFields).map(([key, value]) => {
           // Ignore keys that might be internal or not fields
           if (key === 'needs_documentation' || key === 'documentationNotes') return null;
@@ -205,16 +206,49 @@ const OrderDetails = () => {
 
           const label = fieldDef?.name || getPersianLabel(key);
 
+          // Special UI for manufacturing processes: show selected processes as badges with Persian labels
+          if (key === 'manufacturing_processes') {
+            const ids = Array.isArray(value) ? value : [value];
+            const processes = ids
+              .filter((v): v is string => typeof v === 'string')
+              .map((id) => {
+                const cap = CAPABILITIES_WITH_MACHINES.find((c) => c.id === id);
+                return cap?.name || id;
+              })
+              .filter(Boolean);
+
+            if (processes.length === 0) return null;
+
+            return (
+              <div key={key} className="py-3 border-b border-gray-100">
+                <span className="block font-medium text-gray-600 text-sm mb-2">
+                  {label}:
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {processes.map((name) => (
+                    <Badge key={name} variant="secondary" className="px-3 py-1 text-xs">
+                      {name}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            );
+          }
+
           return (
-            <div key={key} className="flex justify-between items-center py-3 border-b border-gray-100">
-              <span className="font-medium text-gray-600 text-sm">{label}:</span>
-              <span className="text-gray-900 text-sm font-semibold">{formatFieldValue(value)}</span>
+            <div key={key} className="py-3 border-b border-gray-100">
+              <span className="block font-medium text-gray-600 text-sm mb-1">{label}:</span>
+              <span className="block text-gray-900 text-sm font-semibold break-words">
+                {formatFieldValue(value)}
+              </span>
             </div>
           );
         })}
-        <div className="flex justify-between items-center py-3 border-b border-gray-100">
-          <span className="font-medium text-gray-600 text-sm">نیاز به مستندات:</span>
-          <span className="text-gray-900 text-sm font-semibold">{getPersianValue(needs_documentation)}</span>
+        <div className="py-3 border-b border-gray-100">
+          <span className="block font-medium text-gray-600 text-sm mb-1">نیاز به مستندات:</span>
+          <span className="block text-gray-900 text-sm font-semibold">
+            {getPersianValue(needs_documentation)}
+          </span>
         </div>
       </div>
     );

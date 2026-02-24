@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils';
 import PriceInput from '@/components/PriceInput';
 import { getPersianLabel, getPersianValue } from '@/lib/persianMapping';
 import { normalizeFilePaths, renderFileFieldValue } from '@/lib/fieldDisplay';
+import { CAPABILITIES_WITH_MACHINES } from '@/data/capabilitiesAndMachines';
 
 const ContractorDashboard = () => {
   const { user } = useAuth();
@@ -519,12 +520,43 @@ const ContractorDashboard = () => {
                                                   <Settings className="h-4 w-4" /> مشخصات فنی:
                                               </h4>
                                               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                                                  {item.field_values && Object.entries(item.field_values).map(([key, value]) => (
-                                                      <div key={key} className="flex flex-col border-b border-gray-200 pb-2 last:border-0">
-                                                          <span className="text-xs text-gray-500 mb-1">{getPersianLabel(key)}</span>
-                                                          <span className="text-sm font-medium">{renderFieldValue(value)}</span>
-                                                      </div>
-                                                  ))}
+                                                  {item.field_values && Object.entries(item.field_values).map(([key, value]) => {
+                                                      // نمایش ویژه برای فرآیندهای ساخت
+                                                      if (key === 'manufacturing_processes') {
+                                                          const ids = Array.isArray(value) ? value : [value];
+                                                          const processes = ids
+                                                            .filter((v): v is string => typeof v === 'string')
+                                                            .map((id) => {
+                                                              const cap = CAPABILITIES_WITH_MACHINES.find(c => c.id === id);
+                                                              return cap?.name || id;
+                                                            })
+                                                            .filter(Boolean);
+
+                                                          if (processes.length === 0) return null;
+
+                                                          return (
+                                                            <div key={key} className="flex flex-col border-b border-gray-200 pb-2 last:border-0">
+                                                              <span className="text-xs text-gray-500 mb-1">
+                                                                فرآیندهای ساخت انتخاب‌شده
+                                                              </span>
+                                                              <div className="flex flex-wrap gap-2">
+                                                                {processes.map((name) => (
+                                                                  <Badge key={name} variant="secondary" className="px-2 py-0.5 text-xs">
+                                                                    {name}
+                                                                  </Badge>
+                                                                ))}
+                                                              </div>
+                                                            </div>
+                                                          );
+                                                      }
+
+                                                      return (
+                                                        <div key={key} className="flex flex-col border-b border-gray-200 pb-2 last:border-0">
+                                                            <span className="text-xs text-gray-500 mb-1">{getPersianLabel(key)}</span>
+                                                            <span className="text-sm font-medium break-words">{renderFieldValue(value)}</span>
+                                                        </div>
+                                                      );
+                                                  })}
                                               </div>
                                           </div>
                                       ))}
