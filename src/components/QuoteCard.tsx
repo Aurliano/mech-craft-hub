@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Clock, DollarSign, FileText, CheckCircle, X } from 'lucide-react';
 import OrderStatusBadge from './OrderStatusBadge';
+import { formatPriceNumber } from '@/lib/priceUtils';
 
 interface QuoteCardProps {
   quote: {
@@ -56,7 +57,7 @@ const QuoteCard = ({
             <DollarSign className="h-4 w-4 text-green-600" />
             <div>
               <p className="text-sm text-gray-600">قیمت اصلی</p>
-              <p className="font-semibold">{quote.price.toLocaleString()} تومان</p>
+              <p className="font-semibold">{formatPriceNumber(quote.price)} تومان</p>
             </div>
           </div>
           {quote.documentation_price && quote.documentation_price > 0 && (
@@ -64,7 +65,7 @@ const QuoteCard = ({
               <FileText className="h-4 w-4 text-blue-600" />
               <div>
                 <p className="text-sm text-gray-600">مستندسازی</p>
-                <p className="font-semibold">{quote.documentation_price.toLocaleString()} تومان</p>
+                <p className="font-semibold">{formatPriceNumber(quote.documentation_price)} تومان</p>
               </div>
             </div>
           )}
@@ -95,7 +96,7 @@ const QuoteCard = ({
           <div className="flex justify-between items-center">
             <span className="text-lg font-semibold">مجموع:</span>
             <span className="text-xl font-bold text-green-600">
-              {totalPrice.toLocaleString()} تومان
+              {formatPriceNumber(totalPrice)} تومان
             </span>
           </div>
           <div className="flex justify-between items-center text-sm text-gray-600">

@@ -17,6 +17,7 @@ import { useProcessPayment, useDownloadInvoice } from '@/hooks/useAuth';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { OrderPaymentPhases } from '@/components/OrderPaymentPhases';
+import { formatPriceNumber } from '@/lib/priceUtils';
 
 interface Order {
   status: string;
@@ -65,7 +66,9 @@ const Cart = () => {
   // فیلتر کردن سفارشات بر اساس وضعیت
   const allOrders: Order[] = Array.isArray(orders) ? orders as Order[] : [];
   
-  const quotedOrders = allOrders.filter(order => order.status === 'quoted');
+  const quotedOrders = allOrders.filter(order =>
+    order.status === 'quoted' || order.status === 'proposal_accepted'
+  );
   const acceptedOrders = allOrders.filter(order => order.status === 'accepted');
   const inProgressOrders = allOrders.filter(order =>
     ['in_progress', 'project_paid'].includes(order.status)
@@ -89,6 +92,7 @@ const Cart = () => {
   const getStatusBadge = (status: string) => {
     const statusMap = {
       'quoted': { label: 'قیمت‌گذاری شده', variant: 'default' as const, icon: Clock },
+      'proposal_accepted': { label: 'پیشنهاد پذیرفته شده', variant: 'default' as const, icon: CheckCircle2 },
       'accepted': { label: 'تایید شده', variant: 'secondary' as const, icon: CheckCircle2 },
       'in_progress': { label: 'در حال انجام', variant: 'default' as const, icon: Package },
       'completed': { label: 'تکمیل شده', variant: 'default' as const, icon: CheckCircle },
@@ -257,7 +261,7 @@ const Cart = () => {
       <Card className={`hover:shadow-md transition-shadow ${isSelected ? 'ring-2 ring-blue-500' : ''}`}>
         <CardContent className="p-6">
           <div className="flex items-start gap-4">
-            {showActions && (order.status === 'quoted' || order.status === 'accepted') && (
+            {showActions && (order.status === 'quoted' || order.status === 'proposal_accepted' || order.status === 'accepted') && (
               <input
                 type="checkbox"
                 checked={isSelected}
@@ -280,7 +284,7 @@ const Cart = () => {
                 <div>
                   <span className="font-medium">مبلغ کل:</span>
                   <p className="text-green-600 font-semibold">
-                    {order.total_amount ? `${order.total_amount.toLocaleString()} تومان` : 'در انتظار قیمت‌گذاری'}
+                    {order.total_amount ? `${formatPriceNumber(order.total_amount)} تومان` : 'در انتظار قیمت‌گذاری'}
                   </p>
                 </div>
                 <div>
@@ -297,7 +301,7 @@ const Cart = () => {
               )}
 
               {/* نمایش پرداخت ۴ مرحله‌ای (۲۵٪ در هر مرحله) */}
-              {(order.status === 'quoted' || order.status === 'accepted' || order.status === 'project_paid') && (
+              {(order.status === 'quoted' || order.status === 'proposal_accepted' || order.status === 'accepted' || order.status === 'project_paid') && (
                 <div className="mb-4">
                   <OrderPaymentPhases
                     orderId={order.id}
@@ -437,7 +441,7 @@ const Cart = () => {
                               className="bg-blue-600 hover:bg-blue-700"
                             >
                               <CreditCard className="h-4 w-4 ml-2" />
-                              پرداخت بیعانه همه ({quotedDeposit.toLocaleString()} تومان)
+                              پرداخت بیعانه همه ({formatPriceNumber(quotedDeposit)} تومان)
                             </Button>
                           )}
                         </div>
@@ -465,7 +469,7 @@ const Cart = () => {
                         </div>
                         <div className="text-right">
                           <div className="text-2xl font-bold text-blue-900">
-                            {quotedTotal.toLocaleString()} تومان
+                            {formatPriceNumber(quotedTotal)} تومان
                           </div>
                           <div className="text-sm text-blue-700">
                             {filteredQuotedOrders.length} سفارش
@@ -516,7 +520,7 @@ const Cart = () => {
                         </div>
                         <div className="text-right">
                           <div className="text-2xl font-bold text-green-900">
-                            {acceptedTotal.toLocaleString()} تومان
+                            {formatPriceNumber(acceptedTotal)} تومان
                           </div>
                           <div className="text-sm text-green-700">
                             {filteredAcceptedOrders.length} سفارش
@@ -564,7 +568,7 @@ const Cart = () => {
                         </div>
                         <div className="text-right">
                           <div className="text-2xl font-bold text-orange-900">
-                            {inProgressTotal.toLocaleString()} تومان
+                            {formatPriceNumber(inProgressTotal)} تومان
                           </div>
                           <div className="text-sm text-orange-700">
                             {filteredInProgressOrders.length} پروژه
@@ -612,7 +616,7 @@ const Cart = () => {
                 </div>
                 <div className="text-right">
                   <div className="text-2xl font-bold text-green-900">
-                            {completedTotal.toLocaleString()} تومان
+                            {formatPriceNumber(completedTotal)} تومان
                   </div>
                   <div className="text-sm text-green-700">
                             {filteredCompletedOrders.length} پروژه

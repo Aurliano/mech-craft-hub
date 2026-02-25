@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Package, ShoppingCart, Bell, TrendingUp, Clock, CheckCircle, User, BarChart3, HelpCircle, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
+import { formatPriceNumber } from '@/lib/priceUtils';
 
 const UserDashboard = () => {
   const { user, orders, cartItems, notifications, stats, isLoadingDashboard, logout } = useAuth();
@@ -216,7 +217,7 @@ const UserDashboard = () => {
                        order.status === 'pending' ? 'در انتظار' : order.status}
                     </Badge>
                     <span className="text-sm font-medium">
-                      {order.total_amount ? `${order.total_amount} تومان` : 'قیمت نامشخص'}
+                      {order.total_amount ? `${formatPriceNumber(order.total_amount)} تومان` : 'قیمت نامشخص'}
                     </span>
                   </div>
                 </div>

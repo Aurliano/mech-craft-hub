@@ -29,6 +29,7 @@ import PriceInput from '@/components/PriceInput';
 import { getPersianLabel, getPersianValue } from '@/lib/persianMapping';
 import { normalizeFilePaths, renderFileFieldValue } from '@/lib/fieldDisplay';
 import { CAPABILITIES_WITH_MACHINES } from '@/data/capabilitiesAndMachines';
+import { parsePriceToToman, formatPriceNumber } from '@/lib/priceUtils';
 
 const ContractorDashboard = () => {
   const { user } = useAuth();
@@ -229,8 +230,8 @@ const ContractorDashboard = () => {
     try {
       const payload: any = {
         order_item: quoteData.order_item || selectedOrder?.items?.[0]?.id || selectedOrder?.id,
-        price: parseFloat(quoteData.price),
-        documentation_price: parseFloat(quoteData.documentation_price) || 0,
+        price: parsePriceToToman(quoteData.price),
+        documentation_price: parsePriceToToman(quoteData.documentation_price) || 0,
         delivery_days: parseInt(quoteData.delivery_days),
         documentation_days: parseInt(quoteData.documentation_days) || 0,
         notes: quoteData.notes
@@ -590,7 +591,7 @@ const ContractorDashboard = () => {
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-xs sm:text-sm">
                             <div>
                               <p className="text-gray-600">قیمت پیشنهادی</p>
-                              <p className="font-semibold">{proposal.price?.toLocaleString('fa-IR')} تومان</p>
+                              <p className="font-semibold">{formatPriceNumber(proposal.price)} تومان</p>
                             </div>
                             <div>
                               <p className="text-gray-600">تاریخ ثبت</p>

@@ -7,6 +7,7 @@ import {
   DollarSign, Clock, User, CheckCircle, XCircle, 
   MessageCircle, Star, Award, Calendar, Package
 } from 'lucide-react';
+import { formatPriceNumber } from '@/lib/priceUtils';
 
 interface Quote {
   id: string;
@@ -184,7 +185,7 @@ const QuoteManager: React.FC<QuoteManagerProps> = ({
               <div>
                 <span className="font-medium">قیمت اصلی:</span>
                 <p className="text-green-600 font-semibold text-lg">
-                  {quote.price.toLocaleString()} تومان
+                  {formatPriceNumber(quote.price)} تومان
                 </p>
               </div>
               
@@ -192,7 +193,7 @@ const QuoteManager: React.FC<QuoteManagerProps> = ({
                 <div>
                   <span className="font-medium">قیمت مستندات:</span>
                   <p className="text-blue-600 font-semibold">
-                    {quote.documentation_price.toLocaleString()} تومان
+                    {formatPriceNumber(quote.documentation_price)} تومان
                   </p>
                 </div>
               )}
@@ -200,7 +201,7 @@ const QuoteManager: React.FC<QuoteManagerProps> = ({
               <div>
                 <span className="font-medium">قیمت کل:</span>
                 <p className="text-green-600 font-semibold text-lg">
-                  {getTotalPrice(quote).toLocaleString()} تومان
+                  {formatPriceNumber(getTotalPrice(quote))} تومان
                 </p>
               </div>
               

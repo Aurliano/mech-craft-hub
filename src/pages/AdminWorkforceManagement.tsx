@@ -20,6 +20,7 @@ import {
   useCreateJobMatch, useCreateWorkContract, useUpdateJobMatch, useUpdateWorkRequest
 } from '@/hooks/useWorkforce';
 import { useToast } from '@/hooks/use-toast';
+import { formatPriceNumber } from '@/lib/priceUtils';
 
 const AdminWorkforceManagement = () => {
   const { user } = useAuth();
@@ -292,7 +293,7 @@ const AdminWorkforceManagement = () => {
                                 </p>
                               )}
                               {request.offered_salary && (
-                                <p>حقوق: {request.offered_salary.toLocaleString()} تومان</p>
+                                <p>حقوق: {formatPriceNumber(request.offered_salary)} تومان</p>
                               )}
                               {request.work_type && (
                                 <p>نوع کار: {request.work_type === 'full_time' ? 'تمام وقت' : request.work_type === 'part_time' ? 'پاره وقت' : request.work_type}</p>

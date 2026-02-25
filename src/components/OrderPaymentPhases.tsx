@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { CreditCard, CheckCircle, Loader2 } from 'lucide-react';
 import { getOrderPaymentSummary, initiatePaymentPhase, type OrderPaymentSummary } from '@/lib/api';
+import { formatPriceNumber } from '@/lib/priceUtils';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 
@@ -79,7 +80,7 @@ export function OrderPaymentPhases({ orderId, orderNumber, totalAmount, onPaymen
                 {data.is_paid && <CheckCircle className="h-4 w-4 text-green-600" />}
               </div>
               <p className="text-lg font-bold text-green-700 mb-2">
-                {data.amount.toLocaleString('fa-IR')} <span className="text-xs font-normal">تومان</span>
+                {formatPriceNumber(data.amount)} <span className="text-xs font-normal">تومان</span>
               </p>
               {data.is_paid ? (
                 <span className="text-xs text-green-600">پرداخت شده</span>

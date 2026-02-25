@@ -16,6 +16,7 @@ import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import OrderStatusManager from '@/components/OrderStatusManager';
 import { getApiUrl } from '@/lib/api';
+import { formatPriceNumber } from '@/lib/priceUtils';
 
 interface Project {
   id: string;
@@ -329,7 +330,7 @@ const ContractorProjects = () => {
                               <div>
                                 <span className="font-medium">مبلغ:</span>
                                 <p className="text-green-600 font-semibold">
-                                  {project.price.toLocaleString()} تومان
+                                  {formatPriceNumber(project.price)} تومان
                                 </p>
                               </div>
                               <div>
@@ -408,7 +409,7 @@ const ContractorProjects = () => {
                               <div>
                                 <span className="font-medium">مبلغ:</span>
                                 <p className="text-green-600 font-semibold">
-                                  {project.price.toLocaleString()} تومان
+                                  {formatPriceNumber(project.price)} تومان
                                 </p>
                               </div>
                             </div>
@@ -471,7 +472,7 @@ const ContractorProjects = () => {
                               <div>
                                 <span className="font-medium">مبلغ:</span>
                                 <p className="text-green-600 font-semibold">
-                                  {project.price.toLocaleString()} تومان
+                                  {formatPriceNumber(project.price)} تومان
                                 </p>
                               </div>
                             </div>

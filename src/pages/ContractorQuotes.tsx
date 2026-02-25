@@ -24,6 +24,7 @@ import PriceInput from '@/components/PriceInput';
 import { getPersianLabel, getPersianValue } from '@/lib/persianMapping';
 import { normalizeFilePaths, renderFileFieldValue } from '@/lib/fieldDisplay';
 import { CAPABILITIES_WITH_MACHINES } from '@/data/capabilitiesAndMachines';
+import { parsePriceToToman, formatPriceNumber } from '@/lib/priceUtils';
 
 // ... (Interfaces remain similar, ensuring correct structure)
 interface Service {
@@ -213,10 +214,10 @@ const ContractorQuotes = () => {
     try {
       const payload: any = {
         order_item: quoteForm.order_item,
-        price: parseFloat(quoteForm.price),
+        price: parsePriceToToman(quoteForm.price),
         delivery_days: parseInt(quoteForm.delivery_days),
         notes: quoteForm.notes,
-        documentation_price: quoteForm.documentation_price ? parseFloat(quoteForm.documentation_price) : 0,
+        documentation_price: parsePriceToToman(quoteForm.documentation_price) || 0,
         documentation_days: quoteForm.documentation_days ? parseInt(quoteForm.documentation_days) : 0,
       };
 
@@ -409,7 +410,7 @@ const ContractorQuotes = () => {
                              <CardContent>
                                  <div className="flex justify-between items-center">
                                      <div>
-                                         <p className="font-bold">{quote.price.toLocaleString()} تومان</p>
+                                         <p className="font-bold">{formatPriceNumber(quote.price)} تومان</p>
                                          <p className="text-sm text-gray-500">{quote.delivery_days} روز کاری</p>
                                      </div>
                                      <div className="flex gap-2">

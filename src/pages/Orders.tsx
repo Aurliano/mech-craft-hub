@@ -10,6 +10,7 @@ import { useAddOrderToCart, useDownloadInvoice } from '@/hooks/useAuth';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { getApiUrl } from '@/lib/api';
+import { formatPriceNumber } from '@/lib/priceUtils';
 
 interface Order {
   id: string;
@@ -221,7 +222,7 @@ const Orders = () => {
                           <span className="font-medium">مبلغ کل:</span>
                           <p className={getStatusColor(order.status)}>
                             {order.total_amount && order.status !== 'submitted' && order.status !== 'draft' 
-                              ? `${order.total_amount.toLocaleString()} تومان` 
+                              ? `${formatPriceNumber(order.total_amount)} تومان` 
                               : 'محاسبه نشده'
                             }
                           </p>

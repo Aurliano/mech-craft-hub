@@ -20,6 +20,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
+import { formatPriceNumber } from '@/lib/priceUtils';
 
 interface TicketCategory {
   id: string;
@@ -304,7 +305,7 @@ const CreateTicketModal: React.FC<CreateTicketModalProps> = ({
                 <SelectContent>
                   {orders.map((order) => (
                     <SelectItem key={order.id} value={order.id}>
-                      {order.order_number} - {(order.total_amount ?? 0).toLocaleString()} تومان
+                      {order.order_number} - {formatPriceNumber(order.total_amount ?? 0)} تومان
                     </SelectItem>
                   ))}
                 </SelectContent>

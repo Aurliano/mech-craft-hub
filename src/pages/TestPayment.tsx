@@ -12,6 +12,7 @@ import { getCSRFToken } from '@/lib/csrfProtection';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import { toast } from '@/components/ui/use-toast';
+import { formatPriceNumber } from '@/lib/priceUtils';
 
 const TestPayment: React.FC = () => {
   const { isAuthenticated, token } = useAuth();
@@ -197,7 +198,7 @@ const TestPayment: React.FC = () => {
                 اطلاعات پرداخت تست
               </CardTitle>
               <CardDescription>
-                مبلغ تست: {TEST_AMOUNT.toLocaleString('fa-IR')} تومان ({TEST_AMOUNT * 10} ریال)
+                مبلغ تست: {formatPriceNumber(TEST_AMOUNT)} تومان ({TEST_AMOUNT * 10} ریال)
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -266,7 +267,7 @@ const TestPayment: React.FC = () => {
                   ) : (
                     <>
                       <CreditCard className="w-4 h-4 ml-2" />
-                      شروع پرداخت {TEST_AMOUNT.toLocaleString('fa-IR')} تومان
+                      شروع پرداخت {formatPriceNumber(TEST_AMOUNT)} تومان
                     </>
                   )}
                 </Button>
@@ -329,7 +330,7 @@ const TestPayment: React.FC = () => {
                 <strong>Endpoint:</strong> <code className="bg-muted px-2 py-1 rounded">POST /api/v1/payments/initiate/</code>
               </div>
               <div>
-                <strong>مبلغ:</strong> {TEST_AMOUNT.toLocaleString('fa-IR')} تومان ({TEST_AMOUNT * 10} ریال)
+                <strong>مبلغ:</strong> {formatPriceNumber(TEST_AMOUNT)} تومان ({TEST_AMOUNT * 10} ریال)
               </div>
               <div>
                 <strong>نوع پرداخت:</strong> material (پرداخت متریال)

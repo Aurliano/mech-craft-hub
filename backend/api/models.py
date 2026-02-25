@@ -481,6 +481,7 @@ class Order(models.Model):
         ('submitted', 'ثبت شده'),
         ('admin_approved', 'تایید ادمین'),
         ('proposals_received', 'دریافت پیشنهادات'),
+        ('quoted', 'قیمت‌گذاری شده'),
         ('proposal_accepted', 'پیشنهاد پذیرفته شده'),
         ('material_paid', 'متریال پرداخت شده'),
         ('project_paid', 'پروژه پرداخت شده'),

@@ -26,6 +26,7 @@ import { getPersianLabel, getPersianValue } from '@/lib/persianMapping';
 import { getApiUrl } from '@/lib/api';
 import { normalizeFilePaths, renderFileFieldValue } from '@/lib/fieldDisplay';
 import { CAPABILITIES_WITH_MACHINES } from '@/data/capabilitiesAndMachines';
+import { formatPriceNumber } from '@/lib/priceUtils';
 
 interface OrderItem {
   id: string;
@@ -591,7 +592,7 @@ const OrderDetails = () => {
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                         <div className="bg-white p-3 rounded border border-gray-100">
                           <p className="text-xs text-gray-500 mb-1">قیمت پیشنهادی پروژه</p>
-                          <p className="font-bold text-green-600 text-lg">{quote.price.toLocaleString('fa-IR')} <span className="text-xs font-normal text-gray-500">تومان</span></p>
+                          <p className="font-bold text-green-600 text-lg">{formatPriceNumber(quote.price)} <span className="text-xs font-normal text-gray-500">تومان</span></p>
                         </div>
                         <div className="bg-white p-3 rounded border border-gray-100">
                           <p className="text-xs text-gray-500 mb-1">زمان تحویل</p>
@@ -600,7 +601,7 @@ const OrderDetails = () => {
                         {quote.documentation_price > 0 && (
                           <div className="bg-white p-3 rounded border border-gray-100">
                             <p className="text-xs text-gray-500 mb-1">هزینه مستندات</p>
-                            <p className="font-bold text-blue-600">{quote.documentation_price.toLocaleString('fa-IR')} <span className="text-xs font-normal text-gray-500">تومان</span></p>
+                            <p className="font-bold text-blue-600">{formatPriceNumber(quote.documentation_price)} <span className="text-xs font-normal text-gray-500">تومان</span></p>
                           </div>
                         )}
                       </div>

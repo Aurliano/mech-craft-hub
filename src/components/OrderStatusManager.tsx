@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getApiUrl } from '@/lib/api';
+import { formatPriceNumber } from '@/lib/priceUtils';
 
 interface OrderItem {
   id: string;
@@ -293,7 +294,7 @@ const OrderStatusManager: React.FC<OrderStatusManagerProps> = ({
           <div>
             <span className="font-medium">مبلغ:</span>
             <p className="text-green-600 font-semibold">
-              {orderItem.price ? `${orderItem.price.toLocaleString()} تومان` : 'در انتظار قیمت‌گذاری'}
+              {orderItem.price ? `${formatPriceNumber(orderItem.price)} تومان` : 'در انتظار قیمت‌گذاری'}
             </p>
           </div>
           
