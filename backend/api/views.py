@@ -110,6 +110,58 @@ def rial_to_toman(amount_rial: int) -> int:
         return 0
 
 
+def get_bitpay_base_url() -> str:
+    """
+    Get BitPay base URL.
+    طبق نمونه‌کد رسمی BitPay، آدرس صحیح https://bitpay.ir است
+    و نه api.bitpay.ir؛ در صورت تنظیم اشتباه، اینجا تصحیح می‌شود.
+    """
+    base = getattr(settings, 'BITPAY_BASE_URL', 'https://bitpay.ir') or 'https://bitpay.ir'
+    if 'api.bitpay.ir' in base:
+        base = 'https://bitpay.ir'
+    return base.rstrip('/')
+
+
+def bitpay_gateway_send(order: Order, amount_toman: int, description: str):
+    """
+    Call BitPay `/payment/gateway-send` and return (ok, redirect_url, error_message).
+    amount_toman بر حسب تومان است؛ برای درگاه به ریال تبدیل می‌شود.
+    """
+    base_url = get_bitpay_base_url()
+    gateway_url = f"{base_url}/payment/gateway-send"
+    rial_amount = toman_to_rial(amount_toman)
+    data = {
+        'api': settings.BITPAY_API_KEY,
+        'redirect': settings.BITPAY_CALLBACK_URL or getattr(settings, 'FRONTEND_URL', ''),
+        'amount': rial_amount,
+        'factorId': str(order.id),
+        'name': getattr(order.customer, 'username', '') or '',
+        'email': getattr(order.customer, 'email', '') or '',
+        'description': description or '',
+    }
+    try:
+        resp = requests.post(gateway_url, data=data, timeout=20)
+    except requests.exceptions.RequestException as e:
+        logger.warning('BitPay gateway-send connection error: %s', str(e))
+        return False, None, 'خطا در اتصال به درگاه پرداخت'
+
+    if resp.status_code != 200:
+        logger.warning('BitPay gateway-send bad status %s, body=%s', resp.status_code, resp.text[:200])
+        return False, None, 'خطا در اتصال به درگاه پرداخت'
+
+    id_get = (resp.text or '').strip()
+    try:
+        if int(id_get) <= 0:
+            logger.warning('BitPay gateway-send invalid id_get=%s', id_get)
+            return False, None, 'خطای درگاه پرداخت'
+    except ValueError:
+        logger.warning('BitPay gateway-send non-numeric id_get=%s', id_get)
+        return False, None, 'خطای درگاه پرداخت'
+
+    redirect_url = f"{base_url}/payment/gateway-{id_get}-get"
+    return True, redirect_url, None
+
+
 def compute_order_payment_summary(order: Order) -> dict:
     """Compute material/project amounts (in Toman) and recommended payables. 4-phase payment (25% each)."""
     # Material
@@ -212,34 +264,22 @@ def initiate_payment(request):
             status='pending'
         )
 
-        # Prepare BitPay payload
-        rial_amount = toman_to_rial(data['amount'])
-        nonce = get_random_string(24)
-        payload = {
-            'api': settings.BITPAY_API_KEY,
-            'amount': rial_amount,
-            'callback': settings.BITPAY_CALLBACK_URL,
-            'order_id': str(order.id),
-            'payer_desc': data.get('description', ''),
-            'nonce': nonce,
-        }
-
-        try:
-            resp = requests.post(f"{settings.BITPAY_BASE_URL}/api/create", json=payload, timeout=20)
-        except requests.exceptions.RequestException:
-            return Response({'detail': 'خطا در اتصال به درگاه پرداخت'}, status=status.HTTP_502_BAD_GATEWAY)
-
-        if resp.status_code != 200:
-            return Response({'detail': 'خطا در اتصال به درگاه پرداخت'}, status=status.HTTP_502_BAD_GATEWAY)
-        body = resp.json()
-        if not body.get('success'):
-            return Response({'detail': body.get('message', 'خطای درگاه پرداخت')}, status=status.HTTP_400_BAD_REQUEST)
+        ok, redirect_url, error_msg = bitpay_gateway_send(
+            order=order,
+            amount_toman=int(data['amount']),
+            description=data.get('description', ''),
+        )
+        if not ok or not redirect_url:
+            return Response(
+                {'detail': error_msg or 'خطای درگاه پرداخت'},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
 
         # Return payment URL to client
         return Response({
             'payment_id': str(payment.id),
             'gateway': 'bitpay',
-            'redirect_url': body.get('link')
+            'redirect_url': redirect_url,
         })
     except Order.DoesNotExist:
         return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
@@ -282,34 +322,22 @@ def initiate_payment_material(request, order_id):
             status='pending'
         )
 
-        # Prepare BitPay payload
-        rial_amount = toman_to_rial(data['amount'])
-        nonce = get_random_string(24)
-        payload = {
-            'api': settings.BITPAY_API_KEY,
-            'amount': rial_amount,
-            'callback': settings.BITPAY_CALLBACK_URL,
-            'order_id': str(order.id),
-            'payer_desc': data.get('description', ''),
-            'nonce': nonce,
-        }
-
-        try:
-            resp = requests.post(f"{settings.BITPAY_BASE_URL}/api/create", json=payload, timeout=20)
-        except requests.exceptions.RequestException:
-            return Response({'detail': 'خطا در اتصال به درگاه پرداخت'}, status=status.HTTP_502_BAD_GATEWAY)
-
-        if resp.status_code != 200:
-            return Response({'detail': 'خطا در اتصال به درگاه پرداخت'}, status=status.HTTP_502_BAD_GATEWAY)
-        body = resp.json()
-        if not body.get('success'):
-            return Response({'detail': body.get('message', 'خطای درگاه پرداخت')}, status=status.HTTP_400_BAD_REQUEST)
+        ok, redirect_url, error_msg = bitpay_gateway_send(
+            order=order,
+            amount_toman=int(data['amount']),
+            description=data.get('description', ''),
+        )
+        if not ok or not redirect_url:
+            return Response(
+                {'detail': error_msg or 'خطای درگاه پرداخت'},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
 
         # Return payment URL to client
         return Response({
             'payment_id': str(payment.id),
             'gateway': 'bitpay',
-            'redirect_url': body.get('link')
+            'redirect_url': redirect_url,
         })
     except Order.DoesNotExist:
         return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
@@ -351,34 +379,22 @@ def initiate_payment_project_advance(request, order_id):
             status='pending'
         )
 
-        # Prepare BitPay payload
-        rial_amount = toman_to_rial(data['amount'])
-        nonce = get_random_string(24)
-        payload = {
-            'api': settings.BITPAY_API_KEY,
-            'amount': rial_amount,
-            'callback': settings.BITPAY_CALLBACK_URL,
-            'order_id': str(order.id),
-            'payer_desc': data.get('description', ''),
-            'nonce': nonce,
-        }
-
-        try:
-            resp = requests.post(f"{settings.BITPAY_BASE_URL}/api/create", json=payload, timeout=20)
-        except requests.exceptions.RequestException:
-            return Response({'detail': 'خطا در اتصال به درگاه پرداخت'}, status=status.HTTP_502_BAD_GATEWAY)
-
-        if resp.status_code != 200:
-            return Response({'detail': 'خطا در اتصال به درگاه پرداخت'}, status=status.HTTP_502_BAD_GATEWAY)
-        body = resp.json()
-        if not body.get('success'):
-            return Response({'detail': body.get('message', 'خطای درگاه پرداخت')}, status=status.HTTP_400_BAD_REQUEST)
+        ok, redirect_url, error_msg = bitpay_gateway_send(
+            order=order,
+            amount_toman=int(data['amount']),
+            description=data.get('description', ''),
+        )
+        if not ok or not redirect_url:
+            return Response(
+                {'detail': error_msg or 'خطای درگاه پرداخت'},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
 
         # Return payment URL to client
         return Response({
             'payment_id': str(payment.id),
             'gateway': 'bitpay',
-            'redirect_url': body.get('link')
+            'redirect_url': redirect_url,
         })
     except Order.DoesNotExist:
         return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
@@ -412,32 +428,21 @@ def _initiate_phase_payment(request, order_id: str, phase: int) -> Response:
         )
 
         # درگاه پرداخت مبلغ را به ریال می‌خواهد؛ قیمت تومان × 10
-        rial_amount = toman_to_rial(amount)
-        nonce = get_random_string(24)
-        payload = {
-            'api': settings.BITPAY_API_KEY,
-            'amount': rial_amount,
-            'callback': settings.BITPAY_CALLBACK_URL,
-            'order_id': str(order.id),
-            'payer_desc': description,
-            'nonce': nonce,
-        }
-
-        try:
-            resp = requests.post(f"{settings.BITPAY_BASE_URL}/api/create", json=payload, timeout=20)
-        except requests.exceptions.RequestException:
-            return Response({'detail': 'خطا در اتصال به درگاه پرداخت'}, status=status.HTTP_502_BAD_GATEWAY)
-
-        if resp.status_code != 200:
-            return Response({'detail': 'خطا در اتصال به درگاه پرداخت'}, status=status.HTTP_502_BAD_GATEWAY)
-        body = resp.json()
-        if not body.get('success'):
-            return Response({'detail': body.get('message', 'خطای درگاه پرداخت')}, status=status.HTTP_400_BAD_REQUEST)
+        ok, redirect_url, error_msg = bitpay_gateway_send(
+            order=order,
+            amount_toman=int(amount),
+            description=description,
+        )
+        if not ok or not redirect_url:
+            return Response(
+                {'detail': error_msg or 'خطای درگاه پرداخت'},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
 
         return Response({
             'payment_id': str(payment.id),
             'gateway': 'bitpay',
-            'redirect_url': body.get('link'),
+            'redirect_url': redirect_url,
         })
     except Order.DoesNotExist:
         return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
@@ -488,34 +493,22 @@ def initiate_payment_project_final(request, order_id):
             status='pending'
         )
 
-        # Prepare BitPay payload
-        rial_amount = toman_to_rial(data['amount'])
-        nonce = get_random_string(24)
-        payload = {
-            'api': settings.BITPAY_API_KEY,
-            'amount': rial_amount,
-            'callback': settings.BITPAY_CALLBACK_URL,
-            'order_id': str(order.id),
-            'payer_desc': data.get('description', ''),
-            'nonce': nonce,
-        }
-
-        try:
-            resp = requests.post(f"{settings.BITPAY_BASE_URL}/api/create", json=payload, timeout=20)
-        except requests.exceptions.RequestException:
-            return Response({'detail': 'خطا در اتصال به درگاه پرداخت'}, status=status.HTTP_502_BAD_GATEWAY)
-
-        if resp.status_code != 200:
-            return Response({'detail': 'خطا در اتصال به درگاه پرداخت'}, status=status.HTTP_502_BAD_GATEWAY)
-        body = resp.json()
-        if not body.get('success'):
-            return Response({'detail': body.get('message', 'خطای درگاه پرداخت')}, status=status.HTTP_400_BAD_REQUEST)
+        ok, redirect_url, error_msg = bitpay_gateway_send(
+            order=order,
+            amount_toman=int(data['amount']),
+            description=data.get('description', ''),
+        )
+        if not ok or not redirect_url:
+            return Response(
+                {'detail': error_msg or 'خطای درگاه پرداخت'},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
 
         # Return payment URL to client
         return Response({
             'payment_id': str(payment.id),
             'gateway': 'bitpay',
-            'redirect_url': body.get('link')
+            'redirect_url': redirect_url,
         })
     except Order.DoesNotExist:
         return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
