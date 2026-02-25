@@ -224,7 +224,11 @@ def initiate_payment(request):
             'nonce': nonce,
         }
 
-        resp = requests.post(f"{settings.BITPAY_BASE_URL}/api/create", json=payload, timeout=20)
+        try:
+            resp = requests.post(f"{settings.BITPAY_BASE_URL}/api/create", json=payload, timeout=20)
+        except requests.exceptions.RequestException:
+            return Response({'detail': 'خطا در اتصال به درگاه پرداخت'}, status=status.HTTP_502_BAD_GATEWAY)
+
         if resp.status_code != 200:
             return Response({'detail': 'خطا در اتصال به درگاه پرداخت'}, status=status.HTTP_502_BAD_GATEWAY)
         body = resp.json()
@@ -290,7 +294,11 @@ def initiate_payment_material(request, order_id):
             'nonce': nonce,
         }
 
-        resp = requests.post(f"{settings.BITPAY_BASE_URL}/api/create", json=payload, timeout=20)
+        try:
+            resp = requests.post(f"{settings.BITPAY_BASE_URL}/api/create", json=payload, timeout=20)
+        except requests.exceptions.RequestException:
+            return Response({'detail': 'خطا در اتصال به درگاه پرداخت'}, status=status.HTTP_502_BAD_GATEWAY)
+
         if resp.status_code != 200:
             return Response({'detail': 'خطا در اتصال به درگاه پرداخت'}, status=status.HTTP_502_BAD_GATEWAY)
         body = resp.json()
@@ -355,7 +363,11 @@ def initiate_payment_project_advance(request, order_id):
             'nonce': nonce,
         }
 
-        resp = requests.post(f"{settings.BITPAY_BASE_URL}/api/create", json=payload, timeout=20)
+        try:
+            resp = requests.post(f"{settings.BITPAY_BASE_URL}/api/create", json=payload, timeout=20)
+        except requests.exceptions.RequestException:
+            return Response({'detail': 'خطا در اتصال به درگاه پرداخت'}, status=status.HTTP_502_BAD_GATEWAY)
+
         if resp.status_code != 200:
             return Response({'detail': 'خطا در اتصال به درگاه پرداخت'}, status=status.HTTP_502_BAD_GATEWAY)
         body = resp.json()
@@ -390,37 +402,32 @@ def _initiate_phase_payment(request, order_id: str, phase: int) -> Response:
             return Response({'detail': 'مبلغ مرحله نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
 
         payment_type = f'project_phase_{phase}'
-        from .serializers import ProcessPaymentSerializer
-        payment_data = {
-            'order': str(order_id),
-            'amount': amount,
-            'payment_type': payment_type,
-            'description': request.data.get('description', f'پرداخت مرحله {phase} پروژه (۲۵٪)'),
-        }
-        serializer = ProcessPaymentSerializer(data=payment_data)
-        serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
+        description = request.data.get('description', f'پرداخت مرحله {phase} پروژه (۲۵٪)')
 
         payment = Payment.objects.create(
             order=order,
-            amount=data['amount'],
+            amount=amount,
             payment_type=payment_type,
             status='pending'
         )
 
         # درگاه پرداخت مبلغ را به ریال می‌خواهد؛ قیمت تومان × 10
-        rial_amount = toman_to_rial(data['amount'])
+        rial_amount = toman_to_rial(amount)
         nonce = get_random_string(24)
         payload = {
             'api': settings.BITPAY_API_KEY,
             'amount': rial_amount,
             'callback': settings.BITPAY_CALLBACK_URL,
             'order_id': str(order.id),
-            'payer_desc': data.get('description', ''),
+            'payer_desc': description,
             'nonce': nonce,
         }
 
-        resp = requests.post(f"{settings.BITPAY_BASE_URL}/api/create", json=payload, timeout=20)
+        try:
+            resp = requests.post(f"{settings.BITPAY_BASE_URL}/api/create", json=payload, timeout=20)
+        except requests.exceptions.RequestException:
+            return Response({'detail': 'خطا در اتصال به درگاه پرداخت'}, status=status.HTTP_502_BAD_GATEWAY)
+
         if resp.status_code != 200:
             return Response({'detail': 'خطا در اتصال به درگاه پرداخت'}, status=status.HTTP_502_BAD_GATEWAY)
         body = resp.json()
@@ -493,7 +500,11 @@ def initiate_payment_project_final(request, order_id):
             'nonce': nonce,
         }
 
-        resp = requests.post(f"{settings.BITPAY_BASE_URL}/api/create", json=payload, timeout=20)
+        try:
+            resp = requests.post(f"{settings.BITPAY_BASE_URL}/api/create", json=payload, timeout=20)
+        except requests.exceptions.RequestException:
+            return Response({'detail': 'خطا در اتصال به درگاه پرداخت'}, status=status.HTTP_502_BAD_GATEWAY)
+
         if resp.status_code != 200:
             return Response({'detail': 'خطا در اتصال به درگاه پرداخت'}, status=status.HTTP_502_BAD_GATEWAY)
         body = resp.json()

@@ -779,18 +779,6 @@ class AddOrderToCartSerializer(serializers.Serializer):
     order = serializers.UUIDField()
 
 
-# Payment Serializers
-class ProcessPaymentSerializer(serializers.Serializer):
-    order = serializers.UUIDField()
-    amount = serializers.DecimalField(max_digits=12, decimal_places=2)
-    method = serializers.ChoiceField(choices=[
-        ('online', 'آنلاین'),
-        ('transfer', 'انتقال بانکی'),
-        ('cash', 'نقدی'),
-    ], default='online')
-    gateway_response = serializers.JSONField(required=False)
-
-
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
