@@ -1085,23 +1085,27 @@ export async function initiatePaymentPhase(orderId: string, phase: 1 | 2 | 3 | 4
   return { ...data, redirect_url: data.redirect_url || (data as { link?: string }).link };
 }
 
-export async function processPayment(orderId: string, paymentData: {
-  amount: number;
-  method: string;
-  gateway_response?: unknown;
-}) {
-  try {
-    return await fetchJson<unknown>('/v1/payments/process/', {
+export async function processPayment(
+  orderId: string,
+  paymentType: 'deposit' | 'final',
+): Promise<{ payment_id: string; redirect_url: string }> {
+  const isFinal = paymentType === 'final';
+  const path = isFinal
+    ? `/v1/orders/${orderId}/payments/final/`
+    : `/v1/orders/${orderId}/payments/advance/`;
+
+  const data = await fetchJson<{ payment_id: string; redirect_url?: string; link?: string }>(
+    path,
+    {
       method: 'POST',
-      body: JSON.stringify({
-        order: orderId,
-        ...paymentData
-      }),
-    });
-  } catch (error) {
-    console.error('Error processing payment:', error);
-    throw error;
-  }
+      body: JSON.stringify({}),
+    },
+  );
+
+  return {
+    payment_id: data.payment_id,
+    redirect_url: data.redirect_url || data.link || '',
+  };
 }
 
 export async function downloadInvoice(orderId: string) {

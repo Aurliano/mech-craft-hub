@@ -138,39 +138,32 @@ const Cart = () => {
   const quotedDeposit = calculateDepositAmount(quotedTotal);
   const acceptedDeposit = calculateDepositAmount(acceptedTotal);
 
-  const handleProcessPayment = async (orderId: string, amount: number, paymentType: 'deposit' | 'final' = 'deposit') => {
+  const handleProcessPayment = async (orderId: string, _amount: number, paymentType: 'deposit' | 'final' = 'deposit') => {
     try {
-      await processPaymentMutation.mutateAsync({
+      const res = await processPaymentMutation.mutateAsync({
         orderId,
-        paymentData: {
-          amount,
-          method: 'online',
-          payment_type: paymentType,
-          gateway_response: { status: 'success' } // Mock response
-        }
+        paymentType,
       });
-      
-      // Update order status based on payment type
-      if (paymentType === 'deposit') {
-        // Update to in_progress after deposit payment
-        console.log('Deposit payment successful, order moved to in_progress');
-      } else {
-        // Update to completed after final payment
-        console.log('Final payment successful, order completed');
+
+      const redirectUrl = (res as any)?.redirect_url;
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
       }
-      
-      // Refresh orders data
-      window.location.reload();
     } catch (error) {
       console.error('Error processing payment:', error);
     }
   };
 
-  const handleBulkPayment = async (orderIds: string[], totalAmount: number, paymentType: 'deposit' | 'final' = 'deposit') => {
+  const handleBulkPayment = async (orderIds: string[], _totalAmount: number, paymentType: 'deposit' | 'final' = 'deposit') => {
     try {
-      for (const orderId of orderIds) {
-        await handleProcessPayment(orderId, totalAmount / orderIds.length, paymentType);
+      if (orderIds.length === 0) return;
+
+      if (orderIds.length > 1) {
+        alert('در حال حاضر امکان پرداخت هم‌زمان چند سفارش وجود ندارد. لطفاً برای هر سفارش جداگانه پرداخت را انجام دهید.');
+        return;
       }
+
+      await handleProcessPayment(orderIds[0], 0, paymentType);
     } catch (error) {
       console.error('Error processing bulk payment:', error);
     }
