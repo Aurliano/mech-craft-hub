@@ -171,7 +171,8 @@ def bitpay_gateway_send(order: Order, amount_toman: int, description: str):
         'api': settings.BITPAY_API_KEY,
         'redirect': settings.BITPAY_CALLBACK_URL or getattr(settings, 'FRONTEND_URL', ''),
         'amount': rial_amount,
-        'factorId': str(order.id),
+        # BitPay فقط factorId عددی را به‌درستی برمی‌گرداند؛ از order_number استفاده می‌کنیم
+        'factorId': getattr(order, 'order_number', '') or '',
         'name': getattr(order.customer, 'username', '') or '',
         'email': getattr(order.customer, 'email', '') or '',
         'description': description or '',
@@ -580,11 +581,14 @@ def bitpay_webhook(request):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            factor_id = str(result.get('factorId') or '')
+            factor_id = str(result.get('factorId') or '').strip()
             if not factor_id:
                 return Response({'detail': 'شناسه سفارش (factorId) نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
 
-            order = Order.objects.get(id=factor_id)
+            # BitPay معمولا factorId را به صورت عددی برمی‌گرداند؛ ما آن را به order_number نگاشت می‌کنیم
+            order = Order.objects.filter(order_number=factor_id).first()
+            if not order:
+                return Response({'detail': 'سفارش مرتبط با این پرداخت یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
 
             # Idempotency first: if we already processed this trans_id, return success (retries get 200, not 404)
             existing_paid = order.payments.filter(gateway_transaction_id=trans_id, status='paid').first()
