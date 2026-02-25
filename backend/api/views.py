@@ -161,8 +161,9 @@ def bitpay_gateway_verify(trans_id: str, id_get: str):
 
 def bitpay_gateway_send(order: Order, amount_toman: int, description: str):
     """
-    Call BitPay `/payment/gateway-send` and return (ok, redirect_url, error_message).
+    Call BitPay `/payment/gateway-send` and return (ok, redirect_url, error_message, id_get).
     amount_toman بر حسب تومان است؛ برای درگاه به ریال تبدیل می‌شود.
+    id_get را در Payment.webhook_nonce ذخیره کنید تا در callback با آن پرداخت را پیدا کنیم.
     """
     base_url = get_bitpay_base_url()
     gateway_url = f"{base_url}/payment/gateway-send"
@@ -197,7 +198,7 @@ def bitpay_gateway_send(order: Order, amount_toman: int, description: str):
         return False, None, 'خطای درگاه پرداخت'
 
     redirect_url = f"{base_url}/payment/gateway-{id_get}-get"
-    return True, redirect_url, None
+    return True, redirect_url, None, id_get
 
 
 def compute_order_payment_summary(order: Order) -> dict:
@@ -302,7 +303,7 @@ def initiate_payment(request):
             status='pending'
         )
 
-        ok, redirect_url, error_msg = bitpay_gateway_send(
+        ok, redirect_url, error_msg, id_get = bitpay_gateway_send(
             order=order,
             amount_toman=int(data['amount']),
             description=data.get('description', ''),
@@ -312,6 +313,9 @@ def initiate_payment(request):
                 {'detail': error_msg or 'خطای درگاه پرداخت'},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
+        if id_get:
+            payment.webhook_nonce = id_get
+            payment.save(update_fields=['webhook_nonce'])
 
         # Return payment URL to client
         return Response({
@@ -360,7 +364,7 @@ def initiate_payment_material(request, order_id):
             status='pending'
         )
 
-        ok, redirect_url, error_msg = bitpay_gateway_send(
+        ok, redirect_url, error_msg, id_get = bitpay_gateway_send(
             order=order,
             amount_toman=int(data['amount']),
             description=data.get('description', ''),
@@ -370,6 +374,9 @@ def initiate_payment_material(request, order_id):
                 {'detail': error_msg or 'خطای درگاه پرداخت'},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
+        if id_get:
+            payment.webhook_nonce = id_get
+            payment.save(update_fields=['webhook_nonce'])
 
         # Return payment URL to client
         return Response({
@@ -417,7 +424,7 @@ def initiate_payment_project_advance(request, order_id):
             status='pending'
         )
 
-        ok, redirect_url, error_msg = bitpay_gateway_send(
+        ok, redirect_url, error_msg, id_get = bitpay_gateway_send(
             order=order,
             amount_toman=int(data['amount']),
             description=data.get('description', ''),
@@ -427,6 +434,9 @@ def initiate_payment_project_advance(request, order_id):
                 {'detail': error_msg or 'خطای درگاه پرداخت'},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
+        if id_get:
+            payment.webhook_nonce = id_get
+            payment.save(update_fields=['webhook_nonce'])
 
         # Return payment URL to client
         return Response({
@@ -466,7 +476,7 @@ def _initiate_phase_payment(request, order_id: str, phase: int) -> Response:
         )
 
         # درگاه پرداخت مبلغ را به ریال می‌خواهد؛ قیمت تومان × 10
-        ok, redirect_url, error_msg = bitpay_gateway_send(
+        ok, redirect_url, error_msg, id_get = bitpay_gateway_send(
             order=order,
             amount_toman=int(amount),
             description=description,
@@ -476,6 +486,9 @@ def _initiate_phase_payment(request, order_id: str, phase: int) -> Response:
                 {'detail': error_msg or 'خطای درگاه پرداخت'},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
+        if id_get:
+            payment.webhook_nonce = id_get
+            payment.save(update_fields=['webhook_nonce'])
 
         return Response({
             'payment_id': str(payment.id),
@@ -531,7 +544,7 @@ def initiate_payment_project_final(request, order_id):
             status='pending'
         )
 
-        ok, redirect_url, error_msg = bitpay_gateway_send(
+        ok, redirect_url, error_msg, id_get = bitpay_gateway_send(
             order=order,
             amount_toman=int(data['amount']),
             description=data.get('description', ''),
@@ -541,6 +554,9 @@ def initiate_payment_project_final(request, order_id):
                 {'detail': error_msg or 'خطای درگاه پرداخت'},
                 status=status.HTTP_502_BAD_GATEWAY,
             )
+        if id_get:
+            payment.webhook_nonce = id_get
+            payment.save(update_fields=['webhook_nonce'])
 
         # Return payment URL to client
         return Response({
@@ -581,14 +597,29 @@ def bitpay_webhook(request):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            factor_id = str(result.get('factorId') or '').strip()
-            if not factor_id:
-                return Response({'detail': 'شناسه سفارش (factorId) نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
+            # اول با id_get پرداخت معلق را پیدا کنیم (در زمان ایجاد درگاه webhook_nonce را ست کرده‌ایم)
+            payment_by_nonce = Payment.objects.filter(webhook_nonce=id_get, status='pending').select_related('order').first()
+            if payment_by_nonce:
+                order = payment_by_nonce.order
+                payment = payment_by_nonce
+            else:
+                # fallback: پیدا کردن سفارش از factorId برگشتی از درگاه
+                factor_id = str(result.get('factorId') or result.get('factor_id') or '').strip()
+                if not factor_id or factor_id == '0':
+                    return Response({'detail': 'شناسه سفارش (factorId) نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
 
-            # BitPay معمولا factorId را به صورت عددی برمی‌گرداند؛ ما آن را به order_number نگاشت می‌کنیم
-            order = Order.objects.filter(order_number=factor_id).first()
-            if not order:
-                return Response({'detail': 'سفارش مرتبط با این پرداخت یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+                order = Order.objects.filter(order_number=factor_id).first()
+                if not order and factor_id.isdigit():
+                    order = Order.objects.filter(order_number__endswith=factor_id).first()
+                if not order:
+                    order = Order.objects.filter(order_number__icontains=factor_id).first()
+                if not order:
+                    logger.warning('BitPay webhook: no order for factorId=%r', factor_id)
+                    return Response({'detail': 'سفارش مرتبط با این پرداخت یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+
+                payment = order.payments.filter(status='pending').order_by('-created_at').first()
+                if not payment:
+                    return Response({'detail': 'پرداخت معلق برای این سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
 
             # Idempotency first: if we already processed this trans_id, return success (retries get 200, not 404)
             existing_paid = order.payments.filter(gateway_transaction_id=trans_id, status='paid').first()
@@ -603,10 +634,6 @@ def bitpay_webhook(request):
                         'payment_type': existing_paid.payment_type,
                     }
                 )
-
-            payment = order.payments.filter(status='pending').order_by('-created_at').first()
-            if not payment:
-                return Response({'detail': 'پرداخت معلق برای این سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
 
             amount_rial = int(str(result.get('amount', 0)) or 0)
             amount_toman = rial_to_toman(amount_rial)
