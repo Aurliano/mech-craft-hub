@@ -122,6 +122,43 @@ def get_bitpay_base_url() -> str:
     return base.rstrip('/')
 
 
+def bitpay_gateway_verify(trans_id: str, id_get: str):
+    """
+    Verify BitPay payment using /payment/gateway-result-second.
+    Returns (ok, result_dict_or_none, error_message_or_none).
+    """
+    base_url = get_bitpay_base_url()
+    verify_url = f"{base_url}/payment/gateway-result-second"
+    data = {
+        'api': settings.BITPAY_API_KEY,
+        'trans_id': trans_id,
+        'id_get': id_get,
+        'json': 1,
+    }
+    try:
+        resp = requests.post(verify_url, data=data, timeout=20)
+    except requests.exceptions.RequestException as e:
+        logger.warning('BitPay verify connection error: %s', str(e))
+        return False, None, 'خطا در ارتباط با درگاه برای تایید پرداخت'
+
+    if resp.status_code != 200:
+        logger.warning('BitPay verify bad status %s, body=%s', resp.status_code, resp.text[:200])
+        return False, None, 'خطا در تایید پرداخت'
+
+    try:
+        result = resp.json()
+    except ValueError:
+        logger.warning('BitPay verify non-JSON response: %s', resp.text[:200])
+        return False, None, 'پاسخ نامعتبر از درگاه'
+
+    status_val = str(result.get('status', '')).strip()
+    if status_val not in ('1', 'success', '200'):
+        # وضعیت ناموفق
+        return False, result, 'پرداخت ناموفق بود'
+
+    return True, result, None
+
+
 def bitpay_gateway_send(order: Order, amount_toman: int, description: str):
     """
     Call BitPay `/payment/gateway-send` and return (ok, redirect_url, error_message).
@@ -514,11 +551,112 @@ def initiate_payment_project_final(request, order_id):
         return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
 
 
-@api_view(["POST"])
+@api_view(["GET", "POST"])
 @permission_classes([AllowAny])
 def bitpay_webhook(request):
-    """Handle BitPay callback/webhook to confirm payment and update order status."""
+    """
+    Handle BitPay callback/webhook to confirm payment and update order status.
+
+    - GET: کاربر بعد از پرداخت به این آدرس هدایت می‌شود (?trans_id=&id_get=)
+           و ما با gateway-result-second وضعیت را استعلام می‌کنیم.
+    - POST: وبهوک (در صورت استفاده از وبهوک JSON جداگانه)
+    """
     try:
+        # 1) حالت GET: callback پس از بازگشت کاربر از درگاه
+        if request.method == 'GET':
+            trans_id = request.query_params.get('trans_id') or request.query_params.get('transaction_id') or ''
+            id_get = request.query_params.get('id_get') or request.query_params.get('id') or ''
+            if not trans_id or not id_get:
+                return Response({'detail': 'پارامترهای بازگشت از درگاه نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
+
+            ok, result, error_msg = bitpay_gateway_verify(trans_id, id_get)
+            if not ok:
+                # اگر پاسخ معتبر ولی ناموفق بود، همچنان نتیجه را برمی‌گردانیم
+                return Response(
+                    {
+                        'detail': error_msg or 'پرداخت ناموفق بود',
+                        'result': result or {},
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            factor_id = str(result.get('factorId') or '')
+            if not factor_id:
+                return Response({'detail': 'شناسه سفارش (factorId) نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
+
+            order = Order.objects.get(id=factor_id)
+
+            # Idempotency first: if we already processed this trans_id, return success (retries get 200, not 404)
+            existing_paid = order.payments.filter(gateway_transaction_id=trans_id, status='paid').first()
+            if existing_paid:
+                amount_rial = int(str(result.get('amount', 0)) or 0)
+                amount_toman = rial_to_toman(amount_rial)
+                return Response(
+                    {
+                        'detail': 'پرداخت قبلاً تایید شده است',
+                        'order_id': str(order.id),
+                        'amount_toman': amount_toman,
+                        'payment_type': existing_paid.payment_type,
+                    }
+                )
+
+            payment = order.payments.filter(status='pending').order_by('-created_at').first()
+            if not payment:
+                return Response({'detail': 'پرداخت معلق برای این سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+
+            amount_rial = int(str(result.get('amount', 0)) or 0)
+            amount_toman = rial_to_toman(amount_rial)
+
+            payment.status = 'paid'
+            payment.gateway_transaction_id = trans_id
+            payment.gateway_response = result
+            payment.paid_at = timezone.now()
+            payment.save()
+
+            # اعمال لاجیک تجاری مشابه وبهوک قبلی
+            if payment.payment_type == 'material':
+                try:
+                    material_estimate = order.material_estimate
+                    material_estimate.is_paid = True
+                    material_estimate.save()
+                except MaterialEstimate.DoesNotExist:
+                    pass
+                order.status = 'material_paid'
+                order.save()
+                OrderStatus.objects.create(order=order, status='material_paid', description='پرداخت متریال تایید شد')
+            elif payment.payment_type in ('project_advance', 'project_phase_1'):
+                order.status = 'project_paid'
+                order.project_progress_phase = 1
+                order.save()
+                OrderStatus.objects.create(order=order, status='project_paid', description='پرداخت مرحله ۱ تایید شد - ددلاین پروژه آغاز شد')
+                _notify_contractor_on_payment(order, payment)
+            elif payment.payment_type == 'project_phase_2':
+                order.project_progress_phase = 2
+                order.save()
+                OrderStatus.objects.create(order=order, status='project_paid', description='پرداخت مرحله ۲ تایید شد')
+                _notify_contractor_on_payment(order, payment)
+            elif payment.payment_type == 'project_phase_3':
+                order.project_progress_phase = 3
+                order.save()
+                OrderStatus.objects.create(order=order, status='project_paid', description='پرداخت مرحله ۳ تایید شد')
+                _notify_contractor_on_payment(order, payment)
+            elif payment.payment_type in ('project_final', 'project_phase_4'):
+                order.project_progress_phase = 4
+                order.status = 'shipping'
+                order.save()
+                OrderStatus.objects.create(order=order, status='shipping', description='تسویه نهایی تایید شد - ارسال در حال انجام')
+                _notify_contractor_on_payment(order, payment)
+
+            return Response(
+                {
+                    'detail': 'پرداخت تایید شد',
+                    'order_id': str(order.id),
+                    'amount_toman': amount_toman,
+                    'payment_type': payment.payment_type,
+                }
+            )
+
+        # 2) حالت POST: وبهوک JSON (در صورت پشتیبانی در آینده)
         payload = request.data if hasattr(request, 'data') else {}
         # Optional HMAC verification if BitPay provides signature in headers (example: X-BitPay-Signature)
         signature = request.META.get('HTTP_X_BITPAY_SIGNATURE') or request.headers.get('X-BitPay-Signature') if hasattr(request, 'headers') else None
@@ -540,8 +678,8 @@ def bitpay_webhook(request):
             return Response({'detail': 'شناسه سفارش نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
 
         order = Order.objects.get(id=order_id)
-        # Find latest pending payment matching amount (convert rial to toman for compare tolerance)
         amount_toman = rial_to_toman(amount_rial)
+
         # Idempotency: if we already processed this transaction id or nonce, ignore
         if trans_id and order.payments.filter(gateway_transaction_id=trans_id, status='paid').exists():
             return Response({'detail': 'قبلا پردازش شده است'})
@@ -554,7 +692,7 @@ def bitpay_webhook(request):
         verify_ok = False
         try:
             verify_payload = { 'api': settings.BITPAY_API_KEY, 'trans_id': trans_id }
-            vresp = requests.post(f"{settings.BITPAY_BASE_URL}/api/verify", json=verify_payload, timeout=20)
+            vresp = requests.post(f"{get_bitpay_base_url()}/api/verify", json=verify_payload, timeout=20)
             if vresp.status_code == 200:
                 vbody = vresp.json()
                 verify_ok = bool(vbody.get('success'))
@@ -570,9 +708,8 @@ def bitpay_webhook(request):
                 payment.webhook_nonce = nonce
             payment.save()
 
-            # Apply business rules by type
+            # Apply business rules by type (همانند بالا)
             if payment.payment_type == 'material':
-                # Mark material estimate as paid
                 try:
                     material_estimate = order.material_estimate
                     material_estimate.is_paid = True
