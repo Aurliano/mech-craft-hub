@@ -2929,41 +2929,76 @@ def remove_from_cart(request, cart_item_id):
         return Response({'detail': 'آیتم یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
 
 
-# Payment Endpoints
+# Payment Endpoints (legacy simple payment without gateway)
 @api_view(["POST"])
 @permission_classes([IsAuthenticated])
 def process_payment(request):
-    """Process payment for an order"""
+    """
+    ثبت ساده پرداخت (بدون اتصال به درگاه).
+    فعلاً برای دکمه «پرداخت بیعانه همه» در سبد استفاده می‌شود.
+    """
     try:
         order_id = request.data.get('order')
-        amount = request.data.get('amount')
-        method = request.data.get('method', 'online')
-        
+        raw_amount = request.data.get('amount')
+        if not order_id or raw_amount in (None, ''):
+            return Response({'detail': 'شناسه سفارش یا مبلغ نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            amount = int(raw_amount)
+        except (TypeError, ValueError):
+            return Response({'detail': 'مبلغ نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if amount <= 0:
+            return Response({'detail': 'مبلغ نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
+
+        payment_mode = request.data.get('payment_type', 'deposit')
+
         order = Order.objects.get(id=order_id, customer=request.user)
-        
-        # Create payment record
-        Payment.objects.create(
+
+        # نگاشت حالت فرانت به نوع پرداخت داخلی
+        if payment_mode == 'final':
+            payment_type = 'project_final'
+        else:
+            payment_type = 'project_advance'
+
+        payment = Payment.objects.create(
             order=order,
-            payment_id=f"PAY_{order.order_number}_{int(timezone.now().timestamp())}",
             amount=amount,
-            method=method,
-            status='completed'  # Simplified for demo
+            payment_type=payment_type,
+            status='paid',
         )
-        
-        # Update order status
-        order.status = 'confirmed'
-        order.save()
-        
-        # Create notification for payment completion
+
+        # به‌روزرسانی وضعیت سفارش مشابه وبهوک
+        if payment_type in ('project_advance', 'project_phase_1'):
+            order.status = 'project_paid'
+            if order.project_progress_phase < 1:
+                order.project_progress_phase = 1
+            order.save()
+            OrderStatus.objects.create(
+                order=order,
+                status='project_paid',
+                description='پرداخت مرحله ۱ (مسیر ساده بدون درگاه) تایید شد'
+            )
+        elif payment_type in ('project_final', 'project_phase_4'):
+            order.project_progress_phase = max(order.project_progress_phase, 4)
+            order.status = 'shipping'
+            order.save()
+            OrderStatus.objects.create(
+                order=order,
+                status='shipping',
+                description='تسویه نهایی (مسیر ساده بدون درگاه) تایید شد'
+            )
+
+        # اعلان برای کاربر
         create_notification(
             user=order.customer,
             notification_type='payment_completed',
-            title='پرداخت تکمیل شد',
-            message=f'پرداخت سفارش {order.order_number} با موفقیت انجام شد',
+            title='پرداخت ثبت شد',
+            message=f'پرداخت سفارش {order.order_number} با موفقیت ثبت شد',
             related_order=order
         )
-        
-        return Response({'detail': 'پرداخت با موفقیت انجام شد'})
+
+        return Response({'detail': 'پرداخت با موفقیت ثبت شد', 'payment_id': str(payment.id)})
     except Order.DoesNotExist:
         return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
 
