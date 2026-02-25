@@ -498,7 +498,7 @@ class Order(models.Model):
     customer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='orders')
     order_number = models.CharField(max_length=50, unique=True)
     status = models.CharField(max_length=50, choices=ORDER_STATUS, default='submitted')
-    total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    total_amount = models.PositiveIntegerField(default=0, help_text='مبلغ کل سفارش به تومان (عدد صحیح)')
     notes = models.TextField(blank=True)
     documentation_options = models.JSONField(default=dict, blank=True)
     project_progress_phase = models.PositiveSmallIntegerField(
@@ -569,7 +569,7 @@ class OrderItem(models.Model):
         related_name='assigned_order_items'
     )
     status = models.CharField(max_length=50, choices=ITEM_STATUS, default='pending')
-    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    price = models.PositiveIntegerField(null=True, blank=True, help_text='قیمت به تومان (عدد صحیح)')
     estimated_delivery = models.DateTimeField(null=True, blank=True)
     actual_delivery = models.DateTimeField(null=True, blank=True)
     field_values = models.JSONField(default=dict)  # Store field values
@@ -591,8 +591,8 @@ class Quote(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     order_item = models.ForeignKey(OrderItem, on_delete=models.CASCADE, related_name='quotes')
     contractor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='quotes')
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-    documentation_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)  # If documentation needed
+    price = models.PositiveIntegerField(help_text='قیمت به تومان (عدد صحیح)')
+    documentation_price = models.PositiveIntegerField(default=0, help_text='قیمت مستندات به تومان (عدد صحیح)')
     delivery_days = models.PositiveIntegerField()
     documentation_days = models.PositiveIntegerField(default=0)  # Extra days for documentation
     notes = models.TextField(blank=True)

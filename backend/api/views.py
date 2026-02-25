@@ -2004,8 +2004,8 @@ def create_order(request):
             if getattr(service, 'type', None) == 'manufacturing':
                 manufacturing_service_ids.add(service.id)
         
-        # Calculate total amount from service base prices
-        order.total_amount = total_amount
+        # Calculate total amount from service base prices (integer Toman)
+        order.total_amount = int(round(total_amount))
         order.save()
 
         # Notify relevant manufacturing contractors via SMS if order includes manufacturing services

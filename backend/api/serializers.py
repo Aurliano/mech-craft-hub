@@ -767,8 +767,8 @@ class ProcessPaymentSerializer(serializers.Serializer):
 # Quote Management Serializers
 class CreateQuoteSerializer(serializers.Serializer):
     order_item = serializers.UUIDField()
-    price = serializers.DecimalField(max_digits=10, decimal_places=2)
-    documentation_price = serializers.DecimalField(max_digits=10, decimal_places=2, default=0)
+    price = serializers.IntegerField(min_value=0, help_text='قیمت به تومان (عدد صحیح)')
+    documentation_price = serializers.IntegerField(min_value=0, default=0, help_text='قیمت مستندات به تومان (عدد صحیح)')
     delivery_days = serializers.IntegerField(min_value=1)
     documentation_days = serializers.IntegerField(min_value=0, default=0)
     notes = serializers.CharField(required=False, allow_blank=True)
