@@ -63,6 +63,8 @@ from .utils.turnstile import (
     get_fallback_captcha_data, verify_fallback_captcha, get_turnstile_stats
 )
 from django.http import FileResponse
+from django.shortcuts import redirect
+from urllib.parse import quote
 import mimetypes
 
 # Configure logger
@@ -568,6 +570,16 @@ def initiate_payment_project_final(request, order_id):
         return Response({'detail': 'سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
 
 
+def _payment_result_redirect(success: bool, order_id=None, amount_toman=None, payment_type=None, detail=None):
+    """Redirect user to frontend payment result page (success or failed)."""
+    base = (getattr(settings, 'FRONTEND_URL', '') or 'https://saydatech.ir').rstrip('/')
+    if success:
+        params = f"status=success&order_id={quote(str(order_id or ''))}&amount_toman={amount_toman or 0}&payment_type={quote(str(payment_type or ''))}"
+    else:
+        params = f"status=failed&detail={quote(detail or 'پرداخت ناموفق بود')}"
+    return redirect(f"{base}/payment/result?{params}")
+
+
 @api_view(["GET", "POST"])
 @permission_classes([AllowAny])
 def bitpay_webhook(request):
@@ -575,7 +587,7 @@ def bitpay_webhook(request):
     Handle BitPay callback/webhook to confirm payment and update order status.
 
     - GET: کاربر بعد از پرداخت به این آدرس هدایت می‌شود (?trans_id=&id_get=)
-           و ما با gateway-result-second وضعیت را استعلام می‌کنیم.
+           و ما با gateway-result-second وضعیت را استعلام می‌کنیم؛ سپس به صفحه نتیجه فرانت ریدایرکت می‌شود.
     - POST: وبهوک (در صورت استفاده از وبهوک JSON جداگانه)
     """
     try:
@@ -584,18 +596,11 @@ def bitpay_webhook(request):
             trans_id = request.query_params.get('trans_id') or request.query_params.get('transaction_id') or ''
             id_get = request.query_params.get('id_get') or request.query_params.get('id') or ''
             if not trans_id or not id_get:
-                return Response({'detail': 'پارامترهای بازگشت از درگاه نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
+                return _payment_result_redirect(False, detail='پارامترهای بازگشت از درگاه نامعتبر است')
 
             ok, result, error_msg = bitpay_gateway_verify(trans_id, id_get)
             if not ok:
-                # اگر پاسخ معتبر ولی ناموفق بود، همچنان نتیجه را برمی‌گردانیم
-                return Response(
-                    {
-                        'detail': error_msg or 'پرداخت ناموفق بود',
-                        'result': result or {},
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+                return _payment_result_redirect(False, detail=error_msg or 'پرداخت ناموفق بود')
 
             # اول با id_get پرداخت معلق را پیدا کنیم (در زمان ایجاد درگاه webhook_nonce را ست کرده‌ایم)
             payment_by_nonce = Payment.objects.filter(webhook_nonce=id_get, status='pending').select_related('order').first()
@@ -606,7 +611,7 @@ def bitpay_webhook(request):
                 # fallback: پیدا کردن سفارش از factorId برگشتی از درگاه
                 factor_id = str(result.get('factorId') or result.get('factor_id') or '').strip()
                 if not factor_id or factor_id == '0':
-                    return Response({'detail': 'شناسه سفارش (factorId) نامعتبر است'}, status=status.HTTP_400_BAD_REQUEST)
+                    return _payment_result_redirect(False, detail='شناسه سفارش (factorId) نامعتبر است')
 
                 order = Order.objects.filter(order_number=factor_id).first()
                 if not order and factor_id.isdigit():
@@ -615,24 +620,22 @@ def bitpay_webhook(request):
                     order = Order.objects.filter(order_number__icontains=factor_id).first()
                 if not order:
                     logger.warning('BitPay webhook: no order for factorId=%r', factor_id)
-                    return Response({'detail': 'سفارش مرتبط با این پرداخت یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+                    return _payment_result_redirect(False, detail='سفارش مرتبط با این پرداخت یافت نشد')
 
                 payment = order.payments.filter(status='pending').order_by('-created_at').first()
                 if not payment:
-                    return Response({'detail': 'پرداخت معلق برای این سفارش یافت نشد'}, status=status.HTTP_404_NOT_FOUND)
+                    return _payment_result_redirect(False, detail='پرداخت معلق برای این سفارش یافت نشد')
 
             # Idempotency first: if we already processed this trans_id, return success (retries get 200, not 404)
             existing_paid = order.payments.filter(gateway_transaction_id=trans_id, status='paid').first()
             if existing_paid:
                 amount_rial = int(str(result.get('amount', 0)) or 0)
                 amount_toman = rial_to_toman(amount_rial)
-                return Response(
-                    {
-                        'detail': 'پرداخت قبلاً تایید شده است',
-                        'order_id': str(order.id),
-                        'amount_toman': amount_toman,
-                        'payment_type': existing_paid.payment_type,
-                    }
+                return _payment_result_redirect(
+                    True,
+                    order_id=str(order.id),
+                    amount_toman=amount_toman,
+                    payment_type=existing_paid.payment_type,
                 )
 
             amount_rial = int(str(result.get('amount', 0)) or 0)
@@ -678,13 +681,11 @@ def bitpay_webhook(request):
                 OrderStatus.objects.create(order=order, status='shipping', description='تسویه نهایی تایید شد - ارسال در حال انجام')
                 _notify_contractor_on_payment(order, payment)
 
-            return Response(
-                {
-                    'detail': 'پرداخت تایید شد',
-                    'order_id': str(order.id),
-                    'amount_toman': amount_toman,
-                    'payment_type': payment.payment_type,
-                }
+            return _payment_result_redirect(
+                True,
+                order_id=str(order.id),
+                amount_toman=amount_toman,
+                payment_type=payment.payment_type,
             )
 
         # 2) حالت POST: وبهوک JSON (در صورت پشتیبانی در آینده)

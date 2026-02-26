@@ -25,6 +25,7 @@ import PhoneVerification from "./pages/PhoneVerification";
 import Dashboard from "./pages/Dashboard";
 import Orders from "./pages/Orders";
 import Cart from "./pages/Cart";
+import PaymentResult from "./pages/PaymentResult";
 import Profile from "./pages/Profile";
 import Notifications from "./pages/Notifications";
 import Support from "./pages/Support";
@@ -109,6 +110,7 @@ const App = () => (
                   <Cart />
                 </ProtectedRoute>
               } />
+              <Route path="/payment/result" element={<PaymentResult />} />
               
               {/* Contractor Routes - Only accessible by contractors */}
               <Route path="/contractor-dashboard" element={
