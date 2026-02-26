@@ -12,6 +12,10 @@ import Navbar from '@/components/Navbar';
 import { getApiUrl } from '@/lib/api';
 import { formatPriceNumber } from '@/lib/priceUtils';
 
+interface OrderItemLite {
+  quotes?: unknown[];
+}
+
 interface Order {
   id: string;
   order_number: string;
@@ -19,7 +23,7 @@ interface Order {
   status: string;
   created_at: string;
   total_amount?: number;
-  items?: unknown[];
+  items?: OrderItemLite[] | unknown[];
 }
 
 function toOrderArray(input: unknown): Order[] {
@@ -143,6 +147,14 @@ const Orders = () => {
     }
   };
 
+  const getQuotesCount = (order: Order) => {
+    if (!Array.isArray(order.items)) return 0;
+    return (order.items as OrderItemLite[]).reduce((total, item) => {
+      const list = Array.isArray(item?.quotes) ? item.quotes : [];
+      return total + list.length;
+    }, 0);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50" dir="rtl">
       <Navbar />
@@ -205,61 +217,130 @@ const Orders = () => {
         {filteredOrders.length > 0 ? (
           <div className="space-y-4">
             {filteredOrders.map((order) => (
-              <Card key={order.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900">{order.order_number}</h3>
-                        {getStatusBadge(order.status)}
+              <Card
+                key={order.id}
+                className="hover:shadow-lg transition-shadow border border-slate-200/80 bg-white"
+              >
+                <CardHeader className="pb-3 border-b bg-slate-50/70">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <Package className="h-5 w-5 text-primary" />
                       </div>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                        <div>
-                          <span className="font-medium">تاریخ سفارش:</span>
-                          <p>{new Date(order.created_at).toLocaleDateString('fa-IR')}</p>
-                        </div>
-                        <div>
-                          <span className="font-medium">مبلغ کل:</span>
-                          <p className={getStatusColor(order.status)}>
-                            {order.total_amount && order.status !== 'submitted' && order.status !== 'draft' 
-                              ? `${formatPriceNumber(order.total_amount)} تومان` 
-                              : 'محاسبه نشده'
-                            }
-                          </p>
-                        </div>
-                        <div>
-                          <span className="font-medium">تعداد آیتم‌ها:</span>
-                          <p>{order.items?.length || 0} آیتم</p>
-                        </div>
+                      <div>
+                        <CardTitle className="text-base sm:text-lg">
+                          سفارش {order.order_number}
+                        </CardTitle>
+                        <CardDescription className="text-xs sm:text-sm">
+                          ثبت شده در {new Date(order.created_at).toLocaleDateString('fa-IR')}
+                        </CardDescription>
                       </div>
-                      {order.notes && (
-                        <div className="mt-3">
-                          <span className="font-medium text-sm text-gray-600">یادداشت:</span>
-                          <p className="text-sm text-gray-700 mt-1">{order.notes}</p>
-                        </div>
-                      )}
                     </div>
-                    <div className="flex flex-col md:flex-row gap-2">
+                    <div className="flex items-center gap-2">
+                      {getStatusBadge(order.status)}
+                    </div>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="pt-4 space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-gray-700">
+                    <div>
+                      <p className="text-xs text-gray-500">مبلغ کل</p>
+                      <p className={`mt-1 font-semibold ${getStatusColor(order.status)}`}>
+                        {order.total_amount && order.status !== 'submitted' && order.status !== 'draft'
+                          ? `${formatPriceNumber(order.total_amount)} تومان`
+                          : 'محاسبه نشده'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">تعداد آیتم‌ها</p>
+                      <p className="mt-1 font-semibold">{order.items?.length || 0} آیتم</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">تعداد پیشنهادات</p>
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/orders/${order.id}?tab=quotes`)}
+                        className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-blue-700 hover:text-blue-800"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                        {getQuotesCount(order)} پیشنهاد
+                      </button>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">وضعیت پرداخت / فنی</p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        برای مشاهده جزئیات فنی و وضعیت کامل، روی دکمه «جزئیات فنی سفارش» کلیک کنید.
+                      </p>
+                    </div>
+                  </div>
+
+                  {order.notes && (
+                    <div className="rounded-md bg-slate-50 px-3 py-2 text-xs sm:text-sm text-gray-700 border border-dashed border-slate-200">
+                      <span className="font-medium text-gray-600">یادداشت سفارش: </span>
+                      <span>{order.notes}</span>
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap gap-2 justify-between border-t pt-3 mt-2">
+                    <div className="flex flex-wrap gap-2">
                       <Button variant="outline" size="sm" asChild>
                         <Link to={`/orders/${order.id}`}>
                           <Eye className="h-4 w-4 ml-2" />
-                          مشاهده جزئیات
+                          جزئیات فنی سفارش
                         </Link>
                       </Button>
-                      
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(`/orders/${order.id}?tab=quotes`)}
+                      >
+                        <MessageCircle className="h-4 w-4 ml-2" />
+                        مشاهده پیشنهادات
+                      </Button>
+
+                      {/* Add to Cart - Only for quoted orders (پیشنهاد قبول شده) */}
+                      {order.status === 'quoted' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleAddToCart(order.id)}
+                          disabled={addToCartMutation.isPending}
+                        >
+                          <ShoppingCart className="h-4 w-4 ml-2" />
+                          {addToCartMutation.isPending ? 'در حال اضافه کردن...' : 'اضافه به سبد خرید'}
+                        </Button>
+                      )}
+
+                      {/* Download Invoice - Only for completed orders */}
+                      {order.status === 'completed' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDownloadInvoice(order.id)}
+                          disabled={downloadInvoiceMutation.isPending}
+                        >
+                          <Download className="h-4 w-4 ml-2" />
+                          {downloadInvoiceMutation.isPending ? 'در حال دانلود...' : 'دانلود فاکتور'}
+                        </Button>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
                       {/* Edit/Delete - Only for submitted orders */}
                       {order.status === 'submitted' && (
                         <>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => handleEdit(order.id)}
                           >
                             <Edit className="h-4 w-4 ml-2" />
                             ویرایش
                           </Button>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
                             onClick={() => handleDelete(order.id)}
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
@@ -269,37 +350,6 @@ const Orders = () => {
                           </Button>
                         </>
                       )}
-                      
-                      {/* Add to Cart - Only for quoted orders (پیشنهاد قبول شده) */}
-                      {order.status === 'quoted' && (
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleAddToCart(order.id)}
-                          disabled={addToCartMutation.isPending}
-                        >
-                          <ShoppingCart className="h-4 w-4 ml-2" />
-                          {addToCartMutation.isPending ? 'در حال اضافه کردن...' : 'اضافه به سبد خرید'}
-                        </Button>
-                      )}
-                      
-                      {/* Download Invoice - Only for completed orders */}
-                      {order.status === 'completed' && (
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleDownloadInvoice(order.id)}
-                          disabled={downloadInvoiceMutation.isPending}
-                        >
-                          <Download className="h-4 w-4 ml-2" />
-                          {downloadInvoiceMutation.isPending ? 'در حال دانلود...' : 'دانلود فاکتور'}
-                        </Button>
-                      )}
-                      
-                      <Button variant="outline" size="sm">
-                        <MessageCircle className="h-4 w-4 ml-2" />
-                        پشتیبانی
-                      </Button>
                     </div>
                   </div>
                 </CardContent>

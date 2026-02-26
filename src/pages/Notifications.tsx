@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Link } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { getApiUrl } from '@/lib/api';
+import { dateToJalaliString } from '@/lib/dateUtils';
 
 interface Notification {
   id: string;
@@ -21,13 +22,13 @@ interface Notification {
   message: string;
   is_read: boolean;
   created_at: string;
-  related_order?: {
+  related_order?: string | {
     id: string;
-    order_number: string;
+    order_number?: string;
   };
-  related_quote?: {
+  related_quote?: string | {
     id: string;
-    price: number;
+    price?: number;
   };
 }
 
@@ -37,6 +38,13 @@ const Notifications = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
   const [error, setError] = useState<string | null>(null);
+
+  const getRelatedOrderId = (notification: Notification): string | undefined => {
+    if (!notification.related_order) return undefined;
+    return typeof notification.related_order === 'string'
+      ? notification.related_order
+      : notification.related_order.id;
+  };
 
   useEffect(() => {
     fetchNotifications();
@@ -336,7 +344,9 @@ const Notifications = () => {
                                 )}
                               </div>
                               <div className="text-sm text-gray-500">
-                                {new Date(notification.created_at).toLocaleDateString('fa-IR')}
+                                {notification.created_at
+                                  ? dateToJalaliString(notification.created_at)
+                                  : ''}
                               </div>
                             </div>
                             
@@ -354,19 +364,21 @@ const Notifications = () => {
                                 </Button>
                               )}
                               
-                              {notification.related_order && (
+                              {getRelatedOrderId(notification) && (
                                 <Button asChild size="sm" variant="outline">
-                                  <Link to={`/orders/${notification.related_order.id}`}>
+                                  <Link to={`/orders/${getRelatedOrderId(notification)}`}>
                                     <Eye className="h-4 w-4 ml-2" />
                                     مشاهده سفارش
                                   </Link>
                                 </Button>
                               )}
                               
-                              {notification.related_quote && (
-                                <Button size="sm" variant="outline">
-                                  <DollarSign className="h-4 w-4 ml-2" />
-                                  مشاهده پیشنهاد
+                              {notification.related_quote && getRelatedOrderId(notification) && (
+                                <Button asChild size="sm" variant="outline">
+                                  <Link to={`/orders/${getRelatedOrderId(notification)}?tab=quotes`}>
+                                    <DollarSign className="h-4 w-4 ml-2" />
+                                    مشاهده پیشنهاد
+                                  </Link>
                                 </Button>
                               )}
                             </div>
@@ -416,7 +428,9 @@ const Notifications = () => {
                                 </Badge>
                               </div>
                               <div className="text-sm text-gray-500">
-                                {new Date(notification.created_at).toLocaleDateString('fa-IR')}
+                                {notification.created_at
+                                  ? dateToJalaliString(notification.created_at)
+                                  : ''}
                               </div>
                             </div>
                             

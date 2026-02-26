@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useGetOrderById, useGetQuotesByOrder, useAcceptQuote, useRejectQuote, useAddOrderToCart } from '@/hooks/useAuth';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import { getPersianLabel, getPersianValue } from '@/lib/persianMapping';
 import { getApiUrl } from '@/lib/api';
@@ -97,7 +97,9 @@ const OrderDetails = () => {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('details');
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'details';
+  const [activeTab, setActiveTab] = useState(initialTab);
 
   // API Hooks
   const { data: orderData, isLoading: isLoadingOrder } = useGetOrderById(orderId);
@@ -112,6 +114,12 @@ const OrderDetails = () => {
       setOrder(orderData as unknown as Order);
     }
   }, [orderData]);
+
+  // Sync active tab with URL query parameter (?tab=...)
+  useEffect(() => {
+    const tab = searchParams.get('tab') || 'details';
+    setActiveTab(tab);
+  }, [searchParams]);
 
   useEffect(() => {
     if (quotesData) {
