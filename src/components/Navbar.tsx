@@ -91,6 +91,7 @@ const Navbar = () => {
   const userName = user?.username || "کاربر";
   const cartItemsCount = cartItems?.length || 0;
   const unreadNotificationsCount = notifications?.filter((n: { isRead?: boolean }) => !n.isRead)?.length || 0;
+  const hasCustomerAccess = isCustomer || isContractor;
 
   const toggleService = (serviceName: string) => {
     setExpandedServices(prev => 
@@ -115,7 +116,10 @@ const Navbar = () => {
     { name: "ساخت و تولید", href: "/manufacturing" },
     { name: "بازار کار", href: "/job-market" }
   ];
-  const services = isCustomer ? allServices.filter((s) => s.href !== "/job-market") : allServices;
+  // Hide job market only for pure customers (contractors should always see it)
+  const services = (!isContractor && isCustomer)
+    ? allServices.filter((s) => s.href !== "/job-market")
+    : allServices;
 
   return (
     <nav className="bg-background border-b border-border fixed top-0 left-0 right-0 z-50" dir="rtl">
@@ -170,7 +174,7 @@ const Navbar = () => {
                     </Button>
                   )}
                   {/* Shopping Cart */}
-                  {isCustomer && (
+                  {hasCustomerAccess && (
                     <Button variant="ghost" size="sm" className="relative" asChild title="سبد خرید">
                       <Link to="/cart">
                         <ShoppingCart className="h-5 w-5" />
@@ -561,8 +565,8 @@ const Navbar = () => {
                 <div className="px-4 pt-4 border-t border-gray-200 mt-4 pb-8">
                   {isAuthenticated ? (
                     <div className="space-y-2">
-                      {/* Shopping Cart - Only for customers */}
-                      {isCustomer && (
+                        {/* Shopping Cart - Customers & Contractors */}
+                      {hasCustomerAccess && (
                         <Button variant="outline" size="sm" className="w-full flex items-center justify-center gap-2" asChild>
                           <Link to="/cart" onClick={() => setIsOpen(false)}>
                             <ShoppingCart className="h-4 w-4" />
@@ -604,8 +608,8 @@ const Navbar = () => {
                         </Link>
                       </Button>
 
-                      {/* Role-specific menu items */}
-                      {isCustomer && (
+                      {/* Role-specific menu items (customer-style dashboard + orders + quotes) */}
+                      {hasCustomerAccess && (
                         <>
                           <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
                             <Link to="/dashboard" onClick={() => setIsOpen(false)}>

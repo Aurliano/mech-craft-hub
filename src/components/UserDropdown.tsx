@@ -32,6 +32,7 @@ const UserDropdown: React.FC<UserDropdownProps> = ({
   const { isContractor, isCustomer, user } = useAuth();
   const isMobile = useIsMobile();
   const { data: manufacturingCheck } = useCheckContractorManufacturingService();
+  const hasCustomerAccess = isCustomer || isContractor;
   
   // Check if user is admin without using any
   type PossibleRole = string | { name?: string } | undefined;
@@ -93,8 +94,8 @@ const UserDropdown: React.FC<UserDropdownProps> = ({
           </Link>
         </DropdownMenuItem>
         
-        {/* Role-specific items */}
-        {isCustomer && (
+        {/* Role-specific items: customer-style dashboard & orders & quotes & cart */}
+        {hasCustomerAccess && (
           <>
             <DropdownMenuItem asChild>
               <Link to="/dashboard">

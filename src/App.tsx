@@ -94,19 +94,19 @@ const App = () => (
               <Route path="/password-reset-sms" element={<PasswordResetSMS />} />
               <Route path="/phone-verification" element={<PhoneVerification />} />
               
-              {/* Customer Routes */}
+              {/* Customer & Contractor Routes (service buyers) */}
               <Route path="/dashboard" element={
-                <ProtectedRoute allowedRoles={['customer']}>
+                <ProtectedRoute allowedRoles={['customer', 'contractor']}>
                   <Dashboard />
                 </ProtectedRoute>
               } />
               <Route path="/orders" element={
-                <ProtectedRoute allowedRoles={['customer']}>
+                <ProtectedRoute allowedRoles={['customer', 'contractor']}>
                   <Orders />
                 </ProtectedRoute>
               } />
               <Route path="/cart" element={
-                <ProtectedRoute allowedRoles={['customer']}>
+                <ProtectedRoute allowedRoles={['customer', 'contractor']}>
                   <Cart />
                 </ProtectedRoute>
               } />
@@ -161,9 +161,9 @@ const App = () => (
                 </ProtectedRoute>
               } />
               
-              {/* Customer Quote Management */}
+              {/* Customer Quote Management (also available to contractors as service buyers) */}
               <Route path="/quotes" element={
-                <ProtectedRoute allowedRoles={['customer']}>
+                <ProtectedRoute allowedRoles={['customer', 'contractor']}>
                   <CustomerQuotes />
                 </ProtectedRoute>
               } />
