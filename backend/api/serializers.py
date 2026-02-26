@@ -1448,8 +1448,20 @@ class JobSeekerHireRequestCreateSerializer(serializers.ModelSerializer):
 
 # --- User Profile & Messaging ---
 
+def _mask_phone_if_username(username):
+    """If username looks like Iranian mobile (09xxxxxxxxx), return masked; else return as-is."""
+    if not username:
+        return username
+    s = str(username).strip()
+    if len(s) >= 10 and s.isdigit() and (s.startswith('09') or s.startswith('9')):
+        if s.startswith('9'):
+            s = '0' + s
+        return s[:4] + '****' + s[-2:]
+    return s
+
+
 class UserPublicProfileSerializer(serializers.ModelSerializer):
-    """Public user profile - no sensitive data (email, phone)"""
+    """Public user profile - no sensitive data (email, phone). Username is masked when it is a phone."""
     role = serializers.SerializerMethodField()
     display_id = serializers.SerializerMethodField()
     average_rating = serializers.SerializerMethodField()
@@ -1458,16 +1470,22 @@ class UserPublicProfileSerializer(serializers.ModelSerializer):
     resume_url = serializers.SerializerMethodField()
     workshops = serializers.SerializerMethodField()
     specialist_profile = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = User
         fields = [
-            'id', 'username', 'first_name', 'last_name', 'profile_image', 
-            'created_at', 'role', 'display_id', 'average_rating', 
-            'total_completed_projects', 'organization', 'resume_url', 
+            'id', 'username', 'first_name', 'last_name', 'profile_image',
+            'created_at', 'role', 'display_id', 'average_rating',
+            'total_completed_projects', 'organization', 'resume_url',
             'workshops', 'specialist_profile'
         ]
-    
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        raw_username = getattr(instance, 'username', None) or data.get('username')
+        data['username'] = _mask_phone_if_username(raw_username)
+        return data
+
     def get_role(self, obj):
         ur = obj.user_roles.filter(is_active=True).select_related('role').first()
         if ur and ur.role:

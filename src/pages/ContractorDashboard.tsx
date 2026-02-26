@@ -54,6 +54,10 @@ const ContractorDashboard = () => {
     notes: ''
   });
 
+  // Contractor share preview (90% of main price)
+  const basePrice = parsePriceToToman(quoteData.price || '0') || 0;
+  const contractorShare = basePrice > 0 ? Math.floor(basePrice * 0.9) : 0;
+
   const toggleOrderDetails = (orderId: string) => {
     setExpandedOrders(prev => {
       const newSet = new Set(prev);
@@ -850,21 +854,33 @@ const ContractorDashboard = () => {
                   <CardContent className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <PriceInput
-                          label="قیمت پیشنهادی (تومان)"
-                          value={quoteData.price}
-                          onChange={(val) => setQuoteData({...quoteData, price: val})}
-                          required
-                        />
+                        label="قیمت پیشنهادی (تومان)"
+                        value={quoteData.price}
+                        onChange={(val) => setQuoteData({ ...quoteData, price: val })}
+                        required
+                      />
                       <div>
                         <Label htmlFor="delivery_days">زمان تحویل (روز)</Label>
                         <Input
                           id="delivery_days"
                           type="number"
                           value={quoteData.delivery_days}
-                          onChange={(e) => setQuoteData({...quoteData, delivery_days: e.target.value})}
+                          onChange={(e) => setQuoteData({ ...quoteData, delivery_days: e.target.value })}
                           placeholder="تعداد روز"
                         />
                       </div>
+                    </div>
+
+                    {/* Contractor share (90% of price) */}
+                    <div className="rounded-lg border border-dashed bg-blue-50/60 px-3 py-2 text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                      <span className="font-medium text-gray-800">
+                        سهم شما از این سفارش
+                      </span>
+                      <span className="font-semibold text-blue-700">
+                        {contractorShare > 0
+                          ? `سهم شما از این پیشنهاد: ${formatPriceNumber(contractorShare)}`
+                          : 'پس از وارد کردن قیمت محاسبه می‌شود'}
+                      </span>
                     </div>
                     
                     {/* Conditional Documentation Fields */}

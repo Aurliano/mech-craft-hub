@@ -75,7 +75,11 @@ const UserProfileView = () => {
                 </Avatar>
                 <div className="flex-1 text-center sm:text-right">
                   <CardTitle className="text-2xl">{displayName}</CardTitle>
-                  <CardDescription>@{profile.username}</CardDescription>
+                  <CardDescription>
+                    {profile.username && profile.username.includes('*')
+                      ? 'شماره همراه تأیید شده'
+                      : `@${profile.username}`}
+                  </CardDescription>
                   {profile.display_id && (
                     <p className="text-xs text-muted-foreground mt-1 font-mono">
                       ID: {profile.display_id}
