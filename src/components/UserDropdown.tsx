@@ -106,7 +106,14 @@ const UserDropdown: React.FC<UserDropdownProps> = ({
             <DropdownMenuItem asChild>
               <Link to="/orders">
                 <Package className="mr-2 h-4 w-4" />
-                <span>سفارشات</span>
+                <span>سفارشات من</span>
+              </Link>
+            </DropdownMenuItem>
+            
+            <DropdownMenuItem asChild>
+              <Link to="/quotes">
+                <FileText className="mr-2 h-4 w-4" />
+                <span>پیشنهادات دریافتی</span>
               </Link>
             </DropdownMenuItem>
             

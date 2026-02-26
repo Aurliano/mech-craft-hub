@@ -2,7 +2,7 @@ import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
-import { Menu, X, ChevronDown, ChevronUp, User, ShoppingCart, Package, HelpCircle, LogOut, Home, LogIn, UserPlus, Bell, BarChart3, Wrench, Settings, Briefcase, MessageSquare, Building2, BookOpen, Briefcase as BriefcaseIcon, Phone, Plus } from "lucide-react";
+import { Menu, X, ChevronDown, ChevronUp, User, ShoppingCart, Package, HelpCircle, LogOut, Home, LogIn, UserPlus, Bell, BarChart3, Wrench, Settings, Briefcase, MessageSquare, Building2, BookOpen, Briefcase as BriefcaseIcon, Phone, Plus, FileText } from "lucide-react";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -100,7 +100,7 @@ const Navbar = () => {
     );
   };
 
-  const services: Service[] = [
+  const allServices: Service[] = [
     { name: "طراحی و مدل سازی", href: "/design" },
     { 
       name: "تحلیل و شبیه سازی", 
@@ -115,6 +115,7 @@ const Navbar = () => {
     { name: "ساخت و تولید", href: "/manufacturing" },
     { name: "بازار کار", href: "/job-market" }
   ];
+  const services = isCustomer ? allServices.filter((s) => s.href !== "/job-market") : allServices;
 
   return (
     <nav className="bg-background border-b border-border fixed top-0 left-0 right-0 z-50" dir="rtl">
@@ -595,6 +596,14 @@ const Navbar = () => {
                         </Link>
                       </Button>
 
+                      {/* Messages - available to all authenticated users */}
+                      <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
+                        <Link to="/messages" onClick={() => setIsOpen(false)}>
+                          <MessageSquare className="mr-2 h-4 w-4" />
+                          پیام‌ها
+                        </Link>
+                      </Button>
+
                       {/* Role-specific menu items */}
                       {isCustomer && (
                         <>
@@ -608,7 +617,14 @@ const Navbar = () => {
                           <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
                             <Link to="/orders" onClick={() => setIsOpen(false)}>
                               <Package className="mr-2 h-4 w-4" />
-                              سفارشات
+                              سفارشات من
+                            </Link>
+                          </Button>
+                          
+                          <Button variant="ghost" size="sm" className="w-full justify-start" asChild>
+                            <Link to="/quotes" onClick={() => setIsOpen(false)}>
+                              <FileText className="mr-2 h-4 w-4" />
+                              پیشنهادات دریافتی
                             </Link>
                           </Button>
                         </>

@@ -8,11 +8,16 @@ import {
   MessageCircle, Star, Award, Calendar, Package
 } from 'lucide-react';
 import { formatPriceNumber } from '@/lib/priceUtils';
+import { Link } from 'react-router-dom';
 
 interface Quote {
   id: string;
   contractor: {
+    id: string;
     username: string;
+    display_name?: string;
+    first_name?: string;
+    last_name?: string;
     profile_image?: string;
   };
   price: number;
@@ -155,18 +160,30 @@ const QuoteManager: React.FC<QuoteManagerProps> = ({
                   {quote.contractor.profile_image ? (
                     <img 
                       src={quote.contractor.profile_image} 
-                      alt={quote.contractor.username}
+                      alt={quote.contractor.display_name || quote.contractor.username}
                       className="w-10 h-10 rounded-full"
                     />
                   ) : (
                     <User className="h-5 w-5 text-gray-500" />
                   )}
                 </div>
-                <div>
-                  <CardTitle className="text-lg">{quote.contractor.username}</CardTitle>
+                <div className="space-y-1">
+                  <CardTitle className="text-lg">
+                    {quote.contractor.display_name || quote.contractor.username}
+                  </CardTitle>
                   <p className="text-sm text-gray-600">
                     {new Date(quote.created_at).toLocaleDateString('fa-IR')}
                   </p>
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                  >
+                    <Link to={`/users/${quote.contractor.id}`}>
+                      مشاهده پروفایل
+                    </Link>
+                  </Button>
                 </div>
               </div>
               <div className="flex items-center gap-2">

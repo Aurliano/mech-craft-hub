@@ -58,6 +58,7 @@ interface Quote {
   contractor: {
     id: string;
     username: string;
+    display_name?: string;
     profile_image?: string;
   };
   price: number;
@@ -563,7 +564,7 @@ const OrderDetails = () => {
                             <User className="h-5 w-5 text-gray-500" />
                           </div>
                           <div>
-                            <CardTitle className="text-base">{quote.contractor.username}</CardTitle>
+                            <CardTitle className="text-base">{quote.contractor.display_name ?? quote.contractor.username}</CardTitle>
                             <CardDescription className="text-xs">
                               {new Date(quote.created_at).toLocaleDateString('fa-IR')}
                             </CardDescription>

@@ -32,7 +32,9 @@ interface Order {
     quotes: Array<{
       id: string;
       contractor: {
+        id: string;
         username: string;
+        display_name?: string;
         profile_image?: string;
       };
       price: number;

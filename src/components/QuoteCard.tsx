@@ -11,6 +11,7 @@ interface QuoteCardProps {
     id: string;
     contractor: {
       username: string;
+      display_name?: string;
     };
     price: number;
     documentation_price?: number;
@@ -43,7 +44,7 @@ const QuoteCard = ({
     <Card className="hover:shadow-md transition-shadow">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">پیشنهاد از {quote.contractor.username}</CardTitle>
+          <CardTitle className="text-lg">پیشنهاد از {quote.contractor.display_name || quote.contractor.username}</CardTitle>
           <OrderStatusBadge status={quote.status} />
         </div>
         <CardDescription>

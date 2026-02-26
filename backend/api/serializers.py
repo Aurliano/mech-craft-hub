@@ -149,10 +149,17 @@ class OrderItemQuoteSerializer(serializers.ModelSerializer):
         fields = ['id', 'contractor', 'price', 'documentation_price', 'delivery_days', 'documentation_days', 'notes', 'status', 'created_at', 'expires_at']
 
     def get_contractor(self, obj):
+        c = obj.contractor
+        first = getattr(c, 'first_name', None) or ''
+        last = getattr(c, 'last_name', None) or ''
+        display_name = f"{first} {last}".strip() or c.username
         return {
-            'id': str(obj.contractor.id),
-            'username': obj.contractor.username,
-            'profile_image': getattr(obj.contractor, 'profile_image', None),
+            'id': str(c.id),
+            'username': c.username,
+            'first_name': first,
+            'last_name': last,
+            'display_name': display_name,
+            'profile_image': getattr(c, 'profile_image', None),
         }
 
 
