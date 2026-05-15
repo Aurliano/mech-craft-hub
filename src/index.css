@@ -24,6 +24,14 @@ body {
   /* Add padding for fixed navbar */
   padding-top: var(--navbar-offset, 120px);
 }
+@font-face {
+  font-family: "B Roya Bold";
+  src: url("/fonts/B_Roya_Bold.woff2") format("woff2"),
+       url("/fonts/B_Roya_Bold.woff") format("woff");
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
 
 /* On mobile, reduce padding */
 @media (max-width: 1024px) {
@@ -249,3 +257,4 @@ All colors MUST be HSL.
     border: 0;
   }
 }
+

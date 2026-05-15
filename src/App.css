@@ -36,10 +36,12 @@
 }
 @font-face {
   font-family: "B Roya Bold";
-  src: url("https://db.onlinewebfonts.com/t/2cd7e13bf73dde1e798305b5f3da8c9e.woff2") format("woff2"),
-       url("https://db.onlinewebfonts.com/t/2cd7e13bf73dde1e798305b5f3da8c9e.woff") format("woff"),
-       url("https://db.onlinewebfonts.com/t/2cd7e13bf73dde1e798305b5f3da8c9e.ttf") format("truetype");
+  src: url("/fonts/B_Roya_Bold.woff2") format("woff2"),
+       url("/fonts/B_Roya_Bold.woff") format("woff");
+  font-weight: bold;
+  font-style: normal;
 }
+
 
 
 .card {
