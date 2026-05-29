@@ -9,7 +9,8 @@ POSTGRES_PASSWORD="${POSTGRES_PASSWORD:?POSTGRES_PASSWORD environment variable i
 POSTGRES_HOST="${POSTGRES_HOST:-127.0.0.1}"
 POSTGRES_PORT="${POSTGRES_PORT:-5432}"
 BACKUP_DIR="${BACKUP_DIR:-/app/backups}"
-RESTORE_DUMP="${RESTORE_DUMP:-/app/backups/emergency.dump}"
+RESTORE_DUMP="${RESTORE_DUMP:-}"
+RESTORE_LOADDATA="${RESTORE_LOADDATA:-/app/backups/emergency.json.gz}"
 AUTO_BACKUP="${AUTO_BACKUP:-1}"
 
 export POSTGRES_HOST POSTGRES_PORT POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD
@@ -67,17 +68,6 @@ wait_for_postgres() {
 
 wait_for_postgres
 
-RESTORE_MARKER="${PGDATA}/.restore_completed"
-if [ -f "$RESTORE_DUMP" ] && [ ! -f "$RESTORE_MARKER" ]; then
-  log "Restoring database from ${RESTORE_DUMP}..."
-  if bash /app/backend/scripts/pg_restore.sh "$RESTORE_DUMP" --drop-db --create-db; then
-    touch "$RESTORE_MARKER"
-    log "Restore completed."
-  else
-    log "Restore failed; continuing with migrations on existing/empty database."
-  fi
-fi
-
 cd /app/backend
 
 log "Testing database connection..."
@@ -85,6 +75,38 @@ python manage.py check --database default
 
 log "Running migrations..."
 python manage.py migrate --noinput
+
+RESTORE_MARKER="${PGDATA}/.restore_completed"
+if [[ ! -f "$RESTORE_MARKER" ]]; then
+  LOADDATA_FILE=""
+  if [[ -n "$RESTORE_LOADDATA" && -f "$RESTORE_LOADDATA" ]]; then
+    LOADDATA_FILE="$RESTORE_LOADDATA"
+  elif [[ -f /app/backups/emergency.json.gz ]]; then
+    LOADDATA_FILE="/app/backups/emergency.json.gz"
+  elif [[ -f /app/backups/emergency.json ]]; then
+    LOADDATA_FILE="/app/backups/emergency.json"
+  fi
+
+  if [[ -n "$LOADDATA_FILE" ]]; then
+    log "Restoring Django data from ${LOADDATA_FILE} (loaddata)..."
+    if [[ "$LOADDATA_FILE" == *.gz ]]; then
+      gunzip -c "$LOADDATA_FILE" | python manage.py loaddata --format=json -
+    else
+      python manage.py loaddata "$LOADDATA_FILE"
+    fi
+    touch "$RESTORE_MARKER"
+    log "loaddata restore completed."
+  elif [[ -n "$RESTORE_DUMP" && -f "$RESTORE_DUMP" ]]; then
+    log "Restoring PostgreSQL dump from ${RESTORE_DUMP} (pg_restore)..."
+    if bash /app/backend/scripts/pg_restore.sh "$RESTORE_DUMP" --drop-db --create-db; then
+      python manage.py migrate --noinput
+      touch "$RESTORE_MARKER"
+      log "pg_restore completed."
+    else
+      log "pg_restore failed; continuing with empty/migrated database."
+    fi
+  fi
+fi
 
 if [ -n "${DJANGO_SUPERUSER_USERNAME:-}" ] && [ -n "${DJANGO_SUPERUSER_PASSWORD:-}" ]; then
   log "Ensuring superuser exists..."

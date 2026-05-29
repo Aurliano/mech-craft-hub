@@ -12,6 +12,37 @@
 
 ## فاز ۰ — بک‌آپ از sayda-db (قبل از deploy) — **الزامی**
 
+### روش A — pgAdmin (توصیه می‌شود اگر به DB دسترسی دارید)
+
+1. در pgAdmin به دیتابیس `postgres` (روی `sayda-db`) وصل شوید.
+2. راست‌کلیک روی دیتابیس → **Backup...**
+3. تنظیمات:
+   - **Format:** `Custom` (بهترین گزینه برای `pg_restore`)
+   - **Filename:** `emergency.dump` (یا `.backup`)
+   - تب **Dump options:** گزینه‌های پیش‌فرض کافی است؛ برای کامل بودن می‌توانید **Blobs** و **Data** را فعال بگذارید.
+4. فایل را دانلود کنید و در Liara قرار دهید:
+   - آپلود به دیسک `db-backups` → مسیر `/app/backups/emergency.dump`
+   - یا در Shell: فایل را با File Manager / `cat` + base64 منتقل کنید
+5. در env اپ (برای بک‌آپ `dumpdata` که گرفتید):
+   ```bash
+   RESTORE_LOADDATA=/app/backups/emergency.json.gz
+   ```
+   (`RESTORE_DUMP` فقط برای فایل pgAdmin Custom / `pg_dump` است)
+
+**فرمت Plain (.sql):** اگر فقط SQL متنی export کردید، بعد از deploy از این استفاده کنید (نه `pg_restore`):
+
+```bash
+export PGPASSWORD='YOUR_POSTGRES_PASSWORD'
+psql -h 127.0.0.1 -U mechcraft -d mechcraft -f /app/backups/emergency.sql
+cd /app/backend && python manage.py migrate --noinput
+```
+
+**Globals (Roles):** اگر در pgAdmin جداگانه Globals بک‌آپ گرفتید، برای مهاجرت معمولاً لازم نیست — کاربر `mechcraft` در startup ساخته می‌شود.
+
+---
+
+### روش B — Liara Shell (نیاز به `pg_dump` یا deploy جدید)
+
 `sayda-db` فقط از داخل شبکه Liara در دسترس است. در **Liara Shell** یا ترمینال وب اپ اجرا کنید:
 
 ```bash
@@ -30,7 +61,28 @@ bash /app/scripts/backup_legacy_sayda_db.sh
 RESTORE_DUMP=/app/backups/emergency.dump
 ```
 
-**دستور دستی معادل** (اگر اسکریپت نبود):
+### روش C — Django `dumpdata` (بدون pg_dump، همین الان در Shell فعلی)
+
+```bash
+cd /app/backend
+python manage.py dumpdata --natural-foreign --natural-primary --indent 2 \
+  -o /app/backups/emergency.json
+gzip -f /app/backups/emergency.json
+ls -lh /app/backups/emergency.json.gz
+```
+
+بازیابی بعد از deploy (DB خالی + migrate اول):
+
+```bash
+cd /app/backend
+gunzip -c /app/backups/emergency.json.gz | python manage.py loaddata --format=json -
+```
+
+> `dumpdata` همه جداول را پوشش می‌دهد ولی مثل `pg_dump` برای edge-caseهای خاص PostgreSQL نیست؛ برای اکثر داده‌های Django کافی است.
+
+---
+
+**دستور دستی معادل pg_dump** (اگر `postgresql-client` نصب شد یا بعد از deploy جدید):
 
 ```bash
 mkdir -p /app/backups
