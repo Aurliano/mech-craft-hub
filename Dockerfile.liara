@@ -1,5 +1,4 @@
-# Liara deployment Dockerfile - Optimized for fast builds
-# Using single-stage build since psycopg2-binary doesn't need compilation
+# Liara deployment Dockerfile - Django + local PostgreSQL on persistent disk
 FROM python:3.11-slim
 
 # Configure apt to handle network timeouts better
@@ -7,52 +6,47 @@ RUN echo 'Acquire::http::Timeout "60";' > /etc/apt/apt.conf.d/99timeout && \
     echo 'Acquire::ftp::Timeout "60";' >> /etc/apt/apt.conf.d/99timeout && \
     echo 'Acquire::Retries "5";' >> /etc/apt/apt.conf.d/99timeout
 
-# Install ONLY runtime dependencies (no build tools needed for psycopg2-binary)
-# Retry up to 3 times with exponential backoff
+# Install runtime dependencies including PostgreSQL server and client
 RUN for i in 1 2 3; do \
         apt-get update --fix-missing && \
         apt-get install -y --no-install-recommends \
             libpq5 \
             curl \
+            postgresql \
+            postgresql-client \
+            procps \
         && rm -rf /var/lib/apt/lists/* \
         && apt-get clean \
         && break || sleep $((i * 10)); \
     done
 
-# NOTE: run as root to be able to write to mounted disk
-# If you need to drop privileges later, do it after verifying disk permissions
-
 WORKDIR /app
 
-# Copy requirements first for better Docker layer caching
 COPY requirements_liara.txt requirements.txt
-
-# Install Python dependencies (psycopg2-binary is pre-compiled, no build tools needed)
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy application code
 COPY . .
 
-# Cleanup
 RUN find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true && \
     find . -name "*.pyc" -delete 2>/dev/null || true
 
-# Ensure media/static directories exist (the disk will be mounted over /app/backend/media)
-RUN mkdir -p /app/backend/media /app/staticfiles /tmp/staticfiles_runtime
+RUN mkdir -p /app/backend/media /app/staticfiles /tmp/staticfiles_runtime /app/backups /var/lib/postgresql/data && \
+    chmod +x /app/start_liara_with_postgres.sh /app/scripts/emergency_db_recovery.sh /app/scripts/backup_scheduler.sh /app/backend/scripts/pg_backup.sh /app/backend/scripts/pg_restore.sh
 
 ENV PYTHONUNBUFFERED=1
 ENV DJANGO_SETTINGS_MODULE=config.settings_ultra_simple
 ENV PYTHONPATH=/app/backend
 ENV STATIC_ROOT=/app/staticfiles
+ENV PGDATA=/var/lib/postgresql/data
+ENV BACKUP_DIR=/app/backups
 
 EXPOSE 80
 
-# Collect static files at build time so Django admin assets are present
-RUN python backend/manage.py collectstatic --noinput
+# collectstatic does not require PostgreSQL at build time
+RUN USE_SQLITE=1 python backend/manage.py collectstatic --noinput
 
-# Health check - using 127.0.0.1 instead of localhost for better reliability
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=5 \
   CMD curl -f http://127.0.0.1:80/api/health/ || exit 1
 
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:80", "--workers", "3", "--timeout", "120", "--max-requests", "1000", "--max-requests-jitter", "100", "--preload"]
+CMD ["/bin/bash", "/app/start_liara_with_postgres.sh"]

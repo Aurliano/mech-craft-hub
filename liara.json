@@ -10,10 +10,25 @@
     {
       "name": "sayda-disk",
       "mountTo": "/app/backend/media"
+    },
+    {
+      "name": "postgres-data",
+      "mountTo": "/var/lib/postgresql/data"
+    },
+    {
+      "name": "db-backups",
+      "mountTo": "/app/backups"
     }
   ],
   "env": {
     "DJANGO_SETTINGS_MODULE": "config.settings_ultra_simple",
-    "PYTHONPATH": "/app/backend"
+    "PYTHONPATH": "/app/backend",
+    "POSTGRES_HOST": "127.0.0.1",
+    "POSTGRES_PORT": "5432",
+    "POSTGRES_DB": "mechcraft",
+    "POSTGRES_USER": "mechcraft",
+    "PGDATA": "/var/lib/postgresql/data",
+    "BACKUP_DIR": "/app/backups",
+    "AUTO_BACKUP": "1"
   }
 }

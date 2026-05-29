@@ -135,17 +135,29 @@ fi
 if [[ "$S3_UPLOAD" == "true" ]]; then
     log "Uploading backup to S3..."
     
+    ENDPOINT_URL="${AWS_ENDPOINT_URL:-${LIARA_ENDPOINT_URL:-}}"
+    
     if command -v aws >/dev/null 2>&1; then
         S3_KEY="${S3_PREFIX}/$(basename "$BACKUP_FILE")"
+        AWS_ARGS=()
+        if [[ -n "$ENDPOINT_URL" ]]; then
+            AWS_ARGS+=(--endpoint-url "$ENDPOINT_URL")
+        fi
         
-        if aws s3 cp "$BACKUP_FILE" "s3://$S3_BUCKET/$S3_KEY"; then
+        if aws s3 cp "$BACKUP_FILE" "s3://$S3_BUCKET/$S3_KEY" "${AWS_ARGS[@]}"; then
             log "Backup uploaded to S3: s3://$S3_BUCKET/$S3_KEY"
         else
             error "S3 upload failed"
             exit 1
         fi
+    elif command -v python3 >/dev/null 2>&1; then
+        log "AWS CLI not found; falling back to manage.py backup_db for S3 upload..."
+        (cd /app/backend && python manage.py backup_db --s3-upload) || {
+            error "S3 upload via manage.py failed"
+            exit 1
+        }
     else
-        error "AWS CLI not found. Cannot upload to S3."
+        error "Neither AWS CLI nor python3 available for S3 upload."
         exit 1
     fi
 fi

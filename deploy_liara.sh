@@ -39,7 +39,7 @@ if ! command -v liara &> /dev/null; then
 fi
 
 # Check if user is logged in to Liara
-if ! liara whoami &> /dev/null; then
+if ! liara account list &> /dev/null; then
     print_error "You are not logged in to Liara. Please login first:"
     echo "liara login"
     exit 1
@@ -48,7 +48,7 @@ fi
 print_status "Checking project structure..."
 
 # Verify required files exist
-required_files=("liara.json" "Procfile" "requirements_liara.txt" "Dockerfile.liara")
+required_files=("liara.json" "requirements_liara.txt" "Dockerfile.liara" "start_liara_with_postgres.sh")
 for file in "${required_files[@]}"; do
     if [ ! -f "$file" ]; then
         print_error "Required file $file not found!"
@@ -57,6 +57,11 @@ for file in "${required_files[@]}"; do
 done
 
 print_success "All required files found"
+
+print_warning "Before deploy: run emergency recovery if old DB may still have data:"
+echo "  liara shell --app mech-craft-hub-main -- bash /app/scripts/emergency_db_recovery.sh"
+print_warning "Ensure Liara disks exist: postgres-data, db-backups (see LIARA_DB_MIGRATION.md)"
+print_warning "Remove DATABASE_URL from Liara env and set POSTGRES_PASSWORD"
 
 # Set environment variables
 print_status "Setting up environment variables..."
@@ -118,6 +123,20 @@ cp Dockerfile.liara backend/Dockerfile
 liara deploy
 
 print_success "Deployment completed successfully!"
+
+print_status "Running post-deploy health check..."
+sleep 15
+HEALTH_URL="${HEALTH_URL:-https://mech-craft-hub-main.liara.run/api/health/}"
+if curl -sf "$HEALTH_URL" >/dev/null; then
+    print_success "Health check passed: $HEALTH_URL"
+else
+    print_warning "Health check failed or not ready yet: $HEALTH_URL"
+    print_warning "Check logs: liara logs --app mech-craft-hub-main"
+fi
+
+print_status "If no data was restored, create admin user:"
+echo "  liara shell --app mech-craft-hub-main"
+echo "  cd /app/backend && python manage.py createsuperuser"
 
 # Show deployment info
 print_status "Deployment Information:"

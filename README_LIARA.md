@@ -54,8 +54,15 @@ DEBUG=False
 SECRET_KEY=your-super-secret-production-key-here
 ALLOWED_HOSTS=mech-craft-hub-main.liara.run
 
-# Database (Liara PostgreSQL)
-DATABASE_URL=postgresql://username:password@host:port/database
+# Database (local PostgreSQL on Liara persistent disk - do NOT use DATABASE_URL)
+POSTGRES_HOST=127.0.0.1
+POSTGRES_PORT=5432
+POSTGRES_DB=mechcraft
+POSTGRES_USER=mechcraft
+POSTGRES_PASSWORD=your-secure-database-password
+PGDATA=/var/lib/postgresql/data
+BACKUP_DIR=/app/backups
+AUTO_BACKUP=1
 
 # Redis (Liara Redis)
 REDIS_URL=redis://username:password@host:port/database
@@ -87,10 +94,11 @@ FRONTEND_URL=https://mech-craft-hub-main.liara.run
 
 ## 🔧 تنظیمات اضافی
 
-### **Database Setup**
-1. در Liara Console، یک **PostgreSQL** ایجاد کنید
-2. در بخش **Networks**، آن را به شبکه `production` اضافه کنید
-3. متغیر `DATABASE_URL` را از اطلاعات database کپی کنید
+### **Database Setup (PostgreSQL روی دیسک پایدار)**
+1. در Liara Console دو **دیسک** بسازید: `postgres-data` و `db-backups` (طبق [`liara.json`](liara.json))
+2. متغیر `DATABASE_URL` را **حذف** کنید (اتصال به `sayda-db` قطع شود)
+3. متغیرهای `POSTGRES_*` و `PGDATA` را طبق [`LIARA_DB_MIGRATION.md`](LIARA_DB_MIGRATION.md) تنظیم کنید
+4. قبل از deploy: `bash scripts/emergency_db_recovery.sh` در Liara shell برای تلاش نجات داده
 
 ### **Redis Setup (اختیاری)**
 1. در Liara Console، یک **Redis** ایجاد کنید
@@ -117,8 +125,10 @@ liara build-logs --app mech-craft-hub-main
 ```
 
 #### **2. Database Connection Error**
-- بررسی کنید `DATABASE_URL` صحیح باشد
-- اطمینان حاصل کنید database در همان شبکه قرار دارد
+- `DATABASE_URL` نباید در env باشد (باعث اتصال به DB قدیمی می‌شود)
+- دیسک‌های `postgres-data` و `db-backups` باید در Liara ساخته و mount شده باشند
+- `POSTGRES_PASSWORD` باید در env تنظیم شده باشد
+- لاگ startup: `liara logs --app mech-craft-hub-main`
 
 #### **3. Static Files Error**
 - بررسی کنید `collectstatic` در build process اجرا شده باشد
