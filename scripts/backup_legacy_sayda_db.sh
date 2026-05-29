@@ -40,6 +40,14 @@ log() { echo "[backup-legacy] $1"; }
 log "Source: ${LEGACY_USER}@${LEGACY_HOST}:${LEGACY_PORT}/${LEGACY_DB}"
 log "Target: ${OUTPUT_FILE}"
 
+if ! command -v pg_dump >/dev/null 2>&1; then
+  log "pg_dump not found; installing postgresql-client..."
+  if command -v apt-get >/dev/null 2>&1 && [[ "$(id -u)" -eq 0 ]]; then
+    apt-get update -qq
+    apt-get install -y --no-install-recommends postgresql-client
+  fi
+fi
+
 if command -v pg_dump >/dev/null 2>&1; then
   log "Using pg_dump..."
   pg_dump -h "$LEGACY_HOST" -p "$LEGACY_PORT" -U "$LEGACY_USER" -d "$LEGACY_DB" \
@@ -48,7 +56,7 @@ elif [[ -f /app/backend/manage.py ]]; then
   log "pg_dump not found; using Django backup_db..."
   export DATABASE_URL="postgresql://${LEGACY_USER}:${PGPASSWORD}@${LEGACY_HOST}:${LEGACY_PORT}/${LEGACY_DB}"
   STAMP="$(date +%Y%m%d_%H%M%S)"
-  (cd /app/backend && python manage.py backup_db --compress --backup-dir "$BACKUP_DIR")
+  (cd /app/backend && python manage.py backup_db --output "$OUTPUT_FILE" --compress)
   LATEST="$(ls -t "${BACKUP_DIR}"/*_backup_*.sql.gz 2>/dev/null | head -1)"
   if [[ -z "$LATEST" ]]; then
     echo "Django backup_db produced no file." >&2

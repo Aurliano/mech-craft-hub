@@ -1,9 +1,14 @@
 """
 Django management command for database backup operations.
 """
+import gzip
 import os
+import shutil
 import subprocess
 from datetime import datetime
+from io import StringIO
+
+from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 from django.conf import settings
 import boto3
@@ -35,12 +40,76 @@ class Command(BaseCommand):
             default='/app/backups',
             help='Directory to store backup files',
         )
+        parser.add_argument(
+            '--output',
+            type=str,
+            default='',
+            help='Exact output path (e.g. /app/backups/emergency.dump)',
+        )
+
+    def _ensure_pg_dump(self):
+        """Try to locate pg_dump; on Debian slim images install postgresql-client."""
+        if shutil.which('pg_dump'):
+            return True
+
+        self.stdout.write(self.style.WARNING('pg_dump not found; attempting to install postgresql-client...'))
+        if os.name != 'posix' or os.geteuid() != 0:
+            return False
+
+        try:
+            subprocess.run(
+                ['apt-get', 'update'],
+                check=True,
+                capture_output=True,
+                timeout=120,
+            )
+            subprocess.run(
+                [
+                    'apt-get', 'install', '-y', '--no-install-recommends',
+                    'postgresql-client',
+                ],
+                check=True,
+                capture_output=True,
+                timeout=300,
+            )
+        except (subprocess.CalledProcessError, subprocess.TimeoutExpired, FileNotFoundError) as exc:
+            self.stdout.write(self.style.WARNING(f'Could not install postgresql-client: {exc}'))
+            return False
+
+        return bool(shutil.which('pg_dump'))
+
+    def _dumpdata_fallback(self, backup_file, compress):
+        """JSON dump via Django when pg_dump is unavailable (restore with loaddata)."""
+        self.stdout.write(self.style.WARNING(
+            'Using dumpdata fallback — restore with: python manage.py loaddata <file>'
+        ))
+        out = StringIO()
+        call_command(
+            'dumpdata',
+            natural_foreign=True,
+            natural_primary=True,
+            indent=2,
+            stdout=out,
+        )
+        payload = out.getvalue().encode('utf-8')
+        if compress or backup_file.endswith('.gz'):
+            if not backup_file.endswith('.gz'):
+                backup_file = f'{backup_file}.gz'
+            with gzip.open(backup_file, 'wb') as f:
+                f.write(payload)
+        else:
+            if backup_file.endswith('.gz'):
+                backup_file = backup_file[:-3]
+            with open(backup_file, 'wb') as f:
+                f.write(payload)
+        return backup_file
 
     def handle(self, *args, **options):
         dry_run = options.get('dry_run', False)
         compress = options.get('compress', False)
         s3_upload = options.get('s3_upload', False)
         backup_dir = options.get('backup_dir', '/app/backups')
+        output_path = (options.get('output') or '').strip()
 
         # Get database configuration
         db_config = settings.DATABASES['default']
@@ -60,10 +129,14 @@ class Command(BaseCommand):
         # Generate backup filename
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         db_name = db_config['NAME']
-        backup_file = os.path.join(backup_dir, f"{db_name}_backup_{timestamp}.sql")
-        
-        if compress:
-            backup_file += '.gz'
+        if output_path:
+            backup_file = output_path
+            if compress and not backup_file.endswith('.gz'):
+                backup_file = f'{backup_file}.gz'
+        else:
+            backup_file = os.path.join(backup_dir, f"{db_name}_backup_{timestamp}.sql")
+            if compress:
+                backup_file += '.gz'
 
         self.stdout.write(f"Backing up database: {db_name}")
         self.stdout.write(f"Backup file: {backup_file}")
@@ -93,43 +166,63 @@ class Command(BaseCommand):
             return
 
         # Perform the backup
+        used_dumpdata = False
         try:
-            cmd = [
-                'pg_dump',
-                '-h', db_config['HOST'],
-                '-p', str(db_config['PORT']),
-                '-U', db_config['USER'],
-                '-d', db_config['NAME'],
-                '--verbose',
-                '--no-password',
-                '--format=custom'
-            ]
-
-            if compress:
-                # Use gzip compression
-                with open(backup_file, 'wb') as f:
-                    process1 = subprocess.Popen(cmd, stdout=subprocess.PIPE, env=env)
-                    process2 = subprocess.Popen(['gzip'], stdin=process1.stdout, stdout=f)
-                    process1.stdout.close()
-                    process2.wait()
-                    process1.wait()
+            if not self._ensure_pg_dump():
+                backup_file = self._dumpdata_fallback(backup_file, compress)
+                used_dumpdata = True
             else:
-                with open(backup_file, 'wb') as f:
-                    subprocess.run(cmd, stdout=f, env=env, check=True)
+                cmd = [
+                    'pg_dump',
+                    '-h', db_config['HOST'],
+                    '-p', str(db_config['PORT']),
+                    '-U', db_config['USER'],
+                    '-d', db_config['NAME'],
+                    '--verbose',
+                    '--no-password',
+                    '--format=custom',
+                ]
 
-            # Verify backup file
+                if compress:
+                    with open(backup_file, 'wb') as f:
+                        process1 = subprocess.Popen(cmd, stdout=subprocess.PIPE, env=env)
+                        process2 = subprocess.Popen(['gzip'], stdin=process1.stdout, stdout=f)
+                        process1.stdout.close()
+                        process2.wait()
+                        if process1.wait() != 0:
+                            raise subprocess.CalledProcessError(process1.returncode, cmd)
+                        if process2.returncode != 0:
+                            raise subprocess.CalledProcessError(process2.returncode, ['gzip'])
+                else:
+                    with open(backup_file, 'wb') as f:
+                        subprocess.run(cmd, stdout=f, env=env, check=True)
+
             if os.path.exists(backup_file) and os.path.getsize(backup_file) > 0:
                 size = os.path.getsize(backup_file)
                 self.stdout.write(
                     self.style.SUCCESS(f"Backup created successfully. Size: {size} bytes")
                 )
+                if used_dumpdata:
+                    symlink = os.path.join(backup_dir, 'emergency.json.gz')
+                    try:
+                        if os.path.lexists(symlink):
+                            os.remove(symlink)
+                        os.symlink(os.path.abspath(backup_file), symlink)
+                        self.stdout.write(f'Also linked as: {symlink}')
+                    except OSError:
+                        pass
             else:
                 raise CommandError("Backup file is empty or doesn't exist")
 
         except subprocess.CalledProcessError as e:
             raise CommandError(f"Backup failed: {e}")
         except FileNotFoundError:
-            raise CommandError("pg_dump command not found. Please install PostgreSQL client tools.")
+            backup_file = self._dumpdata_fallback(backup_file, compress)
+            if not os.path.exists(backup_file) or os.path.getsize(backup_file) == 0:
+                raise CommandError(
+                    "pg_dump not found and dumpdata fallback failed. "
+                    "Run: apt-get update && apt-get install -y postgresql-client"
+                )
 
         # Upload to S3 if requested
         if s3_upload:
