@@ -32,7 +32,7 @@ RUN find . -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true && 
     find . -name "*.pyc" -delete 2>/dev/null || true
 
 RUN mkdir -p /app/backend/media /app/staticfiles /tmp/staticfiles_runtime /app/backups /var/lib/postgresql/data && \
-    chmod +x /app/start_liara_with_postgres.sh /app/scripts/emergency_db_recovery.sh /app/scripts/backup_scheduler.sh /app/backend/scripts/pg_backup.sh /app/backend/scripts/pg_restore.sh
+    chmod +x /app/start_liara_with_postgres.sh /app/scripts/emergency_db_recovery.sh /app/scripts/backup_legacy_sayda_db.sh /app/scripts/backup_scheduler.sh /app/backend/scripts/pg_backup.sh /app/backend/scripts/pg_restore.sh
 
 ENV PYTHONUNBUFFERED=1
 ENV DJANGO_SETTINGS_MODULE=config.settings_ultra_simple

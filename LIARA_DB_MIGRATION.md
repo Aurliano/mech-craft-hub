@@ -10,7 +10,34 @@
 
 2. **پلان RAM**: حداقل 2GB (PostgreSQL + Gunicorn)
 
-## فاز ۰ — تلاش نجات داده (قبل از deploy)
+## فاز ۰ — بک‌آپ از sayda-db (قبل از deploy) — **الزامی**
+
+`sayda-db` فقط از داخل شبکه Liara در دسترس است. در **Liara Shell** یا ترمینال وب اپ اجرا کنید:
+
+```bash
+# رمز: از DATABASE_URL فعلی در پنل Liara (یا متغیر زیر)
+export LEGACY_DB_PASSWORD='YOUR_ROOT_PASSWORD'
+export LEGACY_DB_HOST=sayda-db
+export LEGACY_DB_USER=root
+export LEGACY_DB_NAME=postgres
+
+bash /app/scripts/backup_legacy_sayda_db.sh
+```
+
+خروجی باید در `/app/backups/emergency.dump` باشد. سپس در env:
+
+```bash
+RESTORE_DUMP=/app/backups/emergency.dump
+```
+
+**دستور دستی معادل** (اگر اسکریپت نبود):
+
+```bash
+mkdir -p /app/backups
+export PGPASSWORD='YOUR_ROOT_PASSWORD'
+pg_dump -h sayda-db -p 5432 -U root -d postgres -Fc -f /app/backups/emergency.dump
+ls -lh /app/backups/emergency.dump
+```
 
 ```bash
 liara shell --app mech-craft-hub-main

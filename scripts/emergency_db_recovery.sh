@@ -22,22 +22,31 @@ mkdir -p "$BACKUP_DIR"
 
 log "=== Phase 0: Emergency database recovery ==="
 echo ""
+warn "Preferred: run dedicated legacy backup script:"
+echo "  bash /app/scripts/backup_legacy_sayda_db.sh"
+echo ""
 warn "Manual checks (Liara panel):"
 echo "  1. PostgreSQL service (sayda-db) -> Snapshots / Export / Backups"
-echo "  2. Object Storage bucket -> search for *.sql, *.sql.gz, *_backup_*"
-echo "  3. Contact Liara support for last available dump"
-echo "  4. Check /app/backend/media for db.sqlite3 or *.json exports"
+echo "  2. Check /app/backend/media for db.sqlite3 or *.json exports"
 echo ""
 
-# Try pg_dump from legacy managed database
+if [[ -x /app/scripts/backup_legacy_sayda_db.sh ]]; then
+  log "Running backup_legacy_sayda_db.sh..."
+  if bash /app/scripts/backup_legacy_sayda_db.sh; then
+    exit 0
+  fi
+  err "backup_legacy_sayda_db.sh failed; trying inline pg_dump..."
+fi
+
+# Fallback inline pg_dump
 LEGACY_HOST="${LEGACY_DB_HOST:-sayda-db}"
 LEGACY_USER="${LEGACY_DB_USER:-root}"
 LEGACY_DB="${LEGACY_DB_NAME:-postgres}"
-EMERGENCY_DUMP="${BACKUP_DIR}/emergency_$(date +%Y%m%d_%H%M%S).dump"
+EMERGENCY_DUMP="${BACKUP_DIR}/emergency.dump"
 
 log "Attempting pg_dump from legacy host: ${LEGACY_HOST}..."
 if command -v pg_dump >/dev/null 2>&1; then
-  if pg_dump -h "$LEGACY_HOST" -U "$LEGACY_USER" -d "$LEGACY_DB" -Fc -f "$EMERGENCY_DUMP" 2>/dev/null; then
+  if pg_dump -h "$LEGACY_HOST" -p "${LEGACY_DB_PORT:-5432}" -U "$LEGACY_USER" -d "$LEGACY_DB" -Fc -f "$EMERGENCY_DUMP" 2>/dev/null; then
     log "SUCCESS: Emergency dump saved to ${EMERGENCY_DUMP}"
     log "Set RESTORE_DUMP=${EMERGENCY_DUMP} before next deploy to auto-restore."
     exit 0
