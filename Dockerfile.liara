@@ -1,9 +1,17 @@
 # Liara deployment Dockerfile - Django + local PostgreSQL on persistent disk
-FROM python:3.11-slim
+#
+# registry-1.docker.io is blocked/slow from Iran — use Liara's Docker Hub mirror.
+# Docs: https://docs.liara.ir/mirrors/docker/
+ARG PYTHON_BASE=docker-mirror.liara.ir/library/python:3.11-slim
+FROM ${PYTHON_BASE}
 
-# Configure apt to handle network timeouts better
-RUN echo 'Acquire::http::Timeout "60";' > /etc/apt/apt.conf.d/99timeout && \
-    echo 'Acquire::ftp::Timeout "60";' >> /etc/apt/apt.conf.d/99timeout && \
+# Liara mirrors for apt/pip (avoid timeouts during build in Iran)
+ENV PIP_INDEX_URL=https://package-mirror.liara.ir/repository/pypi/simple
+ENV PIP_TRUSTED_HOST=package-mirror.liara.ir
+
+# Configure apt to handle network timeouts better (keep default Debian sources — Liara mirror path breaks on trixie)
+RUN echo 'Acquire::http::Timeout "120";' > /etc/apt/apt.conf.d/99timeout && \
+    echo 'Acquire::ftp::Timeout "120";' >> /etc/apt/apt.conf.d/99timeout && \
     echo 'Acquire::Retries "5";' >> /etc/apt/apt.conf.d/99timeout
 
 # Install runtime dependencies including PostgreSQL server and client
@@ -17,8 +25,10 @@ RUN for i in 1 2 3; do \
             procps \
         && rm -rf /var/lib/apt/lists/* \
         && apt-get clean \
-        && break || sleep $((i * 10)); \
-    done
+        && exit 0; \
+        sleep $((i * 10)); \
+    done; \
+    echo "apt-get install failed after 3 attempts" >&2; exit 1
 
 WORKDIR /app
 
